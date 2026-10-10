@@ -19,6 +19,19 @@ void main() {
   });
 
   group('blu by BCA', () {
+    test('format asli: penambahan dana blusaving', () {
+      final draft = engine.parse(
+        packageName: 'com.bcadigital.blu',
+        title: 'Kamu Berhasil Menambahkan Dana',
+        body: 'Penambahan dana ke bluSaving sisa Rp 2.000 berhasil',
+      );
+      expect(draft, isNotNull);
+      expect(draft!.bankId, 'blu');
+      expect(draft.kind, TxKind.topup);
+      expect(draft.direction, Direction.incoming);
+      expect(draft.amount, 2000);
+    });
+
     test('transfer masuk dengan pihak', () {
       final draft = engine.parse(
         packageName: 'id.bm.blu',

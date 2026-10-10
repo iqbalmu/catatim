@@ -48,12 +48,15 @@ Pola di `assets/rules/seed_rules.json` disusun dari format umum, **belum
 divalidasi dengan notifikasi asli** blu by BCA / Bank Nagari. Validasi:
 
 1. Lakukan satu transaksi kecil (mis. transfer Rp1.000 antar-rekening sendiri).
-2. Buka **Capture log** — notifikasi mentah muncul dengan badge
-   `Tercatat` (berhasil) atau `Dikenali?` (gagal parse).
-3. Sesuaikan `matchAll`/`matchAny`/`counterparty` di seed rules dengan teks
-   asli, `flutter run` lagi.
-4. Kirim `packageName` asli blu (lihat capture log) untuk melengkapi
-   `packageNames` nagari/blu bila ternyata berbeda.
+2. Buka **Capture log** — notifikasi mentah muncul dengan badge `Tercatat`
+   (berhasil) atau ikon ⟳ (gagal parse). Tap baris untuk melihat teks
+   mentah lengkap.
+3. Sesuaikan `matchAll`/`matchAny`/`counterparty`/`amount` di seed rules
+   dengan teks asli → hot restart (`R` di sesi `flutter run`) → tap ikon
+   **⟳ Parse ulang** pada entri lama — tanpa perlu transaksi ulang.
+4. `packageName` asli blu (`com.bcadigital.blu`) sudah divalidasi dari
+   capture nyata; lengkapi `packageNames` Bank Nagari dari capture log
+   saat notifikasinya tertangkap.
 
 Dedup: notifikasi ganda (bank kirim dua kali / push+SMS) dengan bank+nominal+
 arah sama dalam ±120 detik hanya jadi satu transaksi.

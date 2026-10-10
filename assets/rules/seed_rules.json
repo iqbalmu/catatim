@@ -5,9 +5,16 @@
     {
       "id": "blu",
       "displayName": "blu by BCA",
-      "packageNames": ["id.bm.blu"],
-      "keywords": ["blu by bca", "blu bca"],
+      "packageNames": ["com.bcadigital.blu", "id.bm.blu"],
+      "keywords": ["blu by bca", "blu bca", "blusaving"],
       "templates": [
+        {
+          "name": "tambah dana blusaving",
+          "kind": "topup",
+          "direction": "in",
+          "matchAll": ["penambahan dana"],
+          "amount": "sebesar\\s*(?:rp\\.?\\s*)?([\\d][\\d.,]*)"
+        },
         {
           "name": "transfer masuk",
           "kind": "transfer",
