@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../capture/capture_channel.dart';
+import '../capture/pipeline.dart' show lessonModeKey;
 import '../core/money.dart';
 import '../models.dart';
 import '../rules/engine.dart';
@@ -179,6 +180,61 @@ class _CaptureLogScreenState extends State<CaptureLogScreen> {
                 ),
               );
             },
+          ),
+          const SizedBox(height: Spacing.m),
+          FutureBuilder<String?>(
+            future: widget.repository.getSetting(lessonModeKey),
+            builder: (context, snap) {
+              final on = (snap.data ?? '1') == '1';
+              return SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Mode pelajaran'),
+                subtitle: const Text(
+                  'Catat SEMUA notifikasi ke log (untuk tuning template). '
+                  'Nonaktif = hanya notifikasi bank yang dikenal.',
+                ),
+                value: on,
+                onChanged: (v) async {
+                  await widget.repository
+                      .setSetting(lessonModeKey, v ? '1' : '0');
+                  if (mounted) setState(() {});
+                },
+              );
+            },
+          ),
+          const SizedBox(height: Spacing.m),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(Spacing.m),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.health_and_safety_outlined),
+                      const SizedBox(width: Spacing.s),
+                      Expanded(
+                        child: Text('Kesehatan capture (vivo/Funtouch)',
+                            style: Theme.of(context).textTheme.titleSmall),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: Spacing.s),
+                  const Text(
+                    '1. Setelan → Baterai → Bukuduit → Batasi di latar '
+                    'belakang: NONAKTIF (Unrestricted)\n'
+                    '2. Izinkan Autostart untuk Bukuduit\n'
+                    '3. Jangan force-close app dari recents',
+                    style: TextStyle(fontSize: 12.5),
+                  ),
+                  const SizedBox(height: Spacing.s),
+                  FilledButton.tonal(
+                    onPressed: widget.channel.openBatterySettings,
+                    child: const Text('Buka pengaturan baterai'),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: Spacing.m),
           Text(

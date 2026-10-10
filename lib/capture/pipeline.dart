@@ -9,6 +9,9 @@ import 'capture_channel.dart';
 
 const String _ownPackage = 'id.xmuu.bukuduit';
 
+/// '1' = catat semua notifikasi ke capture log (tuning); '0' = hanya bank.
+const String lessonModeKey = 'lesson_mode';
+
 /// Menghubungkan aliran notifikasi mentah → parser → database.
 class CapturePipeline extends ChangeNotifier {
   CapturePipeline({
@@ -53,6 +56,16 @@ class CapturePipeline extends ChangeNotifier {
         body: raw.body,
       );
       if (draft == null) {
+        // Di luar mode pelajaran, hanya notifikasi dari sumber bank yang
+        // dikenal yang dicatat — notifikasi lain (chat, dsb.) diabaikan.
+        final lessonMode = await repository.getSetting(lessonModeKey) ?? '1';
+        if (lessonMode != '1' && !engine.isKnownSource(
+          raw.packageName,
+          raw.title,
+          raw.body,
+        )) {
+          return;
+        }
         await repository.recordUnparsedCapture(raw);
       } else {
         await repository.recordFromCapture(raw: raw, draft: draft);
@@ -63,8 +76,7 @@ class CapturePipeline extends ChangeNotifier {
       try {
         await repository.recordUnparsedCapture(raw);
       } catch (_) {
-        // DB tidak siap; baris tetap ada di antrian native? — tidak:
-        // drain sudah mengosongkan; biarkan log berikutnya menangkap.
+        // DB tidak siap; biarkan capture berikutnya menangkap.
       }
     }
   }

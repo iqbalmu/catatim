@@ -25,6 +25,12 @@ class CaptureChannel {
     await _method.invokeMethod<void>('openListenerSettings');
   }
 
+  /// Buka pengaturan optimisasi baterai (penting untuk vendor agresif
+  /// seperti vivo/Funtouch yang mematikan listener latar belakang).
+  Future<void> openBatterySettings() async {
+    await _method.invokeMethod<void>('openBatterySettings');
+  }
+
   /// Ambil notifikasi yang tertangkap saat app tidak berjalan, lalu
   /// antrian native dikosongkan.
   Future<List<RawCapture>> drainQueue() async {

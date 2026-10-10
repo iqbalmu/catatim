@@ -75,6 +75,14 @@ class RuleEngine {
     return null;
   }
 
+  /// Benar bila notifikasi berasal dari app bank yang dikenal (packageName
+  /// terdaftar) atau kontennya mengandung kata kunci bank — dipakai filter
+  /// capture di luar mode pelajaran.
+  bool isKnownSource(String packageName, String title, String body) {
+    final lower = '$title $body'.toLowerCase();
+    return _detectBank(packageName, lower) != null;
+  }
+
   int? _extractAmount(String? customPattern, String text) {
     final patterns = [
       ?customPattern,

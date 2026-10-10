@@ -12,6 +12,7 @@ import 'storage/repository.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await applyPendingRestore(); // pulihkan backup yang di-stage user
   final db = AppDatabase(await openAppDatabase());
   final repository = LedgerRepository(db);
   final engine = RuleEngine(await loadSeedRuleSet());

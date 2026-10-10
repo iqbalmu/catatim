@@ -32,6 +32,12 @@ class MainActivity : FlutterActivity() {
                         )
                         result.success(null)
                     }
+                    "openBatterySettings" -> {
+                        startActivity(
+                            Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                        )
+                        result.success(null)
+                    }
                     "drainQueue" -> result.success(NotificationCatcher.drainQueue(this))
                     else -> result.notImplemented()
                 }

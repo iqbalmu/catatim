@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bukuduit/models.dart';
@@ -108,7 +109,55 @@ void main() {
     expect(txs.first.counterparty, 'Kopi Kenangan');
   });
 
-  test('watchRecent mengurutkan terbaru dulu', () async {
+  test('capture otomatis mendapat kategori bawaan sesuai jenis', () async {
+    await repo.recordFromCapture(raw: capture(), draft: draft()); // transfer
+    final rows = await repo.watchRecentWithCategory().first;
+    expect(rows.single.category?.name, 'Transfer');
+  });
+
+  test('settings simpan & ambil', () async {
+    expect(await repo.getSetting('kunci'), isNull);
+    await repo.setSetting('kunci', '1');
+    expect(await repo.getSetting('kunci'), '1');
+    await repo.setSetting('kunci', '0');
+    expect(await repo.getSetting('kunci'), '0');
+  });
+
+  test('update & hapus transaksi', () async {
+    await repo.addManual(
+      amount: 1000,
+      direction: Direction.outgoing,
+      kind: TxKind.payment,
+    );
+    var rows = await repo.watchRecentWithCategory().first;
+    expect(rows, hasLength(1));
+
+    await repo.updateTransaction(
+      rows.single.tx.id,
+      const TransactionsCompanion(amount: Value(2000)),
+    );
+    rows = await repo.watchRecentWithCategory().first;
+    expect(rows.single.tx.amount, 2000);
+
+    await repo.deleteTransaction(rows.single.tx.id);
+    expect(await repo.watchRecentWithCategory().first, isEmpty);
+  });
+
+  test('csv: header + satu baris data', () async {
+    await repo.addManual(
+      amount: 150000,
+      direction: Direction.outgoing,
+      kind: TxKind.payment,
+      counterparty: 'Kopi "Kenangan", RT',
+    );
+    final csv = await repo.buildCsv();
+    final lines = csv.trim().split('\n');
+    expect(lines.first, 'tanggal,arah,nominal,jenis,kategori,bank,pihak,sumber');
+    expect(lines, hasLength(2));
+    expect(lines.last, contains('"Kopi ""Kenangan"", RT"'));
+  });
+
+  test('watchRecentWithCategory mengurutkan terbaru dulu', () async {
     await repo.recordFromCapture(
       raw: capture(postedAt: DateTime(2026, 10, 9, 8)),
       draft: draft(amount: 1000),
@@ -117,7 +166,7 @@ void main() {
       raw: capture(postedAt: DateTime(2026, 10, 10, 8)),
       draft: draft(amount: 2000),
     );
-    final txs = await repo.watchRecent().first;
-    expect(txs.first.amount, 2000);
+    final txs = await repo.watchRecentWithCategory().first;
+    expect(txs.first.tx.amount, 2000);
   });
 }

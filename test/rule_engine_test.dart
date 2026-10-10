@@ -132,6 +132,22 @@ void main() {
     });
   });
 
+  test('isKnownSource: paket blu dikenal, chat tidak', () {
+    expect(
+      engine.isKnownSource('com.bcadigital.blu', 'apa saja', 'apa saja'),
+      isTrue,
+    );
+    expect(
+      engine.isKnownSource('com.whatsapp', 'Pesan masuk', 'halo bro'),
+      isFalse,
+    );
+    // kata kunci konten tetap dikenali meski paket tidak terdaftar
+    expect(
+      engine.isKnownSource('com.vendor.smsrelay', '', 'BANKNAGARI: Kredit Rp750.000'),
+      isTrue,
+    );
+  });
+
   test('seed rules memuat 3 bank', () {
     final set = _loadSeed();
     expect(set.banks.map((b) => b.id), containsAll(['blu', 'nagari', 'unknown']));

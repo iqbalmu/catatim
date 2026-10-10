@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import '../capture/pipeline.dart';
 import '../core/money.dart';
 import '../models.dart';
-import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/tokens.dart';
+import 'backup_screen.dart';
 import 'capture_log_screen.dart';
-import 'manual_add_sheet.dart';
+import 'report_screen.dart';
+import 'transaction_sheet.dart';
 
 const _daysShort = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 const _monthsShort = [
@@ -15,6 +16,7 @@ const _monthsShort = [
   'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
 ];
 
+/// Shell utama: bottom navigation Beranda | Laporan.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
@@ -30,9 +32,46 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int _tab = 0;
+
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      body: IndexedStack(
+        index: _tab,
+        children: [
+          _BerandaTab(repository: widget.repository, pipeline: widget.pipeline),
+          ReportTab(repository: widget.repository),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _tab,
+        onDestinationSelected: (i) => setState(() => _tab = i),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: Icon(Icons.account_balance_wallet),
+            label: 'Beranda',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.insights_outlined),
+            selectedIcon: Icon(Icons.insights),
+            label: 'Laporan',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BerandaTab extends StatelessWidget {
+  const _BerandaTab({required this.repository, required this.pipeline});
+
+  final LedgerRepository repository;
+  final CapturePipeline pipeline;
+
+  @override
+  Widget build(BuildContext context) {
     final now = DateTime.now();
     final monthStart = DateTime(now.year, now.month);
     final monthEnd = DateTime(now.year, now.month + 1);
@@ -44,12 +83,12 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             tooltip: 'Capture log',
             icon: FutureBuilder<bool>(
-              future: widget.pipeline.channel.isListenerEnabled(),
+              future: pipeline.channel.isListenerEnabled(),
               builder: (context, snapshot) {
                 final enabled = snapshot.data ?? false;
                 return Badge(
                   isLabelVisible: !enabled,
-                  backgroundColor: scheme.error,
+                  backgroundColor: Theme.of(context).colorScheme.error,
                   child: const Icon(Icons.notifications_active_outlined),
                 );
               },
@@ -58,58 +97,127 @@ class _HomeScreenState extends State<HomeScreen> {
               context,
               MaterialPageRoute(
                 builder: (_) => CaptureLogScreen(
-                  repository: widget.repository,
-                  channel: widget.pipeline.channel,
-                  engine: widget.pipeline.engine,
+                  repository: repository,
+                  channel: pipeline.channel,
+                  engine: pipeline.engine,
                 ),
               ),
             ),
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'backup') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BackupScreen(repository: repository),
+                  ),
+                );
+              }
+            },
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: 'backup',
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.backup_outlined),
+                  title: Text('Backup & pulihkan'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(Spacing.m),
         children: [
-          StreamBuilder<List<Transaction>>(
-            stream: widget.repository.watchBetween(monthStart, monthEnd),
+          StreamBuilder<List<TxWithCategory>>(
+            stream: repository.watchBetweenWithCategory(monthStart, monthEnd),
             builder: (context, snapshot) {
               var incoming = 0;
               var outgoing = 0;
-              for (final t in snapshot.data ?? const <Transaction>[]) {
-                if (t.direction == Direction.incoming) {
-                  incoming += t.amount;
+              for (final r in snapshot.data ?? const <TxWithCategory>[]) {
+                if (r.tx.direction == Direction.incoming) {
+                  incoming += r.tx.amount;
                 } else {
-                  outgoing += t.amount;
+                  outgoing += r.tx.amount;
                 }
               }
               return _SummaryCard(incoming: incoming, outgoing: outgoing);
             },
           ),
           const SizedBox(height: Spacing.l),
-          Text(
-            'Transaksi',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
+          Text('Transaksi', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: Spacing.s),
-          StreamBuilder<List<Transaction>>(
-            stream: widget.repository.watchRecent(),
+          StreamBuilder<List<TxWithCategory>>(
+            stream: repository.watchRecentWithCategory(),
             builder: (context, snapshot) {
-              final txs = snapshot.data ?? const <Transaction>[];
-              if (txs.isEmpty) {
+              final items = snapshot.data ?? const <TxWithCategory>[];
+              if (items.isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.symmetric(vertical: Spacing.xl),
                   child: Center(child: Text('Belum ada transaksi.')),
                 );
               }
-              return _TransactionList(txs: txs);
+              // Kelompokkan per hari.
+              final byDay = <DateTime, List<TxWithCategory>>{};
+              for (final item in items) {
+                final t = item.tx.occurredAt;
+                byDay
+                    .putIfAbsent(DateTime(t.year, t.month, t.day), () => [])
+                    .add(item);
+              }
+              final days = byDay.keys.toList()
+                ..sort((a, b) => b.compareTo(a));
+              return Column(
+                children: [
+                  for (final day in days) ...[
+                    _DayHeader(day: day),
+                    for (final item in byDay[day]!)
+                      _TransactionTile(item: item, repository: repository),
+                  ],
+                ],
+              );
             },
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => ManualAddSheet.show(context, widget.repository),
+        onPressed: () => TransactionSheet.show(context, repository),
         icon: const Icon(Icons.add),
         label: const Text('Catat'),
+      ),
+    );
+  }
+}
+
+class _DayHeader extends StatelessWidget {
+  const _DayHeader({required this.day});
+
+  final DateTime day;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final label = switch (day) {
+      DateTime d when d == today => 'Hari ini',
+      DateTime d when d == today.subtract(const Duration(days: 1)) =>
+        'Kemarin',
+      _ =>
+        '${_daysShort[day.weekday - 1]}, ${day.day} ${_monthsShort[day.month - 1]}',
+    };
+    return Padding(
+      padding: const EdgeInsets.only(top: Spacing.m, bottom: Spacing.xs),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          label,
+          style: Theme.of(context)
+              .textTheme
+              .labelLarge
+              ?.copyWith(color: Theme.of(context).colorScheme.primary),
+        ),
       ),
     );
   }
@@ -167,10 +275,7 @@ class _AmountTile extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium,
-        ),
+        Text(label, style: Theme.of(context).textTheme.labelMedium),
         const SizedBox(height: Spacing.xs),
         FittedBox(
           child: Text(
@@ -186,89 +291,56 @@ class _AmountTile extends StatelessWidget {
   }
 }
 
-class _TransactionList extends StatelessWidget {
-  const _TransactionList({required this.txs});
-
-  final List<Transaction> txs;
-
-  @override
-  Widget build(BuildContext context) {
-    final byDay = <DateTime, List<Transaction>>{};
-    for (final t in txs) {
-      final d = DateTime(
-        t.occurredAt.year,
-        t.occurredAt.month,
-        t.occurredAt.day,
-      );
-      byDay.putIfAbsent(d, () => []).add(t);
-    }
-    final days = byDay.keys.toList()..sort((a, b) => b.compareTo(a));
-
-    return Column(
-      children: [
-        for (final day in days) ...[
-          _DayHeader(day: day),
-          for (final t in byDay[day]!) _TransactionTile(tx: t),
-        ],
-      ],
-    );
-  }
-}
-
-class _DayHeader extends StatelessWidget {
-  const _DayHeader({required this.day});
-
-  final DateTime day;
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final label = switch (day) {
-      DateTime d when d == today => 'Hari ini',
-      DateTime d when d == today.subtract(const Duration(days: 1)) => 'Kemarin',
-      _ =>
-        '${_daysShort[day.weekday - 1]}, ${day.day} ${_monthsShort[day.month - 1]}',
-    };
-    return Padding(
-      padding: const EdgeInsets.only(top: Spacing.m, bottom: Spacing.xs),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-        ),
-      ),
-    );
-  }
-}
-
 class _TransactionTile extends StatelessWidget {
-  const _TransactionTile({required this.tx});
+  const _TransactionTile({required this.item, required this.repository});
 
-  final Transaction tx;
+  final TxWithCategory item;
+  final LedgerRepository repository;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final tx = item.tx;
     final incoming = tx.direction == Direction.incoming;
+    final category = item.category;
     final title = (tx.counterparty != null && tx.counterparty!.isNotEmpty)
         ? tx.counterparty!
         : tx.kind.label;
+
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: CircleAvatar(
-        backgroundColor: scheme.secondaryContainer,
-        foregroundColor: scheme.onSecondaryContainer,
+        backgroundColor: category == null
+            ? scheme.secondaryContainer
+            : SeedColors.categoryColor(category.colorIndex).withAlpha(60),
+        foregroundColor: category == null
+            ? scheme.onSecondaryContainer
+            : SeedColors.categoryColor(category.colorIndex),
         child: Icon(_iconFor(tx.kind)),
       ),
       title: Text(title, overflow: TextOverflow.ellipsis),
-      subtitle: Text(
-        '${tx.bankId} · ${tx.source.label}'
-        '${tx.rawTitle != null ? ' · auto' : ''}',
-        style: Theme.of(context).textTheme.labelSmall,
+      subtitle: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: category == null
+                  ? scheme.outlineVariant
+                  : SeedColors.categoryColor(category.colorIndex),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              '${category?.name ?? tx.kind.label} · ${tx.bankId} · '
+              '${tx.source.label}',
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ),
+        ],
       ),
       trailing: Text(
         '${incoming ? '+' : '−'} ${Money.format(tx.amount)}',
@@ -277,6 +349,7 @@ class _TransactionTile extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
       ),
+      onTap: () => TransactionSheet.show(context, repository, existing: item),
     );
   }
 

@@ -26,4 +26,20 @@ class SeedColors {
 
   static const Color incoming = Color(0xFF1B873B);
   static const Color outgoing = Color(0xFFB3392E);
+
+  /// Warna kategori — diindeks via Categories.colorIndex.
+  static const List<Color> categoryPalette = [
+    Color(0xFFE07A5F), // Makanan
+    Color(0xFF3D8AA8), // Transportasi
+    Color(0xFF8A6FBF), // Tagihan
+    Color(0xFF4E9A6F), // Belanja
+    Color(0xFFD4A017), // Hiburan
+    Color(0xFFC75B6E), // Kesehatan
+    Color(0xFF2E8B74), // Gaji
+    Color(0xFF6B7FA3), // Transfer
+    Color(0xFF8D8D8D), // Lainnya
+  ];
+
+  static Color categoryColor(int index) =>
+      categoryPalette[index % categoryPalette.length];
 }
