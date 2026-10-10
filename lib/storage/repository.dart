@@ -16,10 +16,12 @@ class LedgerRepository {
   static const dedupWindow = Duration(seconds: 120);
 
   /// Simpan transaksi hasil capture; kembalikan id baris (baru atau lama
-  /// bila terdeteksi duplikat).
+  /// bila terdeteksi duplikat). [existingLogId] mengisi ulang baris capture
+  /// log yang sudah ada (alur "parse ulang") alih-alih menambah baris baru.
   Future<int> recordFromCapture({
     required RawCapture raw,
     required ParsedDraft draft,
+    int? existingLogId,
   }) async {
     final from = raw.postedAt.subtract(dedupWindow);
     final to = raw.postedAt.add(dedupWindow);
@@ -33,7 +35,8 @@ class LedgerRepository {
         .getSingleOrNull();
 
     if (existing != null) {
-      await _logCapture(raw, parsed: true, transactionId: existing.id);
+      await _logCapture(raw,
+          parsed: true, transactionId: existing.id, updateLogId: existingLogId);
       return existing.id;
     }
 
@@ -51,7 +54,8 @@ class LedgerRepository {
             rawBody: Value(raw.body),
           ),
         );
-    await _logCapture(raw, parsed: true, transactionId: id);
+    await _logCapture(raw,
+        parsed: true, transactionId: id, updateLogId: existingLogId);
     return id;
   }
 
@@ -107,7 +111,18 @@ class LedgerRepository {
     RawCapture raw, {
     required bool parsed,
     int? transactionId,
+    int? updateLogId,
   }) async {
+    if (updateLogId != null) {
+      await (_db.update(_db.captureLogs)..where((c) => c.id.equals(updateLogId)))
+          .write(
+        CaptureLogsCompanion(
+          parsed: Value(parsed),
+          transactionId: Value(transactionId),
+        ),
+      );
+      return;
+    }
     await _db.into(_db.captureLogs).insert(
           CaptureLogsCompanion.insert(
             packageName: raw.packageName,

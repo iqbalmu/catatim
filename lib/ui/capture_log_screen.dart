@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../capture/capture_channel.dart';
+import '../core/money.dart';
+import '../models.dart';
+import '../rules/engine.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/tokens.dart';
@@ -22,10 +25,12 @@ class CaptureLogScreen extends StatefulWidget {
     super.key,
     required this.repository,
     required this.channel,
+    required this.engine,
   });
 
   final LedgerRepository repository;
   final CaptureChannel channel;
+  final RuleEngine engine;
 
   @override
   State<CaptureLogScreen> createState() => _CaptureLogScreenState();
@@ -62,6 +67,63 @@ class _CaptureLogScreenState extends State<CaptureLogScreen> {
       await widget.channel.openListenerSettings();
     }
     if (mounted) setState(() => _enabled = widget.channel.isListenerEnabled());
+  }
+
+  Future<void> _reparse(CaptureLog log) async {
+    final draft = widget.engine.parse(
+      packageName: log.packageName,
+      title: log.title,
+      body: log.body,
+    );
+    final messenger = ScaffoldMessenger.of(context);
+    if (draft == null) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Masih tidak dikenali — template perlu disetel.'),
+        ),
+      );
+      return;
+    }
+    await widget.repository.recordFromCapture(
+      raw: RawCapture(
+        packageName: log.packageName,
+        title: log.title,
+        body: log.body,
+        postedAt: log.postedAt,
+      ),
+      draft: draft,
+      existingLogId: log.id,
+    );
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          'Tercatat: ${draft.direction.label} ${Money.format(draft.amount)} '
+          '(${draft.bankName})',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showFullText(CaptureLog log) {
+    return showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Notifikasi mentah'),
+        content: SelectableText(
+          'App      : ${log.packageName}\n'
+          'Waktu    : ${_time(log.postedAt)}\n'
+          'Judul    : ${log.title}\n'
+          'Isi      : ${log.body}',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -163,10 +225,17 @@ class _CaptureLogScreenState extends State<CaptureLogScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       isThreeLine: true,
-                      trailing: Chip(
-                        label: Text(log.parsed ? 'Tercatat' : 'Dikenali?'),
-                        visualDensity: VisualDensity.compact,
-                      ),
+                      onTap: () => _showFullText(log),
+                      trailing: log.parsed
+                          ? Chip(
+                              label: const Text('Tercatat'),
+                              visualDensity: VisualDensity.compact,
+                            )
+                          : IconButton(
+                              tooltip: 'Parse ulang',
+                              icon: const Icon(Icons.refresh),
+                              onPressed: () => _reparse(log),
+                            ),
                     ),
                 ],
               );

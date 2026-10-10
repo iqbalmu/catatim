@@ -60,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 builder: (_) => CaptureLogScreen(
                   repository: widget.repository,
                   channel: widget.pipeline.channel,
+                  engine: widget.pipeline.engine,
                 ),
               ),
             ),
