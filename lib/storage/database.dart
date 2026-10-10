@@ -68,17 +68,39 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
         onUpgrade: (m, from, to) async {
           if (from < 2) {
-            await m.addColumn(transactions, transactions.categoryId);
+            await m.createTable(categories);
             await m.createTable(appSettings);
+            await m.addColumn(transactions, transactions.categoryId);
           }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
+          final m = createMigrator();
+          // Self-heal: perangkat yang pernah menjalankan migrasi v2 yang
+          // gagal (user_version sudah 2, tabel baru tidak jadi dibuat)
+          // disembuhkan di sini — createTable idempoten (IF NOT EXISTS).
+          await m.createTable(categories);
+          await m.createTable(appSettings);
           // Seed kategori bawaan sekali — berlaku untuk DB baru maupun hasil
           // upgrade v1.
           final existing = await select(categories).get();
           if (existing.isEmpty) {
             await batch((b) => b.insertAll(categories, defaultCategoryRows()));
+          }
+          // Backfill kategori default untuk baris lama yang belum punya —
+          // idempoten (hanya category_id IS NULL).
+          for (final entry in <String, List<String>>{
+            'Transfer': ['transfer', 'topup', 'withdrawal'],
+            'Belanja': ['payment'],
+            'Lainnya': ['other'],
+          }.entries) {
+            await customStatement(
+              'UPDATE transactions SET category_id = '
+              '(SELECT id FROM categories WHERE name = ?) '
+              'WHERE category_id IS NULL AND kind IN '
+              "(${entry.value.map((_) => '?').join(', ')})",
+              [entry.key, ...entry.value],
+            );
           }
         },
       );
