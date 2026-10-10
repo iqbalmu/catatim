@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../game/progress.dart';
 import '../models.dart';
 import '../rules/engine.dart';
 import '../storage/repository.dart';
@@ -18,11 +19,13 @@ class CapturePipeline extends ChangeNotifier {
     required this.channel,
     required this.engine,
     required this.repository,
+    this.progress,
   });
 
   final CaptureChannel channel;
   final RuleEngine engine;
   final LedgerRepository repository;
+  final ProgressService? progress;
 
   StreamSubscription<RawCapture>? _subscription;
   bool _started = false;
@@ -69,6 +72,7 @@ class CapturePipeline extends ChangeNotifier {
         await repository.recordUnparsedCapture(raw);
       } else {
         await repository.recordFromCapture(raw: raw, draft: draft);
+        unawaited(progress?.award(XpEvent.capture));
       }
       handledCount++;
       notifyListeners();

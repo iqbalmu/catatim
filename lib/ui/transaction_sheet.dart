@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
-
 import 'package:drift/drift.dart' show Value;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/money.dart';
+import '../game/progress.dart';
 import '../models.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
@@ -20,15 +21,18 @@ class TransactionSheet extends StatefulWidget {
     super.key,
     required this.repository,
     this.existing,
+    this.progress,
   });
 
   final LedgerRepository repository;
   final TxWithCategory? existing;
+  final ProgressService? progress;
 
   static Future<void> show(
     BuildContext context,
     LedgerRepository repository, {
     TxWithCategory? existing,
+    ProgressService? progress,
   }) {
     return showModalBottomSheet<void>(
       context: context,
@@ -41,7 +45,11 @@ class TransactionSheet extends StatefulWidget {
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
         ),
-        child: TransactionSheet(repository: repository, existing: existing),
+        child: TransactionSheet(
+          repository: repository,
+          existing: existing,
+          progress: progress,
+        ),
       ),
     );
   }
@@ -158,6 +166,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
         int.tryParse(_amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''));
     if (amount == null || amount <= 0) return;
     final counterparty = _counterpartyCtrl.text.trim();
+    await HapticFeedback.lightImpact();
 
     if (_isEdit) {
       await widget.repository.updateTransaction(
@@ -171,6 +180,11 @@ class _TransactionSheetState extends State<TransactionSheet> {
           categoryId: Value(_categoryId),
         ),
       );
+      final categoryChanged =
+          widget.existing!.tx.categoryId != _categoryId;
+      if (categoryChanged) {
+        await widget.progress?.award(XpEvent.reclassify);
+      }
     } else {
       await widget.repository.addManual(
         amount: amount,
@@ -180,6 +194,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
         categoryId: _categoryId,
         occurredAt: _occurredAt,
       );
+      await widget.progress?.award(XpEvent.manualAdd);
     }
     if (mounted) Navigator.pop(context);
   }

@@ -27,6 +27,10 @@ class SeedColors {
   static const Color incoming = Color(0xFF1B873B);
   static const Color outgoing = Color(0xFFB3392E);
 
+  /// Warna Bukuduit Quest.
+  static const Color honey = Color(0xFFFFB33E);
+  static const Color ink = Color(0xFF3B3630);
+
   /// Warna kategori — diindeks via Categories.colorIndex.
   static const List<Color> categoryPalette = [
     Color(0xFFE07A5F), // Makanan

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../capture/pipeline.dart';
 import '../core/money.dart';
+import '../game/hero_card.dart';
+import '../game/mascot.dart';
+import '../game/progress.dart';
 import '../models.dart';
 import '../storage/repository.dart';
 import '../theme/tokens.dart';
@@ -22,10 +26,12 @@ class HomeScreen extends StatefulWidget {
     super.key,
     required this.repository,
     required this.pipeline,
+    required this.progress,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
+  final ProgressService progress;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -40,7 +46,11 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: _tab,
         children: [
-          _BerandaTab(repository: widget.repository, pipeline: widget.pipeline),
+          _BerandaTab(
+            repository: widget.repository,
+            pipeline: widget.pipeline,
+            progress: widget.progress,
+          ),
           ReportTab(repository: widget.repository),
         ],
       ),
@@ -64,18 +74,80 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _BerandaTab extends StatelessWidget {
-  const _BerandaTab({required this.repository, required this.pipeline});
+class _BerandaTab extends StatefulWidget {
+  const _BerandaTab({
+    required this.repository,
+    required this.pipeline,
+    required this.progress,
+  });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
+  final ProgressService progress;
+
+  @override
+  State<_BerandaTab> createState() => _BerandaTabState();
+}
+
+class _BerandaTabState extends State<_BerandaTab> {
+  @override
+  void initState() {
+    super.initState();
+    widget.progress.addListener(_onProgressChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.progress.removeListener(_onProgressChanged);
+    super.dispose();
+  }
+
+  void _onProgressChanged() {
+    final level = widget.progress.consumePendingLevelUp();
+    if (level != null && mounted) {
+      HapticFeedback.mediumImpact();
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Mascot(mood: MascotMood.celebrate, size: 96),
+              const SizedBox(height: Spacing.m),
+              Text(
+                'LEVEL UP!',
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 4),
+              Text('Kamu sekarang level "$level" 🎉'),
+            ],
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Lanjut!'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    final milestone = widget.progress.consumePendingMilestone();
+    if (milestone != null && mounted) {
+      HapticFeedback.mediumImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('🔥 $milestone hari beruntun mencatat — mantap!'),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final monthStart = DateTime(now.year, now.month);
-    final monthEnd = DateTime(now.year, now.month + 1);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bukuduit'),
@@ -83,7 +155,7 @@ class _BerandaTab extends StatelessWidget {
           IconButton(
             tooltip: 'Capture log',
             icon: FutureBuilder<bool>(
-              future: pipeline.channel.isListenerEnabled(),
+              future: widget.pipeline.channel.isListenerEnabled(),
               builder: (context, snapshot) {
                 final enabled = snapshot.data ?? false;
                 return Badge(
@@ -97,9 +169,9 @@ class _BerandaTab extends StatelessWidget {
               context,
               MaterialPageRoute(
                 builder: (_) => CaptureLogScreen(
-                  repository: repository,
-                  channel: pipeline.channel,
-                  engine: pipeline.engine,
+                  repository: widget.repository,
+                  channel: widget.pipeline.channel,
+                  engine: widget.pipeline.engine,
                 ),
               ),
             ),
@@ -110,7 +182,8 @@ class _BerandaTab extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => BackupScreen(repository: repository),
+                    builder: (_) =>
+                        BackupScreen(repository: widget.repository),
                   ),
                 );
               }
@@ -131,26 +204,15 @@ class _BerandaTab extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(Spacing.m),
         children: [
-          StreamBuilder<List<TxWithCategory>>(
-            stream: repository.watchBetweenWithCategory(monthStart, monthEnd),
-            builder: (context, snapshot) {
-              var incoming = 0;
-              var outgoing = 0;
-              for (final r in snapshot.data ?? const <TxWithCategory>[]) {
-                if (r.tx.direction == Direction.incoming) {
-                  incoming += r.tx.amount;
-                } else {
-                  outgoing += r.tx.amount;
-                }
-              }
-              return _SummaryCard(incoming: incoming, outgoing: outgoing);
-            },
+          GameHeroCard(
+            service: widget.progress,
+            repository: widget.repository,
           ),
           const SizedBox(height: Spacing.l),
           Text('Transaksi', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: Spacing.s),
           StreamBuilder<List<TxWithCategory>>(
-            stream: repository.watchRecentWithCategory(),
+            stream: widget.repository.watchRecentWithCategory(),
             builder: (context, snapshot) {
               final items = snapshot.data ?? const <TxWithCategory>[];
               if (items.isEmpty) {
@@ -174,7 +236,8 @@ class _BerandaTab extends StatelessWidget {
                   for (final day in days) ...[
                     _DayHeader(day: day),
                     for (final item in byDay[day]!)
-                      _TransactionTile(item: item, repository: repository),
+                      _TransactionTile(
+                          item: item, repository: widget.repository),
                   ],
                 ],
               );
@@ -183,7 +246,11 @@ class _BerandaTab extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => TransactionSheet.show(context, repository),
+        onPressed: () => TransactionSheet.show(
+          context,
+          widget.repository,
+          progress: widget.progress,
+        ),
         icon: const Icon(Icons.add),
         label: const Text('Catat'),
       ),
@@ -219,74 +286,6 @@ class _DayHeader extends StatelessWidget {
               ?.copyWith(color: Theme.of(context).colorScheme.primary),
         ),
       ),
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.incoming, required this.outgoing});
-
-  final int incoming;
-  final int outgoing;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.m),
-        child: Row(
-          children: [
-            Expanded(
-              child: _AmountTile(
-                label: 'Masuk bulan ini',
-                amount: incoming,
-                color: SeedColors.incoming,
-              ),
-            ),
-            VerticalDivider(color: scheme.outlineVariant),
-            Expanded(
-              child: _AmountTile(
-                label: 'Keluar bulan ini',
-                amount: outgoing,
-                color: SeedColors.outgoing,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AmountTile extends StatelessWidget {
-  const _AmountTile({
-    required this.label,
-    required this.amount,
-    required this.color,
-  });
-
-  final String label;
-  final int amount;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: Theme.of(context).textTheme.labelMedium),
-        const SizedBox(height: Spacing.xs),
-        FittedBox(
-          child: Text(
-            Money.format(amount),
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(color: color, fontWeight: FontWeight.w700),
-          ),
-        ),
-      ],
     );
   }
 }

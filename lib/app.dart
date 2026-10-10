@@ -2,6 +2,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 
 import 'capture/pipeline.dart';
+import 'game/progress.dart';
 import 'storage/repository.dart';
 import 'theme/tokens.dart';
 import 'ui/home_screen.dart';
@@ -11,10 +12,12 @@ class BukuduitApp extends StatelessWidget {
     super.key,
     required this.repository,
     required this.pipeline,
+    required this.progress,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
+  final ProgressService progress;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +42,11 @@ class BukuduitApp extends StatelessWidget {
           title: 'Bukuduit',
           theme: ThemeData(colorScheme: light),
           darkTheme: ThemeData(colorScheme: dark),
-          home: HomeScreen(repository: repository, pipeline: pipeline),
+          home: HomeScreen(
+            repository: repository,
+            pipeline: pipeline,
+            progress: progress,
+          ),
         );
       },
     );
