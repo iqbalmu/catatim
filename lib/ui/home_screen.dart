@@ -2,25 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../capture/pipeline.dart';
-import '../core/money.dart';
+import '../core/dates_id.dart';
 import '../game/hero_card.dart';
 import '../game/mascot.dart';
 import '../game/progress.dart';
-import '../models.dart';
 import '../storage/repository.dart';
+import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'backup_screen.dart';
+import 'bon_screen.dart';
 import 'capture_log_screen.dart';
+import 'history_screen.dart';
+import 'quest.dart';
+import 'rules_screen.dart';
 import 'report_screen.dart';
 import 'transaction_sheet.dart';
+import 'transaction_tile.dart';
 
-const _daysShort = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
-const _monthsShort = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-  'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
-];
+String _todaySubtitle(DateTime now) => idFullDate(now);
 
-/// Shell utama: bottom navigation Beranda | Laporan.
+/// Shell utama: Beranda | Riwayat | Laporan | Bon.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
@@ -33,6 +34,16 @@ class HomeScreen extends StatefulWidget {
   final CapturePipeline pipeline;
   final ProgressService progress;
 
+  static const _destinations = [
+    QuestDestination(
+      icon: Icons.account_balance_wallet_rounded,
+      label: 'Beranda',
+    ),
+    QuestDestination(icon: Icons.receipt_long_rounded, label: 'Riwayat'),
+    QuestDestination(icon: Icons.insights_rounded, label: 'Laporan'),
+    QuestDestination(icon: Icons.handshake_outlined, label: 'Bon'),
+  ];
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -40,50 +51,78 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _tab = 0;
 
+  void _primaryAction() {
+    if (_tab == 3) {
+      BonSheet.show(context, widget.repository);
+    } else {
+      TransactionSheet.show(
+        context,
+        widget.repository,
+        progress: widget.progress,
+      );
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: context.q.bg,
       body: IndexedStack(
         index: _tab,
         children: [
-          _BerandaTab(
-            repository: widget.repository,
-            pipeline: widget.pipeline,
-            progress: widget.progress,
+          TickerMode(
+            enabled: _tab == 0,
+            child: _BerandaTab(
+              repository: widget.repository,
+              pipeline: widget.pipeline,
+              progress: widget.progress,
+              onOpenHistory: () => setState(() => _tab = 1),
+            ),
           ),
-          ReportTab(repository: widget.repository),
+          TickerMode(
+            enabled: _tab == 1,
+            child: HistoryTab(
+              repository: widget.repository,
+              progress: widget.progress,
+            ),
+          ),
+          TickerMode(
+            enabled: _tab == 2,
+            child: ReportTab(repository: widget.repository),
+          ),
+          TickerMode(
+            enabled: _tab == 3,
+            child: BonTab(repository: widget.repository),
+          ),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: (i) => setState(() => _tab = i),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet),
-            label: 'Beranda',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights),
-            label: 'Laporan',
-          ),
-        ],
+      bottomNavigationBar: QuestBottomNav(
+        index: _tab,
+        onChanged: (i) => setState(() => _tab = i),
+        destinations: HomeScreen._destinations,
+        centerAction: (
+          label: _tab == 3 ? 'Catat bon' : 'Catat transaksi',
+          onTap: _primaryAction,
+        ),
       ),
     );
   }
 }
 
+/// Beranda ringan: hero + pratinjau hari ini. Riwayat penuh di tab Riwayat.
 class _BerandaTab extends StatefulWidget {
   const _BerandaTab({
     required this.repository,
     required this.pipeline,
     required this.progress,
+    required this.onOpenHistory,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
   final ProgressService progress;
+  final VoidCallback onOpenHistory;
 
   @override
   State<_BerandaTab> createState() => _BerandaTabState();
@@ -106,42 +145,37 @@ class _BerandaTabState extends State<_BerandaTab> {
     final level = widget.progress.consumePendingLevelUp();
     if (level != null && mounted) {
       HapticFeedback.mediumImpact();
-      showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Mascot(mood: MascotMood.celebrate, size: 96),
-              const SizedBox(height: Spacing.m),
-              Text(
-                'LEVEL UP!',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 4),
-              Text('Kamu sekarang level "$level" 🎉'),
-            ],
-          ),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Lanjut!'),
+      showQuestDialog<void>(
+        context,
+        title: 'LEVEL UP!',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Mascot(mood: MascotMood.celebrate, size: 96),
+            const SizedBox(height: Spacing.s),
+            Text(
+              'Kamu sekarang level "$level" 🎉',
+              style: context.qBody(),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
+        actions: [
+          QuestButton(
+            label: 'Lanjut!',
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
       );
       return;
     }
     final milestone = widget.progress.consumePendingMilestone();
     if (milestone != null && mounted) {
       HapticFeedback.mediumImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('🔥 $milestone hari beruntun mencatat — mantap!'),
-        ),
+      questSnack(
+        context,
+        '$milestone hari beruntun mencatat — mantap!',
+        icon: Icons.local_fire_department_rounded,
       );
     }
   }
@@ -149,52 +183,92 @@ class _BerandaTabState extends State<_BerandaTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Bukuduit'),
+      backgroundColor: context.q.bg,
+      appBar: QuestHeader(
+        title: 'Bukuduit',
+        subtitle: _todaySubtitle(DateTime.now()),
         actions: [
-          IconButton(
-            tooltip: 'Capture log',
-            icon: FutureBuilder<bool>(
-              future: widget.pipeline.channel.isListenerEnabled(),
-              builder: (context, snapshot) {
-                final enabled = snapshot.data ?? false;
-                return Badge(
-                  isLabelVisible: !enabled,
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                  child: const Icon(Icons.notifications_active_outlined),
-                );
-              },
-            ),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => CaptureLogScreen(
-                  repository: widget.repository,
-                  channel: widget.pipeline.channel,
-                  engine: widget.pipeline.engine,
+          FutureBuilder<bool>(
+            future: widget.pipeline.channel.isListenerEnabled(),
+            builder: (context, snapshot) {
+              final enabled = snapshot.data ?? false;
+              return QuestIconButton(
+                icon: Icons.notifications_active_outlined,
+                tooltip: 'Capture log',
+                badge: !enabled,
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CaptureLogScreen(
+                      repository: widget.repository,
+                      channel: widget.pipeline.channel,
+                      engine: widget.pipeline.engine,
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
+          const SizedBox(width: Spacing.s),
           PopupMenuButton<String>(
+            tooltip: 'Menu',
+            icon: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: context.q.surface,
+                shape: BoxShape.circle,
+                border: Border.all(color: context.q.line, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: context.q.shadow,
+                    offset: const Offset(2, 2),
+                    blurRadius: 0,
+                  ),
+                ],
+              ),
+              child: Icon(Icons.more_horiz_rounded, color: context.q.text),
+            ),
             onSelected: (value) {
               if (value == 'backup') {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        BackupScreen(repository: widget.repository),
+                    builder: (_) => BackupScreen(repository: widget.repository),
+                  ),
+                );
+              } else if (value == 'rules') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => RulesScreen(
+                      repository: widget.repository,
+                      engine: widget.pipeline.engine,
+                      progress: widget.progress,
+                    ),
                   ),
                 );
               }
             },
-            itemBuilder: (context) => const [
+            itemBuilder: (context) => [
               PopupMenuItem(
                 value: 'backup',
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.backup_outlined),
-                  title: Text('Backup & pulihkan'),
+                child: Row(
+                  children: [
+                    Icon(Icons.backup_outlined, color: context.q.text),
+                    const SizedBox(width: Spacing.s),
+                    const Text('Backup & pulihkan'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'rules',
+                child: Row(
+                  children: [
+                    Icon(Icons.rule_rounded, color: context.q.text),
+                    const SizedBox(width: Spacing.s),
+                    const Text('Aturan capture'),
+                  ],
                 ),
               ),
             ],
@@ -202,161 +276,60 @@ class _BerandaTabState extends State<_BerandaTab> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(Spacing.m),
+        padding: const EdgeInsets.fromLTRB(
+          Spacing.m,
+          Spacing.s,
+          Spacing.m,
+          Spacing.m,
+        ),
         children: [
-          GameHeroCard(
-            service: widget.progress,
-            repository: widget.repository,
-          ),
-          const SizedBox(height: Spacing.l),
-          Text('Transaksi', style: Theme.of(context).textTheme.titleMedium),
+          GameHeroCard(service: widget.progress, repository: widget.repository),
           const SizedBox(height: Spacing.s),
           StreamBuilder<List<TxWithCategory>>(
-            stream: widget.repository.watchRecentWithCategory(),
+            stream: widget.repository.watchRecentWithCategory(limit: 60),
             builder: (context, snapshot) {
-              final items = snapshot.data ?? const <TxWithCategory>[];
-              if (items.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: Spacing.xl),
-                  child: Center(child: Text('Belum ada transaksi.')),
-                );
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const QuestSkeleton();
               }
-              // Kelompokkan per hari.
-              final byDay = <DateTime, List<TxWithCategory>>{};
-              for (final item in items) {
-                final t = item.tx.occurredAt;
-                byDay
-                    .putIfAbsent(DateTime(t.year, t.month, t.day), () => [])
-                    .add(item);
-              }
-              final days = byDay.keys.toList()
-                ..sort((a, b) => b.compareTo(a));
+              final now = DateTime.now();
+              final todayItems = [
+                for (final r in snapshot.data ?? const <TxWithCategory>[])
+                  if (r.tx.occurredAt.year == now.year &&
+                      r.tx.occurredAt.month == now.month &&
+                      r.tx.occurredAt.day == now.day)
+                    r,
+              ].take(4).toList();
               return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (final day in days) ...[
-                    _DayHeader(day: day),
-                    for (final item in byDay[day]!)
-                      _TransactionTile(
-                          item: item, repository: widget.repository),
-                  ],
+                  const QuestSectionHeader(title: 'Hari ini'),
+                  if (todayItems.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: Spacing.s),
+                      child: Text(
+                        'Belum ada catatan hari ini.',
+                        style: context.qSmall(),
+                      ),
+                    ),
+                  for (final item in todayItems)
+                    TransactionTile(
+                      item: item,
+                      repository: widget.repository,
+                      progress: widget.progress,
+                    ),
+                  const SizedBox(height: Spacing.s),
+                  QuestButton(
+                    label: 'Lihat semua',
+                    icon: Icons.arrow_forward_rounded,
+                    tone: QuestTone.secondary,
+                    onPressed: widget.onOpenHistory,
+                  ),
                 ],
               );
             },
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => TransactionSheet.show(
-          context,
-          widget.repository,
-          progress: widget.progress,
-        ),
-        icon: const Icon(Icons.add),
-        label: const Text('Catat'),
-      ),
     );
   }
-}
-
-class _DayHeader extends StatelessWidget {
-  const _DayHeader({required this.day});
-
-  final DateTime day;
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final label = switch (day) {
-      DateTime d when d == today => 'Hari ini',
-      DateTime d when d == today.subtract(const Duration(days: 1)) =>
-        'Kemarin',
-      _ =>
-        '${_daysShort[day.weekday - 1]}, ${day.day} ${_monthsShort[day.month - 1]}',
-    };
-    return Padding(
-      padding: const EdgeInsets.only(top: Spacing.m, bottom: Spacing.xs),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          label,
-          style: Theme.of(context)
-              .textTheme
-              .labelLarge
-              ?.copyWith(color: Theme.of(context).colorScheme.primary),
-        ),
-      ),
-    );
-  }
-}
-
-class _TransactionTile extends StatelessWidget {
-  const _TransactionTile({required this.item, required this.repository});
-
-  final TxWithCategory item;
-  final LedgerRepository repository;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final tx = item.tx;
-    final incoming = tx.direction == Direction.incoming;
-    final category = item.category;
-    final title = (tx.counterparty != null && tx.counterparty!.isNotEmpty)
-        ? tx.counterparty!
-        : tx.kind.label;
-
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(
-        backgroundColor: category == null
-            ? scheme.secondaryContainer
-            : SeedColors.categoryColor(category.colorIndex).withAlpha(60),
-        foregroundColor: category == null
-            ? scheme.onSecondaryContainer
-            : SeedColors.categoryColor(category.colorIndex),
-        child: Icon(_iconFor(tx.kind)),
-      ),
-      title: Text(title, overflow: TextOverflow.ellipsis),
-      subtitle: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: category == null
-                  ? scheme.outlineVariant
-                  : SeedColors.categoryColor(category.colorIndex),
-            ),
-          ),
-          const SizedBox(width: 4),
-          Flexible(
-            child: Text(
-              '${category?.name ?? tx.kind.label} · ${tx.bankId} · '
-              '${tx.source.label}',
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall,
-            ),
-          ),
-        ],
-      ),
-      trailing: Text(
-        '${incoming ? '+' : '−'} ${Money.format(tx.amount)}',
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: incoming ? SeedColors.incoming : SeedColors.outgoing,
-              fontWeight: FontWeight.w600,
-            ),
-      ),
-      onTap: () => TransactionSheet.show(context, repository, existing: item),
-    );
-  }
-
-  IconData _iconFor(TxKind kind) => switch (kind) {
-        TxKind.transfer => Icons.swap_horiz,
-        TxKind.payment => Icons.receipt_long,
-        TxKind.topup => Icons.add_card,
-        TxKind.withdrawal => Icons.local_atm,
-        TxKind.other => Icons.circle_outlined,
-      };
 }

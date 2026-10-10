@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart';
 
 import '../models.dart';
+import '../rules/engine.dart' show RuleEngine, UserRuleDef;
+import '../rules/rule_set.dart' show BankRules;
 import 'database.dart';
 
 /// Transaksi + kategori ter-join (kategori null bila belum disetel).
@@ -41,24 +43,35 @@ class LedgerRepository {
     int? existingLogId,
   }) async {
     final categoryId = await _defaultCategoryId(draft.kind);
+    final accountId =
+        draft.accountId ?? await _accountIdForBank(draft.bankId);
     final from = raw.postedAt.subtract(dedupWindow);
     final to = raw.postedAt.add(dedupWindow);
-    final existing = await (_db.select(_db.transactions)
-          ..where((t) =>
-              t.bankId.equals(draft.bankId) &
-              t.amount.equals(draft.amount) &
-              t.direction.equalsValue(draft.direction) &
-              t.occurredAt.isBetweenValues(from, to))
-          ..limit(1))
-        .getSingleOrNull();
+    final existing =
+        await (_db.select(_db.transactions)
+              ..where(
+                (t) =>
+                    t.bankId.equals(draft.bankId) &
+                    t.amount.equals(draft.amount) &
+                    t.direction.equalsValue(draft.direction) &
+                    t.occurredAt.isBetweenValues(from, to),
+              )
+              ..limit(1))
+            .getSingleOrNull();
 
     if (existing != null) {
-      await _logCapture(raw,
-          parsed: true, transactionId: existing.id, updateLogId: existingLogId);
+      await _logCapture(
+        raw,
+        parsed: true,
+        transactionId: existing.id,
+        updateLogId: existingLogId,
+      );
       return existing.id;
     }
 
-    final id = await _db.into(_db.transactions).insert(
+    final id = await _db
+        .into(_db.transactions)
+        .insert(
           TransactionsCompanion.insert(
             uuid: newUuid(),
             bankId: draft.bankId,
@@ -68,19 +81,55 @@ class LedgerRepository {
             counterparty: Value(draft.counterparty),
             occurredAt: raw.postedAt,
             source: TxSource.notification,
-            rawTitle: Value(raw.title),
             rawBody: Value(raw.body),
             categoryId: Value(categoryId),
+            accountId: Value(accountId),
           ),
         );
-    await _logCapture(raw,
-        parsed: true, transactionId: id, updateLogId: existingLogId);
+    await _logCapture(
+      raw,
+      parsed: true,
+      transactionId: id,
+      updateLogId: existingLogId,
+    );
     return id;
   }
 
   /// Catat notifikasi yang tidak berhasil diparse (untuk layar Capture Log).
   Future<void> recordUnparsedCapture(RawCapture raw) =>
       _logCapture(raw, parsed: false);
+
+  /// Notifikasi mentah yang belum berhasil diparse.
+  Future<List<CaptureLog>> unparsedCaptures() async {
+    return (_db.select(_db.captureLogs)
+          ..where((c) => c.parsed.equals(false))
+          ..orderBy([(c) => OrderingTerm.desc(c.postedAt)]))
+        .get();
+  }
+
+  /// Parse ulang semua capture gagal dengan rules terkini.
+  /// Mengembalikan jumlah yang berhasil dicatat.
+  Future<int> reparseUnparsed(RuleEngine engine) async {
+    final logs = await unparsedCaptures();
+    var saved = 0;
+    for (final log in logs) {
+      final raw = RawCapture(
+        packageName: log.packageName,
+        title: log.title,
+        body: log.body,
+        postedAt: log.postedAt,
+      );
+      final draft = engine.parse(
+        packageName: raw.packageName,
+        title: raw.title,
+        body: raw.body,
+      );
+      if (draft == null) continue;
+      await recordFromCapture(raw: raw, draft: draft, existingLogId: log.id);
+      saved++;
+    }
+    return saved;
+  }
 
   // --- transaksi manual & edit ---------------------------------------------
 
@@ -90,12 +139,15 @@ class LedgerRepository {
     required TxKind kind,
     String? counterparty,
     int? categoryId,
+    int? accountId,
     DateTime? occurredAt,
   }) {
     final clean = (counterparty == null || counterparty.trim().isEmpty)
         ? null
         : counterparty.trim();
-    return _db.into(_db.transactions).insert(
+    return _db
+        .into(_db.transactions)
+        .insert(
           TransactionsCompanion.insert(
             uuid: newUuid(),
             bankId: 'manual',
@@ -106,13 +158,15 @@ class LedgerRepository {
             occurredAt: occurredAt ?? DateTime.now(),
             source: TxSource.manual,
             categoryId: Value(categoryId),
+            accountId: Value(accountId),
           ),
         );
   }
 
   Future<void> updateTransaction(int id, TransactionsCompanion data) {
-    return (_db.update(_db.transactions)..where((t) => t.id.equals(id)))
-        .write(data);
+    return (_db.update(
+      _db.transactions,
+    )..where((t) => t.id.equals(id))).write(data);
   }
 
   Future<void> deleteTransaction(int id) {
@@ -122,9 +176,9 @@ class LedgerRepository {
   // --- kategori -------------------------------------------------------------
 
   Stream<List<Category>> watchCategories() {
-    return (_db.select(_db.categories)
-          ..orderBy([(c) => OrderingTerm.asc(c.id)]))
-        .watch();
+    return (_db.select(
+      _db.categories,
+    )..orderBy([(c) => OrderingTerm.asc(c.id)])).watch();
   }
 
   Future<List<Category>> getCategories() => _db.select(_db.categories).get();
@@ -132,22 +186,21 @@ class LedgerRepository {
   /// Tambah kategori; melempar bila nama sudah dipakai (unique).
   Future<Category> addCategory(String name) async {
     final all = await getCategories();
-    final id = await _db.into(_db.categories).insert(
-          CategoriesCompanion.insert(
-            name: name.trim(),
-            colorIndex: all.length,
-          ),
+    final id = await _db
+        .into(_db.categories)
+        .insert(
+          CategoriesCompanion.insert(name: name.trim(), colorIndex: all.length),
         );
-    return (await (_db.select(_db.categories)
-              ..where((c) => c.id.equals(id)))
-            .getSingle());
+    return (await (_db.select(
+      _db.categories,
+    )..where((c) => c.id.equals(id))).getSingle());
   }
 
   Future<int?> _defaultCategoryId(TxKind kind) async {
     final name = _kindCategoryName[kind]!;
-    final row = await (_db.select(_db.categories)
-          ..where((c) => c.name.equals(name)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.categories,
+    )..where((c) => c.name.equals(name))).getSingleOrNull();
     return row?.id;
   }
 
@@ -157,6 +210,7 @@ class LedgerRepository {
     DateTime? start,
     DateTime? end,
     int? limit,
+    int? accountId,
   }) {
     final query = _db.select(_db.transactions).join([
       leftOuterJoin(
@@ -167,33 +221,39 @@ class LedgerRepository {
     if (start != null && end != null) {
       query.where(_db.transactions.occurredAt.isBetweenValues(start, end));
     }
+    if (accountId != null) {
+      query.where(_db.transactions.accountId.equals(accountId));
+    }
     query.orderBy([OrderingTerm.desc(_db.transactions.occurredAt)]);
     if (limit != null) query.limit(limit);
     return query;
   }
 
   List<TxWithCategory> _mapRows(List<TypedResult> rows) => [
-        for (final row in rows)
-          TxWithCategory(
-            tx: row.readTable(_db.transactions),
-            category: row.readTableOrNull(_db.categories),
-          ),
-      ];
+    for (final row in rows)
+      TxWithCategory(
+        tx: row.readTable(_db.transactions),
+        category: row.readTableOrNull(_db.categories),
+      ),
+  ];
 
   Stream<List<TxWithCategory>> watchBetweenWithCategory(
-          DateTime start, DateTime end) =>
-      _withCategoryQuery(start: start, end: end).watch().map(_mapRows);
+    DateTime start,
+    DateTime end, {
+    int? accountId,
+  }) => _withCategoryQuery(
+    start: start,
+    end: end,
+    accountId: accountId,
+  ).watch().map(_mapRows);
 
-  Stream<List<TxWithCategory>> watchRecentWithCategory({int limit = 300}) =>
-      _withCategoryQuery(limit: limit).watch().map(_mapRows);
-
-  @Deprecated('Gunakan watchRecentWithCategory')
-  Stream<List<Transaction>> watchRecent({int limit = 300}) {
-    return (_db.select(_db.transactions)
-          ..orderBy([(t) => OrderingTerm.desc(t.occurredAt)])
-          ..limit(limit))
-        .watch();
-  }
+  Stream<List<TxWithCategory>> watchRecentWithCategory({
+    int limit = 300,
+    int? accountId,
+  }) => _withCategoryQuery(
+    limit: limit,
+    accountId: accountId,
+  ).watch().map(_mapRows);
 
   // --- capture log -------------------------------------------------------------
 
@@ -207,9 +267,9 @@ class LedgerRepository {
   /// Jumlah transaksi per hari lokal, sejak [since] — sumber kebenaran
   /// untuk streak di ProgressService.
   Future<Map<DateTime, int>> txCountByDaySince(DateTime since) async {
-    final rows = await (_db.select(_db.transactions)
-          ..where((t) => t.occurredAt.isBiggerOrEqualValue(since)))
-        .get();
+    final rows = await (_db.select(
+      _db.transactions,
+    )..where((t) => t.occurredAt.isBiggerOrEqualValue(since))).get();
     final map = <DateTime, int>{};
     for (final t in rows) {
       final d = DateTime(
@@ -225,16 +285,117 @@ class LedgerRepository {
   // --- settings -----------------------------------------------------------------
 
   Future<String?> getSetting(String key) async {
-    final row = await (_db.select(_db.appSettings)
-          ..where((s) => s.key.equals(key)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.appSettings,
+    )..where((s) => s.key.equals(key))).getSingleOrNull();
     return row?.valueText;
   }
 
   Future<void> setSetting(String key, String value) {
-    return _db.into(_db.appSettings).insertOnConflictUpdate(
+    return _db
+        .into(_db.appSettings)
+        .insertOnConflictUpdate(
           AppSettingsCompanion.insert(key: key, valueText: value),
         );
+  }
+
+  // --- aturan pengguna ------------------------------------------------------
+
+  Stream<List<UserRule>> watchUserRules() {
+    return (_db.select(_db.userRules)
+          ..orderBy([
+            (r) => OrderingTerm.desc(r.enabled),
+            (r) => OrderingTerm.asc(r.id),
+          ]))
+        .watch();
+  }
+
+  Future<List<UserRule>> getUserRules({bool? enabled}) async {
+    final query = _db.select(_db.userRules);
+    if (enabled != null) {
+      query.where((r) => r.enabled.equals(enabled));
+    }
+    return query.get();
+  }
+
+  Future<int> addUserRule(UserRulesCompanion data) =>
+      _db.into(_db.userRules).insert(data);
+
+  Future<void> updateUserRule(int id, UserRulesCompanion data) {
+    return (_db.update(_db.userRules)..where((r) => r.id.equals(id)))
+        .write(data);
+  }
+
+  Future<void> deleteUserRule(int id) {
+    return (_db.delete(_db.userRules)..where((r) => r.id.equals(id))).go();
+  }
+
+  /// Petakan baris DB → definisi untuk engine.
+  Future<List<UserRuleDef>> userRuleDefs() async {
+    final rows = await getUserRules(enabled: true);
+    return [
+      for (final r in rows)
+        UserRuleDef(
+          id: r.id,
+          name: r.name,
+          packageName: r.packageName,
+          matchText: r.matchText,
+          amountPattern: r.amountPattern,
+          direction: r.direction.direction,
+          kind: r.kind,
+          accountId: r.accountId,
+        ),
+    ];
+  }
+
+  /// Seed aturan pengguna dari seed rules bawaan — sekali, saat tabel
+  /// masih kosong.
+  Future<void> seedUserRulesFromBanks(List<BankRules> banks) async {
+    final existing = await _db.select(_db.userRules).get();
+    if (existing.isNotEmpty) return;
+
+    final accounts = await getAccounts();
+    int? accountByName(String name) {
+      for (final a in accounts) {
+        if (a.name == name) return a.id;
+      }
+      return null;
+    }
+
+    final rows = <UserRulesCompanion>[];
+    for (final bank in banks) {
+      final package = bank.packageNames.isNotEmpty
+          ? bank.packageNames.first
+          : null;
+      for (final t in bank.templates) {
+        rows.add(
+          UserRulesCompanion.insert(
+            name: '${bank.displayName} · ${t.name}',
+            packageName: Value(package),
+            matchText: Value(
+              t.matchAll.isNotEmpty
+                  ? t.matchAll.first
+                  : (t.matchAny.isNotEmpty ? t.matchAny.first : null),
+            ),
+            amountPattern: Value(t.amountPattern),
+            direction: t.direction == Direction.incoming
+                ? UserRuleDirection.in_
+                : UserRuleDirection.out_,
+            kind: t.kind,
+            accountId: Value(
+              bank.id == 'blu'
+                  ? accountByName('blu by BCA')
+                  : (bank.id == 'nagari'
+                      ? accountByName('Bank Nagari')
+                      : null),
+            ),
+          ),
+        );
+      }
+    }
+    if (rows.isNotEmpty) {
+      await _db.batch((b) => b.insertAll(_db.userRules, rows));
+    }
   }
 
   // --- backup -----------------------------------------------------------------
@@ -246,11 +407,11 @@ class LedgerRepository {
   // --- CSV ------------------------------------------------------------------------
 
   Future<String> buildCsv() async {
-    final rows =
-        await _withCategoryQuery().get().then((r) => _mapRows(r));
+    final rows = await _withCategoryQuery().get().then((r) => _mapRows(r));
     String esc(String s) => '"${s.replaceAll('"', '""')}"';
     final buf = StringBuffer(
-        'tanggal,arah,nominal,jenis,kategori,bank,pihak,sumber\n');
+      'tanggal,arah,nominal,jenis,kategori,bank,pihak,sumber\n',
+    );
     for (final r in rows) {
       final t = r.tx;
       buf.write(
@@ -267,7 +428,101 @@ class LedgerRepository {
     return buf.toString();
   }
 
-  // --- internal ---------------------------------------------------------------------
+  // --- akun ------------------------------------------------------------------
+
+  Stream<List<Account>> watchAccounts() {
+    return (_db.select(
+      _db.accounts,
+    )..orderBy([(a) => OrderingTerm.asc(a.id)])).watch();
+  }
+
+  Future<List<Account>> getAccounts() => _db.select(_db.accounts).get();
+
+  /// Tambah akun; melempar bila nama sudah dipakai (unique).
+  Future<Account> addAccount(String name, AccountKind kind) async {
+    final all = await getAccounts();
+    final id = await _db
+        .into(_db.accounts)
+        .insert(
+          AccountsCompanion.insert(
+            name: name.trim(),
+            kind: kind,
+            colorIndex: all.length,
+          ),
+        );
+    return (await (_db.select(
+      _db.accounts,
+    )..where((a) => a.id.equals(id))).getSingle());
+  }
+
+  /// Petakan bankId hasil parser ke akun bawaan (blu/nagari).
+  Future<int?> _accountIdForBank(String bankId) async {
+    const names = {'blu': 'blu by BCA', 'nagari': 'Bank Nagari'};
+    final name = names[bankId];
+    if (name == null) return null;
+    final row = await (_db.select(
+      _db.accounts,
+    )..where((a) => a.name.equals(name))).getSingleOrNull();
+    return row?.id;
+  }
+
+  // --- bon -------------------------------------------------------------------
+
+  /// Semua bon, yang belum lunas dulu (NULL settledAt diurut pertama).
+  Stream<List<Bon>> watchBons() {
+    return (_db.select(_db.bons)..orderBy([
+          (b) => OrderingTerm.asc(b.settledAt),
+          (b) => OrderingTerm.desc(b.occurredAt),
+        ]))
+        .watch();
+  }
+
+  Future<int> addBon({
+    required String person,
+    required int amount,
+    required BonDirection direction,
+    String? note,
+    DateTime? occurredAt,
+  }) {
+    final cleanNote = (note == null || note.trim().isEmpty)
+        ? null
+        : note.trim();
+    return _db
+        .into(_db.bons)
+        .insert(
+          BonsCompanion.insert(
+            uuid: newUuid(),
+            person: person.trim(),
+            amount: amount,
+            direction: direction,
+            note: Value(cleanNote),
+            occurredAt: occurredAt ?? DateTime.now(),
+          ),
+        );
+  }
+
+  Future<void> updateBon(int id, BonsCompanion data) {
+    return (_db.update(_db.bons)..where((b) => b.id.equals(id))).write(data);
+  }
+
+  Future<void> deleteBon(int id) {
+    return (_db.delete(_db.bons)..where((b) => b.id.equals(id))).go();
+  }
+
+  /// Ubah nama akun; melempar bila nama sudah dipakai (unique).
+  Future<void> updateAccount(int id, String name) {
+    return (_db.update(_db.accounts)..where((a) => a.id.equals(id))).write(
+      AccountsCompanion(name: Value(name.trim())),
+    );
+  }
+
+  /// Hapus akun; transaksi yang memakainya jadi tanpa akun (tidak ikut
+  /// terhapus).
+  Future<void> deleteAccount(int id) async {
+    await (_db.update(_db.transactions)..where((t) => t.accountId.equals(id)))
+        .write(const TransactionsCompanion(accountId: Value(null)));
+    await (_db.delete(_db.accounts)..where((a) => a.id.equals(id))).go();
+  }
 
   Future<void> _logCapture(
     RawCapture raw, {
@@ -276,8 +531,9 @@ class LedgerRepository {
     int? updateLogId,
   }) async {
     if (updateLogId != null) {
-      await (_db.update(_db.captureLogs)..where((c) => c.id.equals(updateLogId)))
-          .write(
+      await (_db.update(
+        _db.captureLogs,
+      )..where((c) => c.id.equals(updateLogId))).write(
         CaptureLogsCompanion(
           parsed: Value(parsed),
           transactionId: Value(transactionId),
@@ -285,7 +541,9 @@ class LedgerRepository {
       );
       return;
     }
-    await _db.into(_db.captureLogs).insert(
+    await _db
+        .into(_db.captureLogs)
+        .insert(
           CaptureLogsCompanion.insert(
             packageName: raw.packageName,
             title: raw.title,

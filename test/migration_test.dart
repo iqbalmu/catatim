@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqlite3/sqlite3.dart';
+import 'package:bukuduit/models.dart';
 import 'package:bukuduit/storage/database.dart'
     show AppDatabase, defaultCategoryNames;
 import 'package:bukuduit/storage/repository.dart';
@@ -84,26 +85,112 @@ void main() {
     await db.close();
   });
 
-  test('self-heal: DB "v2 rusak" (tanpa tabel categories) ikut disembuhkan',
-      () async {
-    // Simulasikan kondisi device yang menjalankan migrasi lama yang gagal:
-    // user_version sudah 2, kolom category_id sudah ada, tapi tabel
-    // categories & app_settings tidak pernah dibuat.
+  test(
+    'self-heal: DB "v2 rusak" (tanpa tabel categories) ikut disembuhkan',
+    () async {
+      // Simulasikan kondisi device yang menjalankan migrasi lama yang gagal:
+      // user_version sudah 2, kolom category_id sudah ada, tapi tabel
+      // categories & app_settings tidak pernah dibuat.
+      final raw = sqlite3.open(dbFile.path);
+      raw.execute(
+        'ALTER TABLE transactions ADD COLUMN category_id INTEGER NULL '
+        'REFERENCES categories (id)',
+      );
+      raw.execute('PRAGMA user_version = 2');
+      raw.close();
+
+      final db = AppDatabase(NativeDatabase(dbFile));
+      final rows = await repo(db).watchRecentWithCategory().first;
+      expect(rows.single.tx.amount, 2000000);
+      expect(rows.single.category?.name, 'Transfer'); // seeded oleh beforeOpen
+
+      final cats = await db.select(db.categories).get();
+      expect(cats, hasLength(defaultCategoryNames.length));
+
+      await db.close();
+    },
+  );
+
+  test(
+    'self-heal: DB setengah-migrasi (user_version=1, kolom sudah ada)',
+    () async {
+      // Kondisi persis device nyata: ALTER TABLE sudah ter-apply, tapi
+      // user_version tetap 1 karena migrasi gagal di tengah jalan.
+      final raw = sqlite3.open(dbFile.path);
+      raw.execute(
+        'ALTER TABLE transactions ADD COLUMN category_id INTEGER NULL '
+        'REFERENCES categories (id)',
+      );
+      raw.close();
+
+      final db = AppDatabase(
+        NativeDatabase(dbFile),
+      ); // from=1 → onUpgrade jalan
+      final txs = await db.select(db.transactions).get();
+      expect(txs, hasLength(1)); // tidak melempar duplicate column
+
+      final rows = await repo(db).watchRecentWithCategory().first;
+      expect(rows.single.category?.name, 'Transfer');
+      await db.close();
+    },
+  );
+
+  test('migrasi v2→v3: akun ter-seed, accountId ter-backfill', () async {
+    // setUp sudah membuat skema v1; simulasikan hasil migrasi v1→v2:
+    // tambah kolom category_id + tabel categories/app_settings.
     final raw = sqlite3.open(dbFile.path);
     raw.execute(
       'ALTER TABLE transactions ADD COLUMN category_id INTEGER NULL '
       'REFERENCES categories (id)',
     );
+    raw.execute('''
+      CREATE TABLE categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        color_index INTEGER NOT NULL
+      )
+    ''');
+    raw.execute('''
+      CREATE TABLE app_settings (
+        key TEXT NOT NULL PRIMARY KEY,
+        value_text TEXT NOT NULL
+      )
+    ''');
     raw.execute('PRAGMA user_version = 2');
+    raw.execute('''
+      INSERT INTO transactions
+        (uuid, bank_id, kind, direction, amount, counterparty,
+         occurred_at, source, raw_title, raw_body, created_at, category_id)
+      VALUES ('legacy-blu', 'blu', 'transfer', 'incoming', 100000, 'BUDI',
+              1790000000, 'notification', 't', 'b', 1790000000, NULL),
+             ('legacy-manual', 'manual', 'payment', 'outgoing', 25000, NULL,
+              1790000000, 'manual', NULL, NULL, 1790000000, NULL)
+    ''');
     raw.close();
 
     final db = AppDatabase(NativeDatabase(dbFile));
-    final rows = await repo(db).watchRecentWithCategory().first;
-    expect(rows.single.tx.amount, 2000000);
-    expect(rows.single.category?.name, 'Transfer'); // seeded oleh beforeOpen
+    final accounts = await db.select(db.accounts).get();
+    expect(
+      accounts.map((a) => a.name),
+      containsAll(['blu by BCA', 'Bank Nagari', 'Tunai']),
+    );
 
-    final cats = await db.select(db.categories).get();
-    expect(cats, hasLength(defaultCategoryNames.length));
+    final txs = await db.select(db.transactions).get();
+    final blu = txs.firstWhere((t) => t.uuid == 'legacy-blu');
+    final bluAccount = accounts.firstWhere((a) => a.name == 'blu by BCA');
+    expect(blu.accountId, bluAccount.id);
+    final manual = txs.firstWhere((t) => t.uuid == 'legacy-manual');
+    expect(manual.accountId, isNull);
+
+    final repository = repo(db);
+    await repository.addBon(
+      person: 'Andi',
+      amount: 50000,
+      direction: BonDirection.lent,
+    );
+    final bons = await repository.watchBons().first;
+    expect(bons.single.person, 'Andi');
+    expect(bons.single.settledAt, isNull);
 
     await db.close();
   });

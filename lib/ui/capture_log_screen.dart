@@ -7,7 +7,9 @@ import '../models.dart';
 import '../rules/engine.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
+import '../theme/quest.dart';
 import '../theme/tokens.dart';
+import 'quest.dart';
 
 /// Teks prominent disclosure — syarat kebijakan User Data Google Play
 /// sebelum mengarahkan user ke pengaturan akses notifikasi.
@@ -47,22 +49,22 @@ class _CaptureLogScreenState extends State<CaptureLogScreen> {
   }
 
   Future<void> _requestAccess() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Izinkan akses notifikasi?'),
-        content: const Text(disclosureText),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Saya mengerti'),
-          ),
-        ],
-      ),
+    final confirmed = await showQuestDialog<bool>(
+      context,
+      title: 'Izinkan akses notifikasi?',
+      content: Text(disclosureText, style: context.qBody(13)),
+      actions: [
+        QuestButton(
+          label: 'Batal',
+          tone: QuestTone.secondary,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        QuestButton(
+          label: 'Saya mengerti',
+          icon: Icons.check_rounded,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
     );
     if (confirmed ?? false) {
       await widget.channel.openListenerSettings();
@@ -76,12 +78,11 @@ class _CaptureLogScreenState extends State<CaptureLogScreen> {
       title: log.title,
       body: log.body,
     );
-    final messenger = ScaffoldMessenger.of(context);
     if (draft == null) {
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Masih tidak dikenali — template perlu disetel.'),
-        ),
+      questSnack(
+        context,
+        'Masih tidak dikenali — template perlu disetel.',
+        icon: Icons.help_outline_rounded,
       );
       return;
     }
@@ -95,203 +96,285 @@ class _CaptureLogScreenState extends State<CaptureLogScreen> {
       draft: draft,
       existingLogId: log.id,
     );
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(
-          'Tercatat: ${draft.direction.label} ${Money.format(draft.amount)} '
-          '(${draft.bankName})',
-        ),
-      ),
+    if (!mounted) return;
+    questSnack(
+      context,
+      'Tercatat: ${draft.direction.label} ${Money.format(draft.amount)} '
+      '(${draft.bankName})',
+      icon: Icons.check_circle_rounded,
     );
   }
 
   Future<void> _showFullText(CaptureLog log) {
-    return showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Notifikasi mentah'),
-        content: SelectableText(
-          'App      : ${log.packageName}\n'
-          'Waktu    : ${_time(log.postedAt)}\n'
-          'Judul    : ${log.title}\n'
-          'Isi      : ${log.body}',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Tutup'),
-          ),
-        ],
+    return showQuestDialog<void>(
+      context,
+      title: 'Notifikasi mentah',
+      content: SelectableText(
+        'App   : ${log.packageName}\n'
+        'Waktu : ${_time(log.postedAt)}\n'
+        'Judul : ${log.title}\n'
+        'Isi   : ${log.body}',
+        style: context.qBody(13),
       ),
+      actions: [
+        QuestButton(label: 'Tutup', onPressed: () => Navigator.pop(context)),
+      ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Capture log')),
+      backgroundColor: context.q.bg,
+      appBar: const QuestHeader(title: 'Capture log', showBack: true),
       body: ListView(
-        padding: const EdgeInsets.all(Spacing.m),
+        padding: const EdgeInsets.fromLTRB(
+          Spacing.m,
+          Spacing.s,
+          Spacing.m,
+          Spacing.m,
+        ),
         children: [
           FutureBuilder<bool>(
             future: _enabled,
             builder: (context, snapshot) {
               final enabled = snapshot.data ?? false;
-              return Card(
-                color: enabled
-                    ? scheme.secondaryContainer
-                    : scheme.errorContainer,
-                child: Padding(
-                  padding: const EdgeInsets.all(Spacing.m),
+              return QuestCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: enabled ? context.q.good : context.q.honey,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: context.q.line, width: 2),
+                          ),
+                          child: Icon(
+                            enabled
+                                ? Icons.check_rounded
+                                : Icons.warning_amber_rounded,
+                            color: enabled ? Colors.white : context.q.honeyInk,
+                          ),
+                        ),
+                        const SizedBox(width: Spacing.m),
+                        Expanded(
+                          child: Text(
+                            enabled
+                                ? 'Akses notifikasi aktif — transaksi dari '
+                                      'bank tertangkap otomatis.'
+                                : 'Akses notifikasi belum aktif.',
+                            style: context.qBody(14),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (!enabled) ...[
+                      const SizedBox(height: Spacing.m),
+                      QuestButton(
+                        label: 'Beri izin akses notifikasi',
+                        icon: Icons.notifications_active_outlined,
+                        onPressed: _requestAccess,
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: Spacing.m),
+          QuestCard(
+            child: Row(
+              children: [
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            enabled ? Icons.check_circle : Icons.warning_amber,
-                            color: enabled
-                                ? scheme.onSecondaryContainer
-                                : scheme.onErrorContainer,
-                          ),
-                          const SizedBox(width: Spacing.s),
-                          Expanded(
-                            child: Text(
-                              enabled
-                                  ? 'Akses notifikasi aktif — transaksi dari '
-                                      'bank tertangkap otomatis.'
-                                  : 'Akses notifikasi belum aktif.',
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (!enabled) ...[
-                        const SizedBox(height: Spacing.s),
-                        FilledButton(
-                          onPressed: _requestAccess,
-                          child: const Text('Beri izin akses notifikasi'),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: Spacing.m),
-          FutureBuilder<String?>(
-            future: widget.repository.getSetting(lessonModeKey),
-            builder: (context, snap) {
-              final on = (snap.data ?? '1') == '1';
-              return SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Mode pelajaran'),
-                subtitle: const Text(
-                  'Catat SEMUA notifikasi ke log (untuk tuning template). '
-                  'Nonaktif = hanya notifikasi bank yang dikenal.',
-                ),
-                value: on,
-                onChanged: (v) async {
-                  await widget.repository
-                      .setSetting(lessonModeKey, v ? '1' : '0');
-                  if (mounted) setState(() {});
-                },
-              );
-            },
-          ),
-          const SizedBox(height: Spacing.m),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(Spacing.m),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.health_and_safety_outlined),
-                      const SizedBox(width: Spacing.s),
-                      Expanded(
-                        child: Text('Kesehatan capture (vivo/Funtouch)',
-                            style: Theme.of(context).textTheme.titleSmall),
+                      Text('Mode pelajaran', style: context.qTitle(15)),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Catat SEMUA notifikasi ke log (untuk tuning '
+                        'template). Nonaktif = hanya notifikasi bank.',
+                        style: context.qSmall(),
                       ),
                     ],
                   ),
-                  const SizedBox(height: Spacing.s),
-                  const Text(
-                    '1. Setelan → Baterai → Bukuduit → Batasi di latar '
-                    'belakang: NONAKTIF (Unrestricted)\n'
-                    '2. Izinkan Autostart untuk Bukuduit\n'
-                    '3. Jangan force-close app dari recents',
-                    style: TextStyle(fontSize: 12.5),
-                  ),
-                  const SizedBox(height: Spacing.s),
-                  FilledButton.tonal(
-                    onPressed: widget.channel.openBatterySettings,
-                    child: const Text('Buka pengaturan baterai'),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(width: Spacing.s),
+                FutureBuilder<String?>(
+                  future: widget.repository.getSetting(lessonModeKey),
+                  builder: (context, snap) {
+                    final on = (snap.data ?? '1') == '1';
+                    return QuestSwitch(
+                      value: on,
+                      label: 'Mode pelajaran',
+                      onChanged: (v) async {
+                        await widget.repository.setSetting(
+                          lessonModeKey,
+                          v ? '1' : '0',
+                        );
+                        if (mounted) setState(() {});
+                      },
+                    );
+                  },
+                ),
+              ],
             ),
           ),
           const SizedBox(height: Spacing.m),
-          Text(
-            'Notifikasi tertangkap (mentah)',
-            style: Theme.of(context).textTheme.titleMedium,
+          QuestCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.health_and_safety_outlined,
+                      color: context.q.text,
+                    ),
+                    const SizedBox(width: Spacing.s),
+                    Expanded(
+                      child: Text(
+                        'Kesehatan capture (vivo/Funtouch)',
+                        style: context.qTitle(15),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Spacing.s),
+                Text(
+                  '1. Setelan → Baterai → Bukuduit → Unrestricted\n'
+                  '2. Izinkan Autostart untuk Bukuduit\n'
+                  '3. Jangan force-close app dari recents',
+                  style: context.qBody(13),
+                ),
+                const SizedBox(height: Spacing.m),
+                QuestButton(
+                  label: 'Buka pengaturan baterai',
+                  icon: Icons.battery_charging_full_rounded,
+                  tone: QuestTone.secondary,
+                  onPressed: widget.channel.openBatterySettings,
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: Spacing.s),
+          const QuestSectionHeader(title: 'Notifikasi tertangkap (mentah)'),
           StreamBuilder<List<CaptureLog>>(
             stream: widget.repository.watchCaptureLog(),
             builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const QuestSkeleton(rows: 2);
+              }
               final logs = snapshot.data ?? const <CaptureLog>[];
               if (logs.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: Spacing.xl),
-                  child: Center(
-                    child: Text(
-                      'Belum ada notifikasi tertangkap.\n'
-                      'Coba kirim uang kecil dari aplikasi bank-mu.',
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+                return QuestEmpty(
+                  title: 'Belum ada notifikasi',
+                  hint: 'Kirim uang kecil dari aplikasi bank-mu untuk menguji.',
                 );
               }
               return Column(
                 children: [
                   for (final log in logs)
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        log.parsed ? Icons.receipt : Icons.help_outline,
-                        color: log.parsed
-                            ? scheme.primary
-                            : scheme.onSurfaceVariant,
-                      ),
-                      title: Text(
-                        log.title.isEmpty ? '(tanpa judul)' : log.title,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: Text(
-                        '${log.packageName}\n'
-                        '${log.body}\n'
-                        '${_time(log.postedAt)}',
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      isThreeLine: true,
+                    QuestPress(
                       onTap: () => _showFullText(log),
-                      trailing: log.parsed
-                          ? Chip(
-                              label: const Text('Tercatat'),
-                              visualDensity: VisualDensity.compact,
-                            )
-                          : IconButton(
-                              tooltip: 'Parse ulang',
-                              icon: const Icon(Icons.refresh),
-                              onPressed: () => _reparse(log),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: Spacing.s),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: context.q.surface,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: context.q.line, width: 2),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                color: log.parsed
+                                    ? context.q.good.withValues(alpha: 0.18)
+                                    : context.q.surface2,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: context.q.line,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Icon(
+                                log.parsed
+                                    ? Icons.receipt_rounded
+                                    : Icons.help_outline_rounded,
+                                size: 19,
+                                color: log.parsed
+                                    ? context.q.good
+                                    : context.q.muted,
+                              ),
                             ),
+                            const SizedBox(width: Spacing.s),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    log.title.isEmpty
+                                        ? '(tanpa judul)'
+                                        : log.title,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: context.qTitle(14),
+                                  ),
+                                  Text(
+                                    '${log.packageName} · ${_time(log.postedAt)}',
+                                    style: context.qSmall(11),
+                                  ),
+                                  Text(
+                                    log.body,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: context.qSmall(12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (log.parsed)
+                              Container(
+                                margin: const EdgeInsets.only(left: 8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: context.q.good.withValues(alpha: 0.18),
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(
+                                    color: context.q.line,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Text(
+                                  'Tercatat',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    color: context.q.good,
+                                  ),
+                                ),
+                              )
+                            else
+                              QuestIconButton(
+                                icon: Icons.refresh_rounded,
+                                tooltip: 'Parse ulang',
+                                onPressed: () => _reparse(log),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
                 ],
               );

@@ -254,6 +254,353 @@ class CategoriesCompanion extends UpdateCompanion<Category> {
   }
 }
 
+class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AccountsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<AccountKind, String> kind =
+      GeneratedColumn<String>(
+        'kind',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<AccountKind>($AccountsTable.$converterkind);
+  static const VerificationMeta _colorIndexMeta = const VerificationMeta(
+    'colorIndex',
+  );
+  @override
+  late final GeneratedColumn<int> colorIndex = GeneratedColumn<int>(
+    'color_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, kind, colorIndex, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'accounts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Account> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('color_index')) {
+      context.handle(
+        _colorIndexMeta,
+        colorIndex.isAcceptableOrUnknown(data['color_index']!, _colorIndexMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_colorIndexMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Account map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Account(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      kind: $AccountsTable.$converterkind.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}kind'],
+        )!,
+      ),
+      colorIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}color_index'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $AccountsTable createAlias(String alias) {
+    return $AccountsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<AccountKind, String, String> $converterkind =
+      const EnumNameConverter<AccountKind>(AccountKind.values);
+}
+
+class Account extends DataClass implements Insertable<Account> {
+  final int id;
+  final String name;
+  final AccountKind kind;
+  final int colorIndex;
+  final DateTime createdAt;
+  const Account({
+    required this.id,
+    required this.name,
+    required this.kind,
+    required this.colorIndex,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    {
+      map['kind'] = Variable<String>($AccountsTable.$converterkind.toSql(kind));
+    }
+    map['color_index'] = Variable<int>(colorIndex);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  AccountsCompanion toCompanion(bool nullToAbsent) {
+    return AccountsCompanion(
+      id: Value(id),
+      name: Value(name),
+      kind: Value(kind),
+      colorIndex: Value(colorIndex),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory Account.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Account(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      kind: $AccountsTable.$converterkind.fromJson(
+        serializer.fromJson<String>(json['kind']),
+      ),
+      colorIndex: serializer.fromJson<int>(json['colorIndex']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'kind': serializer.toJson<String>(
+        $AccountsTable.$converterkind.toJson(kind),
+      ),
+      'colorIndex': serializer.toJson<int>(colorIndex),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  Account copyWith({
+    int? id,
+    String? name,
+    AccountKind? kind,
+    int? colorIndex,
+    DateTime? createdAt,
+  }) => Account(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    kind: kind ?? this.kind,
+    colorIndex: colorIndex ?? this.colorIndex,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  Account copyWithCompanion(AccountsCompanion data) {
+    return Account(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      colorIndex: data.colorIndex.present
+          ? data.colorIndex.value
+          : this.colorIndex,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Account(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('kind: $kind, ')
+          ..write('colorIndex: $colorIndex, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, kind, colorIndex, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Account &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.kind == this.kind &&
+          other.colorIndex == this.colorIndex &&
+          other.createdAt == this.createdAt);
+}
+
+class AccountsCompanion extends UpdateCompanion<Account> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<AccountKind> kind;
+  final Value<int> colorIndex;
+  final Value<DateTime> createdAt;
+  const AccountsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.colorIndex = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  AccountsCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    required AccountKind kind,
+    required int colorIndex,
+    this.createdAt = const Value.absent(),
+  }) : name = Value(name),
+       kind = Value(kind),
+       colorIndex = Value(colorIndex);
+  static Insertable<Account> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? kind,
+    Expression<int>? colorIndex,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (kind != null) 'kind': kind,
+      if (colorIndex != null) 'color_index': colorIndex,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  AccountsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<AccountKind>? kind,
+    Value<int>? colorIndex,
+    Value<DateTime>? createdAt,
+  }) {
+    return AccountsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      kind: kind ?? this.kind,
+      colorIndex: colorIndex ?? this.colorIndex,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(
+        $AccountsTable.$converterkind.toSql(kind.value),
+      );
+    }
+    if (colorIndex.present) {
+      map['color_index'] = Variable<int>(colorIndex.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AccountsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('kind: $kind, ')
+          ..write('colorIndex: $colorIndex, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $TransactionsTable extends Transactions
     with TableInfo<$TransactionsTable, Transaction> {
   @override
@@ -398,6 +745,20 @@ class $TransactionsTable extends Transactions
       'REFERENCES categories (id)',
     ),
   );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<int> accountId = GeneratedColumn<int>(
+    'account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES accounts (id)',
+    ),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -413,6 +774,7 @@ class $TransactionsTable extends Transactions
     rawBody,
     createdAt,
     categoryId,
+    accountId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -494,6 +856,12 @@ class $TransactionsTable extends Transactions
         categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
       );
     }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    }
     return context;
   }
 
@@ -561,6 +929,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.int,
         data['${effectivePrefix}category_id'],
       ),
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}account_id'],
+      ),
     );
   }
 
@@ -591,6 +963,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final String? rawBody;
   final DateTime createdAt;
   final int? categoryId;
+  final int? accountId;
   const Transaction({
     required this.id,
     required this.uuid,
@@ -605,6 +978,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     this.rawBody,
     required this.createdAt,
     this.categoryId,
+    this.accountId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -642,6 +1016,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     if (!nullToAbsent || categoryId != null) {
       map['category_id'] = Variable<int>(categoryId);
     }
+    if (!nullToAbsent || accountId != null) {
+      map['account_id'] = Variable<int>(accountId);
+    }
     return map;
   }
 
@@ -668,6 +1045,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       categoryId: categoryId == null && nullToAbsent
           ? const Value.absent()
           : Value(categoryId),
+      accountId: accountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountId),
     );
   }
 
@@ -696,6 +1076,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       rawBody: serializer.fromJson<String?>(json['rawBody']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       categoryId: serializer.fromJson<int?>(json['categoryId']),
+      accountId: serializer.fromJson<int?>(json['accountId']),
     );
   }
   @override
@@ -721,6 +1102,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'rawBody': serializer.toJson<String?>(rawBody),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'categoryId': serializer.toJson<int?>(categoryId),
+      'accountId': serializer.toJson<int?>(accountId),
     };
   }
 
@@ -738,6 +1120,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     Value<String?> rawBody = const Value.absent(),
     DateTime? createdAt,
     Value<int?> categoryId = const Value.absent(),
+    Value<int?> accountId = const Value.absent(),
   }) => Transaction(
     id: id ?? this.id,
     uuid: uuid ?? this.uuid,
@@ -752,6 +1135,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     rawBody: rawBody.present ? rawBody.value : this.rawBody,
     createdAt: createdAt ?? this.createdAt,
     categoryId: categoryId.present ? categoryId.value : this.categoryId,
+    accountId: accountId.present ? accountId.value : this.accountId,
   );
   Transaction copyWithCompanion(TransactionsCompanion data) {
     return Transaction(
@@ -774,6 +1158,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       categoryId: data.categoryId.present
           ? data.categoryId.value
           : this.categoryId,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
     );
   }
 
@@ -792,7 +1177,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('rawTitle: $rawTitle, ')
           ..write('rawBody: $rawBody, ')
           ..write('createdAt: $createdAt, ')
-          ..write('categoryId: $categoryId')
+          ..write('categoryId: $categoryId, ')
+          ..write('accountId: $accountId')
           ..write(')'))
         .toString();
   }
@@ -812,6 +1198,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     rawBody,
     createdAt,
     categoryId,
+    accountId,
   );
   @override
   bool operator ==(Object other) =>
@@ -829,7 +1216,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.rawTitle == this.rawTitle &&
           other.rawBody == this.rawBody &&
           other.createdAt == this.createdAt &&
-          other.categoryId == this.categoryId);
+          other.categoryId == this.categoryId &&
+          other.accountId == this.accountId);
 }
 
 class TransactionsCompanion extends UpdateCompanion<Transaction> {
@@ -846,6 +1234,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<String?> rawBody;
   final Value<DateTime> createdAt;
   final Value<int?> categoryId;
+  final Value<int?> accountId;
   const TransactionsCompanion({
     this.id = const Value.absent(),
     this.uuid = const Value.absent(),
@@ -860,6 +1249,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.rawBody = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.categoryId = const Value.absent(),
+    this.accountId = const Value.absent(),
   });
   TransactionsCompanion.insert({
     this.id = const Value.absent(),
@@ -875,6 +1265,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.rawBody = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.categoryId = const Value.absent(),
+    this.accountId = const Value.absent(),
   }) : uuid = Value(uuid),
        bankId = Value(bankId),
        kind = Value(kind),
@@ -896,6 +1287,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<String>? rawBody,
     Expression<DateTime>? createdAt,
     Expression<int>? categoryId,
+    Expression<int>? accountId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -911,6 +1303,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (rawBody != null) 'raw_body': rawBody,
       if (createdAt != null) 'created_at': createdAt,
       if (categoryId != null) 'category_id': categoryId,
+      if (accountId != null) 'account_id': accountId,
     });
   }
 
@@ -928,6 +1321,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<String?>? rawBody,
     Value<DateTime>? createdAt,
     Value<int?>? categoryId,
+    Value<int?>? accountId,
   }) {
     return TransactionsCompanion(
       id: id ?? this.id,
@@ -943,6 +1337,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       rawBody: rawBody ?? this.rawBody,
       createdAt: createdAt ?? this.createdAt,
       categoryId: categoryId ?? this.categoryId,
+      accountId: accountId ?? this.accountId,
     );
   }
 
@@ -994,6 +1389,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (categoryId.present) {
       map['category_id'] = Variable<int>(categoryId.value);
     }
+    if (accountId.present) {
+      map['account_id'] = Variable<int>(accountId.value);
+    }
     return map;
   }
 
@@ -1012,7 +1410,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('rawTitle: $rawTitle, ')
           ..write('rawBody: $rawBody, ')
           ..write('createdAt: $createdAt, ')
-          ..write('categoryId: $categoryId')
+          ..write('categoryId: $categoryId, ')
+          ..write('accountId: $accountId')
           ..write(')'))
         .toString();
   }
@@ -1738,22 +2137,1206 @@ class AppSettingsCompanion extends UpdateCompanion<AppSetting> {
   }
 }
 
+class $BonsTable extends Bons with TableInfo<$BonsTable, Bon> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BonsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
+  @override
+  late final GeneratedColumn<String> uuid = GeneratedColumn<String>(
+    'uuid',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _personMeta = const VerificationMeta('person');
+  @override
+  late final GeneratedColumn<String> person = GeneratedColumn<String>(
+    'person',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumn<int> amount = GeneratedColumn<int>(
+    'amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<BonDirection, String> direction =
+      GeneratedColumn<String>(
+        'direction',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<BonDirection>($BonsTable.$converterdirection);
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _occurredAtMeta = const VerificationMeta(
+    'occurredAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> occurredAt = GeneratedColumn<DateTime>(
+    'occurred_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _settledAtMeta = const VerificationMeta(
+    'settledAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> settledAt = GeneratedColumn<DateTime>(
+    'settled_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    uuid,
+    person,
+    amount,
+    direction,
+    note,
+    occurredAt,
+    settledAt,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'bons';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Bon> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('uuid')) {
+      context.handle(
+        _uuidMeta,
+        uuid.isAcceptableOrUnknown(data['uuid']!, _uuidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_uuidMeta);
+    }
+    if (data.containsKey('person')) {
+      context.handle(
+        _personMeta,
+        person.isAcceptableOrUnknown(data['person']!, _personMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_personMeta);
+    }
+    if (data.containsKey('amount')) {
+      context.handle(
+        _amountMeta,
+        amount.isAcceptableOrUnknown(data['amount']!, _amountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('occurred_at')) {
+      context.handle(
+        _occurredAtMeta,
+        occurredAt.isAcceptableOrUnknown(data['occurred_at']!, _occurredAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_occurredAtMeta);
+    }
+    if (data.containsKey('settled_at')) {
+      context.handle(
+        _settledAtMeta,
+        settledAt.isAcceptableOrUnknown(data['settled_at']!, _settledAtMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Bon map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Bon(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      uuid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}uuid'],
+      )!,
+      person: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}person'],
+      )!,
+      amount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount'],
+      )!,
+      direction: $BonsTable.$converterdirection.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}direction'],
+        )!,
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      occurredAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}occurred_at'],
+      )!,
+      settledAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}settled_at'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $BonsTable createAlias(String alias) {
+    return $BonsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<BonDirection, String, String> $converterdirection =
+      const EnumNameConverter<BonDirection>(BonDirection.values);
+}
+
+class Bon extends DataClass implements Insertable<Bon> {
+  final int id;
+  final String uuid;
+  final String person;
+  final int amount;
+  final BonDirection direction;
+  final String? note;
+  final DateTime occurredAt;
+  final DateTime? settledAt;
+  final DateTime createdAt;
+  const Bon({
+    required this.id,
+    required this.uuid,
+    required this.person,
+    required this.amount,
+    required this.direction,
+    this.note,
+    required this.occurredAt,
+    this.settledAt,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['uuid'] = Variable<String>(uuid);
+    map['person'] = Variable<String>(person);
+    map['amount'] = Variable<int>(amount);
+    {
+      map['direction'] = Variable<String>(
+        $BonsTable.$converterdirection.toSql(direction),
+      );
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['occurred_at'] = Variable<DateTime>(occurredAt);
+    if (!nullToAbsent || settledAt != null) {
+      map['settled_at'] = Variable<DateTime>(settledAt);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  BonsCompanion toCompanion(bool nullToAbsent) {
+    return BonsCompanion(
+      id: Value(id),
+      uuid: Value(uuid),
+      person: Value(person),
+      amount: Value(amount),
+      direction: Value(direction),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      occurredAt: Value(occurredAt),
+      settledAt: settledAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(settledAt),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory Bon.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Bon(
+      id: serializer.fromJson<int>(json['id']),
+      uuid: serializer.fromJson<String>(json['uuid']),
+      person: serializer.fromJson<String>(json['person']),
+      amount: serializer.fromJson<int>(json['amount']),
+      direction: $BonsTable.$converterdirection.fromJson(
+        serializer.fromJson<String>(json['direction']),
+      ),
+      note: serializer.fromJson<String?>(json['note']),
+      occurredAt: serializer.fromJson<DateTime>(json['occurredAt']),
+      settledAt: serializer.fromJson<DateTime?>(json['settledAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'uuid': serializer.toJson<String>(uuid),
+      'person': serializer.toJson<String>(person),
+      'amount': serializer.toJson<int>(amount),
+      'direction': serializer.toJson<String>(
+        $BonsTable.$converterdirection.toJson(direction),
+      ),
+      'note': serializer.toJson<String?>(note),
+      'occurredAt': serializer.toJson<DateTime>(occurredAt),
+      'settledAt': serializer.toJson<DateTime?>(settledAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  Bon copyWith({
+    int? id,
+    String? uuid,
+    String? person,
+    int? amount,
+    BonDirection? direction,
+    Value<String?> note = const Value.absent(),
+    DateTime? occurredAt,
+    Value<DateTime?> settledAt = const Value.absent(),
+    DateTime? createdAt,
+  }) => Bon(
+    id: id ?? this.id,
+    uuid: uuid ?? this.uuid,
+    person: person ?? this.person,
+    amount: amount ?? this.amount,
+    direction: direction ?? this.direction,
+    note: note.present ? note.value : this.note,
+    occurredAt: occurredAt ?? this.occurredAt,
+    settledAt: settledAt.present ? settledAt.value : this.settledAt,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  Bon copyWithCompanion(BonsCompanion data) {
+    return Bon(
+      id: data.id.present ? data.id.value : this.id,
+      uuid: data.uuid.present ? data.uuid.value : this.uuid,
+      person: data.person.present ? data.person.value : this.person,
+      amount: data.amount.present ? data.amount.value : this.amount,
+      direction: data.direction.present ? data.direction.value : this.direction,
+      note: data.note.present ? data.note.value : this.note,
+      occurredAt: data.occurredAt.present
+          ? data.occurredAt.value
+          : this.occurredAt,
+      settledAt: data.settledAt.present ? data.settledAt.value : this.settledAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Bon(')
+          ..write('id: $id, ')
+          ..write('uuid: $uuid, ')
+          ..write('person: $person, ')
+          ..write('amount: $amount, ')
+          ..write('direction: $direction, ')
+          ..write('note: $note, ')
+          ..write('occurredAt: $occurredAt, ')
+          ..write('settledAt: $settledAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    uuid,
+    person,
+    amount,
+    direction,
+    note,
+    occurredAt,
+    settledAt,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Bon &&
+          other.id == this.id &&
+          other.uuid == this.uuid &&
+          other.person == this.person &&
+          other.amount == this.amount &&
+          other.direction == this.direction &&
+          other.note == this.note &&
+          other.occurredAt == this.occurredAt &&
+          other.settledAt == this.settledAt &&
+          other.createdAt == this.createdAt);
+}
+
+class BonsCompanion extends UpdateCompanion<Bon> {
+  final Value<int> id;
+  final Value<String> uuid;
+  final Value<String> person;
+  final Value<int> amount;
+  final Value<BonDirection> direction;
+  final Value<String?> note;
+  final Value<DateTime> occurredAt;
+  final Value<DateTime?> settledAt;
+  final Value<DateTime> createdAt;
+  const BonsCompanion({
+    this.id = const Value.absent(),
+    this.uuid = const Value.absent(),
+    this.person = const Value.absent(),
+    this.amount = const Value.absent(),
+    this.direction = const Value.absent(),
+    this.note = const Value.absent(),
+    this.occurredAt = const Value.absent(),
+    this.settledAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  BonsCompanion.insert({
+    this.id = const Value.absent(),
+    required String uuid,
+    required String person,
+    required int amount,
+    required BonDirection direction,
+    this.note = const Value.absent(),
+    required DateTime occurredAt,
+    this.settledAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : uuid = Value(uuid),
+       person = Value(person),
+       amount = Value(amount),
+       direction = Value(direction),
+       occurredAt = Value(occurredAt);
+  static Insertable<Bon> custom({
+    Expression<int>? id,
+    Expression<String>? uuid,
+    Expression<String>? person,
+    Expression<int>? amount,
+    Expression<String>? direction,
+    Expression<String>? note,
+    Expression<DateTime>? occurredAt,
+    Expression<DateTime>? settledAt,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (uuid != null) 'uuid': uuid,
+      if (person != null) 'person': person,
+      if (amount != null) 'amount': amount,
+      if (direction != null) 'direction': direction,
+      if (note != null) 'note': note,
+      if (occurredAt != null) 'occurred_at': occurredAt,
+      if (settledAt != null) 'settled_at': settledAt,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  BonsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? uuid,
+    Value<String>? person,
+    Value<int>? amount,
+    Value<BonDirection>? direction,
+    Value<String?>? note,
+    Value<DateTime>? occurredAt,
+    Value<DateTime?>? settledAt,
+    Value<DateTime>? createdAt,
+  }) {
+    return BonsCompanion(
+      id: id ?? this.id,
+      uuid: uuid ?? this.uuid,
+      person: person ?? this.person,
+      amount: amount ?? this.amount,
+      direction: direction ?? this.direction,
+      note: note ?? this.note,
+      occurredAt: occurredAt ?? this.occurredAt,
+      settledAt: settledAt ?? this.settledAt,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (uuid.present) {
+      map['uuid'] = Variable<String>(uuid.value);
+    }
+    if (person.present) {
+      map['person'] = Variable<String>(person.value);
+    }
+    if (amount.present) {
+      map['amount'] = Variable<int>(amount.value);
+    }
+    if (direction.present) {
+      map['direction'] = Variable<String>(
+        $BonsTable.$converterdirection.toSql(direction.value),
+      );
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (occurredAt.present) {
+      map['occurred_at'] = Variable<DateTime>(occurredAt.value);
+    }
+    if (settledAt.present) {
+      map['settled_at'] = Variable<DateTime>(settledAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BonsCompanion(')
+          ..write('id: $id, ')
+          ..write('uuid: $uuid, ')
+          ..write('person: $person, ')
+          ..write('amount: $amount, ')
+          ..write('direction: $direction, ')
+          ..write('note: $note, ')
+          ..write('occurredAt: $occurredAt, ')
+          ..write('settledAt: $settledAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $UserRulesTable extends UserRules
+    with TableInfo<$UserRulesTable, UserRule> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserRulesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _packageNameMeta = const VerificationMeta(
+    'packageName',
+  );
+  @override
+  late final GeneratedColumn<String> packageName = GeneratedColumn<String>(
+    'package_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _matchTextMeta = const VerificationMeta(
+    'matchText',
+  );
+  @override
+  late final GeneratedColumn<String> matchText = GeneratedColumn<String>(
+    'match_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _amountPatternMeta = const VerificationMeta(
+    'amountPattern',
+  );
+  @override
+  late final GeneratedColumn<String> amountPattern = GeneratedColumn<String>(
+    'amount_pattern',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<UserRuleDirection, String>
+  direction = GeneratedColumn<String>(
+    'direction',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  ).withConverter<UserRuleDirection>($UserRulesTable.$converterdirection);
+  @override
+  late final GeneratedColumnWithTypeConverter<TxKind, String> kind =
+      GeneratedColumn<String>(
+        'kind',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<TxKind>($UserRulesTable.$converterkind);
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<int> accountId = GeneratedColumn<int>(
+    'account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES accounts (id)',
+    ),
+  );
+  static const VerificationMeta _enabledMeta = const VerificationMeta(
+    'enabled',
+  );
+  @override
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+    'enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    packageName,
+    matchText,
+    amountPattern,
+    direction,
+    kind,
+    accountId,
+    enabled,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_rules';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UserRule> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('package_name')) {
+      context.handle(
+        _packageNameMeta,
+        packageName.isAcceptableOrUnknown(
+          data['package_name']!,
+          _packageNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('match_text')) {
+      context.handle(
+        _matchTextMeta,
+        matchText.isAcceptableOrUnknown(data['match_text']!, _matchTextMeta),
+      );
+    }
+    if (data.containsKey('amount_pattern')) {
+      context.handle(
+        _amountPatternMeta,
+        amountPattern.isAcceptableOrUnknown(
+          data['amount_pattern']!,
+          _amountPatternMeta,
+        ),
+      );
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    }
+    if (data.containsKey('enabled')) {
+      context.handle(
+        _enabledMeta,
+        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  UserRule map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserRule(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      packageName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}package_name'],
+      ),
+      matchText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}match_text'],
+      ),
+      amountPattern: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}amount_pattern'],
+      ),
+      direction: $UserRulesTable.$converterdirection.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}direction'],
+        )!,
+      ),
+      kind: $UserRulesTable.$converterkind.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}kind'],
+        )!,
+      ),
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}account_id'],
+      ),
+      enabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}enabled'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $UserRulesTable createAlias(String alias) {
+    return $UserRulesTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<UserRuleDirection, String, String>
+  $converterdirection = const EnumNameConverter<UserRuleDirection>(
+    UserRuleDirection.values,
+  );
+  static JsonTypeConverter2<TxKind, String, String> $converterkind =
+      const EnumNameConverter<TxKind>(TxKind.values);
+}
+
+class UserRule extends DataClass implements Insertable<UserRule> {
+  final int id;
+  final String name;
+
+  /// Null = cocok paket mana pun; terisi = hanya paket ini.
+  final String? packageName;
+
+  /// Null = bebas kata kunci; terisi = harus mengandung teks ini.
+  final String? matchText;
+
+  /// Pola nominal custom; null = pakai pola default engine.
+  final String? amountPattern;
+  final UserRuleDirection direction;
+  final TxKind kind;
+  final int? accountId;
+  final bool enabled;
+  final DateTime createdAt;
+  const UserRule({
+    required this.id,
+    required this.name,
+    this.packageName,
+    this.matchText,
+    this.amountPattern,
+    required this.direction,
+    required this.kind,
+    this.accountId,
+    required this.enabled,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || packageName != null) {
+      map['package_name'] = Variable<String>(packageName);
+    }
+    if (!nullToAbsent || matchText != null) {
+      map['match_text'] = Variable<String>(matchText);
+    }
+    if (!nullToAbsent || amountPattern != null) {
+      map['amount_pattern'] = Variable<String>(amountPattern);
+    }
+    {
+      map['direction'] = Variable<String>(
+        $UserRulesTable.$converterdirection.toSql(direction),
+      );
+    }
+    {
+      map['kind'] = Variable<String>(
+        $UserRulesTable.$converterkind.toSql(kind),
+      );
+    }
+    if (!nullToAbsent || accountId != null) {
+      map['account_id'] = Variable<int>(accountId);
+    }
+    map['enabled'] = Variable<bool>(enabled);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  UserRulesCompanion toCompanion(bool nullToAbsent) {
+    return UserRulesCompanion(
+      id: Value(id),
+      name: Value(name),
+      packageName: packageName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(packageName),
+      matchText: matchText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(matchText),
+      amountPattern: amountPattern == null && nullToAbsent
+          ? const Value.absent()
+          : Value(amountPattern),
+      direction: Value(direction),
+      kind: Value(kind),
+      accountId: accountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountId),
+      enabled: Value(enabled),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory UserRule.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserRule(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      packageName: serializer.fromJson<String?>(json['packageName']),
+      matchText: serializer.fromJson<String?>(json['matchText']),
+      amountPattern: serializer.fromJson<String?>(json['amountPattern']),
+      direction: $UserRulesTable.$converterdirection.fromJson(
+        serializer.fromJson<String>(json['direction']),
+      ),
+      kind: $UserRulesTable.$converterkind.fromJson(
+        serializer.fromJson<String>(json['kind']),
+      ),
+      accountId: serializer.fromJson<int?>(json['accountId']),
+      enabled: serializer.fromJson<bool>(json['enabled']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'packageName': serializer.toJson<String?>(packageName),
+      'matchText': serializer.toJson<String?>(matchText),
+      'amountPattern': serializer.toJson<String?>(amountPattern),
+      'direction': serializer.toJson<String>(
+        $UserRulesTable.$converterdirection.toJson(direction),
+      ),
+      'kind': serializer.toJson<String>(
+        $UserRulesTable.$converterkind.toJson(kind),
+      ),
+      'accountId': serializer.toJson<int?>(accountId),
+      'enabled': serializer.toJson<bool>(enabled),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  UserRule copyWith({
+    int? id,
+    String? name,
+    Value<String?> packageName = const Value.absent(),
+    Value<String?> matchText = const Value.absent(),
+    Value<String?> amountPattern = const Value.absent(),
+    UserRuleDirection? direction,
+    TxKind? kind,
+    Value<int?> accountId = const Value.absent(),
+    bool? enabled,
+    DateTime? createdAt,
+  }) => UserRule(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    packageName: packageName.present ? packageName.value : this.packageName,
+    matchText: matchText.present ? matchText.value : this.matchText,
+    amountPattern: amountPattern.present
+        ? amountPattern.value
+        : this.amountPattern,
+    direction: direction ?? this.direction,
+    kind: kind ?? this.kind,
+    accountId: accountId.present ? accountId.value : this.accountId,
+    enabled: enabled ?? this.enabled,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  UserRule copyWithCompanion(UserRulesCompanion data) {
+    return UserRule(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      packageName: data.packageName.present
+          ? data.packageName.value
+          : this.packageName,
+      matchText: data.matchText.present ? data.matchText.value : this.matchText,
+      amountPattern: data.amountPattern.present
+          ? data.amountPattern.value
+          : this.amountPattern,
+      direction: data.direction.present ? data.direction.value : this.direction,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      enabled: data.enabled.present ? data.enabled.value : this.enabled,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserRule(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('packageName: $packageName, ')
+          ..write('matchText: $matchText, ')
+          ..write('amountPattern: $amountPattern, ')
+          ..write('direction: $direction, ')
+          ..write('kind: $kind, ')
+          ..write('accountId: $accountId, ')
+          ..write('enabled: $enabled, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    packageName,
+    matchText,
+    amountPattern,
+    direction,
+    kind,
+    accountId,
+    enabled,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserRule &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.packageName == this.packageName &&
+          other.matchText == this.matchText &&
+          other.amountPattern == this.amountPattern &&
+          other.direction == this.direction &&
+          other.kind == this.kind &&
+          other.accountId == this.accountId &&
+          other.enabled == this.enabled &&
+          other.createdAt == this.createdAt);
+}
+
+class UserRulesCompanion extends UpdateCompanion<UserRule> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String?> packageName;
+  final Value<String?> matchText;
+  final Value<String?> amountPattern;
+  final Value<UserRuleDirection> direction;
+  final Value<TxKind> kind;
+  final Value<int?> accountId;
+  final Value<bool> enabled;
+  final Value<DateTime> createdAt;
+  const UserRulesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.packageName = const Value.absent(),
+    this.matchText = const Value.absent(),
+    this.amountPattern = const Value.absent(),
+    this.direction = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  UserRulesCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.packageName = const Value.absent(),
+    this.matchText = const Value.absent(),
+    this.amountPattern = const Value.absent(),
+    required UserRuleDirection direction,
+    required TxKind kind,
+    this.accountId = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : name = Value(name),
+       direction = Value(direction),
+       kind = Value(kind);
+  static Insertable<UserRule> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? packageName,
+    Expression<String>? matchText,
+    Expression<String>? amountPattern,
+    Expression<String>? direction,
+    Expression<String>? kind,
+    Expression<int>? accountId,
+    Expression<bool>? enabled,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (packageName != null) 'package_name': packageName,
+      if (matchText != null) 'match_text': matchText,
+      if (amountPattern != null) 'amount_pattern': amountPattern,
+      if (direction != null) 'direction': direction,
+      if (kind != null) 'kind': kind,
+      if (accountId != null) 'account_id': accountId,
+      if (enabled != null) 'enabled': enabled,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  UserRulesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<String?>? packageName,
+    Value<String?>? matchText,
+    Value<String?>? amountPattern,
+    Value<UserRuleDirection>? direction,
+    Value<TxKind>? kind,
+    Value<int?>? accountId,
+    Value<bool>? enabled,
+    Value<DateTime>? createdAt,
+  }) {
+    return UserRulesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      packageName: packageName ?? this.packageName,
+      matchText: matchText ?? this.matchText,
+      amountPattern: amountPattern ?? this.amountPattern,
+      direction: direction ?? this.direction,
+      kind: kind ?? this.kind,
+      accountId: accountId ?? this.accountId,
+      enabled: enabled ?? this.enabled,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (packageName.present) {
+      map['package_name'] = Variable<String>(packageName.value);
+    }
+    if (matchText.present) {
+      map['match_text'] = Variable<String>(matchText.value);
+    }
+    if (amountPattern.present) {
+      map['amount_pattern'] = Variable<String>(amountPattern.value);
+    }
+    if (direction.present) {
+      map['direction'] = Variable<String>(
+        $UserRulesTable.$converterdirection.toSql(direction.value),
+      );
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(
+        $UserRulesTable.$converterkind.toSql(kind.value),
+      );
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<int>(accountId.value);
+    }
+    if (enabled.present) {
+      map['enabled'] = Variable<bool>(enabled.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserRulesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('packageName: $packageName, ')
+          ..write('matchText: $matchText, ')
+          ..write('amountPattern: $amountPattern, ')
+          ..write('direction: $direction, ')
+          ..write('kind: $kind, ')
+          ..write('accountId: $accountId, ')
+          ..write('enabled: $enabled, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $CategoriesTable categories = $CategoriesTable(this);
+  late final $AccountsTable accounts = $AccountsTable(this);
   late final $TransactionsTable transactions = $TransactionsTable(this);
   late final $CaptureLogsTable captureLogs = $CaptureLogsTable(this);
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
+  late final $BonsTable bons = $BonsTable(this);
+  late final $UserRulesTable userRules = $UserRulesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     categories,
+    accounts,
     transactions,
     captureLogs,
     appSettings,
+    bons,
+    userRules,
   ];
 }
 
@@ -2016,6 +3599,399 @@ typedef $$CategoriesTableProcessedTableManager =
       Category,
       PrefetchHooks Function({bool transactionsRefs})
     >;
+typedef $$AccountsTableCreateCompanionBuilder =
+    AccountsCompanion Function({
+      Value<int> id,
+      required String name,
+      required AccountKind kind,
+      required int colorIndex,
+      Value<DateTime> createdAt,
+    });
+typedef $$AccountsTableUpdateCompanionBuilder =
+    AccountsCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<AccountKind> kind,
+      Value<int> colorIndex,
+      Value<DateTime> createdAt,
+    });
+
+final class $$AccountsTableReferences
+    extends BaseReferences<_$AppDatabase, $AccountsTable, Account> {
+  $$AccountsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$TransactionsTable, List<Transaction>>
+  _transactionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.transactions,
+    aliasName: 'accounts__id__transactions__account_id',
+  );
+
+  $$TransactionsTableProcessedTableManager get transactionsRefs {
+    final manager = $$TransactionsTableTableManager(
+      $_db,
+      $_db.transactions,
+    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_transactionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$UserRulesTable, List<UserRule>>
+  _userRulesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.userRules,
+    aliasName: 'accounts__id__user_rules__account_id',
+  );
+
+  $$UserRulesTableProcessedTableManager get userRulesRefs {
+    final manager = $$UserRulesTableTableManager(
+      $_db,
+      $_db.userRules,
+    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_userRulesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$AccountsTableFilterComposer
+    extends Composer<_$AppDatabase, $AccountsTable> {
+  $$AccountsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<AccountKind, AccountKind, String> get kind =>
+      $composableBuilder(
+        column: $table.kind,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<int> get colorIndex => $composableBuilder(
+    column: $table.colorIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> transactionsRefs(
+    Expression<bool> Function($$TransactionsTableFilterComposer f) f,
+  ) {
+    final $$TransactionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.transactions,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionsTableFilterComposer(
+            $db: $db,
+            $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> userRulesRefs(
+    Expression<bool> Function($$UserRulesTableFilterComposer f) f,
+  ) {
+    final $$UserRulesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userRules,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserRulesTableFilterComposer(
+            $db: $db,
+            $table: $db.userRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$AccountsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AccountsTable> {
+  $$AccountsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get colorIndex => $composableBuilder(
+    column: $table.colorIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AccountsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AccountsTable> {
+  $$AccountsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<AccountKind, String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<int> get colorIndex => $composableBuilder(
+    column: $table.colorIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> transactionsRefs<T extends Object>(
+    Expression<T> Function($$TransactionsTableAnnotationComposer a) f,
+  ) {
+    final $$TransactionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.transactions,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TransactionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> userRulesRefs<T extends Object>(
+    Expression<T> Function($$UserRulesTableAnnotationComposer a) f,
+  ) {
+    final $$UserRulesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userRules,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserRulesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$AccountsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AccountsTable,
+          Account,
+          $$AccountsTableFilterComposer,
+          $$AccountsTableOrderingComposer,
+          $$AccountsTableAnnotationComposer,
+          $$AccountsTableCreateCompanionBuilder,
+          $$AccountsTableUpdateCompanionBuilder,
+          (Account, $$AccountsTableReferences),
+          Account,
+          PrefetchHooks Function({bool transactionsRefs, bool userRulesRefs})
+        > {
+  $$AccountsTableTableManager(_$AppDatabase db, $AccountsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AccountsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AccountsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AccountsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<AccountKind> kind = const Value.absent(),
+                Value<int> colorIndex = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => AccountsCompanion(
+                id: id,
+                name: name,
+                kind: kind,
+                colorIndex: colorIndex,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                required AccountKind kind,
+                required int colorIndex,
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => AccountsCompanion.insert(
+                id: id,
+                name: name,
+                kind: kind,
+                colorIndex: colorIndex,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$AccountsTable, Account>(table),
+                  $$AccountsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({transactionsRefs = false, userRulesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (transactionsRefs) db.transactions,
+                    if (userRulesRefs) db.userRules,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (transactionsRefs)
+                        await $_getPrefetchedData<
+                          Account,
+                          $AccountsTable,
+                          Transaction
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._transactionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).transactionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (userRulesRefs)
+                        await $_getPrefetchedData<
+                          Account,
+                          $AccountsTable,
+                          UserRule
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._userRulesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).userRulesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$AccountsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AccountsTable,
+      Account,
+      $$AccountsTableFilterComposer,
+      $$AccountsTableOrderingComposer,
+      $$AccountsTableAnnotationComposer,
+      $$AccountsTableCreateCompanionBuilder,
+      $$AccountsTableUpdateCompanionBuilder,
+      (Account, $$AccountsTableReferences),
+      Account,
+      PrefetchHooks Function({bool transactionsRefs, bool userRulesRefs})
+    >;
 typedef $$TransactionsTableCreateCompanionBuilder =
     TransactionsCompanion Function({
       Value<int> id,
@@ -2031,6 +4007,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       Value<String?> rawBody,
       Value<DateTime> createdAt,
       Value<int?> categoryId,
+      Value<int?> accountId,
     });
 typedef $$TransactionsTableUpdateCompanionBuilder =
     TransactionsCompanion Function({
@@ -2047,6 +4024,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<String?> rawBody,
       Value<DateTime> createdAt,
       Value<int?> categoryId,
+      Value<int?> accountId,
     });
 
 final class $$TransactionsTableReferences
@@ -2064,6 +4042,23 @@ final class $$TransactionsTableReferences
       $_db.categories,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_categoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $AccountsTable _accountIdTable(_$AppDatabase db) =>
+      db.accounts.createAlias('transactions__account_id__accounts__id');
+
+  $$AccountsTableProcessedTableManager? get accountId {
+    final $_column = $_itemColumn<int>('account_id');
+    if ($_column == null) return null;
+    final manager = $$AccountsTableTableManager(
+      $_db,
+      $_db.accounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -2165,6 +4160,29 @@ class $$TransactionsTableFilterComposer
     );
     return composer;
   }
+
+  $$AccountsTableFilterComposer get accountId {
+    final $$AccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$TransactionsTableOrderingComposer
@@ -2258,6 +4276,29 @@ class $$TransactionsTableOrderingComposer
     );
     return composer;
   }
+
+  $$AccountsTableOrderingComposer get accountId {
+    final $$AccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$TransactionsTableAnnotationComposer
@@ -2331,6 +4372,29 @@ class $$TransactionsTableAnnotationComposer
     );
     return composer;
   }
+
+  $$AccountsTableAnnotationComposer get accountId {
+    final $$AccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$TransactionsTableTableManager
@@ -2346,7 +4410,7 @@ class $$TransactionsTableTableManager
           $$TransactionsTableUpdateCompanionBuilder,
           (Transaction, $$TransactionsTableReferences),
           Transaction,
-          PrefetchHooks Function({bool categoryId})
+          PrefetchHooks Function({bool categoryId, bool accountId})
         > {
   $$TransactionsTableTableManager(_$AppDatabase db, $TransactionsTable table)
     : super(
@@ -2374,6 +4438,7 @@ class $$TransactionsTableTableManager
                 Value<String?> rawBody = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int?> categoryId = const Value.absent(),
+                Value<int?> accountId = const Value.absent(),
               }) => TransactionsCompanion(
                 id: id,
                 uuid: uuid,
@@ -2388,6 +4453,7 @@ class $$TransactionsTableTableManager
                 rawBody: rawBody,
                 createdAt: createdAt,
                 categoryId: categoryId,
+                accountId: accountId,
               ),
           createCompanionCallback:
               ({
@@ -2404,6 +4470,7 @@ class $$TransactionsTableTableManager
                 Value<String?> rawBody = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int?> categoryId = const Value.absent(),
+                Value<int?> accountId = const Value.absent(),
               }) => TransactionsCompanion.insert(
                 id: id,
                 uuid: uuid,
@@ -2418,6 +4485,7 @@ class $$TransactionsTableTableManager
                 rawBody: rawBody,
                 createdAt: createdAt,
                 categoryId: categoryId,
+                accountId: accountId,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -2427,7 +4495,7 @@ class $$TransactionsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({categoryId = false}) {
+          prefetchHooksCallback: ({categoryId = false, accountId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -2460,6 +4528,19 @@ class $$TransactionsTableTableManager
                               )
                               as T;
                     }
+                    if (accountId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.accountId,
+                                referencedTable: $$TransactionsTableReferences
+                                    ._accountIdTable(db),
+                                referencedColumn: $$TransactionsTableReferences
+                                    ._accountIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
 
                     return state;
                   },
@@ -2484,7 +4565,7 @@ typedef $$TransactionsTableProcessedTableManager =
       $$TransactionsTableUpdateCompanionBuilder,
       (Transaction, $$TransactionsTableReferences),
       Transaction,
-      PrefetchHooks Function({bool categoryId})
+      PrefetchHooks Function({bool categoryId, bool accountId})
     >;
 typedef $$CaptureLogsTableCreateCompanionBuilder =
     CaptureLogsCompanion Function({
@@ -2902,16 +4983,703 @@ typedef $$AppSettingsTableProcessedTableManager =
       AppSetting,
       PrefetchHooks Function()
     >;
+typedef $$BonsTableCreateCompanionBuilder =
+    BonsCompanion Function({
+      Value<int> id,
+      required String uuid,
+      required String person,
+      required int amount,
+      required BonDirection direction,
+      Value<String?> note,
+      required DateTime occurredAt,
+      Value<DateTime?> settledAt,
+      Value<DateTime> createdAt,
+    });
+typedef $$BonsTableUpdateCompanionBuilder =
+    BonsCompanion Function({
+      Value<int> id,
+      Value<String> uuid,
+      Value<String> person,
+      Value<int> amount,
+      Value<BonDirection> direction,
+      Value<String?> note,
+      Value<DateTime> occurredAt,
+      Value<DateTime?> settledAt,
+      Value<DateTime> createdAt,
+    });
+
+class $$BonsTableFilterComposer extends Composer<_$AppDatabase, $BonsTable> {
+  $$BonsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get uuid => $composableBuilder(
+    column: $table.uuid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get person => $composableBuilder(
+    column: $table.person,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<BonDirection, BonDirection, String>
+  get direction => $composableBuilder(
+    column: $table.direction,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get settledAt => $composableBuilder(
+    column: $table.settledAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$BonsTableOrderingComposer extends Composer<_$AppDatabase, $BonsTable> {
+  $$BonsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get uuid => $composableBuilder(
+    column: $table.uuid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get person => $composableBuilder(
+    column: $table.person,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get direction => $composableBuilder(
+    column: $table.direction,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get settledAt => $composableBuilder(
+    column: $table.settledAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BonsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BonsTable> {
+  $$BonsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get uuid =>
+      $composableBuilder(column: $table.uuid, builder: (column) => column);
+
+  GeneratedColumn<String> get person =>
+      $composableBuilder(column: $table.person, builder: (column) => column);
+
+  GeneratedColumn<int> get amount =>
+      $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<BonDirection, String> get direction =>
+      $composableBuilder(column: $table.direction, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get settledAt =>
+      $composableBuilder(column: $table.settledAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$BonsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BonsTable,
+          Bon,
+          $$BonsTableFilterComposer,
+          $$BonsTableOrderingComposer,
+          $$BonsTableAnnotationComposer,
+          $$BonsTableCreateCompanionBuilder,
+          $$BonsTableUpdateCompanionBuilder,
+          (Bon, BaseReferences<_$AppDatabase, $BonsTable, Bon>),
+          Bon,
+          PrefetchHooks Function()
+        > {
+  $$BonsTableTableManager(_$AppDatabase db, $BonsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BonsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BonsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BonsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> uuid = const Value.absent(),
+                Value<String> person = const Value.absent(),
+                Value<int> amount = const Value.absent(),
+                Value<BonDirection> direction = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<DateTime> occurredAt = const Value.absent(),
+                Value<DateTime?> settledAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => BonsCompanion(
+                id: id,
+                uuid: uuid,
+                person: person,
+                amount: amount,
+                direction: direction,
+                note: note,
+                occurredAt: occurredAt,
+                settledAt: settledAt,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String uuid,
+                required String person,
+                required int amount,
+                required BonDirection direction,
+                Value<String?> note = const Value.absent(),
+                required DateTime occurredAt,
+                Value<DateTime?> settledAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => BonsCompanion.insert(
+                id: id,
+                uuid: uuid,
+                person: person,
+                amount: amount,
+                direction: direction,
+                note: note,
+                occurredAt: occurredAt,
+                settledAt: settledAt,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$BonsTable, Bon>(table),
+                  BaseReferences<_$AppDatabase, $BonsTable, Bon>(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$BonsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BonsTable,
+      Bon,
+      $$BonsTableFilterComposer,
+      $$BonsTableOrderingComposer,
+      $$BonsTableAnnotationComposer,
+      $$BonsTableCreateCompanionBuilder,
+      $$BonsTableUpdateCompanionBuilder,
+      (Bon, BaseReferences<_$AppDatabase, $BonsTable, Bon>),
+      Bon,
+      PrefetchHooks Function()
+    >;
+typedef $$UserRulesTableCreateCompanionBuilder =
+    UserRulesCompanion Function({
+      Value<int> id,
+      required String name,
+      Value<String?> packageName,
+      Value<String?> matchText,
+      Value<String?> amountPattern,
+      required UserRuleDirection direction,
+      required TxKind kind,
+      Value<int?> accountId,
+      Value<bool> enabled,
+      Value<DateTime> createdAt,
+    });
+typedef $$UserRulesTableUpdateCompanionBuilder =
+    UserRulesCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<String?> packageName,
+      Value<String?> matchText,
+      Value<String?> amountPattern,
+      Value<UserRuleDirection> direction,
+      Value<TxKind> kind,
+      Value<int?> accountId,
+      Value<bool> enabled,
+      Value<DateTime> createdAt,
+    });
+
+final class $$UserRulesTableReferences
+    extends BaseReferences<_$AppDatabase, $UserRulesTable, UserRule> {
+  $$UserRulesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $AccountsTable _accountIdTable(_$AppDatabase db) =>
+      db.accounts.createAlias('user_rules__account_id__accounts__id');
+
+  $$AccountsTableProcessedTableManager? get accountId {
+    final $_column = $_itemColumn<int>('account_id');
+    if ($_column == null) return null;
+    final manager = $$AccountsTableTableManager(
+      $_db,
+      $_db.accounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$UserRulesTableFilterComposer
+    extends Composer<_$AppDatabase, $UserRulesTable> {
+  $$UserRulesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get packageName => $composableBuilder(
+    column: $table.packageName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get matchText => $composableBuilder(
+    column: $table.matchText,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get amountPattern => $composableBuilder(
+    column: $table.amountPattern,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<UserRuleDirection, UserRuleDirection, String>
+  get direction => $composableBuilder(
+    column: $table.direction,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<TxKind, TxKind, String> get kind =>
+      $composableBuilder(
+        column: $table.kind,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$AccountsTableFilterComposer get accountId {
+    final $$AccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserRulesTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserRulesTable> {
+  $$UserRulesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get packageName => $composableBuilder(
+    column: $table.packageName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get matchText => $composableBuilder(
+    column: $table.matchText,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get amountPattern => $composableBuilder(
+    column: $table.amountPattern,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get direction => $composableBuilder(
+    column: $table.direction,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$AccountsTableOrderingComposer get accountId {
+    final $$AccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserRulesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserRulesTable> {
+  $$UserRulesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get packageName => $composableBuilder(
+    column: $table.packageName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get matchText =>
+      $composableBuilder(column: $table.matchText, builder: (column) => column);
+
+  GeneratedColumn<String> get amountPattern => $composableBuilder(
+    column: $table.amountPattern,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<UserRuleDirection, String> get direction =>
+      $composableBuilder(column: $table.direction, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<TxKind, String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$AccountsTableAnnotationComposer get accountId {
+    final $$AccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserRulesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $UserRulesTable,
+          UserRule,
+          $$UserRulesTableFilterComposer,
+          $$UserRulesTableOrderingComposer,
+          $$UserRulesTableAnnotationComposer,
+          $$UserRulesTableCreateCompanionBuilder,
+          $$UserRulesTableUpdateCompanionBuilder,
+          (UserRule, $$UserRulesTableReferences),
+          UserRule,
+          PrefetchHooks Function({bool accountId})
+        > {
+  $$UserRulesTableTableManager(_$AppDatabase db, $UserRulesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserRulesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserRulesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserRulesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> packageName = const Value.absent(),
+                Value<String?> matchText = const Value.absent(),
+                Value<String?> amountPattern = const Value.absent(),
+                Value<UserRuleDirection> direction = const Value.absent(),
+                Value<TxKind> kind = const Value.absent(),
+                Value<int?> accountId = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => UserRulesCompanion(
+                id: id,
+                name: name,
+                packageName: packageName,
+                matchText: matchText,
+                amountPattern: amountPattern,
+                direction: direction,
+                kind: kind,
+                accountId: accountId,
+                enabled: enabled,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                Value<String?> packageName = const Value.absent(),
+                Value<String?> matchText = const Value.absent(),
+                Value<String?> amountPattern = const Value.absent(),
+                required UserRuleDirection direction,
+                required TxKind kind,
+                Value<int?> accountId = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => UserRulesCompanion.insert(
+                id: id,
+                name: name,
+                packageName: packageName,
+                matchText: matchText,
+                amountPattern: amountPattern,
+                direction: direction,
+                kind: kind,
+                accountId: accountId,
+                enabled: enabled,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$UserRulesTable, UserRule>(table),
+                  $$UserRulesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({accountId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (accountId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.accountId,
+                                referencedTable: $$UserRulesTableReferences
+                                    ._accountIdTable(db),
+                                referencedColumn: $$UserRulesTableReferences
+                                    ._accountIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$UserRulesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $UserRulesTable,
+      UserRule,
+      $$UserRulesTableFilterComposer,
+      $$UserRulesTableOrderingComposer,
+      $$UserRulesTableAnnotationComposer,
+      $$UserRulesTableCreateCompanionBuilder,
+      $$UserRulesTableUpdateCompanionBuilder,
+      (UserRule, $$UserRulesTableReferences),
+      UserRule,
+      PrefetchHooks Function({bool accountId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
   $AppDatabaseManager(this._db);
   $$CategoriesTableTableManager get categories =>
       $$CategoriesTableTableManager(_db, _db.categories);
+  $$AccountsTableTableManager get accounts =>
+      $$AccountsTableTableManager(_db, _db.accounts);
   $$TransactionsTableTableManager get transactions =>
       $$TransactionsTableTableManager(_db, _db.transactions);
   $$CaptureLogsTableTableManager get captureLogs =>
       $$CaptureLogsTableTableManager(_db, _db.captureLogs);
   $$AppSettingsTableTableManager get appSettings =>
       $$AppSettingsTableTableManager(_db, _db.appSettings);
+  $$BonsTableTableManager get bons => $$BonsTableTableManager(_db, _db.bons);
+  $$UserRulesTableTableManager get userRules =>
+      $$UserRulesTableTableManager(_db, _db.userRules);
 }

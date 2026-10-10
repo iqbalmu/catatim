@@ -37,7 +37,8 @@ class CaptureChannel {
     try {
       final lines = await _method.invokeMethod<List<dynamic>>('drainQueue');
       return [
-        for (final line in lines ?? const <dynamic>[]) RawCapture.fromLine(line as String),
+        for (final line in lines ?? const <dynamic>[])
+          RawCapture.fromLine(line as String),
       ];
     } on PlatformException {
       return const [];
@@ -45,15 +46,15 @@ class CaptureChannel {
   }
 
   /// Notifikasi baru secara live (JSON line dari native).
-  Stream<RawCapture> stream() => _events
-      .receiveBroadcastStream()
-      .map((event) => RawCapture.fromLine(event as String));
+  Stream<RawCapture> stream() => _events.receiveBroadcastStream().map(
+    (event) => RawCapture.fromLine(event as String),
+  );
 }
 
 /// encode JSON line — dipakai native; util ini untuk test.
 String encodeCaptureLine(RawCapture capture) => jsonEncode({
-      'packageName': capture.packageName,
-      'title': capture.title,
-      'body': capture.body,
-      'postedAt': capture.postedAt.millisecondsSinceEpoch,
-    });
+  'packageName': capture.packageName,
+  'title': capture.title,
+  'body': capture.body,
+  'postedAt': capture.postedAt.millisecondsSinceEpoch,
+});

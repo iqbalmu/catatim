@@ -26,6 +26,15 @@ class AppSettings extends Table {
   Set<Column> get primaryKey => {key};
 }
 
+/// Dompet/akun: bank, e-wallet, atau tunai.
+class Accounts extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text().unique()();
+  TextColumn get kind => textEnum<AccountKind>()();
+  IntColumn get colorIndex => integer()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
 /// Semua transaksi tercatat (hasil capture notifikasi maupun manual).
 class Transactions extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -42,7 +51,22 @@ class Transactions extends Table {
   TextColumn get rawTitle => text().nullable()();
   TextColumn get rawBody => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
-  IntColumn get categoryId => integer().nullable().references(Categories, #id)();
+  IntColumn get categoryId =>
+      integer().nullable().references(Categories, #id)();
+  IntColumn get accountId => integer().nullable().references(Accounts, #id)();
+}
+
+/// Bon pribadi: utang-piutang dengan seseorang.
+class Bons extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get uuid => text().unique()();
+  TextColumn get person => text()();
+  IntColumn get amount => integer()();
+  TextColumn get direction => textEnum<BonDirection>()();
+  TextColumn get note => text().nullable()();
+  DateTimeColumn get occurredAt => dateTime()();
+  DateTimeColumn get settledAt => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 /// Log notifikasi mentah untuk audit & penyetelan template parser.
@@ -57,12 +81,43 @@ class CaptureLogs extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
-@DriftDatabase(tables: [Transactions, CaptureLogs, Categories, AppSettings])
+/// Aturan capture buatan pengguna — diprioritaskan di atas seed rules.
+class UserRules extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+
+  /// Null = cocok paket mana pun; terisi = hanya paket ini.
+  TextColumn get packageName => text().nullable()();
+
+  /// Null = bebas kata kunci; terisi = harus mengandung teks ini.
+  TextColumn get matchText => text().nullable()();
+
+  /// Pola nominal custom; null = pakai pola default engine.
+  TextColumn get amountPattern => text().nullable()();
+
+  TextColumn get direction => textEnum<UserRuleDirection>()();
+  TextColumn get kind => textEnum<TxKind>()();
+  IntColumn get accountId => integer().nullable().references(Accounts, #id)();
+  BoolColumn get enabled => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+@DriftDatabase(
+  tables: [
+    Transactions,
+    CaptureLogs,
+    Categories,
+    AppSettings,
+    Accounts,
+    Bons,
+    UserRules,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -70,40 +125,74 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) {
             await m.createTable(categories);
             await m.createTable(appSettings);
-            await m.addColumn(transactions, transactions.categoryId);
+            // Device yang gagal migrasi lama bisa jadi sudah punya kolom
+            // ini (DDL ter-apply tapi user_version tak terangkat) — jangan
+            // tambah dua kali.
+            if (!await _hasColumn(m, 'transactions', 'category_id')) {
+              await m.addColumn(transactions, transactions.categoryId);
+            }
+          }
+          if (from < 3) {
+            await m.createTable(accounts);
+            await m.createTable(bons);
+            if (!await _hasColumn(m, 'transactions', 'account_id')) {
+              await m.addColumn(transactions, transactions.accountId);
+            }
+          }
+          if (from < 4) {
+            await m.createTable(userRules);
           }
         },
-        beforeOpen: (details) async {
-          await customStatement('PRAGMA foreign_keys = ON');
-          final m = createMigrator();
-          // Self-heal: perangkat yang pernah menjalankan migrasi v2 yang
-          // gagal (user_version sudah 2, tabel baru tidak jadi dibuat)
-          // disembuhkan di sini — createTable idempoten (IF NOT EXISTS).
-          await m.createTable(categories);
-          await m.createTable(appSettings);
-          // Seed kategori bawaan sekali — berlaku untuk DB baru maupun hasil
-          // upgrade v1.
-          final existing = await select(categories).get();
-          if (existing.isEmpty) {
-            await batch((b) => b.insertAll(categories, defaultCategoryRows()));
-          }
-          // Backfill kategori default untuk baris lama yang belum punya —
-          // idempoten (hanya category_id IS NULL).
-          for (final entry in <String, List<String>>{
-            'Transfer': ['transfer', 'topup', 'withdrawal'],
-            'Belanja': ['payment'],
-            'Lainnya': ['other'],
-          }.entries) {
-            await customStatement(
-              'UPDATE transactions SET category_id = '
-              '(SELECT id FROM categories WHERE name = ?) '
-              'WHERE category_id IS NULL AND kind IN '
-              "(${entry.value.map((_) => '?').join(', ')})",
-              [entry.key, ...entry.value],
-            );
-          }
-        },
-      );
+    beforeOpen: (details) async {
+      await customStatement('PRAGMA foreign_keys = ON');
+      final m = createMigrator();
+      // Self-heal idempoten: buat ulang tabel yang hilang (IF NOT
+      // EXISTS) — menyembuhkan device yang gagal migrasi di tengah jalan.
+      await m.createTable(categories);
+      await m.createTable(appSettings);
+      await m.createTable(accounts);
+      await m.createTable(bons);
+      await m.createTable(userRules);
+      // Seed kategori bawaan sekali — berlaku untuk DB baru maupun hasil
+      // upgrade.
+      final existing = await select(categories).get();
+      if (existing.isEmpty) {
+        await batch((b) => b.insertAll(categories, defaultCategoryRows()));
+      }
+      // Seed akun bawaan sekali.
+      final existingAccounts = await select(accounts).get();
+      if (existingAccounts.isEmpty) {
+        await batch((b) => b.insertAll(accounts, defaultAccountRows()));
+      }
+      // Backfill kategori default untuk baris lama yang belum punya —
+      // idempoten (hanya category_id IS NULL).
+      for (final entry in <String, List<String>>{
+        'Transfer': ['transfer', 'topup', 'withdrawal'],
+        'Belanja': ['payment'],
+        'Lainnya': ['other'],
+      }.entries) {
+        await customStatement(
+          'UPDATE transactions SET category_id = '
+          '(SELECT id FROM categories WHERE name = ?) '
+          'WHERE category_id IS NULL AND kind IN '
+          "(${entry.value.map((_) => '?').join(', ')})",
+          [entry.key, ...entry.value],
+        );
+      }
+      // Backfill akun dari bank_id lama — idempoten.
+      for (final entry in <String, String>{
+        'blu': 'blu by BCA',
+        'nagari': 'Bank Nagari',
+      }.entries) {
+        await customStatement(
+          'UPDATE transactions SET account_id = '
+          '(SELECT id FROM accounts WHERE name = ?) '
+          'WHERE account_id IS NULL AND bank_id = ?',
+          [entry.value, entry.key],
+        );
+      }
+    },
+  );
 }
 
 const List<String> defaultCategoryNames = [
@@ -119,20 +208,34 @@ const List<String> defaultCategoryNames = [
 ];
 
 List<CategoriesCompanion> defaultCategoryRows() => [
-      for (var i = 0; i < defaultCategoryNames.length; i++)
-        CategoriesCompanion.insert(
-          name: defaultCategoryNames[i],
-          colorIndex: i,
-        ),
-    ];
+  for (var i = 0; i < defaultCategoryNames.length; i++)
+    CategoriesCompanion.insert(name: defaultCategoryNames[i], colorIndex: i),
+];
+
+const List<({String name, AccountKind kind})> defaultAccounts = [
+  (name: 'blu by BCA', kind: AccountKind.bank),
+  (name: 'Bank Nagari', kind: AccountKind.bank),
+  (name: 'Tunai', kind: AccountKind.cash),
+];
+
+List<AccountsCompanion> defaultAccountRows() => [
+  for (var i = 0; i < defaultAccounts.length; i++)
+    AccountsCompanion.insert(
+      name: defaultAccounts[i].name,
+      kind: defaultAccounts[i].kind,
+      colorIndex: i,
+    ),
+];
 
 /// Menerapkan backup yang di-stage oleh layar Backup (jika ada).
 ///
 /// Dipanggil di main() SEBELUM database dibuka: mengganti file DB dengan
 /// hasil restore pilihan user.
 Future<void> applyPendingRestore() async {
-  final marker = File('${(await getApplicationDocumentsDirectory()).path}/'
-      'restore_pending');
+  final marker = File(
+    '${(await getApplicationDocumentsDirectory()).path}/'
+    'restore_pending',
+  );
   if (!marker.existsSync()) return;
   final dbFile = await currentDatabaseFile();
   if (dbFile.existsSync()) await dbFile.delete();
@@ -140,13 +243,25 @@ Future<void> applyPendingRestore() async {
     final side = File('${dbFile.path}$suffix');
     if (side.existsSync()) await side.delete();
   }
-  final staging = File('${(await getTemporaryDirectory()).path}/'
-      'restore_staging.sqlite');
+  final staging = File(
+    '${(await getTemporaryDirectory()).path}/'
+    'restore_staging.sqlite',
+  );
   if (staging.existsSync()) {
     await staging.copy(dbFile.path);
     await staging.delete();
   }
   await marker.delete();
+}
+
+Future<bool> _hasColumn(Migrator m, String table, String column) async {
+  final rows = await m.database
+      .customSelect(
+        'SELECT name FROM pragma_table_info(?)',
+        variables: [Variable.withString(table)],
+      )
+      .get();
+  return rows.any((r) => r.data['name'] == column);
 }
 
 /// Lokasi file DB aktif — dipakai openAppDatabase & layar Backup.
@@ -182,9 +297,10 @@ Future<String> _passphrase() async {
   final existing = await storage.read(key: 'db_passphrase');
   if (existing != null) return existing;
   final random = Random.secure();
-  final generated = List.generate(32, (_) => random.nextInt(256))
-      .map((b) => b.toRadixString(16).padLeft(2, '0'))
-      .join();
+  final generated = List.generate(
+    32,
+    (_) => random.nextInt(256),
+  ).map((b) => b.toRadixString(16).padLeft(2, '0')).join();
   await storage.write(key: 'db_passphrase', value: generated);
   return generated;
 }

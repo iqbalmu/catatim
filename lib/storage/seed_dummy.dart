@@ -1,0 +1,239 @@
+import 'package:drift/drift.dart' as drift;
+import 'package:flutter/foundation.dart';
+
+import '../models.dart';
+import 'database.dart';
+import 'repository.dart';
+
+/// Isi data contoh supaya emulator/demo langsung hidup.
+///
+/// Hanya berjalan di debug build DAN saat database masih kosong —
+/// rilis publik maupun database berisi data tidak akan tersentuh.
+Future<void> seedDummyIfEmpty(AppDatabase db, LedgerRepository repo) async {
+  if (!kDebugMode) return;
+  final existing = await db.select(db.transactions).get();
+  if (existing.isNotEmpty) return;
+
+  final cats = await repo.getCategories();
+  if (cats.isEmpty) return;
+  int cat(String name) => cats.firstWhere((c) => c.name == name).id;
+
+  final now = DateTime.now();
+  DateTime at(int dayAgo, int hour, int minute) =>
+      DateTime(now.year, now.month, now.day - dayAgo, hour, minute);
+
+  TransactionsCompanion tx(
+    DateTime when,
+    int amount,
+    Direction direction,
+    TxKind kind,
+    String category,
+    String counterparty,
+    TxSource source,
+  ) => TransactionsCompanion.insert(
+    uuid: newUuid(),
+    bankId: source == TxSource.notification ? 'blu' : 'manual',
+    kind: kind,
+    direction: direction,
+    amount: amount,
+    counterparty: drift.Value(counterparty),
+    occurredAt: when,
+    source: source,
+    categoryId: drift.Value(cat(category)),
+  );
+
+  final rows = <TransactionsCompanion>[
+    // Hari ini
+    tx(
+      at(0, 7, 45),
+      18000,
+      Direction.outgoing,
+      TxKind.payment,
+      'Makanan',
+      'Kopi Kenangan',
+      TxSource.manual,
+    ),
+    tx(
+      at(0, 12, 30),
+      22000,
+      Direction.outgoing,
+      TxKind.payment,
+      'Makanan',
+      'Warung Nasi Bu Sri',
+      TxSource.manual,
+    ),
+    // Kemarin
+    tx(
+      at(1, 8, 10),
+      50000,
+      Direction.outgoing,
+      TxKind.payment,
+      'Transportasi',
+      'Pertamax 2L',
+      TxSource.notification,
+    ),
+    tx(
+      at(1, 19, 5),
+      75000,
+      Direction.outgoing,
+      TxKind.payment,
+      'Makanan',
+      'Ayam Geprek Bakar',
+      TxSource.manual,
+    ),
+    tx(
+      at(1, 20, 0),
+      2500000,
+      Direction.incoming,
+      TxKind.transfer,
+      'Transfer',
+      'Proyek desain logo',
+      TxSource.manual,
+    ),
+    // 3 hari lalu
+    tx(
+      at(3, 9, 0),
+      35000,
+      Direction.outgoing,
+      TxKind.payment,
+      'Transportasi',
+      'Gojek ke kantor',
+      TxSource.manual,
+    ),
+    tx(
+      at(3, 15, 40),
+      68000,
+      Direction.outgoing,
+      TxKind.payment,
+      'Tagihan',
+      'Pulsa & paket data',
+      TxSource.manual,
+    ),
+    // 5 hari lalu
+    tx(
+      at(5, 10, 20),
+      125000,
+      Direction.outgoing,
+      TxKind.payment,
+      'Belanja',
+      'Indomaret bulanan',
+      TxSource.manual,
+    ),
+    tx(
+      at(5, 16, 0),
+      30000,
+      Direction.outgoing,
+      TxKind.topup,
+      'Transfer',
+      'Top up bluSaving',
+      TxSource.notification,
+    ),
+    // 7 hari lalu
+    tx(
+      at(7, 11, 0),
+      45000,
+      Direction.outgoing,
+      TxKind.payment,
+      'Hiburan',
+      'Netflix',
+      TxSource.manual,
+    ),
+    tx(
+      at(7, 18, 30),
+      60000,
+      Direction.outgoing,
+      TxKind.payment,
+      'Makanan',
+      'Sate Ayam Pak Kusno',
+      TxSource.manual,
+    ),
+    // 10 hari lalu
+    tx(
+      at(10, 9, 15),
+      8500000,
+      Direction.incoming,
+      TxKind.transfer,
+      'Gaji',
+      'Gaji bulanan',
+      TxSource.manual,
+    ),
+    tx(
+      at(10, 14, 0),
+      500000,
+      Direction.outgoing,
+      TxKind.payment,
+      'Tagihan',
+      'Listrik PLN',
+      TxSource.manual,
+    ),
+    // 14 hari lalu
+    tx(
+      at(14, 13, 0),
+      90000,
+      Direction.outgoing,
+      TxKind.payment,
+      'Kesehatan',
+      'Apotek Kimia Farma',
+      TxSource.manual,
+    ),
+    tx(
+      at(14, 17, 45),
+      55000,
+      Direction.outgoing,
+      TxKind.payment,
+      'Makanan',
+      'Bakso Pak Mahmud',
+      TxSource.manual,
+    ),
+    // 20 hari lalu
+    tx(
+      at(20, 10, 0),
+      200000,
+      Direction.outgoing,
+      TxKind.payment,
+      'Belanja',
+      'Shopee: rak sepatu',
+      TxSource.manual,
+    ),
+    tx(
+      at(20, 20, 15),
+      40000,
+      Direction.outgoing,
+      TxKind.withdrawal,
+      'Transfer',
+      'Tarik tunai ATM',
+      TxSource.manual,
+    ),
+    // 25 hari lalu
+    tx(
+      at(25, 12, 0),
+      120000,
+      Direction.outgoing,
+      TxKind.payment,
+      'Hiburan',
+      'Nonton bioskop',
+      TxSource.manual,
+    ),
+    tx(
+      at(25, 19, 0),
+      1000000,
+      Direction.incoming,
+      TxKind.transfer,
+      'Transfer',
+      'Bayaran freelance artikel',
+      TxSource.manual,
+    ),
+  ];
+
+  await db.batch((b) => b.insertAll(db.transactions, rows));
+
+  // Satu contoh capture mentah supaya Capture Log tidak kosong.
+  await repo.recordUnparsedCapture(
+    RawCapture(
+      packageName: 'com.bcadigital.blu',
+      title: 'blu by BCA',
+      body: 'Penambahan dana ke bluSaving sisa Rp 2.000 berhasil',
+      postedAt: now,
+    ),
+  );
+}

@@ -6,13 +6,7 @@ import '../storage/repository.dart';
 /// Event yang memberi XP.
 enum XpEvent { capture, manualAdd, reclassify }
 
-const List<String> kLevelNames = [
-  'Jajan',
-  'Hemat',
-  'Nabung',
-  'Aman',
-  'Sultan',
-];
+const List<String> kLevelNames = ['Jajan', 'Hemat', 'Nabung', 'Aman', 'Sultan'];
 
 /// Batas XP untuk masuk level ke-i (index sama dengan kLevelNames).
 const List<int> kLevelThresholds = [0, 50, 150, 350, 700];
@@ -78,18 +72,20 @@ class ProgressService extends ChangeNotifier {
   bool _celebrating = false;
 
   Future<void> refresh() async {
-    final xp =
-        int.tryParse(await _repo.getSetting(_kXp) ?? '') ?? 0;
+    final xp = int.tryParse(await _repo.getSetting(_kXp) ?? '') ?? 0;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final counts = await _repo
-        .txCountByDaySince(today.subtract(const Duration(days: 70)));
+    final counts = await _repo.txCountByDaySince(
+      today.subtract(const Duration(days: 70)),
+    );
 
     final recordedToday = (counts[today] ?? 0) > 0;
 
     // Streak: berjalan mundur dari hari ini (atau kemarin, bila hari ini
     // belum dicatat — belum mencatat hari ini bukan putus).
-    var cursor = recordedToday ? today : today.subtract(const Duration(days: 1));
+    var cursor = recordedToday
+        ? today
+        : today.subtract(const Duration(days: 1));
     var streak = 0;
     while ((counts[cursor] ?? 0) > 0) {
       streak++;
@@ -99,10 +95,10 @@ class ProgressService extends ChangeNotifier {
     final mood = _celebrating
         ? MascotMood.celebrate
         : recordedToday
-            ? MascotMood.happy
-            : streak > 0
-                ? MascotMood.idle
-                : MascotMood.sleepy;
+        ? MascotMood.happy
+        : streak > 0
+        ? MascotMood.idle
+        : MascotMood.sleepy;
 
     latest = GameProgress(
       xp: xp,
@@ -118,8 +114,7 @@ class ProgressService extends ChangeNotifier {
   /// Beri XP untuk satu event, perbarui mood, dan tandai perayaan yang
   /// layak (level up / milestone streak).
   Future<void> award(XpEvent event) async {
-    final xpBefore =
-        int.tryParse(await _repo.getSetting(_kXp) ?? '') ?? 0;
+    final xpBefore = int.tryParse(await _repo.getSetting(_kXp) ?? '') ?? 0;
     final newXp = xpBefore + _xpFor(event);
     await _repo.setSetting(_kXp, '$newXp');
 
@@ -128,8 +123,7 @@ class ProgressService extends ChangeNotifier {
 
     final levelBefore = _levelFor(xpBefore);
     final levelAfter = _levelFor(newXp);
-    final seen =
-        int.tryParse(await _repo.getSetting(_kLevelSeen) ?? '') ?? 0;
+    final seen = int.tryParse(await _repo.getSetting(_kLevelSeen) ?? '') ?? 0;
 
     if (levelAfter.index > levelBefore.index && levelAfter.index > seen) {
       await _repo.setSetting(_kLevelSeen, '${levelAfter.index}');
@@ -181,18 +175,17 @@ class ProgressService extends ChangeNotifier {
   }
 
   int _xpFor(XpEvent event) => switch (event) {
-        XpEvent.capture => 1,
-        XpEvent.manualAdd => 2,
-        XpEvent.reclassify => 1,
-      };
+    XpEvent.capture => 1,
+    XpEvent.manualAdd => 2,
+    XpEvent.reclassify => 1,
+  };
 
   String _moodLine(MascotMood mood, int streak) => switch (mood) {
-        MascotMood.happy =>
-          'Duit senang — kamu sudah catat hari ini! 🔥$streak hari beruntun',
-        MascotMood.idle =>
-          'Duit menunggu — catat transaksimu hari ini biar streak aman',
-        MascotMood.sleepy =>
-          'Duit mengantuk… sudah lama tidak ada catatan baru',
-        MascotMood.celebrate => 'Duit berpesta! Level naik! 🎉',
-      };
+    MascotMood.happy =>
+      'Duit senang — kamu sudah catat hari ini! 🔥$streak hari beruntun',
+    MascotMood.idle =>
+      'Duit menunggu — catat transaksimu hari ini biar streak aman',
+    MascotMood.sleepy => 'Duit mengantuk… sudah lama tidak ada catatan baru',
+    MascotMood.celebrate => 'Duit berpesta! Level naik! 🎉',
+  };
 }

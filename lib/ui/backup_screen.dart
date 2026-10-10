@@ -8,7 +8,9 @@ import 'package:share_plus/share_plus.dart';
 
 import '../storage/database.dart';
 import '../storage/repository.dart';
+import '../theme/quest.dart';
 import '../theme/tokens.dart';
+import 'quest.dart';
 
 /// Backup & restore: CSV untuk spreadsheet, file DB terenkripsi + passphrase
 /// untuk pemulihan penuh.
@@ -33,10 +35,9 @@ class _BackupScreenState extends State<BackupScreen> {
     });
   }
 
-  void _snack(String message) {
+  void _snack(String message, {IconData? icon}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    questSnack(context, message, icon: icon);
   }
 
   Future<String> _tmpPath(String name) async {
@@ -56,34 +57,37 @@ class _BackupScreenState extends State<BackupScreen> {
     try {
       await action();
     } catch (e) {
-      _snack('Gagal: $e');
+      _snack('Gagal: $e', icon: Icons.error_outline_rounded);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _exportCsv() => _run(() async {
-        final csv = await widget.repository.buildCsv();
-        final path = await _tmpPath('bukuduit-export-${_stamp()}.csv');
-        await File(path).writeAsString(csv);
-        await SharePlus.instance.share(
-          ShareParams(files: [XFile(path)], text: 'Ekspor transaksi Bukuduit'),
-        );
-      });
+    final csv = await widget.repository.buildCsv();
+    final path = await _tmpPath('bukuduit-export-${_stamp()}.csv');
+    await File(path).writeAsString(csv);
+    await SharePlus.instance.share(
+      ShareParams(files: [XFile(path)], text: 'Ekspor transaksi Bukuduit'),
+    );
+  });
 
   Future<void> _backupDb() => _run(() async {
-        await widget.repository.checkpoint();
-        final dbFile = await currentDatabaseFile();
-        final path = await _tmpPath('bukuduit-backup-${_stamp()}.sqlite');
-        await dbFile.copy(path);
-        await SharePlus.instance.share(
-          ShareParams(
-            files: [XFile(path)],
-            text: 'Backup database Bukuduit (terenkripsi)',
-          ),
-        );
-        _snack('Backup dibagikan — simpan juga passphrase-nya!');
-      });
+    await widget.repository.checkpoint();
+    final dbFile = await currentDatabaseFile();
+    final path = await _tmpPath('bukuduit-backup-${_stamp()}.sqlite');
+    await dbFile.copy(path);
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(path)],
+        text: 'Backup database Bukuduit (terenkripsi)',
+      ),
+    );
+    _snack(
+      'Backup dibagikan — simpan juga passphrase-nya!',
+      icon: Icons.backup_outlined,
+    );
+  });
 
   Future<void> _restore() async {
     final picked = await openFile(
@@ -93,30 +97,31 @@ class _BackupScreenState extends State<BackupScreen> {
     );
     if (!mounted) return;
     if (picked == null) return;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Pulihkan backup?'),
-        content: Text(
-          'Semua data saat ini akan DIGANTI dengan isi file '
-          '"${picked.name}". App akan menutup sendiri — buka lagi setelah itu.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Pulihkan'),
-          ),
-        ],
+    final confirmed = await showQuestDialog<bool>(
+      context,
+      title: 'Pulihkan backup?',
+      content: Text(
+        'Semua data saat ini akan DIGANTI dengan isi file "${picked.name}". '
+        'App akan menutup sendiri — buka lagi setelah itu.',
+        style: context.qBody(),
       ),
+      actions: [
+        QuestButton(
+          label: 'Batal',
+          tone: QuestTone.secondary,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        QuestButton(
+          label: 'Pulihkan',
+          icon: Icons.restore_rounded,
+          tone: QuestTone.danger,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
     );
     if (confirmed != true) return;
     await _run(() async {
       final dir = await getTemporaryDirectory();
-      // Stage di temp; main() akan memindahkannya sebelum DB dibuka.
       await File(picked.path).copy('${dir.path}/restore_staging.sqlite');
       final docs = await getApplicationDocumentsDirectory();
       File('${docs.path}/restore_pending').writeAsStringSync('1');
@@ -129,107 +134,170 @@ class _BackupScreenState extends State<BackupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Backup & pulihkan')),
+      backgroundColor: context.q.bg,
+      appBar: const QuestHeader(title: 'Backup & pulihkan', showBack: true),
       body: ListView(
-        padding: const EdgeInsets.all(Spacing.m),
+        padding: const EdgeInsets.fromLTRB(
+          Spacing.m,
+          Spacing.s,
+          Spacing.m,
+          Spacing.m,
+        ),
         children: [
-          if (_busy) const LinearProgressIndicator(),
-          const SizedBox(height: Spacing.m),
-          Text('Ekspor', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: Spacing.s),
-          Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.table_chart_outlined),
-                  title: const Text('Ekspor CSV'),
-                  subtitle:
-                      const Text('Semua transaksi, siap dibuka di spreadsheet'),
-                  onTap: _busy ? null : _exportCsv,
-                ),
-              ],
+          if (_busy)
+            const Padding(
+              padding: EdgeInsets.only(bottom: Spacing.m),
+              child: LinearProgressIndicator(),
+            ),
+          const QuestSectionHeader(title: 'Ekspor'),
+          QuestCard(
+            padding: EdgeInsets.zero,
+            child: _ActionRow(
+              icon: Icons.table_chart_outlined,
+              title: 'Ekspor CSV',
+              subtitle: 'Semua transaksi, siap dibuka di spreadsheet',
+              onTap: _busy ? null : _exportCsv,
             ),
           ),
-          const SizedBox(height: Spacing.l),
-          Text('Backup penuh (terenkripsi)',
-              style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: Spacing.s),
-          Card(
+          const QuestSectionHeader(title: 'Backup penuh (terenkripsi)'),
+          QuestCard(
+            padding: EdgeInsets.zero,
             child: Column(
               children: [
-                ListTile(
-                  leading: const Icon(Icons.backup_outlined),
-                  title: const Text('Buat backup database'),
-                  subtitle: const Text(
-                      'File .sqlite terenkripsi — dibagikan via share sheet'),
+                _ActionRow(
+                  icon: Icons.backup_outlined,
+                  title: 'Buat backup database',
+                  subtitle:
+                      'File .sqlite terenkripsi — dibagikan via share sheet',
                   onTap: _busy ? null : _backupDb,
                 ),
-                ListTile(
-                  leading: const Icon(Icons.restore_outlined),
-                  title: const Text('Pulihkan dari backup'),
-                  subtitle: const Text('Pilih file .sqlite hasil backup'),
+                Divider(
+                  height: 1,
+                  thickness: 2,
+                  color: context.q.line.withValues(alpha: 0.35),
+                ),
+                _ActionRow(
+                  icon: Icons.restore_outlined,
+                  title: 'Pulihkan dari backup',
+                  subtitle: 'Pilih file .sqlite hasil backup',
                   onTap: _busy ? null : _restore,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: Spacing.l),
-          Card(
-            color: Theme.of(context).colorScheme.errorContainer,
-            child: Padding(
-              padding: const EdgeInsets.all(Spacing.m),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.key_outlined),
-                      const SizedBox(width: Spacing.s),
-                      Expanded(
-                        child: Text(
-                          'Passphrase database',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onErrorContainer),
-                        ),
+          const SizedBox(height: Spacing.m),
+          Container(
+            padding: const EdgeInsets.all(Spacing.m),
+            decoration: BoxDecoration(
+              color: context.q.bad.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: context.q.line, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: context.q.shadow,
+                  offset: const Offset(3, 3),
+                  blurRadius: 0,
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.key_outlined, color: context.q.bad),
+                    const SizedBox(width: Spacing.s),
+                    Expanded(
+                      child: Text(
+                        'Passphrase database',
+                        style: context.qTitle(15),
                       ),
-                      IconButton(
-                        tooltip: 'Salin passphrase',
-                        icon: const Icon(Icons.copy_all_outlined),
-                        onPressed: _passphrase == null
-                            ? null
-                            : () {
-                                Clipboard.setData(
-                                    ClipboardData(text: _passphrase!));
-                                _snack('Passphrase disalin');
-                              },
+                    ),
+                    QuestIconButton(
+                      icon: Icons.copy_all_outlined,
+                      tooltip: 'Salin passphrase',
+                      onPressed: _passphrase == null
+                          ? null
+                          : () {
+                              Clipboard.setData(
+                                ClipboardData(text: _passphrase!),
+                              );
+                              _snack(
+                                'Passphrase disalin',
+                                icon: Icons.copy_all_outlined,
+                              );
+                            },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Spacing.s),
+                SelectableText(
+                  _passphrase ?? 'memuat…',
+                  style: context
+                      .qBody(13)
+                      .copyWith(
+                        fontFeatures: const [FontFeature.tabularFigures()],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: Spacing.s),
-                  SelectableText(
-                    _passphrase ?? 'memuat…',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color:
-                            Theme.of(context).colorScheme.onErrorContainer),
-                  ),
-                  const SizedBox(height: Spacing.s),
-                  Text(
-                    'WAJIB disimpan terpisah dari file backup. Backup tanpa '
-                    'passphrase ini tidak bisa dibuka.',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color:
-                            Theme.of(context).colorScheme.onErrorContainer),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: Spacing.s),
+                Text(
+                  'WAJIB disimpan terpisah dari file backup. Backup tanpa '
+                  'passphrase ini tidak bisa dibuka.',
+                  style: context.qSmall(),
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ActionRow extends StatelessWidget {
+  const _ActionRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return QuestPress(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(Spacing.m),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: context.q.honey.withValues(alpha: 0.25),
+                shape: BoxShape.circle,
+                border: Border.all(color: context.q.line, width: 2),
+              ),
+              child: Icon(icon, color: context.q.text),
+            ),
+            const SizedBox(width: Spacing.m),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: context.qTitle(15)),
+                  Text(subtitle, style: context.qSmall()),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: context.q.muted),
+          ],
+        ),
       ),
     );
   }

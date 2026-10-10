@@ -6,11 +6,59 @@ import '../core/money.dart';
 import '../models.dart';
 import 'rule_set.dart';
 
+/// Aturan buatan pengguna yang sudah dipetakan (dari DB) — diprioritaskan
+/// di atas seed rules.
+class UserRuleDef {
+  const UserRuleDef({
+    required this.id,
+    required this.name,
+    this.packageName,
+    this.matchText,
+    this.amountPattern,
+    required this.direction,
+    required this.kind,
+    this.accountId,
+  });
+
+  final int id;
+  final String name;
+
+  /// Null = cocok paket mana pun.
+  final String? packageName;
+
+  /// Null = bebas kata kunci; terisi = title+body harus mengandung ini
+  /// (case-insensitive).
+  final String? matchText;
+  final String? amountPattern;
+  final Direction direction;
+  final TxKind kind;
+  final int? accountId;
+
+  bool matches(String rawPackageName, String lower) {
+    final pkg = packageName;
+    if (pkg != null && pkg != rawPackageName) {
+      return false;
+    }
+    final text = matchText?.toLowerCase();
+    if (text != null && text.isNotEmpty && !lower.contains(text)) {
+      return false;
+    }
+    return true;
+  }
+}
+
 /// Mesin pencocokan notifikasi → draf transaksi berbasis template JSON.
 class RuleEngine {
   RuleEngine(this._ruleSet);
 
   final RuleSet _ruleSet;
+
+  /// Aturan pengguna — selalu dicoba sebelum seed rules.
+  List<UserRuleDef> _userRules = const [];
+
+  void setUserRules(List<UserRuleDef> rules) {
+    _userRules = List.unmodifiable(rules);
+  }
 
   /// Pola nominal default, dicoba berurutan:
   /// 1. "Rp" atau "Rp." diikuti angka bebas (paling spesifik).
@@ -37,6 +85,24 @@ class RuleEngine {
     final text = '$title $body';
     final lower = text.toLowerCase();
 
+    // 1) Aturan pengguna — prioritas tertinggi.
+    for (final rule in _userRules) {
+      if (!rule.matches(packageName, lower)) continue;
+      final amount = _extractAmount(rule.amountPattern, text);
+      if (amount == null) continue;
+      return ParsedDraft(
+        bankId: 'user',
+        bankName: rule.name,
+        ruleName: rule.name,
+        kind: rule.kind,
+        direction: rule.direction,
+        amount: amount,
+        counterparty: null,
+        accountId: rule.accountId,
+      );
+    }
+
+    // 2) Seed rules.
     final bank = _detectBank(packageName, lower);
     final candidates = <BankRules>[
       ?bank,
@@ -84,9 +150,12 @@ class RuleEngine {
   }
 
   int? _extractAmount(String? customPattern, String text) {
+    // Pola custom dari aturan pengguna bersifat eksklusif: bila gagal
+    // mencocokkan, JANGAN jatuh ke pola default — salah-potong lebih
+    // berbahaya daripada tidak tercatat.
     final patterns = [
       ?customPattern,
-      ..._defaultAmountPatterns,
+      if (customPattern == null) ..._defaultAmountPatterns,
     ];
     for (final pattern in patterns) {
       final match = RegExp(pattern, caseSensitive: false).firstMatch(text);

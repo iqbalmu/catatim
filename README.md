@@ -21,14 +21,34 @@ Notifikasi bank (push)
 Prinsip: **lapisan native hanya transport**, seluruh logika (parser, dedup,
 penyimpanan) di Dart — unit-testable tanpa device.
 
+## Fitur
+
+- **Catat manual**: tombol Catat / FAB kontekstual — nominal, arah
+  masuk/keluar, kategori (+ tambah kategori), jenis, tanggal, akun,
+  dan pihak/keterangan. Tap transaksi untuk ubah/hapus.
+- **Capture otomatis**: notifikasi bank/e-wallet → parser rules per bank →
+  kategori + akun otomatis (blu → blu by BCA, nagari → Bank Nagari).
+- **Akun**: blu by BCA, Bank Nagari, Tunai (bawaan) + tambah sendiri
+  (Bank/E-wallet/Tunai). Filter chips di Beranda; sheet transaksi punya
+  picker akun.
+- **Bon**: tab utang-piutang — tambah/edit, tandai lunas, total piutang
+  vs utang yang belum lunas. Murni lokal, tanpa pengingat server.
+- **Bukuduit Quest**: maskot Duit (4 mood), streak harian, XP
+  (capture +1, manual +2, reklasifikasi +1), level Jajan→Sultan.
+- **Laporan**: donut kategori interaktif + tren 6 bulan.
+- **Backup**: ekspor CSV + backup `.sqlite` terenkripsi (simpan
+  passphrase terpisah!) + restore.
+
 ## Struktur
 
 | Path | Isi |
 |---|---|
 | `lib/rules/` | Rules engine + seed rules (`assets/rules/seed_rules.json`) |
 | `lib/capture/` | Channel native + pipeline capture→parse→simpan |
-| `lib/storage/` | Drift schema + repository (dedup 120 detik) |
-| `lib/ui/` | Beranda, capture log, input manual |
+| `lib/storage/` | Drift schema v3 + repository (dedup 120 detik) |
+| `lib/ui/` | Beranda, Laporan, Bon, capture log, backup |
+| `lib/game/` | Maskot, hero card, XP/streak/level |
+| `lib/theme/` + `lib/ui/quest.dart` | Sistem desain Quest (bukan default Material) |
 | `android/.../MainActivity.kt` | MethodChannel/EventChannel + `NotificationCatcher` |
 
 ## Menjalankan

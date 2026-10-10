@@ -7,19 +7,17 @@ class RuleSet {
   final int version;
   final List<BankRules> banks;
 
-  late final Map<String, BankRules> _byId = {
-    for (final b in banks) b.id: b,
-  };
+  late final Map<String, BankRules> _byId = {for (final b in banks) b.id: b};
 
   BankRules? bank(String id) => _byId[id];
 
   factory RuleSet.fromJson(Map<String, dynamic> json) => RuleSet(
-        version: (json['version'] as num?)?.toInt() ?? 1,
-        banks: [
-          for (final b in json['banks'] as List<dynamic>? ?? const [])
-            BankRules.fromJson(b as Map<String, dynamic>),
-        ],
-      );
+    version: (json['version'] as num?)?.toInt() ?? 1,
+    banks: [
+      for (final b in json['banks'] as List<dynamic>? ?? const [])
+        BankRules.fromJson(b as Map<String, dynamic>),
+    ],
+  );
 }
 
 /// Aturan milik satu bank/e-wallet.
@@ -44,19 +42,19 @@ class BankRules {
   final List<TemplateRule> templates;
 
   factory BankRules.fromJson(Map<String, dynamic> json) => BankRules(
-        id: json['id'] as String,
-        displayName: json['displayName'] as String? ?? json['id'] as String,
-        packageNames: _strings(json['packageNames']),
-        keywords: _strings(json['keywords']).map((e) => e.toLowerCase()).toList(),
-        templates: [
-          for (final t in json['templates'] as List<dynamic>? ?? const [])
-            TemplateRule.fromJson(t as Map<String, dynamic>),
-        ],
-      );
+    id: json['id'] as String,
+    displayName: json['displayName'] as String? ?? json['id'] as String,
+    packageNames: _strings(json['packageNames']),
+    keywords: _strings(json['keywords']).map((e) => e.toLowerCase()).toList(),
+    templates: [
+      for (final t in json['templates'] as List<dynamic>? ?? const [])
+        TemplateRule.fromJson(t as Map<String, dynamic>),
+    ],
+  );
 
   static List<String> _strings(Object? value) => [
-        for (final v in value as List<dynamic>? ?? const []) v as String,
-      ];
+    for (final v in value as List<dynamic>? ?? const []) v as String,
+  ];
 }
 
 /// Satu template: kapan berlaku, arah/jenisnya, dan pola ekstraksi.
@@ -105,35 +103,35 @@ class TemplateRule {
   }
 
   factory TemplateRule.fromJson(Map<String, dynamic> json) => TemplateRule(
-        name: json['name'] as String,
-        kind: txKindFromString(json['kind'] as String),
-        direction: directionFromString(json['direction'] as String),
-        matchAll: BankRules._strings(json['matchAll'])
-            .map((e) => e.toLowerCase())
-            .toList(),
-        matchAny: BankRules._strings(json['matchAny'])
-            .map((e) => e.toLowerCase())
-            .toList(),
-        notMatch: BankRules._strings(json['notMatch'])
-            .map((e) => e.toLowerCase())
-            .toList(),
-        amountPattern: json['amount'] as String?,
-        counterpartyPattern: json['counterparty'] as String?,
-        balancePattern: json['balance'] as String?,
-      );
+    name: json['name'] as String,
+    kind: txKindFromString(json['kind'] as String),
+    direction: directionFromString(json['direction'] as String),
+    matchAll: BankRules._strings(
+      json['matchAll'],
+    ).map((e) => e.toLowerCase()).toList(),
+    matchAny: BankRules._strings(
+      json['matchAny'],
+    ).map((e) => e.toLowerCase()).toList(),
+    notMatch: BankRules._strings(
+      json['notMatch'],
+    ).map((e) => e.toLowerCase()).toList(),
+    amountPattern: json['amount'] as String?,
+    counterpartyPattern: json['counterparty'] as String?,
+    balancePattern: json['balance'] as String?,
+  );
 }
 
 Direction directionFromString(String value) => switch (value) {
-      'in' => Direction.incoming,
-      'out' => Direction.outgoing,
-      _ => throw ArgumentError('direction tidak dikenal: $value'),
-    };
+  'in' => Direction.incoming,
+  'out' => Direction.outgoing,
+  _ => throw ArgumentError('direction tidak dikenal: $value'),
+};
 
 TxKind txKindFromString(String value) => switch (value) {
-      'transfer' => TxKind.transfer,
-      'payment' => TxKind.payment,
-      'topup' => TxKind.topup,
-      'withdrawal' => TxKind.withdrawal,
-      'other' => TxKind.other,
-      _ => throw ArgumentError('kind tidak dikenal: $value'),
-    };
+  'transfer' => TxKind.transfer,
+  'payment' => TxKind.payment,
+  'topup' => TxKind.topup,
+  'withdrawal' => TxKind.withdrawal,
+  'other' => TxKind.other,
+  _ => throw ArgumentError('kind tidak dikenal: $value'),
+};

@@ -12,8 +12,7 @@
           "name": "tambah dana blusaving",
           "kind": "topup",
           "direction": "in",
-          "matchAll": ["penambahan dana"],
-          "amount": "sebesar\\s*(?:rp\\.?\\s*)?([\\d][\\d.,]*)"
+          "matchAll": ["penambahan dana"]
         },
         {
           "name": "transfer masuk",

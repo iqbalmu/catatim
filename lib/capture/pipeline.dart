@@ -45,9 +45,9 @@ class CapturePipeline extends ChangeNotifier {
       // drain gagal (channel belum siap) — live stream tetap dipasang.
     }
     _subscription = channel.stream().listen(
-          (raw) => _handle(raw),
-          onError: (Object _) {},
-        );
+      (raw) => _handle(raw),
+      onError: (Object _) {},
+    );
   }
 
   Future<void> _handle(RawCapture raw) async {
@@ -62,11 +62,8 @@ class CapturePipeline extends ChangeNotifier {
         // Di luar mode pelajaran, hanya notifikasi dari sumber bank yang
         // dikenal yang dicatat — notifikasi lain (chat, dsb.) diabaikan.
         final lessonMode = await repository.getSetting(lessonModeKey) ?? '1';
-        if (lessonMode != '1' && !engine.isKnownSource(
-          raw.packageName,
-          raw.title,
-          raw.body,
-        )) {
+        if (lessonMode != '1' &&
+            !engine.isKnownSource(raw.packageName, raw.title, raw.body)) {
           return;
         }
         await repository.recordUnparsedCapture(raw);

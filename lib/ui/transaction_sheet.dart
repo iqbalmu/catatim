@@ -7,13 +7,10 @@ import '../game/progress.dart';
 import '../models.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
+import '../theme/quest.dart';
 import '../theme/tokens.dart';
-
-const _daysShort = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
-const _monthsShort = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-  'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
-];
+import 'quest.dart';
+import '../core/dates_id.dart';
 
 /// Sheet tambah/ubah transaksi. Mode edit bila [existing] diberikan.
 class TransactionSheet extends StatefulWidget {
@@ -34,16 +31,14 @@ class TransactionSheet extends StatefulWidget {
     TxWithCategory? existing,
     ProgressService? progress,
   }) {
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
-      ),
-      builder: (_) => Padding(
+    return showQuestSheet<void>(
+      context,
+      (context) => Padding(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: Spacing.m,
+          right: Spacing.m,
+          top: Spacing.s,
+          bottom: MediaQuery.of(context).viewInsets.bottom + Spacing.m,
         ),
         child: TransactionSheet(
           repository: repository,
@@ -68,6 +63,8 @@ class _TransactionSheetState extends State<TransactionSheet> {
   late DateTime _occurredAt;
   int? _categoryId;
   List<Category> _categories = const [];
+  int? _accountId;
+  List<Account> _accounts = const [];
 
   bool get _isEdit => widget.existing != null;
 
@@ -79,21 +76,28 @@ class _TransactionSheetState extends State<TransactionSheet> {
     _kind = tx?.kind ?? TxKind.payment;
     _occurredAt = tx?.occurredAt ?? DateTime.now();
     _categoryId = tx?.categoryId;
+    _accountId = tx?.accountId;
     if (tx != null) {
       _amountCtrl.text = tx.amount.toString();
       _counterpartyCtrl.text = tx.counterparty ?? '';
     }
     _loadCategories();
+    _loadAccounts();
   }
 
   Future<void> _loadCategories() async {
     final cats = await widget.repository.getCategories();
     if (!mounted) return;
     setState(() => _categories = cats);
-    // Pada transaksi baru, pre-select kategori pertama agar tak pernah kosong.
     if (!_isEdit && _categoryId == null && cats.isNotEmpty) {
       setState(() => _categoryId = cats.first.id);
     }
+  }
+
+  Future<void> _loadAccounts() async {
+    final accs = await widget.repository.getAccounts();
+    if (!mounted) return;
+    setState(() => _accounts = accs);
   }
 
   @override
@@ -114,37 +118,39 @@ class _TransactionSheetState extends State<TransactionSheet> {
       final t = TimeOfDay.fromDateTime(_occurredAt);
       setState(() {
         _occurredAt = DateTime(
-          picked.year, picked.month, picked.day, t.hour, t.minute,
+          picked.year,
+          picked.month,
+          picked.day,
+          t.hour,
+          t.minute,
         );
       });
     }
   }
 
   Future<void> _addCategory() async {
-    final name = await showDialog<String>(
-      context: context,
-      builder: (context) {
-        final ctrl = TextEditingController();
-        return AlertDialog(
-          title: const Text('Kategori baru'),
-          content: TextField(
-            controller: ctrl,
-            autofocus: true,
-            textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(labelText: 'Nama kategori'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Batal'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, ctrl.text),
-              child: const Text('Tambah'),
-            ),
-          ],
-        );
-      },
+    final ctrl = TextEditingController();
+    final name = await showQuestDialog<String>(
+      context,
+      title: 'Kategori baru',
+      content: TextField(
+        controller: ctrl,
+        autofocus: true,
+        textCapitalization: TextCapitalization.words,
+        decoration: const InputDecoration(labelText: 'Nama kategori'),
+      ),
+      actions: [
+        QuestButton(
+          label: 'Batal',
+          tone: QuestTone.secondary,
+          onPressed: () => Navigator.pop(context),
+        ),
+        QuestButton(
+          label: 'Tambah',
+          icon: Icons.add_rounded,
+          onPressed: () => Navigator.pop(context, ctrl.text),
+        ),
+      ],
     );
     if (name == null || name.trim().isEmpty) return;
     try {
@@ -153,8 +159,10 @@ class _TransactionSheetState extends State<TransactionSheet> {
       if (mounted) setState(() => _categoryId = cat.id);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Kategori "$name" sudah ada.')),
+        questSnack(
+          context,
+          'Kategori "$name" sudah ada.',
+          icon: Icons.info_outline_rounded,
         );
       }
     }
@@ -162,8 +170,9 @@ class _TransactionSheetState extends State<TransactionSheet> {
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final amount =
-        int.tryParse(_amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''));
+    final amount = int.tryParse(
+      _amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''),
+    );
     if (amount == null || amount <= 0) return;
     final counterparty = _counterpartyCtrl.text.trim();
     await HapticFeedback.lightImpact();
@@ -178,10 +187,10 @@ class _TransactionSheetState extends State<TransactionSheet> {
           counterparty: Value(counterparty.isEmpty ? null : counterparty),
           occurredAt: Value(_occurredAt),
           categoryId: Value(_categoryId),
+          accountId: Value(_accountId),
         ),
       );
-      final categoryChanged =
-          widget.existing!.tx.categoryId != _categoryId;
+      final categoryChanged = widget.existing!.tx.categoryId != _categoryId;
       if (categoryChanged) {
         await widget.progress?.award(XpEvent.reclassify);
       }
@@ -192,6 +201,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
         kind: _kind,
         counterparty: counterparty,
         categoryId: _categoryId,
+        accountId: _accountId,
         occurredAt: _occurredAt,
       );
       await widget.progress?.award(XpEvent.manualAdd);
@@ -200,29 +210,29 @@ class _TransactionSheetState extends State<TransactionSheet> {
   }
 
   Future<void> _delete() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Hapus transaksi?'),
-        content: const Text('Tindakan ini tidak bisa dibatalkan.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Hapus'),
-          ),
-        ],
+    final confirmed = await showQuestDialog<bool>(
+      context,
+      title: 'Hapus transaksi?',
+      content: Text(
+        'Tindakan ini tidak bisa dibatalkan.',
+        style: context.qBody(),
       ),
+      actions: [
+        QuestButton(
+          label: 'Batal',
+          tone: QuestTone.secondary,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        QuestButton(
+          label: 'Hapus',
+          icon: Icons.delete_outline_rounded,
+          tone: QuestTone.danger,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
     );
     if (confirmed ?? false) {
-      await widget.repository
-          .deleteTransaction(widget.existing!.tx.id);
+      await widget.repository.deleteTransaction(widget.existing!.tx.id);
       if (mounted) Navigator.pop(context);
     }
   }
@@ -230,9 +240,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Padding(
-        padding:
-            const EdgeInsets.fromLTRB(Spacing.m, Spacing.l, Spacing.m, Spacing.m),
+      child: SingleChildScrollView(
         child: Form(
           key: _formKey,
           child: Column(
@@ -244,13 +252,13 @@ class _TransactionSheetState extends State<TransactionSheet> {
                   Expanded(
                     child: Text(
                       _isEdit ? 'Ubah transaksi' : 'Catat transaksi',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: context.qTitle(20),
                     ),
                   ),
                   if (_isEdit)
-                    IconButton(
+                    QuestIconButton(
+                      icon: Icons.delete_outline_rounded,
                       tooltip: 'Hapus',
-                      icon: const Icon(Icons.delete_outline),
                       onPressed: _delete,
                     ),
                 ],
@@ -260,53 +268,47 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 controller: _amountCtrl,
                 autofocus: !_isEdit,
                 keyboardType: TextInputType.number,
+                style: context.qDisplay(30),
                 decoration: InputDecoration(
                   labelText: 'Nominal (Rp)',
                   hintText: 'Contoh: 150000',
                   helperText: _preview,
-                  border: const OutlineInputBorder(),
                 ),
                 validator: (v) =>
-                    (int.tryParse((v ?? '').replaceAll(RegExp(r'[^0-9]'), '')) ??
-                        0) >
-                    0
-                        ? null
-                        : 'Nominal wajib diisi',
+                    (int.tryParse(
+                              (v ?? '').replaceAll(RegExp(r'[^0-9]'), ''),
+                            ) ??
+                            0) >
+                        0
+                    ? null
+                    : 'Nominal wajib diisi',
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: Spacing.m),
-              SegmentedButton<Direction>(
-                segments: const [
-                  ButtonSegment(
+              QuestSegmented<Direction>(
+                selected: _direction,
+                onChanged: (d) => setState(() => _direction = d),
+                options: const [
+                  (
                     value: Direction.outgoing,
-                    label: Text('Keluar'),
-                    icon: Icon(Icons.arrow_upward),
+                    label: 'Keluar',
+                    icon: Icons.arrow_upward_rounded,
                   ),
-                  ButtonSegment(
+                  (
                     value: Direction.incoming,
-                    label: Text('Masuk'),
-                    icon: Icon(Icons.arrow_downward),
+                    label: 'Masuk',
+                    icon: Icons.arrow_downward_rounded,
                   ),
                 ],
-                selected: {_direction},
-                onSelectionChanged: (s) =>
-                    setState(() => _direction = s.first),
               ),
               const SizedBox(height: Spacing.m),
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<int>(
                       initialValue: _categoryId,
-                      decoration: InputDecoration(
-                        labelText: 'Kategori',
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          tooltip: 'Kategori baru',
-                          icon: const Icon(Icons.add),
-                          onPressed: _addCategory,
-                        ),
-                      ),
+                      decoration: const InputDecoration(labelText: 'Kategori'),
                       items: [
                         for (final c in _categories)
                           DropdownMenuItem(
@@ -314,11 +316,17 @@ class _TransactionSheetState extends State<TransactionSheet> {
                             child: Row(
                               children: [
                                 Container(
-                                  width: 10,
-                                  height: 10,
+                                  width: 12,
+                                  height: 12,
                                   decoration: BoxDecoration(
-                                    color: SeedColors.categoryColor(c.colorIndex),
+                                    color: SeedColors.categoryColor(
+                                      c.colorIndex,
+                                    ),
                                     shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: context.q.line,
+                                      width: 1.5,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: Spacing.s),
@@ -330,15 +338,31 @@ class _TransactionSheetState extends State<TransactionSheet> {
                       onChanged: (v) => setState(() => _categoryId = v),
                     ),
                   ),
+                  const SizedBox(width: Spacing.s),
+                  QuestIconButton(
+                    icon: Icons.add_rounded,
+                    tooltip: 'Kategori baru',
+                    onPressed: _addCategory,
+                  ),
                 ],
+              ),
+              const SizedBox(height: Spacing.m),
+              DropdownButtonFormField<int>(
+                initialValue: _accountId,
+                decoration: const InputDecoration(labelText: 'Akun (opsional)'),
+                items: [
+                  for (final a in _accounts)
+                    DropdownMenuItem(
+                      value: a.id,
+                      child: Text('${a.name} · ${a.kind.label}'),
+                    ),
+                ],
+                onChanged: (v) => setState(() => _accountId = v),
               ),
               const SizedBox(height: Spacing.m),
               DropdownButtonFormField<TxKind>(
                 initialValue: _kind,
-                decoration: const InputDecoration(
-                  labelText: 'Jenis',
-                  border: OutlineInputBorder(),
-                ),
+                decoration: const InputDecoration(labelText: 'Jenis'),
                 items: [
                   for (final k in TxKind.values)
                     DropdownMenuItem(value: k, child: Text(k.label)),
@@ -346,10 +370,11 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 onChanged: (k) => setState(() => _kind = k ?? TxKind.payment),
               ),
               const SizedBox(height: Spacing.m),
-              OutlinedButton.icon(
+              QuestButton(
+                label: _dateLabel(_occurredAt),
+                icon: Icons.event_outlined,
+                tone: QuestTone.secondary,
                 onPressed: _pickDate,
-                icon: const Icon(Icons.event_outlined),
-                label: Text(_dateLabel(_occurredAt)),
               ),
               const SizedBox(height: Spacing.m),
               TextFormField(
@@ -357,15 +382,15 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 textCapitalization: TextCapitalization.words,
                 decoration: const InputDecoration(
                   labelText: 'Pihak / keterangan (opsional)',
-                  border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: Spacing.l),
-              FilledButton.icon(
+              QuestButton(
+                label: _isEdit ? 'Simpan perubahan' : 'Simpan',
+                icon: Icons.check_rounded,
                 onPressed: _save,
-                icon: const Icon(Icons.check),
-                label: Text(_isEdit ? 'Simpan perubahan' : 'Simpan'),
               ),
+              const SizedBox(height: Spacing.s),
             ],
           ),
         ),
@@ -374,15 +399,15 @@ class _TransactionSheetState extends State<TransactionSheet> {
   }
 
   String get _preview {
-    final amount =
-        int.tryParse(_amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''));
+    final amount = int.tryParse(
+      _amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''),
+    );
     if (amount == null || amount <= 0) return 'Masukkan nominal';
     return '≈ ${Money.format(amount)}';
   }
 
   String _dateLabel(DateTime dt) =>
-      '${_daysShort[dt.weekday - 1]}, ${dt.day} ${_monthsShort[dt.month - 1]} '
-      '${dt.year} · '
+      '${idFullDate(dt)} · '
       '${dt.hour.toString().padLeft(2, '0')}:'
       '${dt.minute.toString().padLeft(2, '0')}';
 }

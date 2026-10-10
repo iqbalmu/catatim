@@ -92,8 +92,11 @@ class _MascotPainter extends CustomPainter {
     final breathe = animate ? 1 + 0.03 * math.sin(t * 2 * math.pi) : 1.0;
     final bodyW = s * 0.54;
     final bodyH = s * 0.44 * breathe;
-    final bodyRect =
-        Rect.fromCenter(center: Offset(cx, bodyCy), width: bodyW, height: bodyH);
+    final bodyRect = Rect.fromCenter(
+      center: Offset(cx, bodyCy),
+      width: bodyW,
+      height: bodyH,
+    );
 
     final stroke = Paint()
       ..color = ink
@@ -134,11 +137,23 @@ class _MascotPainter extends CustomPainter {
       case MascotMood.idle:
         canvas.drawCircle(Offset(cx - eyeDx, eyeY), eyeR, dot);
         canvas.drawCircle(Offset(cx + eyeDx, eyeY), eyeR, dot);
-        _arc(canvas, Offset(cx, bodyCy + bodyH * 0.10), bodyW * 0.14, 0.25, stroke);
+        _arc(
+          canvas,
+          Offset(cx, bodyCy + bodyH * 0.10),
+          bodyW * 0.14,
+          0.25,
+          stroke,
+        );
       case MascotMood.happy:
         canvas.drawCircle(Offset(cx - eyeDx, eyeY), eyeR, dot);
         canvas.drawCircle(Offset(cx + eyeDx, eyeY), eyeR, dot);
-        _arc(canvas, Offset(cx, bodyCy + bodyH * 0.08), bodyW * 0.18, 0.7, stroke);
+        _arc(
+          canvas,
+          Offset(cx, bodyCy + bodyH * 0.08),
+          bodyW * 0.18,
+          0.7,
+          stroke,
+        );
       case MascotMood.sleepy:
         for (final dx in [-eyeDx, eyeDx]) {
           canvas.drawLine(
@@ -147,18 +162,26 @@ class _MascotPainter extends CustomPainter {
             stroke,
           );
         }
-        _arc(canvas, Offset(cx, bodyCy + bodyH * 0.16), bodyW * 0.08, -0.5, stroke);
+        _arc(
+          canvas,
+          Offset(cx, bodyCy + bodyH * 0.16),
+          bodyW * 0.08,
+          -0.5,
+          stroke,
+        );
         _drawZzz(canvas, cx + bodyW * 0.38, bodyRect.top - s * 0.06, s);
       case MascotMood.celebrate:
         for (final dx in [-eyeDx, eyeDx]) {
-          _arc(canvas, Offset(cx + dx, eyeY + eyeR * 0.6), eyeR * 1.6, 1.0, stroke,
-              flip: true);
+          _arc(
+            canvas,
+            Offset(cx + dx, eyeY + eyeR * 0.6),
+            eyeR * 1.6,
+            1.0,
+            stroke,
+            flip: true,
+          );
         }
-        canvas.drawCircle(
-          Offset(cx, bodyCy + bodyH * 0.14),
-          s * 0.035,
-          dot,
-        );
+        canvas.drawCircle(Offset(cx, bodyCy + bodyH * 0.14), s * 0.035, dot);
         // Konfeti mengorbit pelan
         final colors = Paint();
         for (var i = 0; i < 6; i++) {
@@ -176,9 +199,14 @@ class _MascotPainter extends CustomPainter {
     }
   }
 
-  void _arc(Canvas canvas, Offset center, double radius, double sweepFactor,
-      Paint stroke,
-      {bool flip = false}) {
+  void _arc(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    double sweepFactor,
+    Paint stroke, {
+    bool flip = false,
+  }) {
     final rect = Rect.fromCircle(center: center, radius: radius);
     final start = flip ? math.pi : 0.15 * math.pi;
     final sweep = math.pi * 0.7 * sweepFactor * (flip ? -1 : 1);
@@ -203,7 +231,5 @@ class _MascotPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _MascotPainter oldDelegate) =>
-      oldDelegate.mood != mood ||
-      oldDelegate.t != t ||
-      oldDelegate.ink != ink;
+      oldDelegate.mood != mood || oldDelegate.t != t || oldDelegate.ink != ink;
 }

@@ -5,12 +5,10 @@ import '../game/mascot.dart';
 import '../game/progress.dart';
 import '../models.dart';
 import '../storage/repository.dart';
+import '../theme/quest.dart';
 import '../theme/tokens.dart';
-
-const _monthsShort = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-  'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
-];
+import '../ui/quest.dart';
+import '../core/dates_id.dart';
 
 /// Hero card gaya board-game: maskot + streak + angka bulan + XP bar.
 class GameHeroCard extends StatelessWidget {
@@ -25,7 +23,6 @@ class GameHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final now = DateTime.now();
     final monthStart = DateTime(now.year, now.month);
     final monthEnd = DateTime(now.year, now.month + 1);
@@ -46,23 +43,15 @@ class GameHeroCard extends StatelessWidget {
                 outgoing += r.tx.amount;
               }
             }
-            return Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerLowest,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: SeedColors.ink, width: 2),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x333B3630),
-                    offset: Offset(3, 3),
-                    blurRadius: 0,
-                  ),
-                ],
-              ),
+            return QuestCard(
+              radius: 24,
               child: progress == null
                   ? const SizedBox(height: 96)
-                  : _Body(progress: progress, incoming: incoming, outgoing: outgoing),
+                  : _Body(
+                      progress: progress,
+                      incoming: incoming,
+                      outgoing: outgoing,
+                    ),
             );
           },
         );
@@ -85,9 +74,7 @@ class _Body extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final streakLabel = progress.streakDays > 0
-        ? '🔥${progress.streakDays}'
-        : '🔥0';
+    final hasStreak = progress.streakDays > 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,28 +83,38 @@ class _Body extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                '${_monthsShort[now.month - 1].toUpperCase()} ${now.year} · '
+                '${idMonthsShort[now.month - 1].toUpperCase()} ${now.year} · '
                 'HARI KE-${now.day}',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      letterSpacing: 2,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                style: context.qEyebrow(),
               ),
             ),
-            Icon(
-              Icons.local_fire_department,
-              size: 16,
-              color: progress.streakDays > 0
-                  ? SeedColors.honey
-                  : Theme.of(context).colorScheme.outlineVariant,
-            ),
-            const SizedBox(width: 2),
-            Text(
-              streakLabel,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelLarge
-                  ?.copyWith(fontWeight: FontWeight.w700),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: hasStreak ? context.q.honey : context.q.surface2,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: context.q.line, width: 2),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.local_fire_department_rounded,
+                    size: 14,
+                    color: hasStreak ? context.q.honeyInk : context.q.muted,
+                  ),
+                  const SizedBox(width: 2),
+                  Text(
+                    '${progress.streakDays}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                      color: hasStreak ? context.q.honeyInk : context.q.muted,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -125,7 +122,7 @@ class _Body extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Mascot(mood: progress.mood, size: 76),
+            RepaintBoundary(child: Mascot(mood: progress.mood, size: 76)),
             const SizedBox(width: Spacing.m),
             Expanded(
               child: Column(
@@ -133,7 +130,7 @@ class _Body extends StatelessWidget {
                 children: [
                   Text(
                     progress.moodLine,
-                    style: Theme.of(context).textTheme.labelSmall,
+                    style: context.qSmall(),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -141,17 +138,12 @@ class _Body extends StatelessWidget {
                   FittedBox(
                     child: Text(
                       Money.format(outgoing),
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: context.qDisplay(38),
                     ),
                   ),
                   Text(
                     'keluar · masuk ${Money.format(incoming)}',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                    style: context.qSmall(13),
                   ),
                 ],
               ),
@@ -159,36 +151,19 @@ class _Body extends StatelessWidget {
           ],
         ),
         const SizedBox(height: Spacing.m),
-        // XP bar ke level berikutnya
-        ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: LinearProgressIndicator(
-            value: progress.level.progressFraction,
-            minHeight: 10,
-            backgroundColor:
-                Theme.of(context).colorScheme.surfaceContainerHighest,
-            valueColor: const AlwaysStoppedAnimation(SeedColors.honey),
-          ),
-        ),
-        const SizedBox(height: 4),
+        QuestBar(value: progress.level.progressFraction),
+        const SizedBox(height: 6),
         Row(
           children: [
-            Text(
-              'Level: ${progress.level.name}',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
+            Text('Level: ${progress.level.name}', style: context.qTitle(14)),
             const Spacer(),
             Text(
               progress.level.xpLevelSpan <= 0
                   ? '${progress.xp} XP · MAX'
                   : '${progress.level.xpIntoLevel}/'
-                      '${progress.level.xpLevelSpan} XP ke '
-                      '${kLevelNames[progress.level.index + 1]}',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                        '${progress.level.xpLevelSpan} XP ke '
+                        '${kLevelNames[progress.level.index + 1]}',
+              style: context.qSmall(),
             ),
           ],
         ),

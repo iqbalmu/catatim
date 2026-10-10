@@ -4,20 +4,32 @@ import 'dart:math';
 /// Arah pergerakan uang.
 enum Direction { incoming, outgoing }
 
+/// Cakupan pencocokan aturan buatan pengguna.
+enum UserRuleMatch { package, content }
+
+/// Arah transaksi untuk aturan pengguna (bentuk singkat untuk UI).
+enum UserRuleDirection { in_, out_ }
+
 /// Sumber pencatatan transaksi.
 enum TxSource { notification, manual, import }
 
 /// Jenis transaksi.
 enum TxKind { transfer, payment, topup, withdrawal, other }
 
+/// Jenis akun/dompet.
+enum AccountKind { bank, ewallet, cash }
+
+/// Arah bon: dipinjamkan (piutang) atau dipinjam (utang).
+enum BonDirection { lent, borrowed }
+
 extension TxKindLabel on TxKind {
   String get label => switch (this) {
-        TxKind.transfer => 'Transfer',
-        TxKind.payment => 'Pembayaran',
-        TxKind.topup => 'Top up',
-        TxKind.withdrawal => 'Tarik tunai',
-        TxKind.other => 'Lainnya',
-      };
+    TxKind.transfer => 'Transfer',
+    TxKind.payment => 'Pembayaran',
+    TxKind.topup => 'Top up',
+    TxKind.withdrawal => 'Tarik tunai',
+    TxKind.other => 'Lainnya',
+  };
 }
 
 extension DirectionLabel on Direction {
@@ -27,12 +39,32 @@ extension DirectionLabel on Direction {
       };
 }
 
+extension UserRuleDirectionLabel on UserRuleDirection {
+  Direction get direction =>
+      this == UserRuleDirection.in_ ? Direction.incoming : Direction.outgoing;
+}
+
 extension TxSourceLabel on TxSource {
   String get label => switch (this) {
-        TxSource.notification => 'Notifikasi',
-        TxSource.manual => 'Manual',
-        TxSource.import => 'Impor',
-      };
+    TxSource.notification => 'Notifikasi',
+    TxSource.manual => 'Manual',
+    TxSource.import => 'Impor',
+  };
+}
+
+extension AccountKindLabel on AccountKind {
+  String get label => switch (this) {
+    AccountKind.bank => 'Bank',
+    AccountKind.ewallet => 'E-wallet',
+    AccountKind.cash => 'Tunai',
+  };
+}
+
+extension BonDirectionLabel on BonDirection {
+  String get label => switch (this) {
+    BonDirection.lent => 'Dipinjamkan',
+    BonDirection.borrowed => 'Dipinjam',
+  };
 }
 
 /// Hasil parsing notifikasi menjadi draf transaksi (belum tersimpan).
@@ -45,6 +77,7 @@ class ParsedDraft {
     required this.direction,
     required this.amount,
     this.counterparty,
+    this.accountId,
   });
 
   final String bankId;
@@ -54,6 +87,9 @@ class ParsedDraft {
   final Direction direction;
   final int amount;
   final String? counterparty;
+
+  /// Akun eksplisit dari aturan pengguna; null = auto-mapping.
+  final int? accountId;
 }
 
 /// Notifikasi mentah yang ditangkap dari lapisan native.

@@ -38,7 +38,7 @@ void main() {
         title: 'blu by BCA',
         body:
             'Kamu menerima transfer masuk sebesar Rp2.000.000 dari BUDI SANTOSO',
-        );
+      );
       expect(draft, isNotNull);
       expect(draft!.bankId, 'blu');
       expect(draft.direction, Direction.incoming);
@@ -87,7 +87,8 @@ void main() {
       final draft = engine.parse(
         packageName: '',
         title: '',
-        body: 'BANKNAGARI: Kredit Rp750.000 dari SITI AMINAH. Saldo Rp3.250.000',
+        body:
+            'BANKNAGARI: Kredit Rp750.000 dari SITI AMINAH. Saldo Rp3.250.000',
       );
       expect(draft, isNotNull);
       expect(draft!.bankId, 'nagari');
@@ -143,13 +144,20 @@ void main() {
     );
     // kata kunci konten tetap dikenali meski paket tidak terdaftar
     expect(
-      engine.isKnownSource('com.vendor.smsrelay', '', 'BANKNAGARI: Kredit Rp750.000'),
+      engine.isKnownSource(
+        'com.vendor.smsrelay',
+        '',
+        'BANKNAGARI: Kredit Rp750.000',
+      ),
       isTrue,
     );
   });
 
   test('seed rules memuat 3 bank', () {
     final set = _loadSeed();
-    expect(set.banks.map((b) => b.id), containsAll(['blu', 'nagari', 'unknown']));
+    expect(
+      set.banks.map((b) => b.id),
+      containsAll(['blu', 'nagari', 'unknown']),
+    );
   });
 }
