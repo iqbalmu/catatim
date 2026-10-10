@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "_comment": "SEED RULES — pola awal berbasis umum, WAJIB divalidasi/disetel dari layar Capture Log dengan notifikasi asli di device. packageName diisi bila sudah terverifikasi.",
+  "banks": [
+    {
+      "id": "blu",
+      "displayName": "blu by BCA",
+      "packageNames": ["id.bm.blu"],
+      "keywords": ["blu by bca", "blu bca"],
+      "templates": [
+        {
+          "name": "transfer masuk",
+          "kind": "transfer",
+          "direction": "in",
+          "matchAll": ["transfer masuk"],
+          "counterparty": "dari\\s+(.+?)(?:\\.|,|$)"
+        },
+        {
+          "name": "menerima uang",
+          "kind": "transfer",
+          "direction": "in",
+          "matchAll": ["kamu menerima"],
+          "counterparty": "dari\\s+(.+?)(?:\\.|,|$)"
+        },
+        {
+          "name": "transfer keluar",
+          "kind": "transfer",
+          "direction": "out",
+          "matchAll": ["transfer ke "],
+          "counterparty": "ke\\s+(.+?)(?:\\.|,|$)"
+        },
+        {
+          "name": "pembayaran / qr",
+          "kind": "payment",
+          "direction": "out",
+          "matchAny": ["pembayaran", "pembelian", "qr"]
+        },
+        {
+          "name": "top up",
+          "kind": "topup",
+          "direction": "out",
+          "matchAny": ["top up", "topup", "isi saldo"]
+        }
+      ]
+    },
+    {
+      "id": "nagari",
+      "displayName": "Bank Nagari",
+      "packageNames": [],
+      "keywords": ["bank nagari", "banknagari", "nagari"],
+      "templates": [
+        {
+          "name": "kredit masuk",
+          "kind": "transfer",
+          "direction": "in",
+          "matchAny": ["kredit", "transfer masuk", "menerima"],
+          "counterparty": "dari\\s+(.+?)(?:\\.|,|$)"
+        },
+        {
+          "name": "debit keluar",
+          "kind": "transfer",
+          "direction": "out",
+          "matchAny": ["debit", "transfer ke", "pembayaran", "belanja", "tarik"],
+          "counterparty": "a\\.n\\.\\s*(.+?)(?:\\.|,|$)"
+        }
+      ]
+    },
+    {
+      "id": "unknown",
+      "displayName": "Tidak dikenal",
+      "packageNames": [],
+      "keywords": [],
+      "templates": [
+        {
+          "name": "masuk umum",
+          "kind": "transfer",
+          "direction": "in",
+          "matchAny": ["kredit", "masuk", "menerima", "berhasil ditambahkan"]
+        },
+        {
+          "name": "keluar umum",
+          "kind": "transfer",
+          "direction": "out",
+          "matchAny": ["debit", "keluar", "pembayaran", "membayar", "belanja", "tarik tunai", "qris"]
+        }
+      ]
+    }
+  ]
+}
