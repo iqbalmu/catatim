@@ -222,12 +222,11 @@ class _BerandaTabState extends State<_BerandaTab> {
               decoration: BoxDecoration(
                 color: context.q.surface,
                 shape: BoxShape.circle,
-                border: Border.all(color: context.q.line, width: 2),
                 boxShadow: [
                   BoxShadow(
                     color: context.q.shadow,
-                    offset: const Offset(2, 2),
-                    blurRadius: 0,
+                    offset: const Offset(0, 4),
+                    blurRadius: 12,
                   ),
                 ],
               ),
@@ -327,8 +326,6 @@ class _BerandaTabState extends State<_BerandaTab> {
         ),
         children: [
           GameHeroCard(service: widget.progress, repository: widget.repository),
-          const SizedBox(height: Spacing.s),
-          PaceCard(service: widget.progress),
           const SizedBox(height: Spacing.s),
           SaldoCard(repository: widget.repository),
           const SizedBox(height: Spacing.s),

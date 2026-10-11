@@ -9,9 +9,9 @@ import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import '../ui/quest.dart';
-import '../core/dates_id.dart';
 
-/// Hero card gaya board-game: maskot + streak + angka bulan + bar anggaran.
+/// Hero beranda gaya Playful Rapi: zona madu (Duit + sisa aman hari ini)
+/// di atas kartu sekunder ringkasan bulan.
 class GameHeroCard extends StatelessWidget {
   const GameHeroCard({
     super.key,
@@ -32,37 +32,154 @@ class GameHeroCard extends StatelessWidget {
       listenable: service,
       builder: (context, _) {
         final progress = service.latest;
-        return StreamBuilder<List<TxWithCategory>>(
-          stream: repository.watchBetweenWithCategory(monthStart, monthEnd),
-          builder: (context, snapshot) {
-            var incoming = 0;
-            var outgoing = 0;
-            for (final r in snapshot.data ?? const <TxWithCategory>[]) {
-              if (r.tx.direction == Direction.incoming) {
-                incoming += r.tx.amount;
-              } else {
-                outgoing += r.tx.amount;
-              }
-            }
-            return QuestCard(
-              radius: 24,
-              child: progress == null
-                  ? const SizedBox(height: 96)
-                  : _Body(
-                      progress: progress,
-                      incoming: incoming,
-                      outgoing: outgoing,
-                    ),
-            );
-          },
+        return Column(
+          children: [
+            _HeroZone(progress: progress),
+            const SizedBox(height: Spacing.s),
+            StreamBuilder<List<TxWithCategory>>(
+              stream: repository.watchBetweenWithCategory(monthStart, monthEnd),
+              builder: (context, snapshot) {
+                var incoming = 0;
+                var outgoing = 0;
+                for (final r in snapshot.data ?? const <TxWithCategory>[]) {
+                  if (r.tx.direction == Direction.incoming) {
+                    incoming += r.tx.amount;
+                  } else {
+                    outgoing += r.tx.amount;
+                  }
+                }
+                return QuestCard(
+                  radius: 20,
+                  child: progress == null
+                      ? const SizedBox(height: 96)
+                      : _MonthBody(
+                          progress: progress,
+                          incoming: incoming,
+                          outgoing: outgoing,
+                        ),
+                );
+              },
+            ),
+          ],
         );
       },
     );
   }
 }
 
-class _Body extends StatelessWidget {
-  const _Body({
+/// Zona madu: Duit + sisa aman hari ini + pill streak.
+class _HeroZone extends StatelessWidget {
+  const _HeroZone({required this.progress});
+
+  final ProgressSummary? progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    final p = progress;
+    final pace = p?.dailyPace;
+    final safe = pace?.safeToSpend;
+    final over = safe != null && safe < 0;
+    final hasStreak = (p?.streakDays ?? 0) > 0;
+
+    return Container(
+      padding: const EdgeInsets.all(Spacing.m),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [SeedColors.honey50, SeedColors.honey100],
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: p == null || pace == null
+          ? const SizedBox(height: 80)
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RepaintBoundary(child: Mascot(mood: p.mood, size: 64)),
+                const SizedBox(width: Spacing.m),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'SISA AMAN HARI INI',
+                        style: context.qEyebrow().copyWith(color: q.honeyInk),
+                      ),
+                      const SizedBox(height: 4),
+                      if (safe == null)
+                        Text(
+                          'Tanpa batas',
+                          style: context.qTitle(18).copyWith(color: q.muted),
+                        )
+                      else
+                        FittedBox(
+                          child: Text(
+                            Money.format(safe),
+                            style: context.qDisplay(34)
+                                .copyWith(color: over ? q.bad : q.text),
+                          ),
+                        ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'tgl ${pace.dayOfMonth} · '
+                        'ideal ${pace.idealUsedPercent}%',
+                        style: context.qSmall().copyWith(color: q.honeyInk),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        p.moodLine,
+                        style: context.qSmall(12),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: Spacing.s),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: q.surface,
+                    borderRadius: BorderRadius.circular(999),
+                    boxShadow: [
+                      BoxShadow(
+                        color: q.shadow,
+                        offset: const Offset(0, 4),
+                        blurRadius: 12,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.local_fire_department_rounded,
+                        size: 14,
+                        color: hasStreak ? SeedColors.honeyDeep : q.muted,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        '${p.streakDays}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                          color: hasStreak ? q.text : q.muted,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+/// Kartu sekunder: keluar/masuk bulan + garis anggaran + tren.
+class _MonthBody extends StatelessWidget {
+  const _MonthBody({
     required this.progress,
     required this.incoming,
     required this.outgoing,
@@ -74,80 +191,33 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final hasStreak = progress.streakDays > 0;
-
+    final q = context.q;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: [
-            Expanded(
-              child: Text(
-                '${idMonthsShort[now.month - 1].toUpperCase()} ${now.year} · '
-                'HARI KE-${now.day}',
-                style: context.qEyebrow(),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: hasStreak ? context.q.honey : context.q.surface2,
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: context.q.line, width: 2),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.local_fire_department_rounded,
-                    size: 14,
-                    color: hasStreak ? context.q.honeyInk : context.q.muted,
-                  ),
-                  const SizedBox(width: 2),
-                  Text(
-                    '${progress.streakDays}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                      color: hasStreak ? context.q.honeyInk : context.q.muted,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: Spacing.s),
-        Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            RepaintBoundary(child: Mascot(mood: progress.mood, size: 76)),
-            const SizedBox(width: Spacing.m),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    progress.moodLine,
-                    style: context.qSmall(),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  FittedBox(
-                    child: Text(
-                      Money.format(outgoing),
-                      style: context.qDisplay(38),
-                    ),
-                  ),
-                  Text(
-                    'keluar · masuk ${Money.format(incoming)}',
-                    style: context.qSmall(13),
-                  ),
+                  Text('KELUAR · BULAN INI', style: context.qEyebrow()),
+                  const SizedBox(height: 2),
+                  Text(Money.format(outgoing), style: context.qTitle(18)),
                 ],
               ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('MASUK', style: context.qEyebrow()),
+                const SizedBox(height: 2),
+                Text(
+                  '+ ${Money.format(incoming)}',
+                  style: context.qTitle(18).copyWith(color: q.good),
+                ),
+              ],
             ),
           ],
         ),

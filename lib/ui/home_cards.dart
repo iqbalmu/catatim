@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../core/budget.dart';
 import '../core/money.dart';
-import '../game/progress.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
@@ -12,89 +11,8 @@ import '../theme/tokens.dart';
 import 'account_manage_screen.dart';
 import 'quest.dart';
 
-/// Tiga kartu beranda di bawah hero maskot: pace harian (kartu utama),
-/// saldo per akun, dan insight mini. Gaya mengikuti hero card.
-///
-/// Pace Card menjawab "boleh habis berapa hari ini?", Saldo Card
-/// "uangku di mana?", Insight Card menjembatani ke tab Laporan.
-/// Saldo & insight mengalir via drift streams sehingga selalu segar.
-
-class PaceCard extends StatelessWidget {
-  const PaceCard({super.key, required this.service});
-
-  final ProgressService service;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: service,
-      builder: (context, _) {
-        final pace = service.latest?.dailyPace;
-        if (pace == null) return const QuestSkeleton(height: 96);
-        final q = context.q;
-        final safe = pace.safeToSpend;
-        final over = safe != null && safe < 0;
-
-        return QuestCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('SISA AMAN HARI INI', style: context.qEyebrow()),
-              const SizedBox(height: Spacing.s),
-              if (safe == null)
-                Text(
-                  'Tanpa batas — atur di menu ⋯ → Anggaran',
-                  style: context.qTitle(15).copyWith(color: q.muted),
-                )
-              else ...[
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: FittedBox(
-                        child: Text(
-                          Money.format(safe),
-                          style: context.qDisplay(34).copyWith(
-                                color: over ? q.bad : q.text,
-                              ),
-                        ),
-                      ),
-                    ),
-                    if (over) ...[
-                      const SizedBox(width: Spacing.s),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          'OVER',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 11,
-                            color: q.bad,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-              const SizedBox(height: Spacing.s),
-              QuestBar(
-                value: pace.dayOfMonth / pace.daysInMonth,
-                height: 8,
-                color: q.honey,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'tgl ${pace.dayOfMonth} · ideal ${pace.idealUsedPercent}%',
-                style: context.qSmall(),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
+/// Kartu beranda di bawah hero: saldo per akun dan insight mini. Gaya
+/// mengikuti sistem Playful Rapi.
 
 class SaldoCard extends StatelessWidget {
   const SaldoCard({super.key, required this.repository});
