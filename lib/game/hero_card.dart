@@ -11,7 +11,7 @@ import '../theme/tokens.dart';
 import '../ui/quest.dart';
 import '../core/dates_id.dart';
 
-/// Hero card gaya board-game: maskot + streak + angka bulan + XP bar.
+/// Hero card gaya board-game: maskot + streak + angka bulan + bar anggaran.
 class GameHeroCard extends StatelessWidget {
   const GameHeroCard({
     super.key,
@@ -152,7 +152,6 @@ class _Body extends StatelessWidget {
           ],
         ),
         const SizedBox(height: Spacing.m),
-        // Bar anggaran bulanan + arah tren menggantikan XP/level.
         _BudgetRow(progress: progress),
       ],
     );

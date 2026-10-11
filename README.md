@@ -55,9 +55,9 @@ penyimpanan) di Dart — unit-testable tanpa device.
 |---|---|
 | `lib/rules/` | Rules engine + seed rules (`assets/rules/seed_rules.json`) |
 | `lib/capture/` | Channel native + pipeline capture→parse→simpan |
-| `lib/storage/` | Drift schema v3 + repository (dedup 120 detik) |
+| `lib/storage/` | Drift schema v6 + repository (dedup 120 detik) |
 | `lib/ui/` | Beranda, Laporan, Bon, capture log, backup |
-| `lib/game/` | Maskot, hero card, XP/streak/level |
+| `lib/game/` | Maskot, hero card, streak & mood |
 | `lib/theme/` + `lib/ui/quest.dart` | Sistem desain Quest (bukan default Material) |
 | `android/.../MainActivity.kt` | MethodChannel/EventChannel + `NotificationCatcher` |
 
