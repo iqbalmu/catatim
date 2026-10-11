@@ -53,9 +53,47 @@ class _HeroCompact extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('SISA AMAN',
-                          style:
-                              context.qEyebrow().copyWith(color: q.honeyInk)),
+                      Row(
+                        children: [
+                          Text('SISA AMAN',
+                              style: context
+                                  .qEyebrow()
+                                  .copyWith(color: q.honeyInk)),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 9, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: q.surface,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.local_fire_department_rounded,
+                                  size: 12,
+                                  color: hasStreak
+                                      ? SeedColors.honeyDeep
+                                      : q.muted,
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '${p.streakDays}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12,
+                                    color: hasStreak ? q.text : q.muted,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures()
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                       const SizedBox(height: 2),
                       if (safe == null)
                         Text(
@@ -80,43 +118,7 @@ class _HeroCompact extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: Spacing.s),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 11, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: q.surface,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.local_fire_department_rounded,
-                            size: 14,
-                            color: hasStreak ? SeedColors.honeyDeep : q.muted,
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            '${p.streakDays}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 13,
-                              color: hasStreak ? q.text : q.muted,
-                              fontFeatures: const [FontFeature.tabularFigures()],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: Spacing.s),
-                    RepaintBoundary(
-                        child: Mascot(mood: p.mood, size: 96)),
-                  ],
-                ),
+                RepaintBoundary(child: Mascot(mood: p.mood, size: 120)),
               ],
             ),
     );
