@@ -6,7 +6,8 @@ import '../theme/tokens.dart';
 import 'quest.dart';
 
 /// Kalender pilih rentang tanggal, gaya Quest — langsung tampil di sheet,
-/// tanpa pindah layar.
+/// tanpa pindah layar. [QuestRangeCalendar.onChanged] mengirim rentang
+/// inklusif (sama dengan kontrak `showDateRangePicker`).
 class QuestRangeCalendar extends StatefulWidget {
   const QuestRangeCalendar({
     super.key,
@@ -63,12 +64,7 @@ class _QuestRangeCalendarState extends State<QuestRangeCalendar> {
       }
     });
     if (_start != null && _end != null) {
-      final endExclusive = DateTime(
-        _end!.year,
-        _end!.month,
-        _end!.day + 1,
-      );
-      widget.onChanged(DateTimeRange(start: _start!, end: endExclusive));
+      widget.onChanged(DateTimeRange(start: _start!, end: _end!));
     }
   }
 
@@ -81,9 +77,7 @@ class _QuestRangeCalendarState extends State<QuestRangeCalendar> {
       _end = today;
       _month = DateTime(start.year, start.month);
     });
-    widget.onChanged(
-      DateTimeRange(start: start, end: today.add(const Duration(days: 1))),
-    );
+    widget.onChanged(DateTimeRange(start: start, end: today));
   }
 
   void _thisMonth() {
@@ -95,9 +89,7 @@ class _QuestRangeCalendarState extends State<QuestRangeCalendar> {
       _end = end;
       _month = start;
     });
-    widget.onChanged(
-      DateTimeRange(start: start, end: DateTime(now.year, now.month + 1)),
-    );
+    widget.onChanged(DateTimeRange(start: start, end: end));
   }
 
   @override

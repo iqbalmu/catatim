@@ -80,21 +80,3 @@ List<TrendBucket> trendBuckets(
   if (span > 62) return rangedMonthlyBuckets(rows, start, end);
   return rangedWeeklyBuckets(rows, start, end);
 }
-
-/// 6 bucket bulanan berakhir di bulan [now].
-List<TrendBucket> monthlyBuckets(List<AmountPoint> rows, DateTime now) =>
-    rangedMonthlyBuckets(
-      rows,
-      DateTime(now.year, now.month - 5),
-      DateTime(now.year, now.month + 1, 0),
-    );
-
-/// 4 bucket mingguan (masing-masing 7 hari) berakhir hari ini.
-List<TrendBucket> weeklyBuckets(List<AmountPoint> rows, DateTime now) {
-  final today = _day(now);
-  return rangedWeeklyBuckets(
-    rows,
-    today.subtract(const Duration(days: 27)),
-    today,
-  );
-}

@@ -7,6 +7,7 @@ import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'account_filter.dart';
+import 'month_picker.dart';
 import 'quest.dart';
 import 'range_calendar.dart';
 import 'transaction_tile.dart';
@@ -26,7 +27,7 @@ bool matchesQuery(TxWithCategory item, String query) {
   return haystacks.any((h) => h.contains(q));
 }
 
-enum _HistoryPeriod { all, month, sixMonths, custom }
+enum _HistoryPeriod { all, month, custom }
 
 /// Tab Riwayat: pencarian + filter (akun & waktu) dalam satu sheet.
 class HistoryTab extends StatefulWidget {
@@ -48,6 +49,7 @@ class _HistoryTabState extends State<HistoryTab> {
   String _query = '';
   int? _accountId;
   _HistoryPeriod _period = _HistoryPeriod.all;
+  DateTime? _month; // bulan terpilih, dinormalisasi ke tanggal 1
   DateTimeRange? _custom;
 
   @override
@@ -64,13 +66,21 @@ class _HistoryTabState extends State<HistoryTab> {
   }
 
   String get _periodLabel => switch (_period) {
-        _HistoryPeriod.month => 'Bulan ini',
-        _HistoryPeriod.sixMonths => '6 bulan',
+        _HistoryPeriod.month => _month == null
+            ? 'Bulan'
+            : _monthLabel(_month!),
         _HistoryPeriod.custom => _custom == null
             ? 'Rentang'
             : '${idDayMonth(_custom!.start)} – ${idDayMonth(_custom!.end)}',
         _HistoryPeriod.all => 'Semua waktu',
       };
+
+  /// 'Bulan ini' bila bulan berjalan, selain itu 'Okt 2026'.
+  String _monthLabel(DateTime m) {
+    final now = DateTime.now();
+    if (m.year == now.year && m.month == now.month) return 'Bulan ini';
+    return idMonthYear(m);
+  }
 
   Future<void> _openFilterSheet() async {
     await showQuestSheet<void>(
@@ -86,11 +96,13 @@ class _HistoryTabState extends State<HistoryTab> {
           repository: widget.repository,
           accountId: _accountId,
           period: _period,
+          month: _month,
           custom: _custom,
-          onApply: (accountId, period, custom) {
+          onApply: (accountId, period, month, custom) {
             setState(() {
               _accountId = accountId;
               _period = period;
+              _month = month;
               _custom = custom;
             });
           },
@@ -127,11 +139,9 @@ class _HistoryTabState extends State<HistoryTab> {
         winStart = null;
         winEnd = null;
       case _HistoryPeriod.month:
-        winStart = DateTime(now.year, now.month);
-        winEnd = DateTime(now.year, now.month + 1);
-      case _HistoryPeriod.sixMonths:
-        winStart = DateTime(now.year, now.month - 5);
-        winEnd = DateTime(now.year, now.month + 1);
+        final m = _month ?? DateTime(now.year, now.month);
+        winStart = DateTime(m.year, m.month);
+        winEnd = DateTime(m.year, m.month + 1);
       case _HistoryPeriod.custom:
         final c = _custom!;
         winStart = DateTime(c.start.year, c.start.month, c.start.day);
@@ -343,12 +353,13 @@ class _RemovableChip extends StatelessWidget {
   }
 }
 
-/// Isi sheet filter: akun + periode (+ pemilih rentang saat custom).
+/// Isi sheet filter: akun + waktu (bulan atau rentang tanggal).
 class _FilterSheet extends StatefulWidget {
   const _FilterSheet({
     required this.repository,
     required this.accountId,
     required this.period,
+    required this.month,
     required this.custom,
     required this.onApply,
   });
@@ -356,9 +367,14 @@ class _FilterSheet extends StatefulWidget {
   final LedgerRepository repository;
   final int? accountId;
   final _HistoryPeriod period;
+  final DateTime? month;
   final DateTimeRange? custom;
-  final void Function(int? accountId, _HistoryPeriod period, DateTimeRange? custom)
-      onApply;
+  final void Function(
+    int? accountId,
+    _HistoryPeriod period,
+    DateTime? month,
+    DateTimeRange? custom,
+  ) onApply;
 
   @override
   State<_FilterSheet> createState() => _FilterSheetState();
@@ -367,6 +383,7 @@ class _FilterSheet extends StatefulWidget {
 class _FilterSheetState extends State<_FilterSheet> {
   int? _accountId;
   _HistoryPeriod _period = _HistoryPeriod.all;
+  DateTime? _month;
   DateTimeRange? _custom;
 
   @override
@@ -374,16 +391,18 @@ class _FilterSheetState extends State<_FilterSheet> {
     super.initState();
     _accountId = widget.accountId;
     _period = widget.period;
+    _month = widget.month;
     _custom = widget.custom;
   }
 
   void _selectPeriod(_HistoryPeriod v) {
-    if (v == _HistoryPeriod.custom) {
-      // Kalender langsung tampil di bawah; user memilih di situ.
-      setState(() => _period = _HistoryPeriod.custom);
-    } else {
-      setState(() => _period = v);
-    }
+    setState(() {
+      _period = v;
+      if (v == _HistoryPeriod.month && _month == null) {
+        final now = DateTime.now();
+        _month = DateTime(now.year, now.month);
+      }
+    });
   }
 
   @override
@@ -410,16 +429,20 @@ class _FilterSheetState extends State<_FilterSheet> {
               selected: _period,
               onChanged: _selectPeriod,
               options: const [
-                (value: _HistoryPeriod.all, label: 'Semua', icon: null),
-                (value: _HistoryPeriod.month, label: 'Bulan ini', icon: null),
-                (
-                  value: _HistoryPeriod.sixMonths,
-                  label: '6 bulan',
-                  icon: null
-                ),
+                (value: _HistoryPeriod.month, label: 'Bulan', icon: null),
                 (value: _HistoryPeriod.custom, label: 'Rentang', icon: null),
               ],
             ),
+            if (_period == _HistoryPeriod.month) ...[
+              const SizedBox(height: Spacing.m),
+              QuestCard(
+                radius: 16,
+                child: QuestMonthPicker(
+                  initialMonth: _month,
+                  onChanged: (m) => setState(() => _month = m),
+                ),
+              ),
+            ],
             if (_period == _HistoryPeriod.custom) ...[
               const SizedBox(height: Spacing.m),
               QuestCard(
@@ -435,7 +458,13 @@ class _FilterSheetState extends State<_FilterSheet> {
               label: 'Terapkan',
               icon: Icons.check_rounded,
               onPressed: () {
-                widget.onApply(_accountId, _period, _custom);
+                // Rentang tanpa pilihan tanggal = tanpa filter waktu,
+                // jangan biarkan _custom! crash di build.
+                final period =
+                    _period == _HistoryPeriod.custom && _custom == null
+                        ? _HistoryPeriod.all
+                        : _period;
+                widget.onApply(_accountId, period, _month, _custom);
                 Navigator.pop(context);
               },
             ),

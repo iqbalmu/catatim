@@ -35,7 +35,8 @@ penyimpanan) di Dart — unit-testable tanpa device.
   vs utang yang belum lunas. Murni lokal, tanpa pengingat server.
 - **Bukuduit Quest**: maskot Duit (4 mood), streak harian, XP
   (capture +1, manual +2, reklasifikasi +1), level Jajan→Sultan.
-- **Laporan**: donut kategori interaktif + tren 6 bulan.
+- **Laporan**: donut kategori interaktif + tren sesuai periode (bulan
+  terpilih atau rentang tanggal).
 - **Backup**: ekspor CSV + backup `.sqlite` terenkripsi (simpan
   passphrase terpisah!) + restore.
 

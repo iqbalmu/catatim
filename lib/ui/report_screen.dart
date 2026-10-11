@@ -9,10 +9,12 @@ import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'quest.dart';
+import 'month_picker.dart';
+import 'range_calendar.dart';
 import '../core/buckets.dart';
 import '../core/dates_id.dart';
 
-/// Tab laporan: donut kategori interaktif + tren 6 bulan.
+/// Tab laporan: donut kategori interaktif + tren sesuai periode.
 class ReportTab extends StatefulWidget {
   const ReportTab({super.key, required this.repository});
 
@@ -22,116 +24,127 @@ class ReportTab extends StatefulWidget {
   State<ReportTab> createState() => _ReportTabState();
 }
 
-enum _Period { month, sixMonths, custom }
+enum _Period { month, custom }
 
 class _ReportTabState extends State<ReportTab> {
   _Period _period = _Period.month;
+  DateTime? _month; // bulan terpilih, dinormalisasi ke tanggal 1
   DateTimeRange? _custom;
 
-  Future<void> _pickRange(DateTime monthStart, DateTime today) async {
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(today.year + 1, 12, 31),
-      initialDateRange:
-          _custom ?? DateTimeRange(start: monthStart, end: today),
-      helpText: 'Pilih rentang tanggal',
-      saveText: 'Pilih',
+  Future<void> _openPeriodSheet() async {
+    final result = await showQuestSheet<(_Period, DateTime?, DateTimeRange?)>(
+      context,
+      (context) => _PeriodSheet(
+        initialPeriod: _period,
+        initialMonth: _month,
+        initialCustom: _custom,
+      ),
     );
-    if (picked != null && mounted) {
+    if (result != null && mounted) {
       setState(() {
-        _custom = picked;
-        _period = _Period.custom;
+        _period = result.$1;
+        _month = result.$2;
+        _custom = result.$3;
       });
     }
   }
 
-  void _onPeriodChanged(_Period v, DateTime monthStart, DateTime today) {
-    if (v == _Period.custom) {
-      if (_custom == null) {
-        _pickRange(monthStart, today);
-      } else {
-        setState(() => _period = _Period.custom);
-      }
-    } else {
-      setState(() => _period = v);
-    }
+  String get _periodLabel {
+    final now = DateTime.now();
+    return switch (_period) {
+      _Period.month => _monthLabel(_month ?? DateTime(now.year, now.month)),
+      _Period.custom =>
+        _custom == null
+            ? 'Pilih rentang'
+            : '${idDayMonth(_custom!.start)} – ${idDayMonth(_custom!.end)}',
+    };
+  }
+
+  /// 'Bulan ini' bila bulan berjalan, selain itu 'Okt 2026'.
+  String _monthLabel(DateTime m) {
+    final now = DateTime.now();
+    if (m.year == now.year && m.month == now.month) return 'Bulan ini';
+    return idMonthYear(m);
   }
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final sixAgo = DateTime(now.year, now.month - 5);
-    final monthStart = DateTime(now.year, now.month);
-    final monthEnd = DateTime(now.year, now.month + 1);
 
     final DateTime winStart;
     final DateTime winEnd;
-    final String subtitle;
     switch (_period) {
       case _Period.month:
-        winStart = monthStart;
-        winEnd = monthEnd;
-        subtitle = '${idMonthsShort[now.month - 1]} ${now.year}';
-      case _Period.sixMonths:
-        winStart = sixAgo;
-        winEnd = monthEnd;
-        subtitle = 'Enam bulan terakhir';
+        final m = _month ?? DateTime(now.year, now.month);
+        winStart = DateTime(m.year, m.month);
+        winEnd = DateTime(m.year, m.month + 1);
       case _Period.custom:
         final c = _custom!;
         winStart = DateTime(c.start.year, c.start.month, c.start.day);
         winEnd = DateTime(c.end.year, c.end.month, c.end.day + 1);
-        subtitle = '${idDayMonth(c.start)} – ${idDayMonth(c.end)}';
     }
 
     return Scaffold(
       backgroundColor: context.q.bg,
-      appBar: QuestHeader(title: 'Laporan', subtitle: subtitle),
+      appBar: QuestHeader(title: 'Laporan', subtitle: _periodLabel),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
-            Spacing.m, Spacing.s, Spacing.m, Spacing.m),
+          Spacing.m,
+          Spacing.s,
+          Spacing.m,
+          Spacing.m,
+        ),
         children: [
-          QuestSegmented<_Period>(
-            selected: _period,
-            onChanged: (v) => _onPeriodChanged(v, monthStart, today),
-            options: const [
-              (value: _Period.month, label: 'Bulan ini', icon: null),
-              (value: _Period.sixMonths, label: '6 bulan', icon: null),
-              (value: _Period.custom, label: 'Rentang', icon: null),
-            ],
-          ),
-          if (_period == _Period.custom) ...[
-            const SizedBox(height: Spacing.s),
-            QuestButton(
-              label: 'Ubah rentang',
-              icon: Icons.event_outlined,
-              tone: QuestTone.secondary,
-              onPressed: () => _pickRange(monthStart, today),
+          // Chip periode kompak pengganti segmented — buka sheet kalender.
+          QuestPress(
+            onTap: _openPeriodSheet,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: context.q.surface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: context.q.line, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: context.q.shadow,
+                    offset: const Offset(2, 2),
+                    blurRadius: 0,
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.event_outlined, color: context.q.honeyInk),
+                  const SizedBox(width: Spacing.s),
+                  Expanded(
+                    child: Text(_periodLabel, style: context.qTitle(15)),
+                  ),
+                  Icon(Icons.expand_more_rounded, color: context.q.muted),
+                ],
+              ),
             ),
-          ],
+          ),
           const SizedBox(height: Spacing.m),
           StreamBuilder<List<TxWithCategory>>(
-            stream: widget.repository
-                .watchBetweenWithCategory(winStart, winEnd),
+            stream: widget.repository.watchBetweenWithCategory(
+              winStart,
+              winEnd,
+            ),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const QuestSkeleton(rows: 2, height: 120);
               }
-              final all = snapshot.data ?? const <TxWithCategory>[];
-              final windowed = _period == _Period.month
-                  ? [
-                      for (final r in all)
-                        if (!r.tx.occurredAt.isBefore(monthStart)) r,
-                    ]
-                  : all;
-              return _CategoryDonutCard(rows: windowed);
+              return _CategoryDonutCard(
+                rows: snapshot.data ?? const <TxWithCategory>[],
+              );
             },
           ),
           const SizedBox(height: Spacing.m),
           StreamBuilder<List<TxWithCategory>>(
-            stream: widget.repository
-                .watchBetweenWithCategory(winStart, winEnd),
+            stream: widget.repository.watchBetweenWithCategory(
+              winStart,
+              winEnd,
+            ),
             builder: (context, snapshot) {
               final rows = snapshot.data ?? const <TxWithCategory>[];
               final points = <AmountPoint>[
@@ -146,14 +159,8 @@ class _ReportTabState extends State<ReportTab> {
               final String title;
               switch (_period) {
                 case _Period.month:
-                  buckets = weeklyBuckets(points, now);
-                  title = 'Tren 4 minggu';
-                case _Period.sixMonths:
-                  buckets = monthlyBuckets(points, now);
-                  title = 'Tren 6 bulan';
                 case _Period.custom:
-                  final endInclusive =
-                      winEnd.subtract(const Duration(days: 1));
+                  final endInclusive = winEnd.subtract(const Duration(days: 1));
                   buckets = trendBuckets(points, winStart, endInclusive);
                   title = winEnd.difference(winStart).inDays > 62
                       ? 'Tren bulanan'
@@ -163,6 +170,109 @@ class _ReportTabState extends State<ReportTab> {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Sheet pemilih periode: segmented bulan/rentang + picker inline.
+class _PeriodSheet extends StatefulWidget {
+  const _PeriodSheet({
+    required this.initialPeriod,
+    required this.initialMonth,
+    required this.initialCustom,
+  });
+
+  final _Period initialPeriod;
+  final DateTime? initialMonth;
+  final DateTimeRange? initialCustom;
+
+  @override
+  State<_PeriodSheet> createState() => _PeriodSheetState();
+}
+
+class _PeriodSheetState extends State<_PeriodSheet> {
+  late _Period _period;
+  DateTime? _month;
+  DateTimeRange? _custom;
+
+  @override
+  void initState() {
+    super.initState();
+    _period = widget.initialPeriod;
+    _month = widget.initialMonth;
+    _custom = widget.initialCustom;
+  }
+
+  void _select(_Period v) {
+    setState(() {
+      _period = v;
+      if (v == _Period.month && _month == null) {
+        final now = DateTime.now();
+        _month = DateTime(now.year, now.month);
+      }
+    });
+  }
+
+  void _apply() {
+    // Rentang tanpa pilihan tanggal = fallback bulan berjalan, jangan
+    // biarkan _custom! crash di build.
+    final period = (_period == _Period.custom && _custom == null)
+        ? _Period.month
+        : _period;
+    Navigator.pop(context, (period, _month, _custom));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: Spacing.m),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Text('Periode', style: context.qTitle(20)),
+            ),
+            const SizedBox(height: Spacing.m),
+            QuestSegmented<_Period>(
+              selected: _period,
+              onChanged: _select,
+              options: const [
+                (value: _Period.month, label: 'Bulan', icon: null),
+                (value: _Period.custom, label: 'Rentang', icon: null),
+              ],
+            ),
+            if (_period == _Period.month) ...[
+              const SizedBox(height: Spacing.m),
+              QuestCard(
+                radius: 16,
+                child: QuestMonthPicker(
+                  initialMonth: _month,
+                  onChanged: (m) => setState(() => _month = m),
+                ),
+              ),
+            ],
+            if (_period == _Period.custom) ...[
+              const SizedBox(height: Spacing.m),
+              QuestCard(
+                radius: 16,
+                child: QuestRangeCalendar(
+                  initialRange: _custom,
+                  onChanged: (r) => setState(() => _custom = r),
+                ),
+              ),
+            ],
+            const SizedBox(height: Spacing.l),
+            QuestButton(
+              label: 'Terapkan',
+              icon: Icons.check_rounded,
+              onPressed: _apply,
+            ),
+            const SizedBox(height: Spacing.m),
+          ],
+        ),
       ),
     );
   }
@@ -397,12 +507,7 @@ class _MonthlyBarCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: context.qTitle(),
-                ),
-              ),
+              Expanded(child: Text(title, style: context.qTitle())),
               _LegendDot(color: context.q.good, label: 'Masuk'),
               const SizedBox(width: Spacing.s),
               _LegendDot(color: context.q.bad, label: 'Keluar'),

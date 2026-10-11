@@ -39,6 +39,9 @@ String idShortDate(DateTime dt) =>
 /// '11 Okt'
 String idDayMonth(DateTime dt) => '${dt.day} ${idMonthsShort[dt.month - 1]}';
 
+/// 'Okt 2026'
+String idMonthYear(DateTime dt) => '${idMonthsShort[dt.month - 1]} ${dt.year}';
+
 /// '11/10 14:05'
 String idDateTime(DateTime dt) =>
     '${dt.day}/${dt.month} '
