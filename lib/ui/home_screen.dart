@@ -21,7 +21,6 @@ import 'quest.dart';
 import 'rules_screen.dart';
 import 'report_screen.dart';
 import 'transaction_sheet.dart';
-import 'transaction_tile.dart';
 
 String _todaySubtitle(DateTime now) => idFullDate(now);
 
@@ -84,7 +83,6 @@ class _HomeScreenState extends State<HomeScreen> {
               repository: widget.repository,
               pipeline: widget.pipeline,
               progress: widget.progress,
-              onOpenHistory: () => setState(() => _tab = 1),
               onOpenReports: () => setState(() => _tab = 2),
             ),
           ),
@@ -118,20 +116,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-/// Beranda ringan: hero + pratinjau hari ini. Riwayat penuh di tab Riwayat.
+/// Beranda dashboard: hero + strip peringatan + ubin info. Tanpa daftar
+/// transaksi — pencatatan via tombol +, riwayat di tab Riwayat.
 class _BerandaTab extends StatefulWidget {
   const _BerandaTab({
     required this.repository,
     required this.pipeline,
     required this.progress,
-    required this.onOpenHistory,
     required this.onOpenReports,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
   final ProgressService progress;
-  final VoidCallback onOpenHistory;
   final VoidCallback onOpenReports;
 
   @override
@@ -374,50 +371,6 @@ class _BerandaTabState extends State<_BerandaTab> {
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: Spacing.s),
-          StreamBuilder<List<TxWithCategory>>(
-            stream: widget.repository.watchRecentWithCategory(limit: 60),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const QuestSkeleton();
-              }
-              final now = DateTime.now();
-              final todayItems = [
-                for (final r in snapshot.data ?? const <TxWithCategory>[])
-                  if (r.tx.occurredAt.year == now.year &&
-                      r.tx.occurredAt.month == now.month &&
-                      r.tx.occurredAt.day == now.day)
-                    r,
-              ].take(4).toList();
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const QuestSectionHeader(title: 'Hari ini'),
-                  if (todayItems.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: Spacing.s),
-                      child: Text(
-                        'Belum ada catatan hari ini.',
-                        style: context.qSmall(),
-                      ),
-                    ),
-                  for (final item in todayItems)
-                    TransactionTile(
-                      item: item,
-                      repository: widget.repository,
-                      progress: widget.progress,
-                    ),
-                  const SizedBox(height: Spacing.s),
-                  QuestButton(
-                    label: 'Lihat semua',
-                    icon: Icons.arrow_forward_rounded,
-                    tone: QuestTone.secondary,
-                    onPressed: widget.onOpenHistory,
-                  ),
-                ],
-              );
-            },
           ),
         ],
       ),
