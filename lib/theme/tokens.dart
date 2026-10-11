@@ -29,7 +29,14 @@ class SeedColors {
 
   /// Warna Bukuduit Quest.
   static const Color honey = Color(0xFFFFB33E);
+  static const Color honey50 = Color(0xFFFFF3DC);
+  static const Color honey100 = Color(0xFFFFE7B8);
+  static const Color honeyDeep = Color(0xFFFFA726);
+  static const Color honeyInk = Color(0xFF8A6420);
   static const Color ink = Color(0xFF3B3630);
+
+  /// Garis sekunder halus — bukan border kartu.
+  static const Color line = Color(0xFFEFE6D4);
 
   /// Warna kategori — diindeks via Categories.colorIndex.
   static const List<Color> categoryPalette = [

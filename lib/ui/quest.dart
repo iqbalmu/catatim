@@ -54,7 +54,7 @@ class _QuestPressState extends State<QuestPress> {
   }
 }
 
-/// Kartu papan-peraga: permukaan + garis tinta + bayangan offset solid.
+/// Kartu lembut: permukaan putih + bayangan halo, tanpa border.
 class QuestCard extends StatelessWidget {
   const QuestCard({
     super.key,
@@ -76,12 +76,11 @@ class QuestCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.q.surface,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: context.q.line, width: 2),
         boxShadow: [
           BoxShadow(
             color: context.q.shadow,
-            offset: const Offset(3, 3),
-            blurRadius: 0,
+            offset: const Offset(0, 6),
+            blurRadius: 18,
           ),
         ],
       ),
@@ -119,8 +118,8 @@ class QuestButton extends StatelessWidget {
     final Color fg;
     switch (tone) {
       case QuestTone.primary:
-        fill = q.honey;
-        fg = q.honeyInk;
+        fill = Colors.transparent; // gradient di decoration.
+        fg = Colors.white;
       case QuestTone.secondary:
         fill = q.surface2;
         fg = q.text;
@@ -137,15 +136,21 @@ class QuestButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
           color: fill,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: q.line, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: q.shadow,
-              offset: const Offset(3, 3),
-              blurRadius: 0,
-            ),
-          ],
+          gradient: tone == QuestTone.primary
+              ? const LinearGradient(
+                  colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
+                )
+              : null,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: tone == QuestTone.primary
+              ? const [
+                  BoxShadow(
+                    color: Color(0x73FFA726),
+                    offset: Offset(0, 8),
+                    blurRadius: 18,
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           mainAxisSize: expanded ? MainAxisSize.max : MainAxisSize.min,
@@ -200,15 +205,14 @@ class QuestChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
           decoration: BoxDecoration(
-            color: selected ? q.honey : q.surface,
+            color: selected ? q.honey : q.surface2,
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: q.line, width: 2),
             boxShadow: selected
-                ? [
+                ? const [
                     BoxShadow(
-                      color: q.shadow,
-                      offset: const Offset(2, 2),
-                      blurRadius: 0,
+                      color: Color(0x59FFB33E),
+                      offset: Offset(0, 6),
+                      blurRadius: 14,
                     ),
                   ]
                 : null,
@@ -246,8 +250,7 @@ class QuestSegmented<T> extends StatelessWidget {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: context.q.surface2,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: context.q.line, width: 2),
+        borderRadius: BorderRadius.circular(22),
       ),
       child: Row(
         children: [
@@ -286,11 +289,8 @@ class _SegmentCell<T> extends StatelessWidget {
         curve: QuestMotion.easeOut,
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? q.honey : Colors.transparent,
+          color: selected ? q.surface : Colors.transparent,
           borderRadius: BorderRadius.circular(15),
-          border: selected
-              ? Border.all(color: q.line, width: 2)
-              : Border.all(color: Colors.transparent, width: 2),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -403,9 +403,8 @@ class QuestIconButton extends StatelessWidget {
       decoration: BoxDecoration(
         color: q.surface,
         shape: BoxShape.circle,
-        border: Border.all(color: q.line, width: 2),
         boxShadow: [
-          BoxShadow(color: q.shadow, offset: const Offset(2, 2), blurRadius: 0),
+          BoxShadow(color: q.shadow, offset: const Offset(0, 4), blurRadius: 12),
         ],
       ),
       child: Icon(icon, color: q.text, size: 22),
@@ -460,13 +459,12 @@ class QuestBottomNav extends StatelessWidget {
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: q.surface,
-          borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: q.line, width: 2),
+          borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
               color: q.shadow,
-              offset: const Offset(3, 3),
-              blurRadius: 0,
+              offset: const Offset(0, 10),
+              blurRadius: 26,
             ),
           ],
         ),
@@ -485,7 +483,6 @@ class QuestBottomNav extends StatelessWidget {
 
   /// Tombol aksi utama yang menonjol di tengah nav.
   Widget _centerButton(BuildContext context) {
-    final q = context.q;
     final action = centerAction!;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -497,20 +494,21 @@ class QuestBottomNav extends StatelessWidget {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: q.honey,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
+              ),
               shape: BoxShape.circle,
-              border: Border.all(color: q.line, width: 2.5),
               boxShadow: [
                 BoxShadow(
-                  color: q.shadow,
-                  offset: const Offset(2, 3),
-                  blurRadius: 0,
+                  color: const Color(0x73FFA726),
+                  offset: const Offset(0, 8),
+                  blurRadius: 18,
                 ),
               ],
             ),
             child: Icon(
               Icons.add_rounded,
-              color: q.honeyInk,
+              color: Colors.white,
               size: 32,
             ),
           ),
@@ -530,21 +528,21 @@ class QuestBottomNav extends StatelessWidget {
           curve: QuestMotion.easeOut,
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: selected ? q.honey : Colors.transparent,
+            color: selected ? q.surface2 : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(dest.icon,
-                  size: 22, color: selected ? q.honeyInk : q.muted),
+                  size: 22, color: selected ? q.text : q.muted),
               const SizedBox(height: 2),
               Text(
                 dest.label,
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 10,
-                  color: selected ? q.honeyInk : q.muted,
+                  color: selected ? q.text : q.muted,
                 ),
               ),
             ],
@@ -615,7 +613,6 @@ class QuestBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: q.surface2,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: q.line, width: 2),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(999),
@@ -670,7 +667,6 @@ class QuestSwitch extends StatelessWidget {
           decoration: BoxDecoration(
             color: value ? q.honey : q.surface2,
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: q.line, width: 2),
           ),
           child: AnimatedAlign(
             duration: QuestMotion.fast,
@@ -679,10 +675,12 @@ class QuestSwitch extends StatelessWidget {
             child: Container(
               width: 22,
               height: 22,
-              decoration: BoxDecoration(
-                color: q.surface,
+              decoration: const BoxDecoration(
+                color: Colors.white,
                 shape: BoxShape.circle,
-                border: Border.all(color: q.line, width: 2),
+                boxShadow: [
+                  BoxShadow(color: Color(0x1F000000), blurRadius: 4),
+                ],
               ),
             ),
           ),
@@ -833,10 +831,6 @@ class QuestSkeleton extends StatelessWidget {
             decoration: BoxDecoration(
               color: context.q.surface2,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: context.q.line.withValues(alpha: 0.4),
-                width: 2,
-              ),
             ),
           ),
       ],

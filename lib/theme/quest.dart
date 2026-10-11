@@ -33,17 +33,17 @@ class QuestPalette {
   final Color shadow;
 
   static const light = QuestPalette(
-    bg: Color(0xFFFDF6E9),
+    bg: Color(0xFFFFF8EE),
     surface: Color(0xFFFFFFFF),
-    surface2: Color(0xFFF7EEDC),
-    line: SeedColors.ink,
-    text: SeedColors.ink,
-    muted: Color(0xFF6E6656),
+    surface2: Color(0xFFFFF3DC),
+    line: Color(0xFFEFE6D4),
+    text: Color(0xFF33302B),
+    muted: Color(0xFFA39A88),
     good: SeedColors.incoming,
     bad: SeedColors.outgoing,
     honey: SeedColors.honey,
-    honeyInk: SeedColors.ink,
-    shadow: Color(0x333B3630),
+    honeyInk: Color(0xFF8A6420),
+    shadow: Color(0x124A3A14),
   );
 
   static const dark = QuestPalette(
@@ -192,6 +192,7 @@ class QuestSchemes {
       outlineVariant: p.muted.withValues(alpha: 0.4),
     );
     return ThemeData(
+      fontFamily: 'Nunito',
       colorScheme: scheme,
       scaffoldBackgroundColor: p.bg,
       splashFactory: NoSplash.splashFactory,
