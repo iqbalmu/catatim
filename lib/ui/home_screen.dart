@@ -249,7 +249,7 @@ class _BerandaTabState extends State<_BerandaTab> {
                     builder: (_) =>
                         BudgetScreen(repository: widget.repository),
                   ),
-                );
+                ).whenComplete(widget.progress.refresh);
               } else if (value == 'backup') {
                 Navigator.push(
                   context,
