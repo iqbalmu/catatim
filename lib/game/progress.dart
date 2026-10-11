@@ -21,6 +21,7 @@ class ProgressSummary {
     required this.monthIn,
     required this.monthOut,
     required this.dailyPace,
+    required this.activeDays,
   });
 
   final int streakDays;
@@ -33,6 +34,10 @@ class ProgressSummary {
 
   /// Pace harian dari batas yang tersedia; null safeToSpend = tanpa batas.
   final DailyPace? dailyPace;
+
+  /// Hari-hari (tengah malam lokal) 30 hari terakhir yang punya ≥1
+  /// transaksi — bahan strip Jejak Duit.
+  final Set<DateTime> activeDays;
 }
 
 /// Otak di balik Duit: menerjemahkan kondisi anggaran + tren bulanan
@@ -167,6 +172,11 @@ class ProgressService extends ChangeNotifier {
     );
 
     final wasCelebrating = _celebrating;
+    final activeDays = <DateTime>{
+      for (var i = 0; i < 30; i++)
+        if ((counts[today.subtract(Duration(days: i))] ?? 0) > 0)
+          today.subtract(Duration(days: i)),
+    };
     final pace = dailyPace(
       now: now,
       dayOut: dayOut,
@@ -185,6 +195,7 @@ class ProgressService extends ChangeNotifier {
       monthIn: monthIn,
       monthOut: monthOut,
       dailyPace: pace,
+      activeDays: activeDays,
     );
     notifyListeners();
   }

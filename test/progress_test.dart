@@ -220,4 +220,24 @@ void main() {
       expect(progress.latest!.dailyPace?.safeToSpend, isNull);
     });
   });
+
+  group('activeDays jejak duit', () {
+    test('30 hari terakhir yang ada transaksi', () async {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      await addTxAt(todayAt(9));
+      await addTxAt(todayAt(9).subtract(const Duration(days: 3)));
+      await addTxAt(todayAt(9).subtract(const Duration(days: 40)));
+      await progress.refresh();
+      final days = progress.latest!.activeDays;
+      expect(days, contains(today));
+      expect(days, contains(today.subtract(const Duration(days: 3))));
+      expect(days, isNot(contains(today.subtract(const Duration(days: 40)))));
+    });
+
+    test('tanpa transaksi: himpunan kosong', () async {
+      await progress.refresh();
+      expect(progress.latest!.activeDays, isEmpty);
+    });
+  });
 }
