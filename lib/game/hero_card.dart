@@ -275,13 +275,22 @@ class _BudgetRow extends StatelessWidget {
                 style: context.qSmall(),
               ),
               const Spacer(),
-              if (display.level != BudgetLevel.ok)
+              if (display.level == BudgetLevel.over)
                 Text(
                   'OVER',
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 11,
                     color: q.bad,
+                  ),
+                )
+              else if (display.level == BudgetLevel.warning)
+                Text(
+                  'WASPADA',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                    color: q.honeyInk,
                   ),
                 ),
             ],
