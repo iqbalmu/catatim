@@ -45,42 +45,53 @@ class _HeroCompact extends StatelessWidget {
       ),
       child: p == null || pace == null
           ? const SizedBox(height: 96)
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('SISA AMAN',
-                          style:
-                              context.qEyebrow().copyWith(color: q.honeyInk)),
-                      const SizedBox(height: 2),
-                      if (safe == null)
-                        Text(
-                          'Tanpa batas',
-                          style: context.qTitle(18).copyWith(color: q.muted),
-                        )
-                      else
-                        FittedBox(
-                          child: Text(
-                            Money.format(safe),
-                            style: context.qDisplay(34)
-                                .copyWith(color: over ? q.bad : q.text),
+          : IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('SISA AMAN',
+                            style: context
+                                .qEyebrow()
+                                .copyWith(color: q.honeyInk)),
+                        const SizedBox(height: 2),
+                        if (safe == null)
+                          Text(
+                            'Tanpa batas',
+                            style: context.qTitle(18).copyWith(color: q.muted),
+                          )
+                        else
+                          FittedBox(
+                            child: Text(
+                              Money.format(safe),
+                              style: context.qDisplay(34)
+                                  .copyWith(color: over ? q.bad : q.text),
+                            ),
                           ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'tgl ${pace.dayOfMonth} · '
+                          'ideal ${pace.idealUsedPercent}%',
+                          style: context.qSmall().copyWith(color: q.honeyInk),
                         ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'tgl ${pace.dayOfMonth} · '
-                        'ideal ${pace.idealUsedPercent}%',
-                        style: context.qSmall().copyWith(color: q.honeyInk),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: Spacing.s),
-                RepaintBoundary(child: Mascot(mood: p.mood, size: 88)),
-              ],
+                  const SizedBox(width: Spacing.s),
+                  AspectRatio(
+                    aspectRatio: 1,
+                    child: FittedBox(
+                      fit: BoxFit.contain,
+                      child:
+                          RepaintBoundary(child: Mascot(mood: p.mood, size: 96)),
+                    ),
+                  ),
+                ],
+              ),
             ),
     );
   }
