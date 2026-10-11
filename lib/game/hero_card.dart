@@ -49,8 +49,6 @@ class _HeroCompact extends StatelessWidget {
           : Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                RepaintBoundary(child: Mascot(mood: p.mood, size: 64)),
-                const SizedBox(width: Spacing.m),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,33 +80,42 @@ class _HeroCompact extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: Spacing.s),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: q.surface,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.local_fire_department_rounded,
-                        size: 14,
-                        color: hasStreak ? SeedColors.honeyDeep : q.muted,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 11, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: q.surface,
+                        borderRadius: BorderRadius.circular(999),
                       ),
-                      const SizedBox(width: 3),
-                      Text(
-                        '${p.streakDays}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13,
-                          color: hasStreak ? q.text : q.muted,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.local_fire_department_rounded,
+                            size: 14,
+                            color: hasStreak ? SeedColors.honeyDeep : q.muted,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            '${p.streakDays}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13,
+                              color: hasStreak ? q.text : q.muted,
+                              fontFeatures: const [FontFeature.tabularFigures()],
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: Spacing.s),
+                    RepaintBoundary(
+                        child: Mascot(mood: p.mood, size: 64)),
+                  ],
                 ),
               ],
             ),
