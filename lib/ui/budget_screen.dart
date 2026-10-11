@@ -852,7 +852,6 @@ class _AllocationRow extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: q.surface2,
                     shape: BoxShape.circle,
-                    border: Border.all(color: q.line, width: 1.5),
                   ),
                   child: Icon(Icons.edit_rounded, size: 16, color: q.text),
                 ),

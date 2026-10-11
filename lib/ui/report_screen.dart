@@ -581,10 +581,6 @@ class _CategoryDonutCardState extends State<_CategoryDonutCard> {
                 ? context.q.honey.withValues(alpha: 0.25)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: active ? context.q.line : Colors.transparent,
-              width: 2,
-            ),
           ),
           child: Row(
             children: [
@@ -594,7 +590,6 @@ class _CategoryDonutCardState extends State<_CategoryDonutCard> {
                 decoration: BoxDecoration(
                   color: b.color,
                   shape: BoxShape.circle,
-                  border: Border.all(color: context.q.line, width: 1.5),
                 ),
               ),
               const SizedBox(width: Spacing.s),

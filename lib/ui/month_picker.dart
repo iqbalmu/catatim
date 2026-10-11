@@ -110,10 +110,6 @@ class _MonthCell extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected ? q.honey : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: selected ? q.honey : q.line,
-            width: 2,
-          ),
         ),
         alignment: Alignment.center,
         child: Text(

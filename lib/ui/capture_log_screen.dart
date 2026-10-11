@@ -307,10 +307,6 @@ class _CaptureLogScreenState extends State<CaptureLogScreen> {
                                     ? context.q.good.withValues(alpha: 0.18)
                                     : context.q.surface2,
                                 shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: context.q.line,
-                                  width: 2,
-                                ),
                               ),
                               child: Icon(
                                 log.parsed
@@ -357,10 +353,6 @@ class _CaptureLogScreenState extends State<CaptureLogScreen> {
                                 decoration: BoxDecoration(
                                   color: context.q.good.withValues(alpha: 0.18),
                                   borderRadius: BorderRadius.circular(999),
-                                  border: Border.all(
-                                    color: context.q.line,
-                                    width: 2,
-                                  ),
                                 ),
                                 child: Text(
                                   'Tercatat',
