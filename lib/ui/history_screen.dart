@@ -8,6 +8,7 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'account_filter.dart';
 import 'quest.dart';
+import 'range_calendar.dart';
 import 'transaction_tile.dart';
 
 /// Cocokkan transaksi dengan query: pihak, kategori, bank, jenis, nominal.
@@ -27,7 +28,7 @@ bool matchesQuery(TxWithCategory item, String query) {
 
 enum _HistoryPeriod { all, month, sixMonths, custom }
 
-/// Tab Riwayat: cari + filter akun + filter waktu + daftar penuh per hari.
+/// Tab Riwayat: pencarian + filter (akun & waktu) dalam satu sheet.
 class HistoryTab extends StatefulWidget {
   const HistoryTab({
     super.key,
@@ -55,11 +56,55 @@ class _HistoryTabState extends State<HistoryTab> {
     super.dispose();
   }
 
-  Future<void> _pickRange(DateTime today) async {
+  int get _activeFilterCount {
+    var n = 0;
+    if (_accountId != null) n++;
+    if (_period != _HistoryPeriod.all) n++;
+    return n;
+  }
+
+  String get _periodLabel => switch (_period) {
+        _HistoryPeriod.month => 'Bulan ini',
+        _HistoryPeriod.sixMonths => '6 bulan',
+        _HistoryPeriod.custom => _custom == null
+            ? 'Rentang'
+            : '${idDayMonth(_custom!.start)} – ${idDayMonth(_custom!.end)}',
+        _HistoryPeriod.all => 'Semua waktu',
+      };
+
+  Future<void> _openFilterSheet() async {
+    await showQuestSheet<void>(
+      context,
+      (context) => Padding(
+        padding: EdgeInsets.only(
+          left: Spacing.m,
+          right: Spacing.m,
+          top: Spacing.s,
+          bottom: MediaQuery.of(context).viewInsets.bottom + Spacing.m,
+        ),
+        child: _FilterSheet(
+          repository: widget.repository,
+          accountId: _accountId,
+          period: _period,
+          custom: _custom,
+          onApply: (accountId, period, custom) {
+            setState(() {
+              _accountId = accountId;
+              _period = period;
+              _custom = custom;
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickRange() async {
+    final now = DateTime.now();
     final picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2020),
-      lastDate: DateTime(today.year + 1, 12, 31),
+      lastDate: DateTime(now.year + 1, 12, 31),
       initialDateRange: _custom,
       helpText: 'Pilih rentang tanggal',
       saveText: 'Pilih',
@@ -72,23 +117,9 @@ class _HistoryTabState extends State<HistoryTab> {
     }
   }
 
-  void _onPeriodChanged(_HistoryPeriod v, DateTime today) {
-    if (v == _HistoryPeriod.custom) {
-      if (_custom == null) {
-        _pickRange(today);
-      } else {
-        setState(() => _period = _HistoryPeriod.custom);
-      }
-    } else {
-      setState(() => _period = v);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
     final DateTime? winStart;
     final DateTime? winEnd;
     switch (_period) {
@@ -133,47 +164,46 @@ class _HistoryTabState extends State<HistoryTab> {
             decoration: InputDecoration(
               hintText: 'Cari pihak, kategori, nominal…',
               prefixIcon: const Icon(Icons.search_rounded),
-              suffixIcon: _query.isEmpty
-                  ? null
-                  : IconButton(
-                      tooltip: 'Bersihkan',
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_query.isNotEmpty)
+                    IconButton(
+                      tooltip: 'Bersihkan pencarian',
                       icon: const Icon(Icons.clear_rounded),
                       onPressed: () {
                         _searchCtrl.clear();
                         setState(() => _query = '');
                       },
                     ),
+                  Badge(
+                    isLabelVisible: _activeFilterCount > 0,
+                    label: Text('$_activeFilterCount'),
+                    backgroundColor: context.q.honey,
+                    child: IconButton(
+                      tooltip: 'Filter',
+                      icon: const Icon(Icons.filter_list_rounded),
+                      onPressed: _openFilterSheet,
+                    ),
+                  ),
+                ],
+              ),
             ),
             onChanged: (v) => setState(() => _query = v),
           ),
-          const SizedBox(height: Spacing.s),
-          AccountFilter(
-            repository: widget.repository,
-            selectedId: _accountId,
-            onChanged: (id) => setState(() => _accountId = id),
-          ),
-          const SizedBox(height: Spacing.s),
-          QuestSegmented<_HistoryPeriod>(
-            selected: _period,
-            onChanged: (v) => _onPeriodChanged(v, today),
-            options: const [
-              (value: _HistoryPeriod.all, label: 'Semua', icon: null),
-              (value: _HistoryPeriod.month, label: 'Bulan ini', icon: null),
-              (
-                value: _HistoryPeriod.sixMonths,
-                label: '6 bulan',
-                icon: null
-              ),
-              (value: _HistoryPeriod.custom, label: 'Rentang', icon: null),
-            ],
-          ),
-          if (_period == _HistoryPeriod.custom && _custom != null) ...[
+          if (_activeFilterCount > 0) ...[
             const SizedBox(height: Spacing.s),
-            QuestChip(
-              label:
-                  '${idDayMonth(_custom!.start)} – ${idDayMonth(_custom!.end)} · Ubah',
-              selected: true,
-              onTap: () => _pickRange(today),
+            _ActiveFilterChips(
+              accountName: _accountName(),
+              periodLabel:
+                  _period == _HistoryPeriod.all ? null : _periodLabel,
+              onClearAccount:
+                  _accountId == null ? null : () => setState(() => _accountId = null),
+              onClearPeriod: _period == _HistoryPeriod.all
+                  ? null
+                  : () => setState(() => _period = _HistoryPeriod.all),
+              onTapPeriod:
+                  _period == _HistoryPeriod.custom ? _pickRange : null,
             ),
           ],
           const SizedBox(height: Spacing.s),
@@ -189,7 +219,7 @@ class _HistoryTabState extends State<HistoryTab> {
               ];
               if (items.isEmpty) {
                 final filtering =
-                    _query.isNotEmpty || _accountId != null || _custom != null;
+                    _query.isNotEmpty || _activeFilterCount > 0;
                 return QuestEmpty(
                   title: filtering ? 'Tidak ada yang cocok' : 'Belum ada catatan',
                   hint: filtering
@@ -217,6 +247,201 @@ class _HistoryTabState extends State<HistoryTab> {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  String? _accountName() {
+    if (_accountId == null) return null;
+    // Nama dicari di build _ActiveFilterChips via stream akun; di sini
+    // cukup label generik.
+    return 'Akun';
+  }
+}
+
+/// Chip filter aktif yang bisa dihapus satu per satu.
+class _ActiveFilterChips extends StatelessWidget {
+  const _ActiveFilterChips({
+    required this.accountName,
+    required this.periodLabel,
+    required this.onClearAccount,
+    required this.onClearPeriod,
+    this.onTapPeriod,
+  });
+
+  final String? accountName;
+  final String? periodLabel;
+  final VoidCallback? onClearAccount;
+  final VoidCallback? onClearPeriod;
+  final VoidCallback? onTapPeriod;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: Spacing.s,
+      runSpacing: Spacing.s,
+      children: [
+        if (accountName != null)
+          _RemovableChip(
+            label: accountName!,
+            onClear: onClearAccount!,
+          ),
+        if (periodLabel != null)
+          _RemovableChip(
+            label: periodLabel!,
+            onClear: onClearPeriod!,
+            onTap: onTapPeriod,
+          ),
+      ],
+    );
+  }
+}
+
+class _RemovableChip extends StatelessWidget {
+  const _RemovableChip({
+    required this.label,
+    required this.onClear,
+    this.onTap,
+  });
+
+  final String label;
+  final VoidCallback onClear;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    return QuestPress(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.only(left: 12, right: 6, top: 5, bottom: 5),
+        decoration: BoxDecoration(
+          color: q.honey.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: q.line, width: 2),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+                color: q.text,
+              ),
+            ),
+            const SizedBox(width: 4),
+            GestureDetector(
+              onTap: onClear,
+              child: Icon(Icons.close_rounded, size: 16, color: q.muted),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Isi sheet filter: akun + periode (+ pemilih rentang saat custom).
+class _FilterSheet extends StatefulWidget {
+  const _FilterSheet({
+    required this.repository,
+    required this.accountId,
+    required this.period,
+    required this.custom,
+    required this.onApply,
+  });
+
+  final LedgerRepository repository;
+  final int? accountId;
+  final _HistoryPeriod period;
+  final DateTimeRange? custom;
+  final void Function(int? accountId, _HistoryPeriod period, DateTimeRange? custom)
+      onApply;
+
+  @override
+  State<_FilterSheet> createState() => _FilterSheetState();
+}
+
+class _FilterSheetState extends State<_FilterSheet> {
+  int? _accountId;
+  _HistoryPeriod _period = _HistoryPeriod.all;
+  DateTimeRange? _custom;
+
+  @override
+  void initState() {
+    super.initState();
+    _accountId = widget.accountId;
+    _period = widget.period;
+    _custom = widget.custom;
+  }
+
+  void _selectPeriod(_HistoryPeriod v) {
+    if (v == _HistoryPeriod.custom) {
+      // Kalender langsung tampil di bawah; user memilih di situ.
+      setState(() => _period = _HistoryPeriod.custom);
+    } else {
+      setState(() => _period = v);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Filter', style: context.qTitle(20)),
+            const SizedBox(height: Spacing.m),
+            Text('Akun', style: context.qEyebrow()),
+            const SizedBox(height: Spacing.s),
+            AccountFilter(
+              repository: widget.repository,
+              selectedId: _accountId,
+              onChanged: (id) => setState(() => _accountId = id),
+            ),
+            const SizedBox(height: Spacing.m),
+            Text('Waktu', style: context.qEyebrow()),
+            const SizedBox(height: Spacing.s),
+            QuestSegmented<_HistoryPeriod>(
+              selected: _period,
+              onChanged: _selectPeriod,
+              options: const [
+                (value: _HistoryPeriod.all, label: 'Semua', icon: null),
+                (value: _HistoryPeriod.month, label: 'Bulan ini', icon: null),
+                (
+                  value: _HistoryPeriod.sixMonths,
+                  label: '6 bulan',
+                  icon: null
+                ),
+                (value: _HistoryPeriod.custom, label: 'Rentang', icon: null),
+              ],
+            ),
+            if (_period == _HistoryPeriod.custom) ...[
+              const SizedBox(height: Spacing.m),
+              QuestCard(
+                radius: 16,
+                child: QuestRangeCalendar(
+                  initialRange: _custom,
+                  onChanged: (r) => setState(() => _custom = r),
+                ),
+              ),
+            ],
+            const SizedBox(height: Spacing.l),
+            QuestButton(
+              label: 'Terapkan',
+              icon: Icons.check_rounded,
+              onPressed: () {
+                widget.onApply(_accountId, _period, _custom);
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: Spacing.s),
+          ],
+        ),
       ),
     );
   }
