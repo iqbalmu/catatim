@@ -192,6 +192,54 @@ class _BerandaTabState extends State<_BerandaTab> {
         title: 'Bukuduit',
         subtitle: _todaySubtitle(DateTime.now()),
         actions: [
+          ListenableBuilder(
+            listenable: widget.progress,
+            builder: (context, _) {
+              final streak = widget.progress.latest?.streakDays ?? 0;
+              final hasStreak = streak > 0;
+              return Container(
+                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: context.q.surface,
+                  borderRadius: BorderRadius.circular(999),
+                  boxShadow: [
+                    BoxShadow(
+                      color: context.q.shadow,
+                      offset: const Offset(0, 4),
+                      blurRadius: 12,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.local_fire_department_rounded,
+                      size: 15,
+                      color: hasStreak
+                          ? SeedColors.honeyDeep
+                          : context.q.muted,
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      '$streak',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                        color:
+                            hasStreak ? context.q.text : context.q.muted,
+                        fontFeatures: const [
+                          FontFeature.tabularFigures()
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: Spacing.s),
           FutureBuilder<bool>(
             future: widget.pipeline.channel.isListenerEnabled(),
             builder: (context, snapshot) {

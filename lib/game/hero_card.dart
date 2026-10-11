@@ -34,7 +34,6 @@ class _HeroCompact extends StatelessWidget {
     final pace = p?.dailyPace;
     final safe = pace?.safeToSpend;
     final over = safe != null && safe < 0;
-    final hasStreak = (p?.streakDays ?? 0) > 0;
 
     return Container(
       padding: const EdgeInsets.all(Spacing.l),
@@ -53,47 +52,9 @@ class _HeroCompact extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Text('SISA AMAN',
-                              style: context
-                                  .qEyebrow()
-                                  .copyWith(color: q.honeyInk)),
-                          const Spacer(),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 9, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: q.surface,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.local_fire_department_rounded,
-                                  size: 12,
-                                  color: hasStreak
-                                      ? SeedColors.honeyDeep
-                                      : q.muted,
-                                ),
-                                const SizedBox(width: 2),
-                                Text(
-                                  '${p.streakDays}',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 12,
-                                    color: hasStreak ? q.text : q.muted,
-                                    fontFeatures: const [
-                                      FontFeature.tabularFigures()
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                      Text('SISA AMAN',
+                          style:
+                              context.qEyebrow().copyWith(color: q.honeyInk)),
                       const SizedBox(height: 2),
                       if (safe == null)
                         Text(
@@ -118,7 +79,7 @@ class _HeroCompact extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: Spacing.s),
-                RepaintBoundary(child: Mascot(mood: p.mood, size: 120)),
+                RepaintBoundary(child: Mascot(mood: p.mood, size: 88)),
               ],
             ),
     );
