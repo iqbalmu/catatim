@@ -365,9 +365,9 @@ void main() {
       await addOutAt(today.subtract(const Duration(days: 6)), 9000);
       await addOutAt(today.subtract(const Duration(days: 31)), 11000);
 
-      final sums = await repo.outSumByDaySince(
-        today.subtract(const Duration(days: 29)),
-      );
+      final sums = await repo
+          .watchOutSumByDaySince(today.subtract(const Duration(days: 29)))
+          .first;
       expect(sums[today], 5000);
       expect(sums[today.subtract(const Duration(days: 1))], 7000);
       expect(sums[today.subtract(const Duration(days: 6))], 9000);
@@ -384,7 +384,7 @@ void main() {
         kind: TxKind.transfer,
         occurredAt: today.add(const Duration(hours: 8)),
       );
-      final sums = await repo.outSumByDaySince(today);
+      final sums = await repo.watchOutSumByDaySince(today).first;
       expect(sums, isEmpty);
     });
   });

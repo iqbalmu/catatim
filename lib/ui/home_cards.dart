@@ -17,6 +17,7 @@ import 'quest.dart';
 ///
 /// Pace Card menjawab "boleh habis berapa hari ini?", Saldo Card
 /// "uangku di mana?", Insight Card menjembatani ke tab Laporan.
+/// Saldo & insight mengalir via drift streams sehingga selalu segar.
 
 class PaceCard extends StatelessWidget {
   const PaceCard({super.key, required this.service});
@@ -102,6 +103,10 @@ class SaldoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final monthStart = DateTime(now.year, now.month);
+    final monthEnd = DateTime(now.year, now.month + 1);
+
     return QuestCard(
       onTap: () => Navigator.push(
         context,
@@ -115,57 +120,86 @@ class SaldoCard extends StatelessWidget {
           return StreamBuilder<Map<int, int>>(
             stream: repository.watchAccountBalances(),
             builder: (context, balSnap) {
-              final accounts = accSnap.data ?? const <Account>[];
-              final balances = balSnap.data ?? const <int, int>{};
-              if (accSnap.connectionState == ConnectionState.waiting) {
-                return const QuestSkeleton(height: 70, rows: 1);
-              }
-              final total = balances.values.fold(0, (a, b) => a + b);
+              return StreamBuilder<List<Budget>>(
+                stream: repository.watchBudgets(),
+                builder: (context, budgetSnap) {
+                  return StreamBuilder<
+                      Map<({int? category, int? account}), int>>(
+                    stream: repository.watchOutPairsBetween(
+                      monthStart,
+                      monthEnd,
+                    ),
+                    builder: (context, usageSnap) {
+                      final accounts = accSnap.data ?? const <Account>[];
+                      final balances = balSnap.data ?? const <int, int>{};
+                      if (accSnap.connectionState == ConnectionState.waiting) {
+                        return const QuestSkeleton(height: 70, rows: 1);
+                      }
+                      final total = balances.values.fold(0, (a, b) => a + b);
+                      final allocations = [
+                        for (final b in budgetSnap.data ?? const <Budget>[])
+                          (
+                            categoryId: b.categoryId,
+                            accountId: b.accountId,
+                            monthlyLimit: b.monthlyLimit,
+                          ),
+                      ];
+                      final usage =
+                          usageSnap.data ?? const <({int? category, int? account}), int>{};
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text('SALDO', style: context.qEyebrow()),
-                      const Spacer(),
-                      Text(
-                        Money.format(total),
-                        style: context.qTitle(17),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: Spacing.s),
-                  for (final account in accounts)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: Row(
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          FutureBuilder<Color>(
-                            future: _dotColor(context, account.id),
-                            builder: (context, dot) => Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: dot.data ?? context.q.line,
-                                shape: BoxShape.circle,
+                          Row(
+                            children: [
+                              Text('SALDO', style: context.qEyebrow()),
+                              const Spacer(),
+                              Text(
+                                Money.format(total),
+                                style: context.qTitle(17),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: Spacing.s),
+                          for (final account in accounts)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 3),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: _dotFor(
+                                        context,
+                                        allocations,
+                                        usage,
+                                        account.id,
+                                      ),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: Spacing.s),
+                                  Expanded(
+                                    child: Text(
+                                      account.name,
+                                      style: context.qSmall(13),
+                                    ),
+                                  ),
+                                  Text(
+                                    Money.format(balances[account.id] ?? 0),
+                                    style: context.qSmall(13),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                          const SizedBox(width: Spacing.s),
-                          Expanded(
-                            child: Text(account.name, style: context.qSmall(13)),
-                          ),
-                          Text(
-                            Money.format(balances[account.id] ?? 0),
-                            style: context.qSmall(13),
-                          ),
+                          if (accounts.isEmpty)
+                            Text('Belum ada akun.', style: context.qSmall()),
                         ],
-                      ),
-                    ),
-                  if (accounts.isEmpty)
-                    Text('Belum ada akun.', style: context.qSmall()),
-                ],
+                      );
+                    },
+                  );
+                },
               );
             },
           );
@@ -176,25 +210,15 @@ class SaldoCard extends StatelessWidget {
 
   /// Warna dot alokasi akun: level terburuk alokasi yang di-scope ke
   /// akun itu; abu-abu bila akun tanpa alokasi ber-scope.
-  Future<Color> _dotColor(BuildContext context, int accountId) async {
+  Color _dotFor(
+    BuildContext context,
+    List<CategoryAllocation> allocations,
+    Map<({int? category, int? account}), int> usage,
+    int accountId,
+  ) {
     final q = context.q;
-    final now = DateTime.now();
-    final monthStart = DateTime(now.year, now.month);
-    final monthEnd = DateTime(now.year, now.month + 1);
-    final results = await Future.wait([
-      repository.watchBudgets().first,
-      repository.outPairsBetween(monthStart, monthEnd),
-    ]);
-    final budgets = results[0] as List<Budget>;
-    final usage = results[1] as Map<({int? category, int? account}), int>;
     final level = accountBudgetLevel(
-      budgets: budgets
-          .map((b) => (
-                categoryId: b.categoryId,
-                accountId: b.accountId,
-                monthlyLimit: b.monthlyLimit,
-              ))
-          .toList(),
+      budgets: allocations,
       usage: usage,
       accountId: accountId,
     );
@@ -223,19 +247,128 @@ class InsightCard extends StatefulWidget {
 
 class _InsightCardState extends State<InsightCard> {
   int _windowDays = 7;
-  late Future<_InsightData> _future = _load();
 
-  Future<_InsightData> _load() async {
+  Stream<Map<DateTime, int>> _sumsStream() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final monthStart = DateTime(now.year, now.month);
-    final monthEnd = DateTime(now.year, now.month + 1);
-    final sums = await widget.repository.outSumByDaySince(
+    return widget.repository.watchOutSumByDaySince(
       today.subtract(Duration(days: _windowDays - 1)),
     );
-    final usage =
-        await widget.repository.outPairsBetween(monthStart, monthEnd);
-    final categories = await widget.repository.watchCategories().first;
+  }
+
+  void _setWindow(int days) => setState(() => _windowDays = days);
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final monthStart = DateTime(now.year, now.month);
+    final monthEnd = DateTime(now.year, now.month + 1);
+    final today = DateTime(now.year, now.month, now.day);
+
+    return QuestCard(
+      onTap: widget.onOpenReports,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('TREN KELUAR', style: context.qEyebrow()),
+              const SizedBox(width: Spacing.s),
+              Expanded(
+                child: QuestSegmented<int>(
+                  options: const [
+                    (value: 7, label: '7 hari', icon: null),
+                    (value: 30, label: '30 hari', icon: null),
+                  ],
+                  selected: _windowDays,
+                  onChanged: _setWindow,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Spacing.s),
+          StreamBuilder<Map<DateTime, int>>(
+            stream: _sumsStream(),
+            key: ValueKey(_windowDays),
+            builder: (context, sumsSnap) {
+              return StreamBuilder<Map<({int? category, int? account}), int>>(
+                stream: widget.repository.watchOutPairsBetween(
+                  monthStart,
+                  monthEnd,
+                ),
+                builder: (context, usageSnap) {
+                  return StreamBuilder<List<Category>>(
+                    stream: widget.repository.watchCategories(),
+                    builder: (context, catSnap) {
+                      if (sumsSnap.connectionState == ConnectionState.waiting ||
+                          usageSnap.connectionState ==
+                              ConnectionState.waiting ||
+                          catSnap.connectionState == ConnectionState.waiting) {
+                        return const QuestSkeleton(height: 96, rows: 1);
+                      }
+                      final sums = sumsSnap.data ?? const <DateTime, int>{};
+                      final points = [
+                        for (var i = 0; i < _windowDays; i++)
+                          sums[today.subtract(Duration(days: i))] ?? 0,
+                      ].reversed.toList();
+                      final top = _topCategories(usageSnap.data, catSnap.data);
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            height: 48,
+                            width: double.infinity,
+                            child: CustomPaint(
+                              painter: _Sparkline(
+                                points: points,
+                                line: context.q.honey,
+                                base: context.q.line,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: Spacing.s),
+                          for (final cat in top)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 2),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      cat.name,
+                                      style: context.qSmall(13),
+                                    ),
+                                  ),
+                                  Text(
+                                    Money.format(cat.total),
+                                    style: context.qSmall(13),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          if (top.isEmpty)
+                            Text(
+                              'Belum ada pengeluaran bulan ini.',
+                              style: context.qSmall(),
+                            ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<({String name, int total})> _topCategories(
+    Map<({int? category, int? account}), int>? usage,
+    List<Category>? categories,
+  ) {
+    if (usage == null || categories == null) return const [];
     final names = {for (final c in categories) c.id: c.name};
     final byCategory = <int, int>{};
     for (final e in usage.entries) {
@@ -245,112 +378,10 @@ class _InsightCardState extends State<InsightCard> {
     }
     final top = byCategory.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    return _InsightData(
-      sums: sums,
-      today: today,
-      topCategories: [
-        for (final e in top.take(3))
-          (name: names[e.key] ?? 'Lainnya', total: e.value),
-      ],
-    );
+    return [
+      for (final e in top.take(3)) (name: names[e.key] ?? 'Lainnya', total: e.value),
+    ];
   }
-
-  void _setWindow(int days) {
-    setState(() {
-      _windowDays = days;
-      _future = _load();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return QuestCard(
-      onTap: widget.onOpenReports,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text('TREN KELUAR', style: context.qEyebrow()),
-              const Spacer(),
-              QuestSegmented<int>(
-                options: const [
-                  (value: 7, label: '7 hari', icon: null),
-                  (value: 30, label: '30 hari', icon: null),
-                ],
-                selected: _windowDays,
-                onChanged: _setWindow,
-              ),
-            ],
-          ),
-          const SizedBox(height: Spacing.s),
-          FutureBuilder<_InsightData>(
-            future: _future,
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const QuestSkeleton(height: 96, rows: 1);
-              }
-              final data = snap.data;
-              if (data == null) {
-                return Text('Data belum tersedia.', style: context.qSmall());
-              }
-              final points = [
-                for (var i = 0; i < _windowDays; i++)
-                  data.sums[data.today.subtract(Duration(days: _windowDays - 1 - i))] ?? 0,
-              ];
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    height: 48,
-                    width: double.infinity,
-                    child: CustomPaint(
-                      painter: _Sparkline(
-                        points: points,
-                        line: context.q.honey,
-                        base: context.q.line,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: Spacing.s),
-                  for (final cat in data.topCategories)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(cat.name, style: context.qSmall(13)),
-                          ),
-                          Text(
-                            Money.format(cat.total),
-                            style: context.qSmall(13),
-                          ),
-                        ],
-                      ),
-                    ),
-                  if (data.topCategories.isEmpty)
-                    Text('Belum ada pengeluaran bulan ini.',
-                        style: context.qSmall()),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InsightData {
-  const _InsightData({
-    required this.sums,
-    required this.today,
-    required this.topCategories,
-  });
-
-  final Map<DateTime, int> sums;
-  final DateTime today;
-  final List<({String name, int total})> topCategories;
 }
 
 class _Sparkline extends CustomPainter {
