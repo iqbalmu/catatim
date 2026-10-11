@@ -164,7 +164,13 @@ class _BonTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: context.q.surface,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: context.q.line, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: context.q.shadow,
+                offset: const Offset(0, 6),
+                blurRadius: 18,
+              ),
+            ],
           ),
           child: Row(
             children: [
@@ -177,7 +183,6 @@ class _BonTile extends StatelessWidget {
                       ? context.q.good.withValues(alpha: 0.16)
                       : context.q.bad.withValues(alpha: 0.16),
                   shape: BoxShape.circle,
-                  border: Border.all(color: context.q.line, width: 2),
                 ),
                 child: Text(initial, style: context.qTitle(19)),
               ),

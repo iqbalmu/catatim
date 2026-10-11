@@ -329,7 +329,6 @@ class _RemovableChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: q.honey.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: q.line, width: 2),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

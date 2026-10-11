@@ -103,12 +103,11 @@ class _ReportTabState extends State<ReportTab> {
               decoration: BoxDecoration(
                 color: context.q.surface,
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: context.q.line, width: 2),
                 boxShadow: [
                   BoxShadow(
                     color: context.q.shadow,
-                    offset: const Offset(2, 2),
-                    blurRadius: 0,
+                    offset: const Offset(0, 6),
+                    blurRadius: 18,
                   ),
                 ],
               ),
