@@ -20,6 +20,7 @@ class ProgressSummary {
     required this.snapshot,
     required this.monthIn,
     required this.monthOut,
+    required this.dailyPace,
   });
 
   final int streakDays;
@@ -29,6 +30,9 @@ class ProgressSummary {
   final BudgetSnapshot snapshot;
   final int monthIn;
   final int monthOut;
+
+  /// Pace harian dari batas yang tersedia; null safeToSpend = tanpa batas.
+  final DailyPace? dailyPace;
 }
 
 /// Otak di balik Duit: menerjemahkan kondisi anggaran + tren bulanan
@@ -163,6 +167,15 @@ class ProgressService extends ChangeNotifier {
     );
 
     final wasCelebrating = _celebrating;
+    final pace = dailyPace(
+      now: now,
+      dayOut: dayOut,
+      weekOut: weekOut,
+      monthOut: monthOut,
+      dailyLimit: dailyLimit,
+      weeklyLimit: weekLimit,
+      monthlyTotal: monthTotalLimit,
+    );
     latest = ProgressSummary(
       streakDays: streak,
       recordedToday: recordedToday,
@@ -171,6 +184,7 @@ class ProgressService extends ChangeNotifier {
       snapshot: snapshot,
       monthIn: monthIn,
       monthOut: monthOut,
+      dailyPace: pace,
     );
     notifyListeners();
   }

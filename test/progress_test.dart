@@ -203,4 +203,21 @@ void main() {
       expect(line.level, BudgetLevel.over);
     });
   });
+
+  group('dailyPace dalam ringkasan', () {
+    test('ringkasan membawa sisa aman harian', () async {
+      await repo.setSetting(kKeyDailyLimit, '5000');
+      await addTxAt(todayAt(9), amount: 1250);
+      await progress.refresh();
+      final p = progress.latest!;
+      expect(p.dailyPace, isNotNull);
+      expect(p.dailyPace!.safeToSpend, 3750);
+    });
+
+    test('tanpa batas apa pun: safeToSpend null', () async {
+      await addTxAt(todayAt(9));
+      await progress.refresh();
+      expect(progress.latest!.dailyPace?.safeToSpend, isNull);
+    });
+  });
 }

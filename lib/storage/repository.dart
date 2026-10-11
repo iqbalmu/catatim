@@ -282,6 +282,24 @@ class LedgerRepository {
     return map;
   }
 
+  /// Total keluar per hari lokal sejak [since] (inklusif) — bahan
+  /// sparkline insight beranda.
+  Future<Map<DateTime, int>> outSumByDaySince(DateTime since) async {
+    final rows = await (_db.select(_db.transactions)..where((t) =>
+        t.direction.equalsValue(Direction.outgoing) &
+        t.occurredAt.isBiggerOrEqualValue(since))).get();
+    final map = <DateTime, int>{};
+    for (final t in rows) {
+      final d = DateTime(
+        t.occurredAt.year,
+        t.occurredAt.month,
+        t.occurredAt.day,
+      );
+      map.update(d, (v) => v + t.amount, ifAbsent: () => t.amount);
+    }
+    return map;
+  }
+
   // --- settings -----------------------------------------------------------------
 
   Future<String?> getSetting(String key) async {
