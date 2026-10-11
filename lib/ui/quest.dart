@@ -138,16 +138,16 @@ class QuestButton extends StatelessWidget {
           color: fill,
           gradient: tone == QuestTone.primary
               ? const LinearGradient(
-                  colors: [Color(0xFFFFB33E), Color(0xFFF08C1A)],
+                  colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
                 )
               : null,
           borderRadius: BorderRadius.circular(999),
           boxShadow: tone == QuestTone.primary
               ? const [
                   BoxShadow(
-                    color: Color(0x73F08C1A),
+                    color: Color(0x73FFA726),
                     offset: Offset(0, 8),
-                    blurRadius: 24,
+                    blurRadius: 18,
                   ),
                 ]
               : null,
