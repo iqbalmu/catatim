@@ -211,4 +211,66 @@ void main() {
       expect(feb.idealUsedPercent, 3);
     });
   });
+
+  group('level alokasi per akun', () {
+    CategoryAllocation scoped(int cat, int acc, int limit) =>
+        (categoryId: cat, accountId: acc, monthlyLimit: limit);
+
+    test('over bila pemakaian melewati plafon', () {
+      expect(
+        accountBudgetLevel(
+          budgets: [scoped(5, 1, 100000)],
+          usage: const {(category: 5, account: 1): 150000},
+          accountId: 1,
+        ),
+        BudgetLevel.over,
+      );
+    });
+
+    test('warning di 75% ke atas', () {
+      expect(
+        accountBudgetLevel(
+          budgets: [scoped(5, 1, 100000)],
+          usage: const {(category: 5, account: 1): 80000},
+          accountId: 1,
+        ),
+        BudgetLevel.warning,
+      );
+    });
+
+    test('ok di bawah 75%', () {
+      expect(
+        accountBudgetLevel(
+          budgets: [scoped(5, 1, 100000)],
+          usage: const {(category: 5, account: 1): 50000},
+          accountId: 1,
+        ),
+        BudgetLevel.ok,
+      );
+    });
+
+    test('akun tanpa alokasi ber-scope: null', () {
+      expect(
+        accountBudgetLevel(
+          budgets: [scoped(5, 1, 100000)],
+          usage: const {(category: 5, account: 2): 150000},
+          accountId: 2,
+        ),
+        isNull,
+      );
+    });
+
+    test('alokasi global tidak mewarnai dot akun', () {
+      expect(
+        accountBudgetLevel(
+          budgets: const [
+            (categoryId: 5, accountId: null, monthlyLimit: 100000),
+          ],
+          usage: const {(category: 5, account: null): 150000},
+          accountId: 1,
+        ),
+        isNull,
+      );
+    });
+  });
 }

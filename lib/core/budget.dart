@@ -193,3 +193,33 @@ DailyPace dailyPace({
     idealUsedPercent: (dayOfMonth / daysInMonth * 100).round(),
   );
 }
+
+/// Alokasi anggaran murni — dipetakan dari row drift `Budget` di
+/// lapisan UI/storage agar core tetap bebas dependensi (ADR-003).
+typedef CategoryAllocation = ({int categoryId, int? accountId, int monthlyLimit});
+
+/// Level terburuk alokasi yang di-scope ke [accountId]; null bila akun
+/// tidak punya alokasi ber-scope. Alokasi global (`accountId` null)
+/// tidak ikut dinilai — indikator per akun hanya mencerminkan
+/// alokasi milik akun itu, bukan garis global.
+BudgetLevel? accountBudgetLevel({
+  required List<CategoryAllocation> budgets,
+  required Map<({int? category, int? account}), int> usage,
+  required int accountId,
+}) {
+  BudgetLevel? worst;
+  for (final allocation in budgets) {
+    if (allocation.accountId != accountId) continue;
+    final used = usage.entries
+        .where((e) =>
+            e.key.category == allocation.categoryId &&
+            e.key.account == accountId)
+        .fold(0, (total, e) => total + e.value);
+    final level =
+        LimitLine(label: '', used: used, limit: allocation.monthlyLimit)
+            .level;
+    if (level == BudgetLevel.over) return BudgetLevel.over;
+    if (worst == null || level.index > worst.index) worst = level;
+  }
+  return worst;
+}
