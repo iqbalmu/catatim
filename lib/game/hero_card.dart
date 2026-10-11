@@ -114,7 +114,7 @@ class _HeroCompact extends StatelessWidget {
                     ),
                     const SizedBox(height: Spacing.s),
                     RepaintBoundary(
-                        child: Mascot(mood: p.mood, size: 64)),
+                        child: Mascot(mood: p.mood, size: 96)),
                   ],
                 ),
               ],
