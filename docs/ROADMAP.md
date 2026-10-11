@@ -17,7 +17,7 @@ target setelah produk terasa lengkap dan capture terbukti di lapangan.
 
 ## Milestone
 
-### M1 — Beranda baru
+### M1 — Beranda baru (selesai 2026-10-11)
 
 Beranda berubah dari catatan pasif menjadi panggung keputusan. Di atas
 hero card maskot (tetap), ditambahkan:
@@ -33,6 +33,13 @@ hero card maskot (tetap), ditambahkan:
 **Selesai bila**: beranda menjawab "boleh habis berapa hari ini?" dan
 "uangku di mana?" tanpa buka layar lain; perhitungan pace punya unit
 test.
+
+**Hasil**: terverifikasi di emulator (Android 14) — pace Rp10.000
+dari batas harian Rp50.000 − keluar hari ini Rp40.000, fallback
+"tanpa batas" sebelum anggaran diatur, saldo per akun + dot alokasi,
+sparkline 7/30, navigasi ke Laporan dan Kelola Akun. Ditemukan & diperbaiki
+saat smoke: pace tidak segar setelah edit anggaran (refresh saat kembali
+dari layar Anggaran).
 
 ### M2 — Misi harian
 
