@@ -240,3 +240,12 @@ LimitLine? heroBudgetLine(BudgetSnapshot snap) {
   });
   return global.first;
 }
+
+/// Label delta persen periode berjalan vs pembanding: '▲ 12%', '▼ 3%',
+/// '±0%'; null bila pembanding nol (tidak bisa dibandingkan).
+String? deltaLabel(int current, int previous) {
+  if (previous <= 0) return null;
+  final pct = ((current - previous) * 100 / previous).round();
+  if (pct == 0) return '±0%';
+  return '${pct > 0 ? '▲' : '▼'} ${pct.abs()}%';
+}

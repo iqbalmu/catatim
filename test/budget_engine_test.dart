@@ -327,4 +327,22 @@ void main() {
       );
     });
   });
+
+  group('deltaLabel', () {
+    test('naik 12 persen', () {
+      expect(deltaLabel(1120000, 1000000), '▲ 12%');
+    });
+
+    test('turun 3 persen', () {
+      expect(deltaLabel(970000, 1000000), '▼ 3%');
+    });
+
+    test('pembanding nol: null', () {
+      expect(deltaLabel(500000, 0), isNull);
+    });
+
+    test('sama persis: nol datar', () {
+      expect(deltaLabel(1000000, 1000000), '±0%');
+    });
+  });
 }
