@@ -491,3 +491,299 @@ class _Sparkline extends CustomPainter {
       oldDelegate.line != line ||
       oldDelegate.base != base;
 }
+
+/// Pita Jejak Duit: 30 titik hari aktif dari data streak — rantai visual
+/// yang tak ingin diputus. Tanpa query tambahan.
+class JejakStrip extends StatelessWidget {
+  const JejakStrip({super.key, required this.service});
+
+  final ProgressService service;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: service,
+      builder: (context, _) {
+        final p = service.latest;
+        if (p == null) return const SizedBox.shrink();
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final active = p.activeDays;
+        return QuestCard(
+          radius: 18,
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text('JEJAK 30 HARI', style: context.qEyebrow()),
+                  const Spacer(),
+                  Text(
+                    '${active.length}/30',
+                    style: context.qSmall(11),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Spacing.s),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  for (var i = 29; i >= 0; i--)
+                    _JejakDot(
+                      day: today.subtract(Duration(days: i)),
+                      today: today,
+                      active: active,
+                    ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _JejakDot extends StatelessWidget {
+  const _JejakDot({
+    required this.day,
+    required this.today,
+    required this.active,
+  });
+
+  final DateTime day;
+  final DateTime today;
+  final Set<DateTime> active;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    final isToday = day == today;
+    final on = active.contains(day);
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        color: on ? q.honey : q.surface2,
+        shape: BoxShape.circle,
+        border: isToday && !on ? Border.all(color: q.text, width: 1.5) : null,
+      ),
+    );
+  }
+}
+
+/// Pita kewajiban: bon belum lunas (jumlah + umur tertua + total).
+/// Tap → tab Bon. Kosong → hilang agar dashboard tenang.
+class KewajibanStrip extends StatelessWidget {
+  const KewajibanStrip({
+    super.key,
+    required this.repository,
+    required this.onOpenBon,
+  });
+
+  final LedgerRepository repository;
+  final VoidCallback onOpenBon;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<Bon>>(
+      stream: repository.watchBons(),
+      builder: (context, snap) {
+        final open = [
+          for (final b in snap.data ?? const <Bon>[])
+            if (b.settledAt == null) b,
+        ];
+        if (open.isEmpty) return const SizedBox.shrink();
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        var oldest = open.first.occurredAt;
+        var total = 0;
+        for (final b in open) {
+          if (b.occurredAt.isBefore(oldest)) oldest = b.occurredAt;
+          total += b.amount;
+        }
+        final age = today
+            .difference(DateTime(oldest.year, oldest.month, oldest.day))
+            .inDays;
+        return Padding(
+          padding: const EdgeInsets.only(top: Spacing.s),
+          child: QuestPress(
+            onTap: onOpenBon,
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+              decoration: BoxDecoration(
+                color: context.q.surface,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: context.q.shadow,
+                    offset: const Offset(0, 6),
+                    blurRadius: 18,
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.handshake_outlined,
+                    size: 18,
+                    color: context.q.text,
+                  ),
+                  const SizedBox(width: Spacing.s),
+                  Expanded(
+                    child: Text(
+                      '${open.length} bon · tertua $age hari · '
+                      '${Money.format(total)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 16,
+                    color: context.q.muted,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Kartu ke mana perginya: 3 bar kategori terbesar bulan ini.
+/// Tap → Laporan.
+class KategoriCard extends StatelessWidget {
+  const KategoriCard({
+    super.key,
+    required this.repository,
+    required this.onOpenReports,
+  });
+
+  final LedgerRepository repository;
+  final VoidCallback onOpenReports;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final monthStart = DateTime(now.year, now.month);
+    final monthEnd = DateTime(now.year, now.month + 1);
+    return QuestCard(
+      onTap: onOpenReports,
+      radius: 18,
+      padding: const EdgeInsets.all(12),
+      child: StreamBuilder<Map<({int? category, int? account}), int>>(
+        stream: repository.watchOutPairsBetween(monthStart, monthEnd),
+        builder: (context, usageSnap) {
+          return StreamBuilder<List<Category>>(
+            stream: repository.watchCategories(),
+            builder: (context, catSnap) {
+              final rows = _topRows(usageSnap.data, catSnap.data);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('KE MANA PERGINYA', style: context.qEyebrow()),
+                  const SizedBox(height: Spacing.s),
+                  if (rows.isEmpty)
+                    Text(
+                      'Belum ada pengeluaran bulan ini.',
+                      style: context.qSmall(),
+                    ),
+                  for (final r in rows)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 3),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 9,
+                            height: 9,
+                            decoration: BoxDecoration(
+                              color: r.color,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: Spacing.s),
+                          SizedBox(
+                            width: 86,
+                            child: Text(
+                              r.name,
+                              style: context.qSmall(12),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Expanded(
+                            child: QuestBar(
+                              value: r.fraction,
+                              height: 8,
+                              color: r.color,
+                            ),
+                          ),
+                          const SizedBox(width: Spacing.s),
+                          SizedBox(
+                            width: 64,
+                            child: Text(
+                              _shortMoney(r.total),
+                              style: context.qSmall(12),
+                              textAlign: TextAlign.right,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _TopRow {
+  const _TopRow({
+    required this.name,
+    required this.total,
+    required this.color,
+    required this.fraction,
+  });
+
+  final String name;
+  final int total;
+  final Color color;
+  final double fraction;
+}
+
+List<_TopRow> _topRows(
+  Map<({int? category, int? account}), int>? usage,
+  List<Category>? categories,
+) {
+  if (usage == null || categories == null) return const [];
+  final byId = {for (final c in categories) c.id: c};
+  final byCategory = <int, int>{};
+  for (final e in usage.entries) {
+    final cat = e.key.category;
+    if (cat == null) continue;
+    byCategory.update(cat, (v) => v + e.value, ifAbsent: () => e.value);
+  }
+  if (byCategory.isEmpty) return const [];
+  final sorted = byCategory.entries.toList()
+    ..sort((a, b) => b.value.compareTo(a.value));
+  final maxValue = sorted.first.value;
+  return [
+    for (final e in sorted.take(3))
+      _TopRow(
+        name: byId[e.key]?.name ?? 'Lainnya',
+        total: e.value,
+        color: SeedColors.categoryColor(byId[e.key]?.colorIndex ?? 8),
+        fraction: maxValue == 0 ? 0 : e.value / maxValue,
+      ),
+  ];
+}

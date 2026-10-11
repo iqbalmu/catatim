@@ -84,6 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
               pipeline: widget.pipeline,
               progress: widget.progress,
               onOpenReports: () => setState(() => _tab = 2),
+              onOpenBon: () => setState(() => _tab = 3),
             ),
           ),
           TickerMode(
@@ -124,12 +125,14 @@ class _BerandaTab extends StatefulWidget {
     required this.pipeline,
     required this.progress,
     required this.onOpenReports,
+    required this.onOpenBon,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
   final ProgressService progress;
   final VoidCallback onOpenReports;
+  final VoidCallback onOpenBon;
 
   @override
   State<_BerandaTab> createState() => _BerandaTabState();
@@ -372,6 +375,17 @@ class _BerandaTabState extends State<_BerandaTab> {
               ],
             ),
           ),
+          const SizedBox(height: Spacing.s),
+          KategoriCard(
+            repository: widget.repository,
+            onOpenReports: widget.onOpenReports,
+          ),
+          const SizedBox(height: Spacing.s),
+          KewajibanStrip(
+            repository: widget.repository,
+            onOpenBon: widget.onOpenBon,
+          ),
+          JejakStrip(service: widget.progress),
         ],
       ),
     );
