@@ -325,13 +325,55 @@ class _BerandaTabState extends State<_BerandaTab> {
           Spacing.m + MediaQuery.paddingOf(context).bottom,
         ),
         children: [
-          GameHeroCard(service: widget.progress, repository: widget.repository),
-          const SizedBox(height: Spacing.s),
-          SaldoCard(repository: widget.repository),
-          const SizedBox(height: Spacing.s),
-          InsightCard(
+          GameHeroCard(service: widget.progress),
+          AlertStrip(
             repository: widget.repository,
-            onOpenReports: widget.onOpenReports,
+            service: widget.progress,
+          ),
+          const SizedBox(height: Spacing.s),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: SaldoTile(repository: widget.repository),
+                ),
+                const SizedBox(width: Spacing.s),
+                Expanded(
+                  child: TrendTile(
+                    repository: widget.repository,
+                    onOpenReports: widget.onOpenReports,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: Spacing.s),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: OutTile(
+                    service: widget.progress,
+                    onOpenBudget: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BudgetScreen(
+                            repository: widget.repository,
+                          ),
+                        ),
+                      ).whenComplete(widget.progress.refresh);
+                    },
+                  ),
+                ),
+                const SizedBox(width: Spacing.s),
+                Expanded(
+                  child: InTile(service: widget.progress),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: Spacing.s),
           StreamBuilder<List<TxWithCategory>>(
