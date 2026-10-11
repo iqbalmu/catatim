@@ -30,13 +30,17 @@ penyimpanan) di Dart — unit-testable tanpa device.
   kategori + akun otomatis (blu → blu by BCA, nagari → Bank Nagari).
 - **Akun**: blu by BCA, Bank Nagari, Tunai (bawaan) + tambah sendiri.
   Kelola (tambah/ubah/hapus) di menu Beranda → *Kelola akun* atau tautan
-  *Kelola* di sheet filter Riwayat; filter akun murni memfilter. Sheet
-  transaksi punya picker akun.
+  *Kelola* di sheet filter Riwayat; filter akun murni memfilter. Tiap
+  akun punya saldo awal + saldo berjalan (`awal + masuk − keluar`).
+  Sheet transaksi punya picker akun.
 - **Bon**: tab utang-piutang — tambah/edit, tandai lunas, total piutang
   vs utang yang belum lunas. Murni lokal, tanpa pengingat server.
-- **Anggaran**: alokasi dana per kategori + batas harian/mingguan/bulanan
-  (menu Beranda → *Anggaran*). Progres masuk/keluar dibanding bulan lalu
-  dengan penilaian membaik/memburuk.
+- **Anggaran**: alokasi dana per jenis anggaran — bisa di-scope ke akun
+  tertentu (mis. "Makanan @ e-wallet") atau berlaku global — plus batas
+  harian/mingguan/bulanan (menu Beranda → *Anggaran*). Jenis anggaran
+  bisa ditambah/diubah/dihapus; transaksi di jenis yang dihapus pindah
+  ke "Lainnya". Progres masuk/keluar dibanding bulan lalu dengan
+  penilaian membaik/memburuk.
 - **Bukuduit Quest**: maskot Duit merepresentasikan kondisi anggaran —
   khawatir saat batas terlampaui, tenang saat aman. Streak mencatat
   dari data asli (milestone 3/7/14/21/30/60/100 hari).

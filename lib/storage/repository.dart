@@ -305,46 +305,108 @@ class LedgerRepository {
         _db.budgets,
       )..orderBy([(b) => OrderingTerm.asc(b.id)])).watch();
 
-  /// Set (atau timpa) alokasi bulanan satu kategori.
-  Future<void> setBudget(int categoryId, int monthlyLimit) {
-    return _db
-        .into(_db.budgets)
-        .insertOnConflictUpdate(
-          BudgetsCompanion.insert(
-            categoryId: categoryId,
-            monthlyLimit: monthlyLimit,
-          ),
-        );
-  }
-
-  Future<void> removeBudget(int categoryId) {
-    return (_db.delete(
+  /// Set (atau timpa) alokasi bulanan satu kategori. [accountId] null =
+  /// berlaku di semua akun; beda akun = baris alokasi yang berbeda.
+  Future<void> setBudget(
+    int categoryId,
+    int monthlyLimit, {
+    int? accountId,
+  }) async {
+    final existing = await (_db.select(
       _db.budgets,
-    )..where((b) => b.categoryId.equals(categoryId))).go();
+    )..where(
+        (b) =>
+            b.categoryId.equals(categoryId) &
+            (accountId == null
+                ? b.accountId.isNull()
+                : b.accountId.equals(accountId)),
+      )).getSingleOrNull();
+    if (existing != null) {
+      await (_db.update(
+        _db.budgets,
+      )..where((b) => b.id.equals(existing.id))).write(
+        BudgetsCompanion(monthlyLimit: Value(monthlyLimit)),
+      );
+    } else {
+      await _db.into(_db.budgets).insert(
+            BudgetsCompanion.insert(
+              categoryId: categoryId,
+              monthlyLimit: monthlyLimit,
+              accountId: Value(accountId),
+            ),
+          );
+    }
   }
 
-  /// Total keluar per kategori dalam [start, end) — kunci null = tanpa
-  /// kategori. Sumber alokasi progress di Anggaran & mood Duit.
-  Stream<Map<int?, int>> watchOutByCategoryBetween(
+  /// Hapus alokasi satu kategori (seluruh scope, atau akun tertentu).
+  Future<void> removeBudget(int categoryId, {int? accountId}) {
+    return (_db.delete(_db.budgets)..where(
+        (b) =>
+            b.categoryId.equals(categoryId) &
+            (accountId == null
+                ? b.accountId.isNull()
+                : b.accountId.equals(accountId)),
+      )).go();
+  }
+
+  /// Keluar bulan dikelompokkan per pasangan (kategori, akun) dalam
+  /// [start, end). Kunci kategori null = tanpa kategori, dst.
+  Stream<Map<({int? category, int? account}), int>> watchOutPairsBetween(
     DateTime start,
     DateTime end,
   ) {
     final amountSum = _db.transactions.amount.sum();
     final query = _db.selectOnly(_db.transactions)
-      ..addColumns([_db.transactions.categoryId, amountSum])
+      ..addColumns([
+        _db.transactions.categoryId,
+        _db.transactions.accountId,
+        amountSum,
+      ])
       ..where(
         _db.transactions.direction.equalsValue(Direction.outgoing) &
             _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
             _db.transactions.occurredAt.isSmallerThanValue(end),
       )
-      ..groupBy([_db.transactions.categoryId]);
+      ..groupBy([_db.transactions.categoryId, _db.transactions.accountId]);
     return query.watch().map(
           (rows) => {
             for (final row in rows)
-              row.read(_db.transactions.categoryId):
+              (
+                category: row.read(_db.transactions.categoryId),
+                account: row.read(_db.transactions.accountId),
+              ):
                   row.read(amountSum) ?? 0,
           },
         );
+  }
+
+  /// Versi one-shot dari [watchOutPairsBetween].
+  Future<Map<({int? category, int? account}), int>> outPairsBetween(
+    DateTime start,
+    DateTime end,
+  ) async {
+    final amountSum = _db.transactions.amount.sum();
+    final query = _db.selectOnly(_db.transactions)
+      ..addColumns([
+        _db.transactions.categoryId,
+        _db.transactions.accountId,
+        amountSum,
+      ])
+      ..where(
+        _db.transactions.direction.equalsValue(Direction.outgoing) &
+            _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
+            _db.transactions.occurredAt.isSmallerThanValue(end),
+      )
+      ..groupBy([_db.transactions.categoryId, _db.transactions.accountId]);
+    final rows = await query.get();
+    return {
+      for (final row in rows)
+        (
+          category: row.read(_db.transactions.categoryId),
+          account: row.read(_db.transactions.accountId),
+        ):
+            row.read(amountSum) ?? 0,
+    };
   }
 
   /// Total (masuk atau keluar) dalam [start, end) — hidup (watch).
@@ -383,25 +445,64 @@ class LedgerRepository {
     return row.read(amountSum) ?? 0;
   }
 
-  /// Versi one-shot dari [watchOutByCategoryBetween].
-  Future<Map<int?, int>> outByCategoryBetween(
-    DateTime start,
-    DateTime end,
-  ) async {
-    final amountSum = _db.transactions.amount.sum();
-    final query = _db.selectOnly(_db.transactions)
-      ..addColumns([_db.transactions.categoryId, amountSum])
-      ..where(
-        _db.transactions.direction.equalsValue(Direction.outgoing) &
-            _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
-            _db.transactions.occurredAt.isSmallerThanValue(end),
-      )
-      ..groupBy([_db.transactions.categoryId]);
-    final rows = await query.get();
-    return {
-      for (final row in rows)
-        row.read(_db.transactions.categoryId): row.read(amountSum) ?? 0,
-    };
+  /// Saldo berjalan tiap akun = saldo awal + masuk − keluar. Transfer/
+  /// topup satu kaki sementara dihitung sebagai keluar/masuk akun asal;
+  /// transfer dua kaki menyusul.
+  Stream<Map<int, int>> watchAccountBalances() {
+    final inSum = _db.transactions.amount.sum(
+      filter: _db.transactions.direction.equalsValue(Direction.incoming),
+    );
+    final outSum = _db.transactions.amount.sum(
+      filter: _db.transactions.direction.equalsValue(Direction.outgoing),
+    );
+    final query = _db.selectOnly(_db.accounts).join([
+      leftOuterJoin(
+        _db.transactions,
+        _db.transactions.accountId.equalsExp(_db.accounts.id),
+      ),
+    ]);
+    query.addColumns([
+      _db.accounts.id,
+      _db.accounts.openingBalance,
+      inSum,
+      outSum,
+    ]);
+    query.groupBy([_db.accounts.id]);
+    return query.watch().map(
+          (rows) => {
+            for (final row in rows)
+              row.read(_db.accounts.id)!:
+                  _intOf(row.read(_db.accounts.openingBalance)) +
+                      _intOf(row.read(inSum)) -
+                      _intOf(row.read(outSum)),
+          },
+        );
+  }
+
+  static int _intOf(Object? value) => (value as num?)?.toInt() ?? 0;
+
+  // --- kategori -----------------------------------------------------------------
+
+  /// Ubah nama kategori; melempar bila nama sudah dipakai (unique).
+  Future<void> renameCategory(int id, String name) {
+    return (_db.update(
+      _db.categories,
+    )..where((c) => c.id.equals(id))).write(
+      CategoriesCompanion(name: Value(name.trim())),
+    );
+  }
+
+  /// Hapus kategori: transaksinya dipindah ke kategori [fallbackId]
+  /// (biasanya "Lainnya"), alokasinya ikut terhapus.
+  Future<void> deleteCategory(int id, {required int fallbackId}) async {
+    if (id == fallbackId) throw ArgumentError('tidak boleh hapus fallback');
+    await (_db.update(
+      _db.transactions,
+    )..where((t) => t.categoryId.equals(id))).write(
+      TransactionsCompanion(categoryId: Value(fallbackId)),
+    );
+    await (_db.delete(_db.budgets)..where((b) => b.categoryId.equals(id))).go();
+    await (_db.delete(_db.categories)..where((c) => c.id.equals(id))).go();
   }
 
   // --- aturan pengguna ------------------------------------------------------
@@ -618,6 +719,13 @@ class LedgerRepository {
   Future<void> updateAccount(int id, String name) {
     return (_db.update(_db.accounts)..where((a) => a.id.equals(id))).write(
       AccountsCompanion(name: Value(name.trim())),
+    );
+  }
+
+  /// Set saldo awal akun — dasar perhitungan saldo berjalan.
+  Future<void> setOpeningBalance(int id, int amount) {
+    return (_db.update(_db.accounts)..where((a) => a.id.equals(id))).write(
+      AccountsCompanion(openingBalance: Value(amount)),
     );
   }
 

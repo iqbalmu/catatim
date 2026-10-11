@@ -302,6 +302,18 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _openingBalanceMeta = const VerificationMeta(
+    'openingBalance',
+  );
+  @override
+  late final GeneratedColumn<int> openingBalance = GeneratedColumn<int>(
+    'opening_balance',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -315,7 +327,14 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     defaultValue: currentDateAndTime,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, name, kind, colorIndex, createdAt];
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    kind,
+    colorIndex,
+    openingBalance,
+    createdAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -346,6 +365,15 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
       );
     } else if (isInserting) {
       context.missing(_colorIndexMeta);
+    }
+    if (data.containsKey('opening_balance')) {
+      context.handle(
+        _openingBalanceMeta,
+        openingBalance.isAcceptableOrUnknown(
+          data['opening_balance']!,
+          _openingBalanceMeta,
+        ),
+      );
     }
     if (data.containsKey('created_at')) {
       context.handle(
@@ -380,6 +408,10 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
         DriftSqlType.int,
         data['${effectivePrefix}color_index'],
       )!,
+      openingBalance: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}opening_balance'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -401,12 +433,16 @@ class Account extends DataClass implements Insertable<Account> {
   final String name;
   final AccountKind kind;
   final int colorIndex;
+
+  /// Saldo awal saat akun didaftarkan — dasar perhitungan saldo berjalan.
+  final int openingBalance;
   final DateTime createdAt;
   const Account({
     required this.id,
     required this.name,
     required this.kind,
     required this.colorIndex,
+    required this.openingBalance,
     required this.createdAt,
   });
   @override
@@ -418,6 +454,7 @@ class Account extends DataClass implements Insertable<Account> {
       map['kind'] = Variable<String>($AccountsTable.$converterkind.toSql(kind));
     }
     map['color_index'] = Variable<int>(colorIndex);
+    map['opening_balance'] = Variable<int>(openingBalance);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -428,6 +465,7 @@ class Account extends DataClass implements Insertable<Account> {
       name: Value(name),
       kind: Value(kind),
       colorIndex: Value(colorIndex),
+      openingBalance: Value(openingBalance),
       createdAt: Value(createdAt),
     );
   }
@@ -444,6 +482,7 @@ class Account extends DataClass implements Insertable<Account> {
         serializer.fromJson<String>(json['kind']),
       ),
       colorIndex: serializer.fromJson<int>(json['colorIndex']),
+      openingBalance: serializer.fromJson<int>(json['openingBalance']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -457,6 +496,7 @@ class Account extends DataClass implements Insertable<Account> {
         $AccountsTable.$converterkind.toJson(kind),
       ),
       'colorIndex': serializer.toJson<int>(colorIndex),
+      'openingBalance': serializer.toJson<int>(openingBalance),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -466,12 +506,14 @@ class Account extends DataClass implements Insertable<Account> {
     String? name,
     AccountKind? kind,
     int? colorIndex,
+    int? openingBalance,
     DateTime? createdAt,
   }) => Account(
     id: id ?? this.id,
     name: name ?? this.name,
     kind: kind ?? this.kind,
     colorIndex: colorIndex ?? this.colorIndex,
+    openingBalance: openingBalance ?? this.openingBalance,
     createdAt: createdAt ?? this.createdAt,
   );
   Account copyWithCompanion(AccountsCompanion data) {
@@ -482,6 +524,9 @@ class Account extends DataClass implements Insertable<Account> {
       colorIndex: data.colorIndex.present
           ? data.colorIndex.value
           : this.colorIndex,
+      openingBalance: data.openingBalance.present
+          ? data.openingBalance.value
+          : this.openingBalance,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -493,13 +538,15 @@ class Account extends DataClass implements Insertable<Account> {
           ..write('name: $name, ')
           ..write('kind: $kind, ')
           ..write('colorIndex: $colorIndex, ')
+          ..write('openingBalance: $openingBalance, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, kind, colorIndex, createdAt);
+  int get hashCode =>
+      Object.hash(id, name, kind, colorIndex, openingBalance, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -508,6 +555,7 @@ class Account extends DataClass implements Insertable<Account> {
           other.name == this.name &&
           other.kind == this.kind &&
           other.colorIndex == this.colorIndex &&
+          other.openingBalance == this.openingBalance &&
           other.createdAt == this.createdAt);
 }
 
@@ -516,12 +564,14 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   final Value<String> name;
   final Value<AccountKind> kind;
   final Value<int> colorIndex;
+  final Value<int> openingBalance;
   final Value<DateTime> createdAt;
   const AccountsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.kind = const Value.absent(),
     this.colorIndex = const Value.absent(),
+    this.openingBalance = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   AccountsCompanion.insert({
@@ -529,6 +579,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     required String name,
     required AccountKind kind,
     required int colorIndex,
+    this.openingBalance = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : name = Value(name),
        kind = Value(kind),
@@ -538,6 +589,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Expression<String>? name,
     Expression<String>? kind,
     Expression<int>? colorIndex,
+    Expression<int>? openingBalance,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -545,6 +597,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       if (name != null) 'name': name,
       if (kind != null) 'kind': kind,
       if (colorIndex != null) 'color_index': colorIndex,
+      if (openingBalance != null) 'opening_balance': openingBalance,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -554,6 +607,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Value<String>? name,
     Value<AccountKind>? kind,
     Value<int>? colorIndex,
+    Value<int>? openingBalance,
     Value<DateTime>? createdAt,
   }) {
     return AccountsCompanion(
@@ -561,6 +615,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       name: name ?? this.name,
       kind: kind ?? this.kind,
       colorIndex: colorIndex ?? this.colorIndex,
+      openingBalance: openingBalance ?? this.openingBalance,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -582,6 +637,9 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     if (colorIndex.present) {
       map['color_index'] = Variable<int>(colorIndex.value);
     }
+    if (openingBalance.present) {
+      map['opening_balance'] = Variable<int>(openingBalance.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -595,6 +653,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
           ..write('name: $name, ')
           ..write('kind: $kind, ')
           ..write('colorIndex: $colorIndex, ')
+          ..write('openingBalance: $openingBalance, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -2166,7 +2225,21 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
     type: DriftSqlType.int,
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'UNIQUE REFERENCES categories (id)',
+      'REFERENCES categories (id)',
+    ),
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<int> accountId = GeneratedColumn<int>(
+    'account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES accounts (id)',
     ),
   );
   static const VerificationMeta _monthlyLimitMeta = const VerificationMeta(
@@ -2181,7 +2254,12 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
     requiredDuringInsert: true,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, categoryId, monthlyLimit];
+  List<GeneratedColumn> get $columns => [
+    id,
+    categoryId,
+    accountId,
+    monthlyLimit,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2205,6 +2283,12 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
     } else if (isInserting) {
       context.missing(_categoryIdMeta);
     }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    }
     if (data.containsKey('monthly_limit')) {
       context.handle(
         _monthlyLimitMeta,
@@ -2222,6 +2306,10 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {categoryId, accountId},
+  ];
+  @override
   Budget map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Budget(
@@ -2233,6 +2321,10 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
         DriftSqlType.int,
         data['${effectivePrefix}category_id'],
       )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}account_id'],
+      ),
       monthlyLimit: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}monthly_limit'],
@@ -2249,10 +2341,12 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
 class Budget extends DataClass implements Insertable<Budget> {
   final int id;
   final int categoryId;
+  final int? accountId;
   final int monthlyLimit;
   const Budget({
     required this.id,
     required this.categoryId,
+    this.accountId,
     required this.monthlyLimit,
   });
   @override
@@ -2260,6 +2354,9 @@ class Budget extends DataClass implements Insertable<Budget> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['category_id'] = Variable<int>(categoryId);
+    if (!nullToAbsent || accountId != null) {
+      map['account_id'] = Variable<int>(accountId);
+    }
     map['monthly_limit'] = Variable<int>(monthlyLimit);
     return map;
   }
@@ -2268,6 +2365,9 @@ class Budget extends DataClass implements Insertable<Budget> {
     return BudgetsCompanion(
       id: Value(id),
       categoryId: Value(categoryId),
+      accountId: accountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountId),
       monthlyLimit: Value(monthlyLimit),
     );
   }
@@ -2280,6 +2380,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     return Budget(
       id: serializer.fromJson<int>(json['id']),
       categoryId: serializer.fromJson<int>(json['categoryId']),
+      accountId: serializer.fromJson<int?>(json['accountId']),
       monthlyLimit: serializer.fromJson<int>(json['monthlyLimit']),
     );
   }
@@ -2289,13 +2390,20 @@ class Budget extends DataClass implements Insertable<Budget> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'categoryId': serializer.toJson<int>(categoryId),
+      'accountId': serializer.toJson<int?>(accountId),
       'monthlyLimit': serializer.toJson<int>(monthlyLimit),
     };
   }
 
-  Budget copyWith({int? id, int? categoryId, int? monthlyLimit}) => Budget(
+  Budget copyWith({
+    int? id,
+    int? categoryId,
+    Value<int?> accountId = const Value.absent(),
+    int? monthlyLimit,
+  }) => Budget(
     id: id ?? this.id,
     categoryId: categoryId ?? this.categoryId,
+    accountId: accountId.present ? accountId.value : this.accountId,
     monthlyLimit: monthlyLimit ?? this.monthlyLimit,
   );
   Budget copyWithCompanion(BudgetsCompanion data) {
@@ -2304,6 +2412,7 @@ class Budget extends DataClass implements Insertable<Budget> {
       categoryId: data.categoryId.present
           ? data.categoryId.value
           : this.categoryId,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
       monthlyLimit: data.monthlyLimit.present
           ? data.monthlyLimit.value
           : this.monthlyLimit,
@@ -2315,45 +2424,52 @@ class Budget extends DataClass implements Insertable<Budget> {
     return (StringBuffer('Budget(')
           ..write('id: $id, ')
           ..write('categoryId: $categoryId, ')
+          ..write('accountId: $accountId, ')
           ..write('monthlyLimit: $monthlyLimit')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, categoryId, monthlyLimit);
+  int get hashCode => Object.hash(id, categoryId, accountId, monthlyLimit);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Budget &&
           other.id == this.id &&
           other.categoryId == this.categoryId &&
+          other.accountId == this.accountId &&
           other.monthlyLimit == this.monthlyLimit);
 }
 
 class BudgetsCompanion extends UpdateCompanion<Budget> {
   final Value<int> id;
   final Value<int> categoryId;
+  final Value<int?> accountId;
   final Value<int> monthlyLimit;
   const BudgetsCompanion({
     this.id = const Value.absent(),
     this.categoryId = const Value.absent(),
+    this.accountId = const Value.absent(),
     this.monthlyLimit = const Value.absent(),
   });
   BudgetsCompanion.insert({
     this.id = const Value.absent(),
     required int categoryId,
+    this.accountId = const Value.absent(),
     required int monthlyLimit,
   }) : categoryId = Value(categoryId),
        monthlyLimit = Value(monthlyLimit);
   static Insertable<Budget> custom({
     Expression<int>? id,
     Expression<int>? categoryId,
+    Expression<int>? accountId,
     Expression<int>? monthlyLimit,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (categoryId != null) 'category_id': categoryId,
+      if (accountId != null) 'account_id': accountId,
       if (monthlyLimit != null) 'monthly_limit': monthlyLimit,
     });
   }
@@ -2361,11 +2477,13 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
   BudgetsCompanion copyWith({
     Value<int>? id,
     Value<int>? categoryId,
+    Value<int?>? accountId,
     Value<int>? monthlyLimit,
   }) {
     return BudgetsCompanion(
       id: id ?? this.id,
       categoryId: categoryId ?? this.categoryId,
+      accountId: accountId ?? this.accountId,
       monthlyLimit: monthlyLimit ?? this.monthlyLimit,
     );
   }
@@ -2379,6 +2497,9 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     if (categoryId.present) {
       map['category_id'] = Variable<int>(categoryId.value);
     }
+    if (accountId.present) {
+      map['account_id'] = Variable<int>(accountId.value);
+    }
     if (monthlyLimit.present) {
       map['monthly_limit'] = Variable<int>(monthlyLimit.value);
     }
@@ -2390,6 +2511,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     return (StringBuffer('BudgetsCompanion(')
           ..write('id: $id, ')
           ..write('categoryId: $categoryId, ')
+          ..write('accountId: $accountId, ')
           ..write('monthlyLimit: $monthlyLimit')
           ..write(')'))
         .toString();
@@ -3962,6 +4084,7 @@ typedef $$AccountsTableCreateCompanionBuilder =
       required String name,
       required AccountKind kind,
       required int colorIndex,
+      Value<int> openingBalance,
       Value<DateTime> createdAt,
     });
 typedef $$AccountsTableUpdateCompanionBuilder =
@@ -3970,6 +4093,7 @@ typedef $$AccountsTableUpdateCompanionBuilder =
       Value<String> name,
       Value<AccountKind> kind,
       Value<int> colorIndex,
+      Value<int> openingBalance,
       Value<DateTime> createdAt,
     });
 
@@ -3990,6 +4114,25 @@ final class $$AccountsTableReferences
     ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_transactionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$BudgetsTable, List<Budget>> _budgetsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.budgets,
+    aliasName: 'accounts__id__budgets__account_id',
+  );
+
+  $$BudgetsTableProcessedTableManager get budgetsRefs {
+    final manager = $$BudgetsTableTableManager(
+      $_db,
+      $_db.budgets,
+    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_budgetsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -4044,6 +4187,11 @@ class $$AccountsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get openingBalance => $composableBuilder(
+    column: $table.openingBalance,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
@@ -4065,6 +4213,31 @@ class $$AccountsTableFilterComposer
           }) => $$TransactionsTableFilterComposer(
             $db: $db,
             $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> budgetsRefs(
+    Expression<bool> Function($$BudgetsTableFilterComposer f) f,
+  ) {
+    final $$BudgetsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgets,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BudgetsTableFilterComposer(
+            $db: $db,
+            $table: $db.budgets,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4129,6 +4302,11 @@ class $$AccountsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get openingBalance => $composableBuilder(
+    column: $table.openingBalance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -4158,6 +4336,11 @@ class $$AccountsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get openingBalance => $composableBuilder(
+    column: $table.openingBalance,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -4177,6 +4360,31 @@ class $$AccountsTableAnnotationComposer
           }) => $$TransactionsTableAnnotationComposer(
             $db: $db,
             $table: $db.transactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> budgetsRefs<T extends Object>(
+    Expression<T> Function($$BudgetsTableAnnotationComposer a) f,
+  ) {
+    final $$BudgetsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.budgets,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BudgetsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.budgets,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4225,7 +4433,11 @@ class $$AccountsTableTableManager
           $$AccountsTableUpdateCompanionBuilder,
           (Account, $$AccountsTableReferences),
           Account,
-          PrefetchHooks Function({bool transactionsRefs, bool userRulesRefs})
+          PrefetchHooks Function({
+            bool transactionsRefs,
+            bool budgetsRefs,
+            bool userRulesRefs,
+          })
         > {
   $$AccountsTableTableManager(_$AppDatabase db, $AccountsTable table)
     : super(
@@ -4244,12 +4456,14 @@ class $$AccountsTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<AccountKind> kind = const Value.absent(),
                 Value<int> colorIndex = const Value.absent(),
+                Value<int> openingBalance = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => AccountsCompanion(
                 id: id,
                 name: name,
                 kind: kind,
                 colorIndex: colorIndex,
+                openingBalance: openingBalance,
                 createdAt: createdAt,
               ),
           createCompanionCallback:
@@ -4258,12 +4472,14 @@ class $$AccountsTableTableManager
                 required String name,
                 required AccountKind kind,
                 required int colorIndex,
+                Value<int> openingBalance = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => AccountsCompanion.insert(
                 id: id,
                 name: name,
                 kind: kind,
                 colorIndex: colorIndex,
+                openingBalance: openingBalance,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0
@@ -4275,11 +4491,16 @@ class $$AccountsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({transactionsRefs = false, userRulesRefs = false}) {
+              ({
+                transactionsRefs = false,
+                budgetsRefs = false,
+                userRulesRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (transactionsRefs) db.transactions,
+                    if (budgetsRefs) db.budgets,
                     if (userRulesRefs) db.userRules,
                   ],
                   addJoins: null,
@@ -4300,6 +4521,27 @@ class $$AccountsTableTableManager
                                 table,
                                 p0,
                               ).transactionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (budgetsRefs)
+                        await $_getPrefetchedData<
+                          Account,
+                          $AccountsTable,
+                          Budget
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._budgetsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).budgetsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.accountId == item.id,
@@ -4347,7 +4589,11 @@ typedef $$AccountsTableProcessedTableManager =
       $$AccountsTableUpdateCompanionBuilder,
       (Account, $$AccountsTableReferences),
       Account,
-      PrefetchHooks Function({bool transactionsRefs, bool userRulesRefs})
+      PrefetchHooks Function({
+        bool transactionsRefs,
+        bool budgetsRefs,
+        bool userRulesRefs,
+      })
     >;
 typedef $$TransactionsTableCreateCompanionBuilder =
     TransactionsCompanion Function({
@@ -5344,12 +5590,14 @@ typedef $$BudgetsTableCreateCompanionBuilder =
     BudgetsCompanion Function({
       Value<int> id,
       required int categoryId,
+      Value<int?> accountId,
       required int monthlyLimit,
     });
 typedef $$BudgetsTableUpdateCompanionBuilder =
     BudgetsCompanion Function({
       Value<int> id,
       Value<int> categoryId,
+      Value<int?> accountId,
       Value<int> monthlyLimit,
     });
 
@@ -5368,6 +5616,23 @@ final class $$BudgetsTableReferences
       $_db.categories,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_categoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $AccountsTable _accountIdTable(_$AppDatabase db) =>
+      db.accounts.createAlias('budgets__account_id__accounts__id');
+
+  $$AccountsTableProcessedTableManager? get accountId {
+    final $_column = $_itemColumn<int>('account_id');
+    if ($_column == null) return null;
+    final manager = $$AccountsTableTableManager(
+      $_db,
+      $_db.accounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -5408,6 +5673,29 @@ class $$BudgetsTableFilterComposer
           }) => $$CategoriesTableFilterComposer(
             $db: $db,
             $table: $db.categories,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableFilterComposer get accountId {
+    final $$AccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.accounts,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5459,6 +5747,29 @@ class $$BudgetsTableOrderingComposer
     );
     return composer;
   }
+
+  $$AccountsTableOrderingComposer get accountId {
+    final $$AccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$BudgetsTableAnnotationComposer
@@ -5500,6 +5811,29 @@ class $$BudgetsTableAnnotationComposer
     );
     return composer;
   }
+
+  $$AccountsTableAnnotationComposer get accountId {
+    final $$AccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$BudgetsTableTableManager
@@ -5515,7 +5849,7 @@ class $$BudgetsTableTableManager
           $$BudgetsTableUpdateCompanionBuilder,
           (Budget, $$BudgetsTableReferences),
           Budget,
-          PrefetchHooks Function({bool categoryId})
+          PrefetchHooks Function({bool categoryId, bool accountId})
         > {
   $$BudgetsTableTableManager(_$AppDatabase db, $BudgetsTable table)
     : super(
@@ -5532,20 +5866,24 @@ class $$BudgetsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<int> categoryId = const Value.absent(),
+                Value<int?> accountId = const Value.absent(),
                 Value<int> monthlyLimit = const Value.absent(),
               }) => BudgetsCompanion(
                 id: id,
                 categoryId: categoryId,
+                accountId: accountId,
                 monthlyLimit: monthlyLimit,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required int categoryId,
+                Value<int?> accountId = const Value.absent(),
                 required int monthlyLimit,
               }) => BudgetsCompanion.insert(
                 id: id,
                 categoryId: categoryId,
+                accountId: accountId,
                 monthlyLimit: monthlyLimit,
               ),
           withReferenceMapper: (p0) => p0
@@ -5556,7 +5894,7 @@ class $$BudgetsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({categoryId = false}) {
+          prefetchHooksCallback: ({categoryId = false, accountId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -5589,6 +5927,19 @@ class $$BudgetsTableTableManager
                               )
                               as T;
                     }
+                    if (accountId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.accountId,
+                                referencedTable: $$BudgetsTableReferences
+                                    ._accountIdTable(db),
+                                referencedColumn: $$BudgetsTableReferences
+                                    ._accountIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
 
                     return state;
                   },
@@ -5613,7 +5964,7 @@ typedef $$BudgetsTableProcessedTableManager =
       $$BudgetsTableUpdateCompanionBuilder,
       (Budget, $$BudgetsTableReferences),
       Budget,
-      PrefetchHooks Function({bool categoryId})
+      PrefetchHooks Function({bool categoryId, bool accountId})
     >;
 typedef $$BonsTableCreateCompanionBuilder =
     BonsCompanion Function({

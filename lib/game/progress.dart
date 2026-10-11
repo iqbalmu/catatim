@@ -4,6 +4,7 @@ import '../core/budget.dart';
 import '../core/money.dart';
 import '../game/mascot.dart';
 import '../models.dart';
+import '../storage/database.dart';
 import '../storage/repository.dart';
 
 /// Streak mencatat yang layak dirayakan.
@@ -110,9 +111,10 @@ class ProgressService extends ChangeNotifier {
       lastMonthEnd,
       Direction.incoming,
     );
-    final catUsed = await _repo.outByCategoryBetween(monthStart, monthEnd);
+    final catAccountUsed = await _repo.outPairsBetween(monthStart, monthEnd);
     final budgets = await _repo.watchBudgets().first;
     final categories = await _repo.watchCategories().first;
+    final accounts = await _repo.watchAccounts().first;
     final dailyLimit = int.tryParse(
       await _repo.getSetting(kKeyDailyLimit) ?? '',
     );
@@ -124,6 +126,14 @@ class ProgressService extends ChangeNotifier {
     );
 
     final categoryNames = {for (final c in categories) c.id: c.name};
+    final accountNames = {for (final a in accounts) a.id: a.name};
+    // Pemakaian satu alokasi: seluruh akun (scope global) atau akun
+    // tertentu bila alokasi di-scope.
+    int usedFor(Budget b) => catAccountUsed.entries
+        .where((e) =>
+            e.key.category == b.categoryId &&
+            (b.accountId == null || e.key.account == b.accountId))
+        .fold(0, (total, e) => total + e.value);
     final lines = <LimitLine>[
       LimitLine(label: 'Batas harian', used: dayOut, limit: dailyLimit),
       LimitLine(label: 'Batas mingguan', used: weekOut, limit: weekLimit),
@@ -134,8 +144,11 @@ class ProgressService extends ChangeNotifier {
       ),
       for (final b in budgets)
         LimitLine(
-          label: categoryNames[b.categoryId] ?? 'Kategori',
-          used: catUsed[b.categoryId] ?? 0,
+          label: (categoryNames[b.categoryId] ?? 'Kategori') +
+              (b.accountId == null
+                  ? ''
+                  : ' · ${accountNames[b.accountId] ?? 'akun'}'),
+          used: usedFor(b),
           limit: b.monthlyLimit,
           isCategory: true,
         ),

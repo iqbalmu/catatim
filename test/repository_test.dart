@@ -258,4 +258,94 @@ void main() {
     final all = await repo.watchRecentWithCategory().first;
     expect(all.single.tx.accountId, isNull);
   });
+
+  test('alokasi: scope akun terpisah & upsert per scope', () async {
+    final accounts = await repo.getAccounts();
+    final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
+    final cats = await repo.watchCategories().first;
+    final makanan = cats.firstWhere((c) => c.name == 'Makanan');
+
+    await repo.setBudget(makanan.id, 1000000);
+    await repo.setBudget(makanan.id, 2000000); // upsert scope global
+    await repo.setBudget(makanan.id, 500000, accountId: blu.id);
+
+    var budgets = await repo.watchBudgets().first;
+    expect(budgets.where((b) => b.categoryId == makanan.id), hasLength(2));
+    expect(
+      budgets.firstWhere((b) => b.accountId == null).monthlyLimit,
+      2000000,
+    );
+    expect(
+      budgets.firstWhere((b) => b.accountId == blu.id).monthlyLimit,
+      500000,
+    );
+
+    // Pemakaian per pasangan (kategori, akun).
+    final now = DateTime.now();
+    await repo.addManual(
+      amount: 100000,
+      direction: Direction.outgoing,
+      kind: TxKind.payment,
+      categoryId: makanan.id,
+      accountId: blu.id,
+      occurredAt: DateTime(now.year, now.month, now.day, 10),
+    );
+    final pairs = await repo.outPairsBetween(
+      DateTime(now.year, now.month),
+      DateTime(now.year, now.month + 1),
+    );
+    expect(pairs[(category: makanan.id, account: blu.id)], 100000);
+
+    await repo.removeBudget(makanan.id, accountId: blu.id);
+    budgets = await repo.watchBudgets().first;
+    expect(budgets.where((b) => b.categoryId == makanan.id), hasLength(1));
+  });
+
+  test('saldo akun = saldo awal + masuk − keluar', () async {
+    final accounts = await repo.getAccounts();
+    final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
+    await repo.setOpeningBalance(blu.id, 1000000);
+    final now = DateTime.now();
+    await repo.addManual(
+      amount: 300000,
+      direction: Direction.incoming,
+      kind: TxKind.transfer,
+      accountId: blu.id,
+      occurredAt: DateTime(now.year, now.month, now.day, 10),
+    );
+    await repo.addManual(
+      amount: 200000,
+      direction: Direction.outgoing,
+      kind: TxKind.payment,
+      accountId: blu.id,
+      occurredAt: DateTime(now.year, now.month, now.day, 11),
+    );
+    final balances = await repo.watchAccountBalances().first;
+    expect(balances[blu.id], 1100000);
+  });
+
+  test('hapus kategori: transaksi pindah ke fallback, alokasi ikut hilang',
+      () async {
+    final cats = await repo.watchCategories().first;
+    final makanan = cats.firstWhere((c) => c.name == 'Makanan');
+    final lainnya = cats.firstWhere((c) => c.name == 'Lainnya');
+    await repo.setBudget(makanan.id, 100000);
+    final now = DateTime.now();
+    await repo.addManual(
+      amount: 25000,
+      direction: Direction.outgoing,
+      kind: TxKind.payment,
+      categoryId: makanan.id,
+      occurredAt: DateTime(now.year, now.month, now.day, 10),
+    );
+
+    await repo.deleteCategory(makanan.id, fallbackId: lainnya.id);
+
+    final rows = await repo.watchRecentWithCategory().first;
+    expect(rows.single.category?.name, 'Lainnya');
+    final budgets = await repo.watchBudgets().first;
+    expect(budgets.where((b) => b.categoryId == makanan.id), isEmpty);
+    final catsAfter = await repo.watchCategories().first;
+    expect(catsAfter.map((c) => c.name), isNot(contains('Makanan')));
+  });
 }

@@ -32,6 +32,8 @@ class Accounts extends Table {
   TextColumn get name => text().unique()();
   TextColumn get kind => textEnum<AccountKind>()();
   IntColumn get colorIndex => integer()();
+  /// Saldo awal saat akun didaftarkan — dasar perhitungan saldo berjalan.
+  IntColumn get openingBalance => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -56,11 +58,19 @@ class Transactions extends Table {
   IntColumn get accountId => integer().nullable().references(Accounts, #id)();
 }
 
-/// Alokasi dana bulanan per kategori (rupiah). Satu baris per kategori.
+/// Alokasi dana bulanan per kategori (rupiah). Opsional di-scope ke satu
+/// akun (mis. "Makanan @ e-wallet"); null = berlaku di semua akun.
 class Budgets extends Table {
   IntColumn get id => integer().autoIncrement()();
-  IntColumn get categoryId => integer().unique().references(Categories, #id)();
+  IntColumn get categoryId => integer().references(Categories, #id)();
+  IntColumn get accountId =>
+      integer().nullable().references(Accounts, #id)();
   IntColumn get monthlyLimit => integer()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {categoryId, accountId},
+      ];
 }
 
 /// Bon pribadi: utang-piutang dengan seseorang.
@@ -125,7 +135,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -152,6 +162,20 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 5) {
             await m.createTable(budgets);
+          }
+          if (from < 6) {
+            // budgets dibangun ulang: unique(kategori) lama dilepas,
+            // diganti unique(kategori, akun); accountId ikut ditambah.
+            // DB yang lompat jauh (mis. v2→v6) sudah membuat budgets
+            // bentuk baru di langkah from<5 — jangan tambah dua kali.
+            if (!await _hasColumn(m, 'budgets', 'account_id')) {
+              await m.alterTable(
+                TableMigration(budgets, newColumns: [budgets.accountId]),
+              );
+            }
+            if (!await _hasColumn(m, 'accounts', 'opening_balance')) {
+              await m.addColumn(accounts, accounts.openingBalance);
+            }
           }
         },
     beforeOpen: (details) async {

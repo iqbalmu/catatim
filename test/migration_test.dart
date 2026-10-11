@@ -194,6 +194,93 @@ void main() {
 
     await db.close();
   });
+
+  test('migrasi v5→v6: alokasi & saldo awal baru, data lama utuh', () async {
+    // Naikkan skema secara manual ke v5 (bentuk lama: budgets tanpa
+    // account_id dengan UNIQUE(category_id), accounts tanpa saldo awal).
+    final raw = sqlite3.open(dbFile.path);
+    raw.execute(
+      'ALTER TABLE transactions ADD COLUMN category_id INTEGER NULL '
+      'REFERENCES categories (id)',
+    );
+    raw.execute(
+      'ALTER TABLE transactions ADD COLUMN account_id INTEGER NULL '
+      'REFERENCES accounts (id)',
+    );
+    raw.execute('''
+      CREATE TABLE categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        color_index INTEGER NOT NULL
+      )
+    ''');
+    raw.execute('''
+      CREATE TABLE app_settings (
+        key TEXT NOT NULL PRIMARY KEY,
+        value_text TEXT NOT NULL
+      )
+    ''');
+    raw.execute('''
+      CREATE TABLE accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        kind TEXT NOT NULL,
+        color_index INTEGER NOT NULL,
+        created_at INTEGER NOT NULL
+      )
+    ''');
+    raw.execute('''
+      CREATE TABLE bons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT NOT NULL UNIQUE,
+        person TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        direction TEXT NOT NULL,
+        note TEXT NULL,
+        occurred_at INTEGER NOT NULL,
+        settled_at INTEGER NULL,
+        created_at INTEGER NOT NULL
+      )
+    ''');
+    raw.execute('''
+      CREATE TABLE budgets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category_id INTEGER NOT NULL UNIQUE REFERENCES categories (id),
+        monthly_limit INTEGER NOT NULL
+      )
+    ''');
+    raw.execute('PRAGMA user_version = 5');
+    raw.execute("INSERT INTO categories (name, color_index) VALUES ('Makanan', 0)");
+    raw.execute(
+      "INSERT INTO accounts (name, kind, color_index, created_at) "
+      "VALUES ('blu by BCA', 'bank', 0, 1790000000)",
+    );
+    raw.execute(
+      "INSERT INTO budgets (category_id, monthly_limit) "
+      "VALUES ((SELECT id FROM categories WHERE name = 'Makanan'), 2000000)",
+    );
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(dbFile));
+    final budgets = await db.select(db.budgets).get();
+    expect(budgets.single.monthlyLimit, 2000000);
+    expect(budgets.single.accountId, isNull); // kolom baru terisi null
+    final accounts = await db.select(db.accounts).get();
+    expect(accounts.single.openingBalance, 0); // kolom baru default 0
+
+    // Tabel baru bisa dipakai: alokasi ber-scope akun disimpan terpisah
+    // dari alokasi global untuk kategori yang sama.
+    final repository = repo(db);
+    await repository.setBudget(
+      budgets.single.categoryId,
+      3000000,
+      accountId: accounts.single.id,
+    );
+    final scoped = await repository.watchBudgets().first;
+    expect(scoped, hasLength(2));
+
+    await db.close();
+  });
 }
 
 LedgerRepository repo(AppDatabase db) => LedgerRepository(db);

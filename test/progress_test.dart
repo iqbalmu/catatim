@@ -171,5 +171,36 @@ void main() {
       expect(progress.latest!.mood, MascotMood.idle);
       expect(progress.latest!.moodLine, contains('waspada'));
     });
+
+    test('alokasi ber-scope akun hanya menghitung akun itu', () async {
+      final cats = await repo.watchCategories().first;
+      final makanan = cats.firstWhere((c) => c.name == 'Makanan');
+      final accounts = await repo.getAccounts();
+      final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
+      await repo.setBudget(makanan.id, 1000, accountId: blu.id);
+      await repo.addManual(
+        amount: 2000,
+        direction: Direction.outgoing,
+        kind: TxKind.payment,
+        categoryId: makanan.id,
+        accountId: blu.id,
+        occurredAt: todayAt(9),
+      );
+      // Keluaran di luar scope (tanpa akun) tidak menggerus alokasi.
+      await repo.addManual(
+        amount: 5000,
+        direction: Direction.outgoing,
+        kind: TxKind.payment,
+        categoryId: makanan.id,
+        occurredAt: todayAt(10),
+      );
+
+      await progress.refresh();
+      final line = progress.latest!.snapshot.lines
+          .firstWhere((l) => l.label.contains('Makanan'));
+      expect(line.label, 'Makanan · blu by BCA');
+      expect(line.used, 2000);
+      expect(line.level, BudgetLevel.over);
+    });
   });
 }
