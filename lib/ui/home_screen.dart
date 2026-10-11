@@ -16,6 +16,7 @@ import 'bon_screen.dart';
 import 'budget_screen.dart';
 import 'capture_log_screen.dart';
 import 'history_screen.dart';
+import 'home_cards.dart';
 import 'quest.dart';
 import 'rules_screen.dart';
 import 'report_screen.dart';
@@ -84,6 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
               pipeline: widget.pipeline,
               progress: widget.progress,
               onOpenHistory: () => setState(() => _tab = 1),
+              onOpenReports: () => setState(() => _tab = 2),
             ),
           ),
           TickerMode(
@@ -123,12 +125,14 @@ class _BerandaTab extends StatefulWidget {
     required this.pipeline,
     required this.progress,
     required this.onOpenHistory,
+    required this.onOpenReports,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
   final ProgressService progress;
   final VoidCallback onOpenHistory;
+  final VoidCallback onOpenReports;
 
   @override
   State<_BerandaTab> createState() => _BerandaTabState();
@@ -323,6 +327,15 @@ class _BerandaTabState extends State<_BerandaTab> {
         ),
         children: [
           GameHeroCard(service: widget.progress, repository: widget.repository),
+          const SizedBox(height: Spacing.s),
+          PaceCard(service: widget.progress),
+          const SizedBox(height: Spacing.s),
+          SaldoCard(repository: widget.repository),
+          const SizedBox(height: Spacing.s),
+          InsightCard(
+            repository: widget.repository,
+            onOpenReports: widget.onOpenReports,
+          ),
           const SizedBox(height: Spacing.s),
           StreamBuilder<List<TxWithCategory>>(
             stream: widget.repository.watchRecentWithCategory(limit: 60),
