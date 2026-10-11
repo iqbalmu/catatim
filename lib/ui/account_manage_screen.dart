@@ -265,7 +265,13 @@ class _AccountRow extends StatelessWidget {
         decoration: BoxDecoration(
           color: q.surface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: q.line, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: q.shadow,
+              offset: const Offset(0, 6),
+              blurRadius: 18,
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -275,7 +281,6 @@ class _AccountRow extends StatelessWidget {
               decoration: BoxDecoration(
                 color: q.surface2,
                 shape: BoxShape.circle,
-                border: Border.all(color: q.line, width: 2),
               ),
               child: Icon(_kindIcon(account.kind), color: q.text, size: 20),
             ),

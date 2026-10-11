@@ -151,7 +151,6 @@ class _CaptureLogScreenState extends State<CaptureLogScreen> {
                           decoration: BoxDecoration(
                             color: enabled ? context.q.good : context.q.honey,
                             shape: BoxShape.circle,
-                            border: Border.all(color: context.q.line, width: 2),
                           ),
                           child: Icon(
                             enabled
@@ -289,7 +288,13 @@ class _CaptureLogScreenState extends State<CaptureLogScreen> {
                         decoration: BoxDecoration(
                           color: context.q.surface,
                           borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: context.q.line, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: context.q.shadow,
+                              offset: const Offset(0, 6),
+                              blurRadius: 18,
+                            ),
+                          ],
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,

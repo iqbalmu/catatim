@@ -734,7 +734,13 @@ class _LimitRow extends StatelessWidget {
         decoration: BoxDecoration(
           color: q.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: q.line, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: q.shadow,
+              offset: const Offset(0, 6),
+              blurRadius: 18,
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -790,12 +796,17 @@ class _AllocationRow extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
       margin: const EdgeInsets.only(bottom: Spacing.s),
       decoration: BoxDecoration(
-        color: q.surface,
+        color: line.level == BudgetLevel.over
+            ? q.bad.withValues(alpha: 0.12)
+            : q.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: line.level == BudgetLevel.over ? q.bad : q.line,
-          width: 2,
-        ),
+        boxShadow: [
+          BoxShadow(
+            color: q.shadow,
+            offset: const Offset(0, 6),
+            blurRadius: 18,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

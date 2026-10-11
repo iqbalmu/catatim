@@ -191,14 +191,6 @@ class _BackupScreenState extends State<BackupScreen> {
             decoration: BoxDecoration(
               color: context.q.bad.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: context.q.line, width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: context.q.shadow,
-                  offset: const Offset(3, 3),
-                  blurRadius: 0,
-                ),
-              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,7 +273,6 @@ class _ActionRow extends StatelessWidget {
               decoration: BoxDecoration(
                 color: context.q.honey.withValues(alpha: 0.25),
                 shape: BoxShape.circle,
-                border: Border.all(color: context.q.line, width: 2),
               ),
               child: Icon(icon, color: context.q.text),
             ),

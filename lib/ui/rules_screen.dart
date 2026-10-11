@@ -72,28 +72,29 @@ class _RulesScreenState extends State<RulesScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
           decoration: BoxDecoration(
-            color: context.q.honey,
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
+            ),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: context.q.line, width: 2),
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
-                color: context.q.shadow,
-                offset: const Offset(3, 3),
-                blurRadius: 0,
+                color: Color(0x73FFA726),
+                offset: Offset(0, 8),
+                blurRadius: 18,
               ),
             ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.add_rounded, color: context.q.honeyInk, size: 24),
+              Icon(Icons.add_rounded, color: Colors.white, size: 24),
               const SizedBox(width: 6),
               Text(
                 'Aturan',
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
                   fontSize: 17,
-                  color: context.q.honeyInk,
+                  color: Colors.white,
                 ),
               ),
             ],

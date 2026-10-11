@@ -84,7 +84,13 @@ class TransactionTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.q.surface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: context.q.line, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: context.q.shadow,
+              offset: const Offset(0, 6),
+              blurRadius: 18,
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -94,7 +100,6 @@ class TransactionTile extends StatelessWidget {
               decoration: BoxDecoration(
                 color: dotColor.withValues(alpha: 0.16),
                 shape: BoxShape.circle,
-                border: Border.all(color: context.q.line, width: 2),
               ),
               child: Icon(_iconFor(tx.kind), color: dotColor, size: 22),
             ),
