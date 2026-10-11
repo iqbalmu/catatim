@@ -71,7 +71,7 @@ class _AlertRow extends StatelessWidget {
     final q = context.q;
     final over = line.level == BudgetLevel.over;
     return Padding(
-      padding: const EdgeInsets.only(top: Spacing.s),
+      padding: const EdgeInsets.only(top: Spacing.m),
       child: QuestPress(
         onTap: () => Navigator.push(
           context,
@@ -607,7 +607,7 @@ class KewajibanStrip extends StatelessWidget {
             .difference(DateTime(oldest.year, oldest.month, oldest.day))
             .inDays;
         return Padding(
-          padding: const EdgeInsets.only(top: Spacing.s),
+          padding: const EdgeInsets.only(bottom: Spacing.m),
           child: QuestPress(
             onTap: onOpenBon,
             child: Container(

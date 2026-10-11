@@ -330,7 +330,7 @@ class _BerandaTabState extends State<_BerandaTab> {
             repository: widget.repository,
             service: widget.progress,
           ),
-          const SizedBox(height: Spacing.s),
+          const SizedBox(height: Spacing.m),
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -348,7 +348,7 @@ class _BerandaTabState extends State<_BerandaTab> {
               ],
             ),
           ),
-          const SizedBox(height: Spacing.s),
+          const SizedBox(height: Spacing.m),
           IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -375,12 +375,12 @@ class _BerandaTabState extends State<_BerandaTab> {
               ],
             ),
           ),
-          const SizedBox(height: Spacing.s),
+          const SizedBox(height: Spacing.m),
           KategoriCard(
             repository: widget.repository,
             onOpenReports: widget.onOpenReports,
           ),
-          const SizedBox(height: Spacing.s),
+          const SizedBox(height: Spacing.m),
           KewajibanStrip(
             repository: widget.repository,
             onOpenBon: widget.onOpenBon,
