@@ -7,6 +7,7 @@ import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'account_filter.dart';
+import 'account_manage_screen.dart';
 import 'month_picker.dart';
 import 'quest.dart';
 import 'range_calendar.dart';
@@ -415,7 +416,30 @@ class _FilterSheetState extends State<_FilterSheet> {
           children: [
             Text('Filter', style: context.qTitle(20)),
             const SizedBox(height: Spacing.m),
-            Text('Akun', style: context.qEyebrow()),
+            Row(
+              children: [
+                Text('Akun', style: context.qEyebrow()),
+                const Spacer(),
+                QuestPress(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AccountManageScreen(
+                        repository: widget.repository,
+                      ),
+                    ),
+                  ),
+                  child: Text(
+                    'Kelola',
+                    style: TextStyle(
+                      color: context.q.honey,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: Spacing.s),
             AccountFilter(
               repository: widget.repository,

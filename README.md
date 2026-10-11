@@ -28,9 +28,10 @@ penyimpanan) di Dart — unit-testable tanpa device.
   dan pihak/keterangan. Tap transaksi untuk ubah/hapus.
 - **Capture otomatis**: notifikasi bank/e-wallet → parser rules per bank →
   kategori + akun otomatis (blu → blu by BCA, nagari → Bank Nagari).
-- **Akun**: blu by BCA, Bank Nagari, Tunai (bawaan) + tambah sendiri
-  (Bank/E-wallet/Tunai). Filter chips di Beranda; sheet transaksi punya
-  picker akun.
+- **Akun**: blu by BCA, Bank Nagari, Tunai (bawaan) + tambah sendiri.
+  Kelola (tambah/ubah/hapus) di menu Beranda → *Kelola akun* atau tautan
+  *Kelola* di sheet filter Riwayat; filter akun murni memfilter. Sheet
+  transaksi punya picker akun.
 - **Bon**: tab utang-piutang — tambah/edit, tandai lunas, total piutang
   vs utang yang belum lunas. Murni lokal, tanpa pengingat server.
 - **Bukuduit Quest**: maskot Duit (4 mood), streak harian, XP

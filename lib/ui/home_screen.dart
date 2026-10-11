@@ -9,6 +9,7 @@ import '../game/progress.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
+import 'account_manage_screen.dart';
 import 'backup_screen.dart';
 import 'bon_screen.dart';
 import 'capture_log_screen.dart';
@@ -230,7 +231,15 @@ class _BerandaTabState extends State<_BerandaTab> {
               child: Icon(Icons.more_horiz_rounded, color: context.q.text),
             ),
             onSelected: (value) {
-              if (value == 'backup') {
+              if (value == 'accounts') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        AccountManageScreen(repository: widget.repository),
+                  ),
+                );
+              } else if (value == 'backup') {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -251,6 +260,19 @@ class _BerandaTabState extends State<_BerandaTab> {
               }
             },
             itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'accounts',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet_rounded,
+                      color: context.q.text,
+                    ),
+                    const SizedBox(width: Spacing.s),
+                    const Text('Kelola akun'),
+                  ],
+                ),
+              ),
               PopupMenuItem(
                 value: 'backup',
                 child: Row(
