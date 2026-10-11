@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../core/budget.dart';
 import '../core/money.dart';
 import '../models.dart';
 import '../storage/database.dart';
@@ -122,6 +123,12 @@ class _ReportTabState extends State<ReportTab> {
                 ],
               ),
             ),
+          ),
+          const SizedBox(height: Spacing.m),
+          _PeriodHeadlines(
+            repository: widget.repository,
+            winStart: winStart,
+            winEnd: winEnd,
           ),
           const SizedBox(height: Spacing.m),
           StreamBuilder<List<TxWithCategory>>(
@@ -283,6 +290,174 @@ class _Bucket {
   final Color color;
 
   const _Bucket(this.label, this.amount, this.color);
+}
+
+/// Kartu headline: nominal besar + delta vs periode pembanding.
+class _HeadlineCard extends StatelessWidget {
+  const _HeadlineCard({
+    required this.label,
+    required this.amount,
+    required this.delta,
+    required this.upIsBad,
+  });
+
+  final String label;
+  final int amount;
+  final String? delta;
+  final bool upIsBad;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    final arrow = delta?.startsWith('▲') ?? false;
+    final flat = delta?.startsWith('±') ?? false;
+    final deltaColor = delta == null || flat
+        ? q.muted
+        : (arrow == upIsBad ? q.bad : q.good);
+    return Container(
+      padding: const EdgeInsets.all(Spacing.m),
+      decoration: BoxDecoration(
+        color: q.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: q.shadow,
+            offset: const Offset(0, 6),
+            blurRadius: 18,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: context.qEyebrow()),
+                const SizedBox(height: 2),
+                FittedBox(
+                  child: Text(
+                    Money.format(amount),
+                    style: context.qDisplay(30),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (delta != null)
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: deltaColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                delta!,
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  color: deltaColor,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Dua headline (keluar & masuk) + delta vs periode pembanding.
+class _PeriodHeadlines extends StatelessWidget {
+  const _PeriodHeadlines({
+    required this.repository,
+    required this.winStart,
+    required this.winEnd,
+  });
+
+  final LedgerRepository repository;
+  final DateTime? winStart;
+  final DateTime? winEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final start = winStart;
+    final end = winEnd;
+    if (start == null || end == null) {
+      return const SizedBox.shrink();
+    }
+    final span = end.difference(start);
+    final prevStart = start.subtract(span);
+    final prevEnd = start;
+    return Column(
+      children: [
+        _HeadlineFuture(
+          repository: repository,
+          label: 'KELUAR · periode ini',
+          start: start,
+          end: end,
+          prevStart: prevStart,
+          prevEnd: prevEnd,
+          direction: Direction.outgoing,
+          upIsBad: true,
+        ),
+        const SizedBox(height: Spacing.s),
+        _HeadlineFuture(
+          repository: repository,
+          label: 'MASUK · periode ini',
+          start: start,
+          end: end,
+          prevStart: prevStart,
+          prevEnd: prevEnd,
+          direction: Direction.incoming,
+          upIsBad: false,
+        ),
+      ],
+    );
+  }
+}
+
+class _HeadlineFuture extends StatelessWidget {
+  const _HeadlineFuture({
+    required this.repository,
+    required this.label,
+    required this.start,
+    required this.end,
+    required this.prevStart,
+    required this.prevEnd,
+    required this.direction,
+    required this.upIsBad,
+  });
+
+  final LedgerRepository repository;
+  final String label;
+  final DateTime start;
+  final DateTime end;
+  final DateTime prevStart;
+  final DateTime prevEnd;
+  final Direction direction;
+  final bool upIsBad;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<int>(
+      future: repository.sumBetween(start, end, direction),
+      builder: (context, cur) {
+        return FutureBuilder<int>(
+          future: repository.sumBetween(prevStart, prevEnd, direction),
+          builder: (context, prev) {
+            final amount = cur.data ?? 0;
+            return _HeadlineCard(
+              label: label,
+              amount: amount,
+              delta: deltaLabel(amount, prev.data ?? 0),
+              upIsBad: upIsBad,
+            );
+          },
+        );
+      },
+    );
+  }
 }
 
 class _CategoryDonutCard extends StatefulWidget {
