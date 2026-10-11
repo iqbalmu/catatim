@@ -88,11 +88,11 @@ class _ReportTabState extends State<ReportTab> {
       backgroundColor: context.q.bg,
       appBar: QuestHeader(title: 'Laporan', subtitle: _periodLabel),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(
+        padding: EdgeInsets.fromLTRB(
           Spacing.m,
           Spacing.s,
           Spacing.m,
-          Spacing.m,
+          Spacing.m + MediaQuery.paddingOf(context).bottom,
         ),
         children: [
           // Chip periode kompak pengganti segmented — buka sheet kalender.

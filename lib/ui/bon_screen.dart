@@ -51,11 +51,11 @@ class BonTab extends StatelessWidget {
           ];
 
           return ListView(
-            padding: const EdgeInsets.fromLTRB(
+            padding: EdgeInsets.fromLTRB(
               Spacing.m,
               Spacing.s,
               Spacing.m,
-              Spacing.m,
+              Spacing.m + MediaQuery.paddingOf(context).bottom,
             ),
             children: [
               Row(

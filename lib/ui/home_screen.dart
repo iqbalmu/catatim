@@ -69,6 +69,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.q.bg,
+      // Konten mengalir di belakang navbar floating; tiap tab memberi
+      // clearance lewat MediaQuery.padding.bottom yang disuntik Scaffold.
+      extendBody: true,
       body: IndexedStack(
         index: _tab,
         children: [
@@ -298,11 +301,11 @@ class _BerandaTabState extends State<_BerandaTab> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(
+        padding: EdgeInsets.fromLTRB(
           Spacing.m,
           Spacing.s,
           Spacing.m,
-          Spacing.m,
+          Spacing.m + MediaQuery.paddingOf(context).bottom,
         ),
         children: [
           GameHeroCard(service: widget.progress, repository: widget.repository),

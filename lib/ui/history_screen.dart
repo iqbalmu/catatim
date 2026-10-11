@@ -162,11 +162,11 @@ class _HistoryTabState extends State<HistoryTab> {
         subtitle: 'Semua transaksi',
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(
+        padding: EdgeInsets.fromLTRB(
           Spacing.m,
           Spacing.s,
           Spacing.m,
-          Spacing.m,
+          Spacing.m + MediaQuery.paddingOf(context).bottom,
         ),
         children: [
           TextField(
