@@ -37,30 +37,27 @@ class _HeroCompact extends StatelessWidget {
     final hasStreak = (p?.streakDays ?? 0) > 0;
 
     return Container(
-      padding: const EdgeInsets.all(Spacing.m),
+      padding: const EdgeInsets.all(Spacing.l),
       decoration: BoxDecoration(
-        color: q.surface,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: q.shadow,
-            offset: const Offset(0, 8),
-            blurRadius: 20,
-          ),
-        ],
+        gradient: const LinearGradient(
+          colors: [SeedColors.honey50, SeedColors.honey100],
+        ),
+        borderRadius: BorderRadius.circular(24),
       ),
       child: p == null || pace == null
-          ? const SizedBox(height: 72)
+          ? const SizedBox(height: 96)
           : Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                RepaintBoundary(child: Mascot(mood: p.mood, size: 52)),
+                RepaintBoundary(child: Mascot(mood: p.mood, size: 64)),
                 const SizedBox(width: Spacing.m),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('SISA AMAN', style: context.qEyebrow()),
+                      Text('SISA AMAN',
+                          style:
+                              context.qEyebrow().copyWith(color: q.honeyInk)),
                       const SizedBox(height: 2),
                       if (safe == null)
                         Text(
@@ -71,7 +68,7 @@ class _HeroCompact extends StatelessWidget {
                         FittedBox(
                           child: Text(
                             Money.format(safe),
-                            style: context.qDisplay(28)
+                            style: context.qDisplay(34)
                                 .copyWith(color: over ? q.bad : q.text),
                           ),
                         ),
@@ -79,7 +76,7 @@ class _HeroCompact extends StatelessWidget {
                       Text(
                         'tgl ${pace.dayOfMonth} · '
                         'ideal ${pace.idealUsedPercent}%',
-                        style: context.qSmall(),
+                        style: context.qSmall().copyWith(color: q.honeyInk),
                       ),
                     ],
                   ),
@@ -89,7 +86,7 @@ class _HeroCompact extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
                   decoration: BoxDecoration(
-                    color: q.surface2,
+                    color: q.surface,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Row(
