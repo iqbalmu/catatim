@@ -58,6 +58,8 @@ class BonTab extends StatelessWidget {
               Spacing.m + MediaQuery.paddingOf(context).bottom,
             ),
             children: [
+              _NetCard(net: piutang - utang),
+              const SizedBox(height: Spacing.s),
               Row(
                 children: [
                   Expanded(
@@ -106,6 +108,47 @@ class BonTab extends StatelessWidget {
   }
 }
 
+/// Kartu posisi bersih: piutang − utang (belum lunas saja).
+class _NetCard extends StatelessWidget {
+  const _NetCard({required this.net});
+
+  final int net;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    final positive = net >= 0;
+    return Container(
+      padding: const EdgeInsets.all(Spacing.m),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [SeedColors.honeyBright, SeedColors.honey],
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        children: [
+          Text(
+            'POSISI BERSIH',
+            style: context.qEyebrow().copyWith(color: q.honeyInk),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${positive ? '+' : '-'}${Money.format(net.abs())}',
+            style: context.qDisplay(30).copyWith(color: q.text),
+          ),
+          Text(
+            positive
+                ? 'kamu dipinjami bersih segini'
+                : 'kamu berutang bersih segini',
+            style: context.qSmall(11).copyWith(color: q.honeyInk),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _TotalCard extends StatelessWidget {
   const _TotalCard({
     required this.label,
@@ -145,6 +188,22 @@ class _BonTile extends StatelessWidget {
 
   final Bon bon;
   final LedgerRepository repository;
+
+  /// Umur bon sejak dicatat: 'hari ini', '3 hari', '2 minggu', '1 bulan'.
+  String _ageLabel(DateTime occurredAt) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final start = DateTime(
+      occurredAt.year,
+      occurredAt.month,
+      occurredAt.day,
+    );
+    final days = today.difference(start).inDays;
+    if (days <= 0) return 'hari ini';
+    if (days < 14) return '$days hari';
+    if (days < 60) return '${days ~/ 7} minggu';
+    return '${(days / 30).round()} bulan';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -213,21 +272,38 @@ class _BonTile extends StatelessWidget {
                 children: [
                   QuestAmount(amount: bon.amount, incoming: !lent, size: 15),
                   const SizedBox(height: 2),
-                  Text(
-                    settled ? 'Lunas ✓' : 'Belum lunas',
-                    style: context
-                        .qSmall(11)
-                        .copyWith(
-                          fontWeight: settled
-                              ? FontWeight.w400
-                              : FontWeight.w800,
-                          color: settled
-                              ? context.q.muted
-                              : (lent ? context.q.good : context.q.bad),
-                        ),
-                  ),
+                  if (settled)
+                    Text(
+                      'Lunas ✓',
+                      style: context
+                          .qSmall(11)
+                          .copyWith(color: context.q.muted),
+                    )
+                  else
+                    Text(
+                      _ageLabel(bon.occurredAt),
+                      style: context.qSmall(11).copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: lent ? context.q.good : context.q.bad,
+                          ),
+                    ),
                 ],
               ),
+              if (!settled) ...[
+                const SizedBox(width: Spacing.s),
+                IconButton(
+                  tooltip: 'Tandai lunas',
+                  icon: Icon(
+                    Icons.check_circle_outline_rounded,
+                    color: context.q.good,
+                    size: 24,
+                  ),
+                  onPressed: () => repository.updateBon(
+                    bon.id,
+                    BonsCompanion(settledAt: Value(DateTime.now())),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
