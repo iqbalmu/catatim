@@ -223,3 +223,20 @@ BudgetLevel? accountBudgetLevel({
   }
   return worst;
 }
+
+/// Garis global (bukan alokasi kategori) yang layak ditampilkan di hero:
+/// garis global berbatas yang paling kritis (over → warning → ok);
+/// null bila memang belum ada anggaran apa pun. Batas nol/negatif =
+/// tanpa batas (konsisten [LimitLine.level]).
+LimitLine? heroBudgetLine(BudgetSnapshot snap) {
+  final global = snap.lines
+      .where((l) => !l.isCategory && (l.limit ?? 0) > 0)
+      .toList();
+  if (global.isEmpty) return null;
+  global.sort((a, b) {
+    final byLevel = b.level.index.compareTo(a.level.index);
+    if (byLevel != 0) return byLevel;
+    return b.fraction.compareTo(a.fraction);
+  });
+  return global.first;
+}

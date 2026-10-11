@@ -273,4 +273,58 @@ void main() {
       );
     });
   });
+
+  group('heroBudgetLine', () {
+    BudgetSnapshot snapOf(List<LimitLine> lines) => BudgetSnapshot(
+          lines: lines,
+          monthIn: 0,
+          monthOut: 0,
+          lastMonthIn: 0,
+          lastMonthOut: 0,
+          hasData: true,
+        );
+
+    test('hanya batas harian: tampil baris harian, bukan tanpa anggaran',
+        () {
+      final line = heroBudgetLine(snapOf(const [
+        LimitLine(label: 'Batas harian', used: 40000, limit: 50000),
+        LimitLine(label: 'Batas mingguan', used: 0),
+        LimitLine(label: 'Total bulan ini', used: 0),
+      ]));
+      expect(line, isNotNull);
+      expect(line!.label, 'Batas harian');
+    });
+
+    test('harian over menang atas bulanan yang masih ok', () {
+      final line = heroBudgetLine(snapOf(const [
+        LimitLine(label: 'Batas harian', used: 60000, limit: 50000),
+        LimitLine(label: 'Batas mingguan', used: 0),
+        LimitLine(label: 'Total bulan ini', used: 1000000, limit: 3100000),
+      ]));
+      expect(line!.label, 'Batas harian');
+      expect(line.level, BudgetLevel.over);
+    });
+
+    test('tanpa batas di mana pun: null', () {
+      expect(
+        heroBudgetLine(snapOf(const [
+          LimitLine(label: 'Batas harian', used: 40000),
+          LimitLine(label: 'Batas mingguan', used: 0),
+          LimitLine(label: 'Total bulan ini', used: 1000000),
+        ])),
+        isNull,
+      );
+    });
+
+    test('alokasi kategori over tanpa garis global: tetap null', () {
+      expect(
+        heroBudgetLine(snapOf(const [
+          LimitLine(label: 'Batas harian', used: 0),
+          LimitLine(
+              label: 'Makanan', used: 150000, limit: 100000, isCategory: true),
+        ])),
+        isNull,
+      );
+    });
+  });
 }

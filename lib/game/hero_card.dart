@@ -237,9 +237,7 @@ class _BudgetRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final q = context.q;
     final snapshot = progress.snapshot;
-    final total = snapshot.lines
-        .where((l) => l.label == 'Total bulan ini')
-        .firstOrNull;
+    final display = heroBudgetLine(snapshot);
     final trend = snapshot.outTrend;
 
     final Color trendColor;
@@ -259,10 +257,10 @@ class _BudgetRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (total?.limit != null) ...[
+        if (display != null) ...[
           QuestBar(
-            value: total!.fraction,
-            color: switch (total.level) {
+            value: display.fraction,
+            color: switch (display.level) {
               BudgetLevel.over => q.bad,
               BudgetLevel.warning => q.honey,
               BudgetLevel.ok => q.good,
@@ -272,12 +270,12 @@ class _BudgetRow extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Anggaran: ${Money.format(total.used)} / '
-                '${Money.format(total.limit!)} (${total.usedPercent}%)',
+                '${display.label}: ${Money.format(display.used)} / '
+                '${Money.format(display.limit!)} (${display.usedPercent}%)',
                 style: context.qSmall(),
               ),
               const Spacer(),
-              if (total.level != BudgetLevel.ok)
+              if (display.level != BudgetLevel.ok)
                 Text(
                   'OVER',
                   style: TextStyle(
