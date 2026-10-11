@@ -130,50 +130,51 @@ class QuestButton extends StatelessWidget {
         fill = Colors.transparent;
         fg = q.text;
     }
-    final button = Opacity(
-      opacity: onPressed == null ? 0.45 : 1,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        decoration: BoxDecoration(
-          color: fill,
-          gradient: tone == QuestTone.primary
-              ? const LinearGradient(
-                  colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
-                )
-              : null,
-          borderRadius: BorderRadius.circular(999),
-          boxShadow: tone == QuestTone.primary
-              ? const [
-                  BoxShadow(
-                    color: Color(0x73FFA726),
-                    offset: Offset(0, 8),
-                    blurRadius: 18,
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: expanded ? MainAxisSize.max : MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 20, color: fg),
-              const SizedBox(width: Spacing.s),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 16,
-                letterSpacing: 0.2,
-                color: fg,
-              ),
-            ),
+    final button = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      decoration: BoxDecoration(
+        color: tone == QuestTone.primary ? null : fill,
+        gradient: tone == QuestTone.primary
+            ? const LinearGradient(
+                colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
+              )
+            : null,
+        borderRadius: BorderRadius.circular(999),
+        boxShadow: tone == QuestTone.primary
+            ? const [
+                BoxShadow(
+                  color: Color(0x73FFA726),
+                  offset: Offset(0, 8),
+                  blurRadius: 18,
+                ),
+              ]
+            : null,
+      ),
+      child: Row(
+        mainAxisSize: expanded ? MainAxisSize.max : MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 20, color: fg),
+            const SizedBox(width: Spacing.s),
           ],
-        ),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 16,
+              letterSpacing: 0.2,
+              color: fg,
+            ),
+          ),
+        ],
       ),
     );
-    return QuestPress(onTap: onPressed, child: button);
+    // Tanpa Opacity saat enabled: saveLayer + blur shadow besar di Impeller
+    // bisa membilas isi layer hingga tombol tampak pucat.
+    final wrapped =
+        onPressed == null ? Opacity(opacity: 0.45, child: button) : button;
+    return QuestPress(onTap: onPressed, child: wrapped);
   }
 }
 
