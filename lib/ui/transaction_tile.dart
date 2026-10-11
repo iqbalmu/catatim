@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/dates_id.dart';
+import '../core/money.dart';
 import '../game/progress.dart';
 import '../models.dart';
 import '../storage/repository.dart';
@@ -15,21 +16,33 @@ class TransactionDayHeader extends StatelessWidget {
     super.key,
     required this.day,
     required this.first,
+    this.totalOut,
   });
 
   final DateTime day;
   final bool first;
 
+  /// Total keluar hari itu — audit cepat per grup. Null = sembunyikan.
+  final int? totalOut;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(top: first ? 0 : Spacing.m, bottom: Spacing.xs),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          idRelativeDay(day, DateTime.now()).toUpperCase(),
-          style: context.qEyebrow(),
-        ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              idRelativeDay(day, DateTime.now()).toUpperCase(),
+              style: context.qEyebrow(),
+            ),
+          ),
+          if (totalOut != null && totalOut! > 0)
+            Text(
+              '-${Money.format(totalOut!)}',
+              style: context.qSmall(11).copyWith(color: context.q.bad),
+            ),
+        ],
       ),
     );
   }

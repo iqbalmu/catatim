@@ -157,9 +157,11 @@ class _HistoryTabState extends State<HistoryTab> {
 
     return Scaffold(
       backgroundColor: context.q.bg,
-      appBar: const QuestHeader(
+      appBar: QuestHeader(
         title: 'Riwayat',
-        subtitle: 'Semua transaksi',
+        subtitle: _period == _HistoryPeriod.all
+            ? 'Semua transaksi'
+            : _periodLabel,
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
@@ -245,6 +247,14 @@ class _HistoryTabState extends State<HistoryTab> {
                     TransactionDayHeader(
                       day: entry.key,
                       first: entry.key == byDay.keys.first,
+                      totalOut: entry.value.fold<int>(
+                        0,
+                        (sum, r) =>
+                            sum +
+                            (r.tx.direction == Direction.outgoing
+                                ? r.tx.amount
+                                : 0),
+                      ),
                     ),
                     for (final item in entry.value)
                       TransactionTile(
