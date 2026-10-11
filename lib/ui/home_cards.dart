@@ -71,7 +71,7 @@ class _AlertRow extends StatelessWidget {
     final q = context.q;
     final over = line.level == BudgetLevel.over;
     return Padding(
-      padding: const EdgeInsets.only(bottom: Spacing.s),
+      padding: const EdgeInsets.only(top: Spacing.s),
       child: QuestPress(
         onTap: () => Navigator.push(
           context,
