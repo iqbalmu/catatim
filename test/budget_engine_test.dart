@@ -105,4 +105,110 @@ void main() {
       expect(trendLabel(TrendDirection.better, incoming: true), 'masuk naik');
     });
   });
+
+  group('pace harian', () {
+    final now = DateTime(2026, 10, 11); // Minggu, 31 hari.
+
+    test('prioritas harian di atas mingguan/bulanan', () {
+      final p = dailyPace(
+        now: now,
+        dayOut: 42500,
+        weekOut: 150000,
+        monthOut: 1000000,
+        dailyLimit: 50000,
+        weeklyLimit: 300000,
+        monthlyTotal: 3100000,
+      );
+      expect(p.safeToSpend, 7500);
+    });
+
+    test('harian over tetap negatif', () {
+      expect(
+        dailyPace(
+          now: now,
+          dayOut: 60000,
+          weekOut: 60000,
+          monthOut: 60000,
+          dailyLimit: 50000,
+        ).safeToSpend,
+        -10000,
+      );
+    });
+
+    test('fallback mingguan: sisa minggu dibagi sisa hari', () {
+      expect(
+        dailyPace(
+          now: now,
+          dayOut: 100000,
+          weekOut: 100000,
+          monthOut: 100000,
+          weeklyLimit: 300000,
+        ).safeToSpend,
+        200000, // (300rb-100rb) / sisa 1 hari (Minggu).
+      );
+      expect(
+        dailyPace(
+          now: DateTime(2026, 10, 7), // Rabu.
+          dayOut: 100000,
+          weekOut: 100000,
+          monthOut: 100000,
+          weeklyLimit: 300000,
+        ).safeToSpend,
+        40000, // / sisa 5 hari.
+      );
+    });
+
+    test('fallback bulanan: sisa bulan dibagi sisa hari', () {
+      expect(
+        dailyPace(
+          now: now,
+          dayOut: 1000000,
+          weekOut: 1000000,
+          monthOut: 1000000,
+          monthlyTotal: 3100000,
+        ).safeToSpend,
+        100000, // 2100000 / (31-11+1).
+      );
+    });
+
+    test('tanpa batas apa pun: null', () {
+      expect(
+        dailyPace(
+          now: now,
+          dayOut: 0,
+          weekOut: 0,
+          monthOut: 0,
+        ).safeToSpend,
+        isNull,
+      );
+    });
+
+    test('limit nol diperlakukan tanpa batas', () {
+      expect(
+        dailyPace(
+          now: now,
+          dayOut: 0,
+          weekOut: 0,
+          monthOut: 0,
+          dailyLimit: 0,
+        ).safeToSpend,
+        isNull,
+      );
+    });
+
+    test('idealUsedPercent dan dimensi bulan', () {
+      final p = dailyPace(now: now, dayOut: 0, weekOut: 0, monthOut: 0);
+      expect(p.idealUsedPercent, 35);
+      expect(p.dayOfMonth, 11);
+      expect(p.daysInMonth, 31);
+      final feb = dailyPace(
+        now: DateTime(2024, 2, 1),
+        dayOut: 0,
+        weekOut: 0,
+        monthOut: 0,
+      );
+      expect(feb.daysInMonth, 29);
+      expect(feb.idealUsedPercent, 3);
+    });
+  });
 }

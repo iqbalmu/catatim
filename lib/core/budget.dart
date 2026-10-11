@@ -134,3 +134,62 @@ String trendLabel(TrendDirection trend, {required bool incoming}) =>
       TrendDirection.worse => incoming ? 'masuk turun' : 'keluar naik',
       TrendDirection.flat => incoming ? 'masuk stabil' : 'keluar stabil',
     };
+
+/// Pace harian: berapa yang boleh dihabis hari ini agar kondisi tetap
+/// aman sampai akhir periode.
+class DailyPace {
+  const DailyPace({
+    required this.safeToSpend,
+    required this.dayOfMonth,
+    required this.daysInMonth,
+    required this.idealUsedPercent,
+  });
+
+  /// Sisa aman hari ini; null = tanpa batas apa pun. Negatif = over.
+  final int? safeToSpend;
+
+  /// Tanggal 1-based dan panjang bulan berjalan.
+  final int dayOfMonth;
+  final int daysInMonth;
+
+  /// Persen terpakai ideal sampai hari ini: round(day/daysInMonth*100).
+  final int idealUsedPercent;
+}
+
+/// Hitung pace harian. Prioritas batas: harian → mingguan → bulanan;
+/// limit `<= 0` diperlakukan tanpa batas (konsisten [LimitLine.level]).
+/// Sisa periode dibagi rata ke sisa hari (rupiah penuh, dibulatkan ke
+/// bawah); nilai bisa negatif — penanda OVER ada di UI.
+DailyPace dailyPace({
+  required DateTime now,
+  required int dayOut,
+  required int weekOut,
+  required int monthOut,
+  int? dailyLimit,
+  int? weeklyLimit,
+  int? monthlyTotal,
+}) {
+  final monthStart = DateTime(now.year, now.month);
+  final daysInMonth =
+      DateTime(now.year, now.month + 1).difference(monthStart).inDays;
+  final dayOfMonth = now.day;
+
+  int? safe;
+  if (dailyLimit != null && dailyLimit > 0) {
+    safe = dailyLimit - dayOut;
+  } else if (weeklyLimit != null && weeklyLimit > 0) {
+    // Senin = awal minggu; sisa hari termasuk hari ini, minimal 1.
+    final daysLeftWeek = 7 - now.weekday + 1;
+    safe = (weeklyLimit - weekOut) ~/ daysLeftWeek;
+  } else if (monthlyTotal != null && monthlyTotal > 0) {
+    final daysLeftMonth = daysInMonth - dayOfMonth + 1;
+    safe = (monthlyTotal - monthOut) ~/ daysLeftMonth;
+  }
+
+  return DailyPace(
+    safeToSpend: safe,
+    dayOfMonth: dayOfMonth,
+    daysInMonth: daysInMonth,
+    idealUsedPercent: (dayOfMonth / daysInMonth * 100).round(),
+  );
+}
