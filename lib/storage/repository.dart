@@ -299,6 +299,111 @@ class LedgerRepository {
         );
   }
 
+  // --- anggaran ---------------------------------------------------------------
+
+  Stream<List<Budget>> watchBudgets() => (_db.select(
+        _db.budgets,
+      )..orderBy([(b) => OrderingTerm.asc(b.id)])).watch();
+
+  /// Set (atau timpa) alokasi bulanan satu kategori.
+  Future<void> setBudget(int categoryId, int monthlyLimit) {
+    return _db
+        .into(_db.budgets)
+        .insertOnConflictUpdate(
+          BudgetsCompanion.insert(
+            categoryId: categoryId,
+            monthlyLimit: monthlyLimit,
+          ),
+        );
+  }
+
+  Future<void> removeBudget(int categoryId) {
+    return (_db.delete(
+      _db.budgets,
+    )..where((b) => b.categoryId.equals(categoryId))).go();
+  }
+
+  /// Total keluar per kategori dalam [start, end) — kunci null = tanpa
+  /// kategori. Sumber alokasi progress di Anggaran & mood Duit.
+  Stream<Map<int?, int>> watchOutByCategoryBetween(
+    DateTime start,
+    DateTime end,
+  ) {
+    final amountSum = _db.transactions.amount.sum();
+    final query = _db.selectOnly(_db.transactions)
+      ..addColumns([_db.transactions.categoryId, amountSum])
+      ..where(
+        _db.transactions.direction.equalsValue(Direction.outgoing) &
+            _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
+            _db.transactions.occurredAt.isSmallerThanValue(end),
+      )
+      ..groupBy([_db.transactions.categoryId]);
+    return query.watch().map(
+          (rows) => {
+            for (final row in rows)
+              row.read(_db.transactions.categoryId):
+                  row.read(amountSum) ?? 0,
+          },
+        );
+  }
+
+  /// Total (masuk atau keluar) dalam [start, end) — hidup (watch).
+  Stream<int> watchSumBetween(
+    DateTime start,
+    DateTime end,
+    Direction direction,
+  ) {
+    final amountSum = _db.transactions.amount.sum();
+    final query = _db.selectOnly(_db.transactions)
+      ..addColumns([amountSum])
+      ..where(
+        _db.transactions.direction.equalsValue(direction) &
+            _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
+            _db.transactions.occurredAt.isSmallerThanValue(end),
+      );
+    return query.watchSingle().map((row) => row.read(amountSum) ?? 0);
+  }
+
+  /// Versi one-shot dari [watchSumBetween] — untuk perhitungan sekali
+  /// jalan (ProgressService.refresh) tanpa langganan stream.
+  Future<int> sumBetween(
+    DateTime start,
+    DateTime end,
+    Direction direction,
+  ) async {
+    final amountSum = _db.transactions.amount.sum();
+    final query = _db.selectOnly(_db.transactions)
+      ..addColumns([amountSum])
+      ..where(
+        _db.transactions.direction.equalsValue(direction) &
+            _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
+            _db.transactions.occurredAt.isSmallerThanValue(end),
+      );
+    final row = await query.getSingle();
+    return row.read(amountSum) ?? 0;
+  }
+
+  /// Versi one-shot dari [watchOutByCategoryBetween].
+  Future<Map<int?, int>> outByCategoryBetween(
+    DateTime start,
+    DateTime end,
+  ) async {
+    final amountSum = _db.transactions.amount.sum();
+    final query = _db.selectOnly(_db.transactions)
+      ..addColumns([_db.transactions.categoryId, amountSum])
+      ..where(
+        _db.transactions.direction.equalsValue(Direction.outgoing) &
+            _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
+            _db.transactions.occurredAt.isSmallerThanValue(end),
+      )
+      ..groupBy([_db.transactions.categoryId]);
+    final rows = await query.get();
+    return {
+      for (final row in rows)
+        row.read(_db.transactions.categoryId): row.read(amountSum) ?? 0,
+    };
+  }
+
   // --- aturan pengguna ------------------------------------------------------
 
   Stream<List<UserRule>> watchUserRules() {

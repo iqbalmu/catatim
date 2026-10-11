@@ -34,8 +34,12 @@ penyimpanan) di Dart — unit-testable tanpa device.
   transaksi punya picker akun.
 - **Bon**: tab utang-piutang — tambah/edit, tandai lunas, total piutang
   vs utang yang belum lunas. Murni lokal, tanpa pengingat server.
-- **Bukuduit Quest**: maskot Duit (4 mood), streak harian, XP
-  (capture +1, manual +2, reklasifikasi +1), level Jajan→Sultan.
+- **Anggaran**: alokasi dana per kategori + batas harian/mingguan/bulanan
+  (menu Beranda → *Anggaran*). Progres masuk/keluar dibanding bulan lalu
+  dengan penilaian membaik/memburuk.
+- **Bukuduit Quest**: maskot Duit merepresentasikan kondisi anggaran —
+  khawatir saat batas terlampaui, tenang saat aman. Streak mencatat
+  dari data asli (milestone 3/7/14/21/30/60/100 hari).
 - **Laporan**: donut kategori interaktif + tren sesuai periode (bulan
   terpilih atau rentang tanggal).
 - **Backup**: ekspor CSV + backup `.sqlite` terenkripsi (simpan

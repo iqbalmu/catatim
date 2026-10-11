@@ -192,19 +192,19 @@ class _TransactionSheetState extends State<TransactionSheet> {
       );
       final categoryChanged = widget.existing!.tx.categoryId != _categoryId;
       if (categoryChanged) {
-        await widget.progress?.award(XpEvent.reclassify);
+        await widget.progress?.onTransactionRecorded();
       }
     } else {
       await widget.repository.addManual(
         amount: amount,
         direction: _direction,
         kind: _kind,
-        counterparty: counterparty,
+        counterparty: counterparty.isEmpty ? null : counterparty,
         categoryId: _categoryId,
         accountId: _accountId,
         occurredAt: _occurredAt,
       );
-      await widget.progress?.award(XpEvent.manualAdd);
+      await widget.progress?.onTransactionRecorded();
     }
     if (mounted) Navigator.pop(context);
   }

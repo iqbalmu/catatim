@@ -56,6 +56,13 @@ class Transactions extends Table {
   IntColumn get accountId => integer().nullable().references(Accounts, #id)();
 }
 
+/// Alokasi dana bulanan per kategori (rupiah). Satu baris per kategori.
+class Budgets extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get categoryId => integer().unique().references(Categories, #id)();
+  IntColumn get monthlyLimit => integer()();
+}
+
 /// Bon pribadi: utang-piutang dengan seseorang.
 class Bons extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -109,6 +116,7 @@ class UserRules extends Table {
     Categories,
     AppSettings,
     Accounts,
+    Budgets,
     Bons,
     UserRules,
   ],
@@ -117,7 +125,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -142,6 +150,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 4) {
             await m.createTable(userRules);
           }
+          if (from < 5) {
+            await m.createTable(budgets);
+          }
         },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -153,6 +164,7 @@ class AppDatabase extends _$AppDatabase {
       await m.createTable(accounts);
       await m.createTable(bons);
       await m.createTable(userRules);
+      await m.createTable(budgets);
       // Seed kategori bawaan sekali — berlaku untuk DB baru maupun hasil
       // upgrade.
       final existing = await select(categories).get();

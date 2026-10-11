@@ -598,12 +598,13 @@ class QuestAmount extends StatelessWidget {
   }
 }
 
-/// Bar progres berbingkai dengan isi madu.
+/// Bar progres berbingkai; isi madu default, warna opsional.
 class QuestBar extends StatelessWidget {
-  const QuestBar({super.key, required this.value, this.height = 12});
+  const QuestBar({super.key, required this.value, this.height = 12, this.color});
 
   final double value;
   final double height;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -629,7 +630,7 @@ class QuestBar extends StatelessWidget {
                 curve: QuestMotion.easeOut,
                 width: w,
                 height: double.infinity,
-                color: q.honey,
+                color: color ?? q.honey,
               ),
             );
           },

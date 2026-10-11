@@ -69,7 +69,7 @@ class CapturePipeline extends ChangeNotifier {
         await repository.recordUnparsedCapture(raw);
       } else {
         await repository.recordFromCapture(raw: raw, draft: draft);
-        unawaited(progress?.award(XpEvent.capture));
+        unawaited(progress?.onTransactionRecorded());
       }
       handledCount++;
       notifyListeners();

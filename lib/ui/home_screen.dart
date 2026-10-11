@@ -1,10 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../capture/pipeline.dart';
 import '../core/dates_id.dart';
 import '../game/hero_card.dart';
-import '../game/mascot.dart';
 import '../game/progress.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
@@ -12,6 +13,7 @@ import '../theme/tokens.dart';
 import 'account_manage_screen.dart';
 import 'backup_screen.dart';
 import 'bon_screen.dart';
+import 'budget_screen.dart';
 import 'capture_log_screen.dart';
 import 'history_screen.dart';
 import 'quest.dart';
@@ -137,6 +139,7 @@ class _BerandaTabState extends State<_BerandaTab> {
   void initState() {
     super.initState();
     widget.progress.addListener(_onProgressChanged);
+    unawaited(widget.progress.refresh());
   }
 
   @override
@@ -145,37 +148,30 @@ class _BerandaTabState extends State<_BerandaTab> {
     super.dispose();
   }
 
-  void _onProgressChanged() {
-    final level = widget.progress.consumePendingLevelUp();
-    if (level != null && mounted) {
+  Future<void> _onProgressChanged() async {
+    final alert = widget.progress.consumePendingAlert();
+    if (alert != null && mounted) {
       HapticFeedback.mediumImpact();
-      showQuestDialog<void>(
+      questSnack(
         context,
-        title: 'LEVEL UP!',
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Mascot(mood: MascotMood.celebrate, size: 96),
-            const SizedBox(height: Spacing.s),
-            Text(
-              'Kamu sekarang level "$level" 🎉',
-              style: context.qBody(),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-        actions: [
-          QuestButton(
-            label: 'Lanjut!',
-            onPressed: () => Navigator.pop(context),
-          ),
-        ],
+        alert,
+        icon: Icons.warning_amber_rounded,
+      );
+      return;
+    }
+    final recovery = await widget.progress.consumePendingRecovery();
+    if (recovery != null && mounted) {
+      HapticFeedback.lightImpact();
+      questSnack(
+        context,
+        recovery,
+        icon: Icons.emoji_emotions_rounded,
       );
       return;
     }
     final milestone = widget.progress.consumePendingMilestone();
     if (milestone != null && mounted) {
-      HapticFeedback.mediumImpact();
+      HapticFeedback.lightImpact();
       questSnack(
         context,
         '$milestone hari beruntun mencatat — mantap!',
@@ -242,6 +238,14 @@ class _BerandaTabState extends State<_BerandaTab> {
                         AccountManageScreen(repository: widget.repository),
                   ),
                 );
+              } else if (value == 'budget') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        BudgetScreen(repository: widget.repository),
+                  ),
+                );
               } else if (value == 'backup') {
                 Navigator.push(
                   context,
@@ -273,6 +277,16 @@ class _BerandaTabState extends State<_BerandaTab> {
                     ),
                     const SizedBox(width: Spacing.s),
                     const Text('Kelola akun'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'budget',
+                child: Row(
+                  children: [
+                    Icon(Icons.savings_rounded, color: context.q.text),
+                    const SizedBox(width: Spacing.s),
+                    const Text('Anggaran'),
                   ],
                 ),
               ),

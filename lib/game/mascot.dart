@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
 
-enum MascotMood { idle, happy, sleepy, celebrate }
+enum MascotMood { idle, happy, sleepy, celebrate, worried }
 
-/// Maskot "Duit" — blob bulat dengan 4 mood.
+/// Maskot "Duit" — blob bulat dengan 5 mood.
 ///
 /// Animasi hanya bob/breathing halus; hormat ke `disableAnimations`.
 class Mascot extends StatefulWidget {
@@ -170,6 +170,33 @@ class _MascotPainter extends CustomPainter {
           stroke,
         );
         _drawZzz(canvas, cx + bodyW * 0.38, bodyRect.top - s * 0.06, s);
+      case MascotMood.worried:
+        // Alis miring ke dalam + mata sayu + mulut cemberut + keringat.
+        for (final dx in [-eyeDx, eyeDx]) {
+          final inner = cx + dx - (dx.isNegative ? -1 : 1) * eyeR * 0.7;
+          canvas.drawLine(
+            Offset(cx + dx - eyeR * (dx.isNegative ? 1 : -1), eyeY - eyeR * 2),
+            Offset(inner, eyeY - eyeR * 0.9),
+            stroke,
+          );
+          canvas.drawCircle(Offset(cx + dx, eyeY + eyeR * 0.4), eyeR, dot);
+        }
+        _arc(
+          canvas,
+          Offset(cx, bodyCy + bodyH * 0.26),
+          bodyW * 0.11,
+          -0.6,
+          stroke,
+        );
+        // Tetes keringat di pelipis.
+        final sweatY =
+            bodyRect.top - s * 0.02 + (animate ? math.sin(t * 4 * math.pi) * s * 0.012 : 0);
+        final sweat = Rect.fromCenter(
+          center: Offset(cx - bodyW * 0.52, sweatY),
+          width: s * 0.045,
+          height: s * 0.07,
+        );
+        canvas.drawOval(sweat, Paint()..color = ink.withValues(alpha: 0.55));
       case MascotMood.celebrate:
         for (final dx in [-eyeDx, eyeDx]) {
           _arc(

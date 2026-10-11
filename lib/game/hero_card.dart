@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/budget.dart';
 import '../core/money.dart';
 import '../game/mascot.dart';
 import '../game/progress.dart';
@@ -67,7 +68,7 @@ class _Body extends StatelessWidget {
     required this.outgoing,
   });
 
-  final GameProgress progress;
+  final ProgressSummary progress;
   final int incoming;
   final int outgoing;
 
@@ -151,23 +152,138 @@ class _Body extends StatelessWidget {
           ],
         ),
         const SizedBox(height: Spacing.m),
-        QuestBar(value: progress.level.progressFraction),
-        const SizedBox(height: 6),
-        Row(
+        // Bar anggaran bulanan + arah tren menggantikan XP/level.
+        _BudgetRow(progress: progress),
+      ],
+    );
+  }
+}
+
+class _BudgetRow extends StatelessWidget {
+  const _BudgetRow({required this.progress});
+
+  final ProgressSummary progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    final snapshot = progress.snapshot;
+    final total = snapshot.lines
+        .where((l) => l.label == 'Total bulan ini')
+        .firstOrNull;
+    final trend = snapshot.outTrend;
+
+    final Color trendColor;
+    final IconData trendIcon;
+    switch (trend) {
+      case TrendDirection.better:
+        trendColor = q.good;
+        trendIcon = Icons.trending_down_rounded;
+      case TrendDirection.worse:
+        trendColor = q.bad;
+        trendIcon = Icons.trending_up_rounded;
+      case TrendDirection.flat:
+        trendColor = q.muted;
+        trendIcon = Icons.trending_flat_rounded;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (total?.limit != null) ...[
+          QuestBar(
+            value: total!.fraction,
+            color: switch (total.level) {
+              BudgetLevel.over => q.bad,
+              BudgetLevel.warning => q.honey,
+              BudgetLevel.ok => q.good,
+            },
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Text(
+                'Anggaran: ${Money.format(total.used)} / '
+                '${Money.format(total.limit!)} (${total.usedPercent}%)',
+                style: context.qSmall(),
+              ),
+              const Spacer(),
+              if (total.level != BudgetLevel.ok)
+                Text(
+                  'OVER',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                    color: q.bad,
+                  ),
+                ),
+            ],
+          ),
+        ] else
+          Text(
+            'Belum ada anggaran — atur di menu ⋯ → Anggaran',
+            style: context.qSmall(),
+          ),
+        const SizedBox(height: Spacing.s),
+        Wrap(
+          spacing: Spacing.s,
+          runSpacing: Spacing.s,
           children: [
-            Text('Level: ${progress.level.name}', style: context.qTitle(14)),
-            const Spacer(),
-            Text(
-              progress.level.xpLevelSpan <= 0
-                  ? '${progress.xp} XP · MAX'
-                  : '${progress.level.xpIntoLevel}/'
-                        '${progress.level.xpLevelSpan} XP ke '
-                        '${kLevelNames[progress.level.index + 1]}',
-              style: context.qSmall(),
+            _TrendChip(
+              icon: trendIcon,
+              color: trendColor,
+              label: 'keluar ${trendLabel(trend, incoming: false)}',
+            ),
+            _TrendChip(
+              icon: Icons.savings_rounded,
+              color: snapshot.inTrend == TrendDirection.worse
+                  ? q.bad
+                  : q.good,
+              label: 'masuk ${trendLabel(snapshot.inTrend, incoming: true)}',
             ),
           ],
         ),
       ],
+    );
+  }
+}
+
+class _TrendChip extends StatelessWidget {
+  const _TrendChip({
+    required this.icon,
+    required this.color,
+    required this.label,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: q.line, width: 1.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+              color: q.text,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
