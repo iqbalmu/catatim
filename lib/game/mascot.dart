@@ -61,6 +61,28 @@ class _MascotState extends State<Mascot> with SingleTickerProviderStateMixin {
 }
 
 class _MascotPainter extends CustomPainter {
+  /// Rentang tinta vertikal per mood (fraksi tinggi kanvas): tepi atas
+  /// (telinga / Zzz / keringat) dan tepi bawah (kaki). Dipakai menormalisasi
+  /// framing agar tiap mood mengisi kanvas sama besar.
+  static const _inkTop = {
+    MascotMood.idle: 0.30,
+    MascotMood.happy: 0.30,
+    MascotMood.sleepy: 0.06,
+    MascotMood.worried: 0.29,
+    MascotMood.celebrate: 0.30,
+  };
+  static const _inkBottom = 0.875;
+
+  /// Setengah lebar tinta maksimum (fraksi lebar kanvas) — agar ornamen
+  /// horizontal (konfeti, Zzz) tak terpotong kanvas.
+  static const _inkHalfW = {
+    MascotMood.idle: 0.243,
+    MascotMood.happy: 0.243,
+    MascotMood.sleepy: 0.463,
+    MascotMood.worried: 0.304,
+    MascotMood.celebrate: 0.36,
+  };
+
   _MascotPainter({
     required this.mood,
     required this.t,
@@ -104,6 +126,17 @@ class _MascotPainter extends CustomPainter {
       ..strokeWidth = s * 0.035
       ..strokeCap = StrokeCap.round;
 
+    // Normalisasi framing: petakan rentang tinta mood ini ke [0.03, 0.97].
+    // Skala seragam (tanpa distorsi); dibatasi agar muat horizontal.
+    final inkTop = _inkTop[mood]!;
+    final vFit = 0.94 / (_inkBottom - inkTop);
+    final hFit = 1.0 / (2 * _inkHalfW[mood]!);
+    final frameScale = vFit < hFit ? vFit : hFit;
+    final frameCy = (inkTop + _inkBottom) / 2;
+    canvas.save();
+    canvas.translate(cx, size.height * 0.5);
+    canvas.scale(frameScale);
+    canvas.translate(-cx, -size.height * frameCy);
     // Telinga
     for (final dx in [-0.16, 0.16]) {
       final ear = Rect.fromCenter(
@@ -224,6 +257,7 @@ class _MascotPainter extends CustomPainter {
           );
         }
     }
+    canvas.restore();
   }
 
   void _arc(

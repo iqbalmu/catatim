@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../core/money.dart';
 import '../game/mascot.dart';
@@ -82,8 +83,7 @@ class _HeroCompact extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: Spacing.s),
-                  AspectRatio(
-                    aspectRatio: 1,
+                  _SquareFill(
                     child: FittedBox(
                       fit: BoxFit.contain,
                       child:
@@ -94,6 +94,43 @@ class _HeroCompact extends StatelessWidget {
               ),
             ),
     );
+  }
+}
+
+/// Kotak persegi yang mengisi tinggi layout, tapi melaporkan tinggi
+/// intrinsik nol — agar tinggi baris hanya ditentukan oleh teks, bukan
+/// oleh maskot. (AspectRatio melaporkan intrinsik dari child-nya sehingga
+/// IntrinsicHeight mengukur baris dari maskot, bukan dari teks.)
+class _SquareFill extends SingleChildRenderObjectWidget {
+  const _SquareFill({required super.child});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderSquareFill();
+}
+
+class _RenderSquareFill extends RenderProxyBox {
+  @override
+  double computeMaxIntrinsicHeight(double width) => 0;
+
+  @override
+  double computeMinIntrinsicHeight(double width) => 0;
+
+  @override
+  double computeMaxIntrinsicWidth(double height) => 0;
+
+  @override
+  double computeMinIntrinsicWidth(double height) => 0;
+
+  @override
+  void performLayout() {
+    if (constraints.hasBoundedHeight) {
+      final h = constraints.maxHeight;
+      child!.layout(BoxConstraints.tight(Size(h, h)), parentUsesSize: true);
+      size = Size(h, h);
+    } else {
+      super.performLayout();
+    }
   }
 }
 
