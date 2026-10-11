@@ -308,14 +308,14 @@ class _BudgetRow extends StatelessWidget {
             _TrendChip(
               icon: trendIcon,
               color: trendColor,
-              label: 'keluar ${trendLabel(trend, incoming: false)}',
+              label: trendLabel(trend, incoming: false),
             ),
             _TrendChip(
               icon: Icons.savings_rounded,
               color: snapshot.inTrend == TrendDirection.worse
                   ? q.bad
                   : q.good,
-              label: 'masuk ${trendLabel(snapshot.inTrend, incoming: true)}',
+              label: trendLabel(snapshot.inTrend, incoming: true),
             ),
           ],
         ),
