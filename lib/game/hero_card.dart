@@ -40,7 +40,7 @@ class _HeroCompact extends StatelessWidget {
       padding: const EdgeInsets.all(Spacing.l),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [SeedColors.honey50, SeedColors.honey100],
+          colors: [SeedColors.honeyBright, SeedColors.honey],
         ),
         borderRadius: BorderRadius.circular(24),
       ),

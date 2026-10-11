@@ -31,6 +31,7 @@ class SeedColors {
   static const Color honey = Color(0xFFFFB33E);
   static const Color honey50 = Color(0xFFFFF3DC);
   static const Color honey100 = Color(0xFFFFE7B8);
+  static const Color honeyBright = Color(0xFFFFD97A);
   static const Color honeyDeep = Color(0xFFFFA726);
   static const Color honeyInk = Color(0xFF8A6420);
   static const Color ink = Color(0xFF3B3630);
