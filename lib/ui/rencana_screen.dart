@@ -41,6 +41,16 @@ class _RencanaScreenState extends State<RencanaScreen> {
   late RencanaSegment _segment = widget.initialSegment;
 
   @override
+  void didUpdateWidget(covariant RencanaScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Tap berulang dari Beranda membangun ulang widget dengan
+    // initialSegment baru — sinkronkan segmen agar pindah.
+    if (widget.initialSegment != oldWidget.initialSegment) {
+      _segment = widget.initialSegment;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.q.bg,
