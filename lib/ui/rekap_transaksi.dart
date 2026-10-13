@@ -75,9 +75,9 @@ class _RekapTransaksiState extends State<RekapTransaksi> {
         ),
       ),
     );
-    if (accountId != widget.filter.accountId) {
-      _update(_AccountPatch(base: widget.filter, accountId: accountId).build());
-    }
+    // Selalu emit hasil sheet saat tertutup — jangan bandingkan akun
+    // lama (bisa basi bila filter berubah selama sheet terbuka).
+    _update(_AccountPatch(base: widget.filter, accountId: accountId).build());
   }
 
   @override

@@ -86,73 +86,93 @@ class _RekapScreenState extends State<RekapScreen> {
     return Scaffold(
       backgroundColor: context.q.bg,
       appBar: QuestHeader(title: 'Rekap', subtitle: _periodLabel),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(
-          Spacing.m,
-          Spacing.s,
-          Spacing.m,
-          Spacing.m + MediaQuery.paddingOf(context).bottom,
-        ),
+      // Kolom non-scroll: konten segmen (RekapTransaksi) yang menggulir,
+      // jangan sarangkan dua ListView tanpa shrinkWrap. Inset bawah
+      // diberikan sekali saja oleh ListView segmen.
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Pil periode kompak — buka sheet kalender (pola Laporan).
-          QuestPress(
-            onTap: _openPeriodSheet,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: context.q.surface,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color: context.q.shadow,
-                    offset: const Offset(0, 6),
-                    blurRadius: 18,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.s, Spacing.m, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Pil periode kompak — buka sheet kalender (pola Laporan).
+                QuestPress(
+                  onTap: _openPeriodSheet,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.q.surface,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: context.q.shadow,
+                          offset: const Offset(0, 6),
+                          blurRadius: 18,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.event_outlined, color: context.q.honeyInk),
+                        const SizedBox(width: Spacing.s),
+                        Expanded(
+                          child: Text(_periodLabel, style: context.qTitle(15)),
+                        ),
+                        Icon(Icons.expand_more_rounded, color: context.q.muted),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.event_outlined, color: context.q.honeyInk),
-                  const SizedBox(width: Spacing.s),
-                  Expanded(
-                    child: Text(_periodLabel, style: context.qTitle(15)),
-                  ),
-                  Icon(Icons.expand_more_rounded, color: context.q.muted),
-                ],
-              ),
+                ),
+                const SizedBox(height: Spacing.m),
+                QuestSegmented<_RekapSegment>(
+                  selected: _segment,
+                  onChanged: (s) => setState(() {
+                    _segment = s;
+                    // Periode/akun/cari dipertahankan; kategori/tanggal
+                    // dihapus.
+                    _filter = _filter.onSegmentSwitch();
+                  }),
+                  options: const [
+                    (
+                      value: _RekapSegment.transaksi,
+                      label: 'Transaksi',
+                      icon: null,
+                    ),
+                    (value: _RekapSegment.donat, label: 'Donat', icon: null),
+                    (value: _RekapSegment.tren, label: 'Tren', icon: null),
+                    (
+                      value: _RekapSegment.kalender,
+                      label: 'Kalender',
+                      icon: null,
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
           const SizedBox(height: Spacing.m),
-          QuestSegmented<_RekapSegment>(
-            selected: _segment,
-            onChanged: (s) => setState(() {
-              _segment = s;
-              // Periode/akun/cari dipertahankan; kategori/tanggal dihapus.
-              _filter = _filter.onSegmentSwitch();
-            }),
-            options: const [
-              (value: _RekapSegment.transaksi, label: 'Transaksi', icon: null),
-              (value: _RekapSegment.donat, label: 'Donat', icon: null),
-              (value: _RekapSegment.tren, label: 'Tren', icon: null),
-              (value: _RekapSegment.kalender, label: 'Kalender', icon: null),
-            ],
+          Expanded(
+            child: switch (_segment) {
+              _RekapSegment.transaksi => RekapTransaksi(
+                  repository: widget.repository,
+                  filter: _filter,
+                  onFilterChanged: (f) => setState(() => _filter = f),
+                ),
+              // Segmen Donat/Tren/Kalender diisi tugas berikutnya.
+              _RekapSegment.donat ||
+              _RekapSegment.tren ||
+              _RekapSegment.kalender =>
+                QuestEmpty(
+                  title: 'Menyusul',
+                  hint: 'Segmen ini sedang disiapkan.',
+                ),
+            },
           ),
-          const SizedBox(height: Spacing.m),
-          switch (_segment) {
-            _RekapSegment.transaksi => RekapTransaksi(
-                repository: widget.repository,
-                filter: _filter,
-                onFilterChanged: (f) => setState(() => _filter = f),
-              ),
-            // Segmen Donat/Tren/Kalender diisi tugas berikutnya.
-            _RekapSegment.donat ||
-            _RekapSegment.tren ||
-            _RekapSegment.kalender =>
-              QuestEmpty(
-                title: 'Menyusul',
-                hint: 'Segmen ini sedang disiapkan.',
-              ),
-          },
         ],
       ),
     );
