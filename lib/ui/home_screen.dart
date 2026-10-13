@@ -117,8 +117,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-/// Beranda dashboard: hero + strip peringatan + ubin info. Tanpa daftar
-/// transaksi — pencatatan via tombol +, riwayat di tab Riwayat.
+/// Beranda kilat: hero + strip peringatan + 3 kartu batas + mini
+/// keluar/masuk + baris saldo. Tanpa daftar transaksi — pencatatan via
+/// tombol +, riwayat di tab Riwayat.
 class _BerandaTab extends StatefulWidget {
   const _BerandaTab({
     required this.repository,
@@ -379,61 +380,63 @@ class _BerandaTabState extends State<_BerandaTab> {
             service: widget.progress,
           ),
           const SizedBox(height: Spacing.m),
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: SaldoTile(repository: widget.repository),
-                ),
-                const SizedBox(width: Spacing.s),
-                Expanded(
-                  child: TrendTile(
-                    repository: widget.repository,
-                    onOpenReports: widget.onOpenReports,
+          ListenableBuilder(
+            listenable: widget.progress,
+            builder: (context, _) {
+              final lines = widget.progress.latest?.snapshot.lines;
+              final daily = lines != null && lines.isNotEmpty ? lines[0] : null;
+              final weekly =
+                  lines != null && lines.length > 1 ? lines[1] : null;
+              final monthly =
+                  lines != null && lines.length > 2 ? lines[2] : null;
+              void openBudget() {
+                // TODO(plan5): deep-link Rencana·Batas
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BudgetScreen(
+                      repository: widget.repository,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: Spacing.m),
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: OutTile(
-                    service: widget.progress,
-                    onOpenBudget: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => BudgetScreen(
-                            repository: widget.repository,
-                          ),
-                        ),
-                      ).whenComplete(widget.progress.refresh);
-                    },
+                ).whenComplete(widget.progress.refresh);
+              }
+
+              return Column(
+                children: [
+                  LimitCard(
+                    label: 'HARIAN',
+                    limit: daily?.limit,
+                    used: daily?.used ?? 0,
+                    safe: (daily?.limit ?? 0) - (daily?.used ?? 0),
+                    onTap: openBudget,
                   ),
-                ),
-                const SizedBox(width: Spacing.s),
-                Expanded(
-                  child: InTile(service: widget.progress),
-                ),
-              ],
-            ),
+                  const SizedBox(height: Spacing.s),
+                  LimitCard(
+                    label: 'MINGGUAN',
+                    limit: weekly?.limit,
+                    used: weekly?.used ?? 0,
+                    safe: (weekly?.limit ?? 0) - (weekly?.used ?? 0),
+                    onTap: openBudget,
+                  ),
+                  const SizedBox(height: Spacing.s),
+                  LimitCard(
+                    label: 'BULANAN',
+                    limit: monthly?.limit,
+                    used: monthly?.used ?? 0,
+                    safe: (monthly?.limit ?? 0) - (monthly?.used ?? 0),
+                    onTap: openBudget,
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: Spacing.m),
-          KategoriCard(
-            repository: widget.repository,
-            onOpenReports: widget.onOpenReports,
+          MiniInOut(
+            service: widget.progress,
+            onTap: widget.onOpenReports,
           ),
           const SizedBox(height: Spacing.m),
-          KewajibanStrip(
-            repository: widget.repository,
-            onOpenBon: widget.onOpenBon,
-          ),
-          JejakStrip(service: widget.progress),
+          SaldoRow(repository: widget.repository),
         ],
       ),
     );

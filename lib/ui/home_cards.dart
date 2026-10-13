@@ -787,3 +787,272 @@ List<_TopRow> _topRows(
       ),
   ];
 }
+
+/// Kartu batas Beranda (HARIAN/MINGGUAN/BULANAN): sisa besar + bar fraksi
+/// + sub "dipakai X dari Y · reset …". Tap → Anggaran (fallback sampai
+/// Plan 5 mengganti dengan deep-link Rencana·Batas).
+class LimitCard extends StatelessWidget {
+  const LimitCard({
+    super.key,
+    required this.label,
+    required this.limit,
+    required this.used,
+    required this.safe,
+    required this.onTap,
+  });
+
+  /// Judul periode: 'HARIAN', 'MINGGUAN', atau 'BULANAN'.
+  final String label;
+
+  /// Plafon rupiah; null/<=0 = tanpa batas.
+  final int? limit;
+
+  /// Terpakai efektif (belanja murni + sisihan pos target).
+  final int used;
+
+  /// Sisa = limit - used; negatif = OVER. Diabaikan bila tanpa batas.
+  final int safe;
+
+  final VoidCallback onTap;
+
+  String get _reset {
+    final upper = label.toUpperCase();
+    if (upper.contains('MINGGU')) return 'reset Senin';
+    if (upper.contains('BULAN')) return 'reset tanggal 1';
+    return 'reset tengah malam';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    final line = LimitLine(label: label, used: used, limit: limit);
+    final hasLimit = limit != null && limit! > 0;
+    final over = hasLimit && safe < 0;
+    final barColor = switch (line.level) {
+      BudgetLevel.over => q.bad,
+      BudgetLevel.warning => q.honey,
+      BudgetLevel.ok => q.good,
+    };
+    return QuestCard(
+      onTap: onTap,
+      radius: 18,
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: context.qEyebrow()),
+          const SizedBox(height: 2),
+          Text(
+            hasLimit
+                ? (over
+                      ? '${Money.format(safe)} · OVER'
+                      : 'Sisa ${Money.format(safe)}')
+                : 'Tanpa batas',
+            style: context.qTitle(22).copyWith(
+                  color: over
+                      ? q.bad
+                      : hasLimit
+                          ? q.text
+                          : q.muted,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+          ),
+          const SizedBox(height: 6),
+          QuestBar(value: line.fraction, height: 8, color: barColor),
+          const SizedBox(height: 4),
+          Text(
+            hasLimit
+                ? 'dipakai ${Money.format(used)} dari '
+                    '${Money.format(limit!)} · $_reset'
+                : 'Belum ada batas · ketuk untuk atur',
+            style: context.qSmall(11),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Ringkas keluar + masuk bulan berjalan: nominal + delta vs bulan lalu.
+/// Tap → laporan (via [onTap]).
+class MiniInOut extends StatelessWidget {
+  const MiniInOut({super.key, required this.service, this.onTap});
+
+  final ProgressService service;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: service,
+      builder: (context, _) {
+        final snap = service.latest;
+        if (snap == null) {
+          return const QuestCard(
+            radius: 18,
+            padding: EdgeInsets.all(12),
+            child: SizedBox(height: 64),
+          );
+        }
+        final shot = snap.snapshot;
+        final now = DateTime.now();
+        final lastShort = idMonthsShort[(now.month + 10) % 12];
+        final q = context.q;
+        return QuestCard(
+          onTap: onTap,
+          radius: 18,
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Expanded(
+                child: _MiniSide(
+                  label: 'KELUAR',
+                  amount: snap.monthOut,
+                  previous: shot.lastMonthOut,
+                  lastShort: lastShort,
+                  incoming: false,
+                ),
+              ),
+              const SizedBox(width: Spacing.s),
+              Container(width: 1, height: 48, color: q.line),
+              const SizedBox(width: Spacing.s),
+              Expanded(
+                child: _MiniSide(
+                  label: 'MASUK',
+                  amount: snap.monthIn,
+                  previous: shot.lastMonthIn,
+                  lastShort: lastShort,
+                  incoming: true,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MiniSide extends StatelessWidget {
+  const _MiniSide({
+    required this.label,
+    required this.amount,
+    required this.previous,
+    required this.lastShort,
+    required this.incoming,
+  });
+
+  final String label;
+  final int amount;
+  final int previous;
+  final String lastShort;
+  final bool incoming;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    final delta = deltaLabel(amount, previous);
+    final up = previous > 0 && amount > previous;
+    final down = previous > 0 && amount < previous;
+    final deltaColor = delta == null
+        ? q.muted
+        : up
+            ? (incoming ? q.good : q.bad)
+            : down
+                ? (incoming ? q.bad : q.good)
+                : q.muted;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: context.qEyebrow()),
+        const SizedBox(height: 2),
+        Text(
+          Money.format(amount),
+          style: context.qTitle(19).copyWith(
+                color: incoming ? q.good : q.text,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          delta == null ? 'bulan pertama' : '$delta · $lastShort',
+          style: context.qSmall(11).copyWith(color: deltaColor),
+        ),
+      ],
+    );
+  }
+}
+
+/// Baris SALDO Beranda: total + ringkas per akun. Tap → Kelola Akun.
+class SaldoRow extends StatelessWidget {
+  const SaldoRow({super.key, required this.repository});
+
+  final LedgerRepository repository;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    return QuestCard(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AccountManageScreen(repository: repository),
+        ),
+      ),
+      radius: 18,
+      padding: const EdgeInsets.all(12),
+      child: StreamBuilder<List<Account>>(
+        stream: repository.watchAccounts(),
+        builder: (context, accSnap) {
+          return StreamBuilder<Map<int, int>>(
+            stream: repository.watchAccountBalances(),
+            builder: (context, balSnap) {
+              final accounts = accSnap.data ?? const <Account>[];
+              final balances = balSnap.data ?? const <int, int>{};
+              final total = balances.values.fold(0, (a, b) => a + b);
+              return Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('SALDO', style: context.qEyebrow()),
+                        const SizedBox(height: 2),
+                        Text(
+                          Money.format(total),
+                          style: context.qTitle(19).copyWith(
+                                color: total < 0 ? q.bad : q.text,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures()
+                                ],
+                              ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          accounts.isEmpty
+                              ? 'Belum ada akun'
+                              : accounts
+                                  .map((a) =>
+                                      '${a.name} ${_shortMoney(balances[a.id] ?? 0)}')
+                                  .join(' · '),
+                          style: context.qSmall(11),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    size: 16,
+                    color: q.muted,
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
