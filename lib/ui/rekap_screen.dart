@@ -8,7 +8,9 @@ import '../theme/tokens.dart';
 import 'month_picker.dart';
 import 'quest.dart';
 import 'range_calendar.dart';
+import 'rekap_donat.dart';
 import 'rekap_transaksi.dart';
+import 'rekap_tren.dart';
 
 /// Layar Rekap: pil periode (bulan/rentang) di atas segmen; segmen
 /// Transaksi tampil default. State filter (RekapFilter) dimiliki di
@@ -163,11 +165,22 @@ class _RekapScreenState extends State<RekapScreen> {
                   filter: _filter,
                   onFilterChanged: (f) => setState(() => _filter = f),
                 ),
-              // Segmen Donat/Tren/Kalender diisi tugas berikutnya.
-              _RekapSegment.donat ||
-              _RekapSegment.tren ||
-              _RekapSegment.kalender =>
-                QuestEmpty(
+              _RekapSegment.donat => RekapDonat(
+                  repository: widget.repository,
+                  filter: _filter,
+                  // Deep-link kategori (alur B): filter hasil applyDonatTap
+                  // + pindah segmen ke Transaksi.
+                  onCategoryTap: (f) => setState(() {
+                    _filter = f;
+                    _segment = _RekapSegment.transaksi;
+                  }),
+                ),
+              _RekapSegment.tren => RekapTren(
+                  repository: widget.repository,
+                  filter: _filter,
+                ),
+              // Segmen Kalender diisi tugas berikutnya.
+              _RekapSegment.kalender => QuestEmpty(
                   title: 'Menyusul',
                   hint: 'Segmen ini sedang disiapkan.',
                 ),

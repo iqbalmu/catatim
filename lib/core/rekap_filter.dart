@@ -18,6 +18,27 @@ class RekapFilter {
     this.day,
   });
 
+  /// Jendela [start, end) dari periode filter: rentang (akhir +1 hari,
+  /// eksklusif) bila ada, else bulan. Null bila keduanya kosong.
+  ({DateTime start, DateTime end})? get window {
+    final s = rangeStart;
+    final e = rangeEnd;
+    if (s != null && e != null) {
+      return (
+        start: DateTime(s.year, s.month, s.day),
+        end: DateTime(e.year, e.month, e.day + 1),
+      );
+    }
+    final m = month;
+    if (m != null) {
+      return (
+        start: DateTime(m.year, m.month),
+        end: DateTime(m.year, m.month + 1),
+      );
+    }
+    return null;
+  }
+
   /// Tap slice donat: filter kategori dalam rentang bulan; tanggal hari dilepas.
   RekapFilter applyDonatTap({
     required int categoryId,

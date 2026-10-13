@@ -85,28 +85,12 @@ class _RekapTransaksiState extends State<RekapTransaksi> {
     final filter = widget.filter;
     final query = filter.query ?? '';
 
-    final DateTime? winStart;
-    final DateTime? winEnd;
-    if (filter.rangeStart != null && filter.rangeEnd != null) {
-      final s = filter.rangeStart!;
-      final e = filter.rangeEnd!;
-      winStart = DateTime(s.year, s.month, s.day);
-      // batas eksklusif: akhir + 1 hari
-      winEnd = DateTime(e.year, e.month, e.day + 1);
-    } else if (filter.month != null) {
-      final m = filter.month!;
-      winStart = DateTime(m.year, m.month);
-      winEnd = DateTime(m.year, m.month + 1);
-    } else {
-      winStart = null;
-      winEnd = null;
-    }
-
-    final stream = (winStart == null || winEnd == null)
+    final win = filter.window;
+    final stream = win == null
         ? widget.repository.watchRecentWithCategory(accountId: filter.accountId)
         : widget.repository.watchBetweenWithCategory(
-            winStart,
-            winEnd,
+            win.start,
+            win.end,
             accountId: filter.accountId,
           );
 
@@ -152,12 +136,26 @@ class _RekapTransaksiState extends State<RekapTransaksi> {
           onChanged: (v) =>
               _update(_QueryPatch(base: filter, query: v).build()),
         ),
-        if (filter.accountId != null) ...[
+        if (filter.accountId != null || filter.categoryId != null) ...[
           const SizedBox(height: Spacing.s),
-          _AccountChip(
-            onClear: () => _update(
-              _AccountPatch(base: filter, accountId: null).build(),
-            ),
+          Wrap(
+            spacing: Spacing.s,
+            runSpacing: 4,
+            children: [
+              if (filter.accountId != null)
+                _FilterChip(
+                  label: 'Akun',
+                  onClear: () => _update(
+                    _AccountPatch(base: filter, accountId: null).build(),
+                  ),
+                ),
+              // Hasil deep-link Donat: ✕ membersihkan kategori.
+              if (filter.categoryId != null)
+                _FilterChip(
+                  label: 'Kategori',
+                  onClear: () => _update(filter.clearChip()),
+                ),
+            ],
           ),
         ],
         const SizedBox(height: Spacing.s),
@@ -169,10 +167,15 @@ class _RekapTransaksiState extends State<RekapTransaksi> {
             }
             final items = [
               for (final r in snapshot.data ?? const <TxWithCategory>[])
-                if (matchesQuery(r, query)) r,
+                if (matchesQuery(r, query) &&
+                    (filter.categoryId == null ||
+                        r.category?.id == filter.categoryId))
+                  r,
             ];
             if (items.isEmpty) {
-              final filtering = query.isNotEmpty || filter.accountId != null;
+              final filtering = query.isNotEmpty ||
+                  filter.accountId != null ||
+                  filter.categoryId != null;
               return QuestEmpty(
                 title: filtering ? 'Tidak ada yang cocok' : 'Belum ada catatan',
                 hint: filtering
@@ -248,10 +251,11 @@ class _QueryPatch {
       );
 }
 
-/// Chip filter akun aktif yang bisa dihapus.
-class _AccountChip extends StatelessWidget {
-  const _AccountChip({required this.onClear});
+/// Chip filter aktif (akun/kategori) yang bisa dihapus.
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({required this.label, required this.onClear});
 
+  final String label;
   final VoidCallback onClear;
 
   @override
@@ -269,7 +273,7 @@ class _AccountChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Akun',
+              label,
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 12,
