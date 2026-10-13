@@ -1,8 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../core/dates_id.dart';
 import '../core/money.dart';
-import '../models.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
@@ -57,7 +58,7 @@ class _RekapKalenderState extends State<RekapKalender> {
     final monthStart = DateTime(_month.year, _month.month);
 
     return StreamBuilder<Map<DateTime, int>>(
-      stream: widget.repository.watchOutSumByDaySince(monthStart),
+      stream: _effectiveOutByDay(monthStart),
       builder: (context, snapshot) {
         final sums = snapshot.data ?? const <DateTime, int>{};
         return ListView(
@@ -107,6 +108,9 @@ class _RekapKalenderState extends State<RekapKalender> {
               _DayDetail(
                 repository: widget.repository,
                 day: _selected!,
+                // Total keluar EFEKTIF hari itu (ruling 5) — bukan jumlah
+                // seluruh baris (transfer biasa tak masuk).
+                effectiveOut: sums[_selected!] ?? 0,
                 onClear: () => setState(() => _selected = null),
                 onSeeInTransactions: () => widget.onDayTap(_selected!),
               ),
@@ -115,6 +119,28 @@ class _RekapKalenderState extends State<RekapKalender> {
         );
       },
     );
+  }
+
+  /// Keluaran EFEKTIF per hari (ruling 5): belanja murni
+  /// (outSpendByDaySince) + sisihan target (outTargetByDaySince);
+  /// transfer biasa tak terlihat. Reaktivitas memakai
+  /// watchOutSumByDaySince sebagai pemicu (query tunggal tak ber-stream).
+  Stream<Map<DateTime, int>> _effectiveOutByDay(DateTime since) {
+    return widget.repository
+        .watchOutSumByDaySince(since)
+        .asyncMap((_) async {
+          final spend = await widget.repository.outSpendByDaySince(since);
+          final target = await widget.repository.outTargetByDaySince(since);
+          return mergeSum(spend, target);
+        });
+  }
+
+  /// Gabung dua peta nominal per hari (jumlahkan kunci sama).
+  static Map<DateTime, int> mergeSum(
+    Map<DateTime, int> a,
+    Map<DateTime, int> b,
+  ) {
+    return {...a, ...b.map((k, v) => MapEntry(k, (a[k] ?? 0) + v))};
   }
 }
 
@@ -280,12 +306,14 @@ class _DayDetail extends StatelessWidget {
   const _DayDetail({
     required this.repository,
     required this.day,
+    required this.effectiveOut,
     required this.onClear,
     required this.onSeeInTransactions,
   });
 
   final LedgerRepository repository;
   final DateTime day;
+  final int effectiveOut;
   final VoidCallback onClear;
   final VoidCallback onSeeInTransactions;
 
@@ -302,11 +330,6 @@ class _DayDetail extends StatelessWidget {
           return const QuestSkeleton(rows: 2, height: 56);
         }
         final rows = snapshot.data ?? const <TxWithCategory>[];
-        final totalOut = rows.fold<int>(
-          0,
-          (sum, r) =>
-              sum + (r.tx.direction == Direction.outgoing ? r.tx.amount : 0),
-        );
         return QuestCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -322,7 +345,7 @@ class _DayDetail extends StatelessWidget {
                         Text(
                           rows.isEmpty
                               ? 'Tidak ada transaksi'
-                              : 'Keluar ${Money.format(totalOut)}',
+                              : 'Keluar ${Money.format(effectiveOut)}',
                           style: context.qSmall(11).copyWith(color: q.muted),
                         ),
                       ],
