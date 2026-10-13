@@ -219,7 +219,9 @@ class _TargetCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   '$paceText • ${pace.percent}%',
-                  style: context.qSmall(),
+                  style: context.qSmall().copyWith(
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
               ),
               QuestButton(
@@ -242,7 +244,9 @@ class _TargetCard extends StatelessWidget {
       content: Text(
         '${Money.format(entry.deposited)} dari '
         '${Money.format(entry.target.goalAmount)}',
-        style: context.qBody(),
+        style: context.qBody().copyWith(
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
       ),
       actions: [
         QuestButton(
@@ -551,7 +555,7 @@ class _SisihkanSheetState extends State<SisihkanSheet> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           DropdownButtonFormField<int>(
-                            initialValue: _accountId,
+                            initialValue: selected,
                             isExpanded: true,
                             decoration: const InputDecoration(
                               labelText: 'Dari akun',
@@ -564,6 +568,11 @@ class _SisihkanSheetState extends State<SisihkanSheet> {
                                     '${a.name} • '
                                     '${Money.format(balances[a.id] ?? 0)}',
                                     overflow: TextOverflow.ellipsis,
+                                    style: context.qBody().copyWith(
+                                      fontFeatures: const [
+                                        FontFeature.tabularFigures(),
+                                      ],
+                                    ),
                                   ),
                                 ),
                             ],
@@ -578,6 +587,9 @@ class _SisihkanSheetState extends State<SisihkanSheet> {
                               style: context.qSmall().copyWith(
                                 color: context.q.bad,
                                 fontWeight: FontWeight.w700,
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
                               ),
                             ),
                           ],
