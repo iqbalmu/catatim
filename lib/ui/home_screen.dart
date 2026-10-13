@@ -15,16 +15,16 @@ import 'backup_screen.dart';
 import 'bon_screen.dart';
 import 'budget_screen.dart';
 import 'capture_log_screen.dart';
-import 'history_screen.dart';
 import 'home_cards.dart';
 import 'quest.dart';
+import 'rekap_screen.dart';
+import 'rencana_screen.dart';
 import 'rules_screen.dart';
-import 'report_screen.dart';
 import 'transaction_sheet.dart';
 
 String _todaySubtitle(DateTime now) => idFullDate(now);
 
-/// Shell utama: Beranda | Riwayat | Laporan | Bon.
+/// Shell utama: Beranda | Rekap | Rencana | Bon.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
@@ -42,8 +42,8 @@ class HomeScreen extends StatefulWidget {
       icon: Icons.account_balance_wallet_rounded,
       label: 'Beranda',
     ),
-    QuestDestination(icon: Icons.receipt_long_rounded, label: 'Riwayat'),
-    QuestDestination(icon: Icons.insights_rounded, label: 'Laporan'),
+    QuestDestination(icon: Icons.receipt_long_rounded, label: 'Rekap'),
+    QuestDestination(icon: Icons.savings_rounded, label: 'Rencana'),
     QuestDestination(icon: Icons.handshake_outlined, label: 'Bon'),
   ];
 
@@ -54,18 +54,22 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _tab = 0;
 
-  void _primaryAction() {
-    if (_tab == 3) {
-      BonSheet.show(context, widget.repository);
-    } else {
-      TransactionSheet.show(
-        context,
-        widget.repository,
-        progress: widget.progress,
-      );
-    }
-  }
+  /// Segmen Rencana yang sedang aktif — dimiliki shell agar deep-link
+  /// Beranda → Rencana·Batas selalu sinkron via [RencanaScreen].
+  RencanaSegment _rencanaSegment = RencanaSegment.batas;
 
+  /// Deep-link Beranda (LimitCard/strip) → Rencana·Batas.
+  void _openRencanaBatas() => setState(() {
+    _rencanaSegment = RencanaSegment.batas;
+    _tab = 2;
+  });
+
+  void _onTabChanged(int i) {
+    setState(() => _tab = i);
+    // Kembali ke Beranda setelah ubah batas di Rencana: hero pace/streak
+    // dihitung dari limit terbaru.
+    if (i == 0) unawaited(widget.progress.refresh());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,20 +87,26 @@ class _HomeScreenState extends State<HomeScreen> {
               repository: widget.repository,
               pipeline: widget.pipeline,
               progress: widget.progress,
-              onOpenReports: () => setState(() => _tab = 2),
+              onOpenRekap: () => setState(() => _tab = 1),
+              onOpenRencanaBatas: _openRencanaBatas,
               onOpenBon: () => setState(() => _tab = 3),
             ),
           ),
           TickerMode(
             enabled: _tab == 1,
-            child: HistoryTab(
+            child: RekapScreen(
               repository: widget.repository,
               progress: widget.progress,
             ),
           ),
           TickerMode(
             enabled: _tab == 2,
-            child: ReportTab(repository: widget.repository),
+            child: RencanaScreen(
+              repository: widget.repository,
+              progress: widget.progress,
+              initialSegment: _rencanaSegment,
+              onSegmentChanged: (s) => _rencanaSegment = s,
+            ),
           ),
           TickerMode(
             enabled: _tab == 3,
@@ -104,14 +114,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+      // Shell hanya navigasi — tiap tab punya FAB sendiri.
       bottomNavigationBar: QuestBottomNav(
         index: _tab,
-        onChanged: (i) => setState(() => _tab = i),
+        onChanged: _onTabChanged,
         destinations: HomeScreen._destinations,
-        centerAction: (
-          label: _tab == 3 ? 'Catat bon' : 'Catat transaksi',
-          onTap: _primaryAction,
-        ),
       ),
     );
   }
@@ -119,20 +126,22 @@ class _HomeScreenState extends State<HomeScreen> {
 
 /// Beranda kilat: hero + strip peringatan + 3 kartu batas + mini
 /// keluar/masuk + baris saldo. Tanpa daftar transaksi — pencatatan via
-/// tombol +, riwayat di tab Riwayat.
+/// FAB "Catat transaksi", telaah di tab Rekap.
 class _BerandaTab extends StatefulWidget {
   const _BerandaTab({
     required this.repository,
     required this.pipeline,
     required this.progress,
-    required this.onOpenReports,
+    required this.onOpenRekap,
+    required this.onOpenRencanaBatas,
     required this.onOpenBon,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
   final ProgressService progress;
-  final VoidCallback onOpenReports;
+  final VoidCallback onOpenRekap;
+  final VoidCallback onOpenRencanaBatas;
   final VoidCallback onOpenBon;
 
   @override
@@ -366,6 +375,22 @@ class _BerandaTabState extends State<_BerandaTab> {
           ),
         ],
       ),
+      // FAB milik tab ini (bukan shell). Padding bawah agar melayang di
+      // atas navbar floating.
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(
+          bottom: 72 + MediaQuery.paddingOf(context).bottom,
+        ),
+        child: QuestFab(
+          label: 'Catat transaksi',
+          icon: Icons.add_rounded,
+          onTap: () => TransactionSheet.show(
+            context,
+            widget.repository,
+            progress: widget.progress,
+          ),
+        ),
+      ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           Spacing.m,
@@ -378,6 +403,7 @@ class _BerandaTabState extends State<_BerandaTab> {
           AlertStrip(
             repository: widget.repository,
             service: widget.progress,
+            onOpenBatas: widget.onOpenRencanaBatas,
           ),
           const SizedBox(height: Spacing.m),
           ListenableBuilder(
@@ -385,21 +411,13 @@ class _BerandaTabState extends State<_BerandaTab> {
             builder: (context, _) {
               final lines = widget.progress.latest?.snapshot.lines;
               final daily = lines != null && lines.isNotEmpty ? lines[0] : null;
-              final weekly =
-                  lines != null && lines.length > 1 ? lines[1] : null;
-              final monthly =
-                  lines != null && lines.length > 2 ? lines[2] : null;
-              void openBudget() {
-                // TODO(plan5): deep-link Rencana·Batas
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => BudgetScreen(
-                      repository: widget.repository,
-                    ),
-                  ),
-                ).whenComplete(widget.progress.refresh);
-              }
+              final weekly = lines != null && lines.length > 1
+                  ? lines[1]
+                  : null;
+              final monthly = lines != null && lines.length > 2
+                  ? lines[2]
+                  : null;
+              final onOpenBatas = widget.onOpenRencanaBatas;
 
               return Column(
                 children: [
@@ -408,7 +426,7 @@ class _BerandaTabState extends State<_BerandaTab> {
                     limit: daily?.limit,
                     used: daily?.used ?? 0,
                     safe: (daily?.limit ?? 0) - (daily?.used ?? 0),
-                    onTap: openBudget,
+                    onTap: onOpenBatas,
                   ),
                   const SizedBox(height: Spacing.s),
                   LimitCard(
@@ -416,7 +434,7 @@ class _BerandaTabState extends State<_BerandaTab> {
                     limit: weekly?.limit,
                     used: weekly?.used ?? 0,
                     safe: (weekly?.limit ?? 0) - (weekly?.used ?? 0),
-                    onTap: openBudget,
+                    onTap: onOpenBatas,
                   ),
                   const SizedBox(height: Spacing.s),
                   LimitCard(
@@ -424,17 +442,14 @@ class _BerandaTabState extends State<_BerandaTab> {
                     limit: monthly?.limit,
                     used: monthly?.used ?? 0,
                     safe: (monthly?.limit ?? 0) - (monthly?.used ?? 0),
-                    onTap: openBudget,
+                    onTap: onOpenBatas,
                   ),
                 ],
               );
             },
           ),
           const SizedBox(height: Spacing.m),
-          MiniInOut(
-            service: widget.progress,
-            onTap: widget.onOpenReports,
-          ),
+          MiniInOut(service: widget.progress, onTap: widget.onOpenRekap),
           const SizedBox(height: Spacing.m),
           SaldoRow(repository: widget.repository),
         ],

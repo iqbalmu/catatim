@@ -10,6 +10,70 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'quest.dart';
 
+/// Alur tambah jenis anggaran baru (kategori) + alokasi awal opsional.
+/// Dipakai tombol "Tambah" segmen Batas dan FAB "＋ Jenis" layar Rencana.
+Future<void> showAddJenisFlow(
+  BuildContext context,
+  LedgerRepository repository,
+) async {
+  final result = await showQuestDialog<_NewCategory>(
+    context,
+    title: 'Jenis anggaran baru',
+    content: _NewCategoryForm(),
+    actions: [
+      QuestButton(
+        label: 'Batal',
+        tone: QuestTone.secondary,
+        onPressed: () => Navigator.pop(context),
+      ),
+      QuestButton(
+        label: 'Tambah',
+        icon: Icons.add_rounded,
+        onPressed: () {
+          final state = _NewCategoryForm.maybeOf(context);
+          Navigator.pop(
+            context,
+            state == null
+                ? null
+                : _NewCategory(
+                    name: state.nameCtrl.text,
+                    limit: state.limitCtrl.text.trim().isEmpty
+                        ? null
+                        : int.tryParse(
+                            state.limitCtrl.text.replaceAll(
+                              RegExp(r'[^0-9]'),
+                              '',
+                            ),
+                          ),
+                  ),
+          );
+        },
+      ),
+    ],
+  );
+  if (result == null || result.name.trim().isEmpty) return;
+  if (!context.mounted) return;
+  try {
+    final category = await repository.addCategory(result.name);
+    if (result.limit != null && result.limit! > 0) {
+      await repository.setBudget(category.id, result.limit!);
+    }
+    if (!context.mounted) return;
+    questSnack(
+      context,
+      'Jenis anggaran "${category.name}" ditambahkan.',
+      icon: Icons.check_rounded,
+    );
+  } catch (_) {
+    if (!context.mounted) return;
+    questSnack(
+      context,
+      'Nama "${result.name}" sudah dipakai.',
+      icon: Icons.info_outline_rounded,
+    );
+  }
+}
+
 /// Segmen Batas layar Rencana (eks BudgetScreen): batas
 /// harian/mingguan/bulanan, jenis anggaran yang bisa dikelola user +
 /// alokasi dana (opsional di-scope per akun), dan progres masuk/keluar
@@ -115,7 +179,12 @@ class _RencanaBatasState extends State<RencanaBatas> {
         const SizedBox(height: Spacing.m),
         Row(
           children: [
-            Expanded(child: Text('Jenis anggaran & alokasi', style: context.qEyebrow())),
+            Expanded(
+              child: Text(
+                'Jenis anggaran & alokasi',
+                style: context.qEyebrow(),
+              ),
+            ),
             QuestPress(
               onTap: _addCategoryFlow,
               child: Row(
@@ -147,7 +216,8 @@ class _RencanaBatasState extends State<RencanaBatas> {
                   stream: widget.repository.watchAccounts(),
                   builder: (context, accSnap) {
                     return StreamBuilder<
-                        Map<({int? category, int? account}), int>>(
+                      Map<({int? category, int? account}), int>
+                    >(
                       // Pemicu reaktif: watch semua keluar; datanya
                       // belanja-murni supaya transfer tidak menggerogoti
                       // alokasi Jenis.
@@ -160,13 +230,11 @@ class _RencanaBatasState extends State<RencanaBatas> {
                             ),
                           ),
                       builder: (context, usedSnap) {
-                        final categories =
-                            catSnap.data ?? const <Category>[];
-                        final budgets =
-                            budgetSnap.data ?? const <Budget>[];
-                        final accounts =
-                            accSnap.data ?? const <Account>[];
-                        final used = usedSnap.data ??
+                        final categories = catSnap.data ?? const <Category>[];
+                        final budgets = budgetSnap.data ?? const <Budget>[];
+                        final accounts = accSnap.data ?? const <Account>[];
+                        final used =
+                            usedSnap.data ??
                             const <({int? category, int? account}), int>{};
                         if (categories.isEmpty) {
                           return const QuestSkeleton(rows: 2);
@@ -178,8 +246,9 @@ class _RencanaBatasState extends State<RencanaBatas> {
                           children: [
                             for (final c in categories) ...[
                               // Alokasi yang sudah ada (global + per akun).
-                              for (final b
-                                  in budgets.where((b) => b.categoryId == c.id))
+                              for (final b in budgets.where(
+                                (b) => b.categoryId == c.id,
+                              ))
                                 _AllocationRow(
                                   name: c.name,
                                   scopeLabel: b.accountId == null
@@ -284,17 +353,18 @@ class _RencanaBatasState extends State<RencanaBatas> {
   int _usedForCategory(
     Map<({int? category, int? account}), int> used,
     int categoryId,
-  ) =>
-      used.entries
-          .where((e) => e.key.category == categoryId)
-          .fold(0, (total, e) => total + e.value);
+  ) => used.entries
+      .where((e) => e.key.category == categoryId)
+      .fold(0, (total, e) => total + e.value);
 
-  int _usedFor(Map<({int? category, int? account}), int> used, Budget b) =>
-      used.entries
-          .where((e) =>
-              e.key.category == b.categoryId &&
-              (b.accountId == null || e.key.account == b.accountId))
-          .fold(0, (total, e) => total + e.value);
+  int _usedFor(Map<({int? category, int? account}), int> used, Budget b) => used
+      .entries
+      .where(
+        (e) =>
+            e.key.category == b.categoryId &&
+            (b.accountId == null || e.key.account == b.accountId),
+      )
+      .fold(0, (total, e) => total + e.value);
 
   Future<void> _saveLimit(String key, int? value) async {
     if (value == null) {
@@ -310,11 +380,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
     required int? current,
     required Future<void> Function(int?) save,
   }) async {
-    final value = await _askAmount(
-      context,
-      title: title,
-      current: current,
-    );
+    final value = await _askAmount(context, title: title, current: current);
     if (value == null && current == null) return;
     if (!mounted) return;
     await save(value);
@@ -363,63 +429,8 @@ class _RencanaBatasState extends State<RencanaBatas> {
   }
 
   /// Tambah jenis anggaran baru (kategori) + alokasi awal opsional.
-  Future<void> _addCategoryFlow() async {
-    final result = await showQuestDialog<_NewCategory>(
-      context,
-      title: 'Jenis anggaran baru',
-      content: _NewCategoryForm(),
-      actions: [
-        QuestButton(
-          label: 'Batal',
-          tone: QuestTone.secondary,
-          onPressed: () => Navigator.pop(context),
-        ),
-        QuestButton(
-          label: 'Tambah',
-          icon: Icons.add_rounded,
-          onPressed: () {
-            final state = _NewCategoryForm.maybeOf(context);
-            Navigator.pop(
-              context,
-              state == null
-                  ? null
-                  : _NewCategory(
-                      name: state.nameCtrl.text,
-                      limit: state.limitCtrl.text.trim().isEmpty
-                          ? null
-                          : int.tryParse(
-                              state.limitCtrl.text.replaceAll(
-                                RegExp(r'[^0-9]'),
-                                '',
-                              ),
-                            ),
-                    ),
-            );
-          },
-        ),
-      ],
-    );
-    if (result == null || result.name.trim().isEmpty || !mounted) return;
-    try {
-      final category = await widget.repository.addCategory(result.name);
-      if (result.limit != null && result.limit! > 0) {
-        await widget.repository.setBudget(category.id, result.limit!);
-      }
-      if (!mounted) return;
-      questSnack(
-        context,
-        'Jenis anggaran "${category.name}" ditambahkan.',
-        icon: Icons.check_rounded,
-      );
-    } catch (_) {
-      if (!mounted) return;
-      questSnack(
-        context,
-        'Nama "${result.name}" sudah dipakai.',
-        icon: Icons.info_outline_rounded,
-      );
-    }
-  }
+  Future<void> _addCategoryFlow() =>
+      showAddJenisFlow(context, widget.repository);
 
   /// Kelola satu jenis anggaran: ubah nama atau hapus (transaksi pindah
   /// ke "Lainnya").
@@ -622,8 +633,9 @@ Future<_AllocationResult?> _askAllocation(
           context,
           _AllocationResult(
             remove: false,
-            limit:
-                limitCtrl.text.trim().isEmpty ? 0 : Money.parseGroup(limitCtrl.text),
+            limit: limitCtrl.text.trim().isEmpty
+                ? 0
+                : Money.parseGroup(limitCtrl.text),
             account: scope,
           ),
         ),
@@ -892,8 +904,9 @@ class _ProgressCard extends StatelessWidget {
 
   /// Masuk naik = membaik; keluar naik = memburuk. Toleransi ±5% = datar.
   TrendDirection _trend() {
-    final (current, baseline) =
-        incoming ? (amount, previous) : (previous, amount);
+    final (current, baseline) = incoming
+        ? (amount, previous)
+        : (previous, amount);
     if (current <= 0 && baseline <= 0) return TrendDirection.flat;
     if (baseline <= 0) {
       return incoming ? TrendDirection.better : TrendDirection.worse;
@@ -915,8 +928,8 @@ class _ProgressCard extends StatelessWidget {
     final color = trend == TrendDirection.flat
         ? q.muted
         : good
-            ? q.good
-            : q.bad;
+        ? q.good
+        : q.bad;
     final icon = switch (trend) {
       TrendDirection.better => Icons.trending_up_rounded,
       TrendDirection.worse => Icons.trending_down_rounded,

@@ -33,17 +33,20 @@ class _RulesScreenState extends State<RulesScreen> {
   Future<void> _openEditor({UserRule? existing}) async {
     final saved = await showQuestSheet<bool>(
       context,
-      (context) => _RuleEditor(repository: widget.repository, existing: existing),
+      (context) =>
+          _RuleEditor(repository: widget.repository, existing: existing),
     );
     if (saved ?? false) {
       await _syncEngine();
       if (mounted) {
-        questSnack(context, 'Aturan disimpan.', icon: Icons.check_circle_rounded);
+        questSnack(
+          context,
+          'Aturan disimpan.',
+          icon: Icons.check_circle_rounded,
+        );
       }
       // Parse ulang notifikasi yang dulu gagal — aturan baru mungkin cocok.
-      final count = await widget.repository.reparseUnparsed(
-        widget.engine,
-      );
+      final count = await widget.repository.reparseUnparsed(widget.engine);
       if (count > 0 && mounted) {
         questSnack(
           context,
@@ -67,39 +70,10 @@ class _RulesScreenState extends State<RulesScreen> {
         subtitle: 'Aturan buatanmu dipakai sebelum aturan bawaan',
         showBack: true,
       ),
-      floatingActionButton: QuestPress(
+      floatingActionButton: QuestFab(
+        label: 'Aturan',
+        icon: Icons.add_rounded,
         onTap: () => _openEditor(),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
-            ),
-            borderRadius: BorderRadius.circular(999),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x73FFA726),
-                offset: Offset(0, 8),
-                blurRadius: 18,
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.add_rounded, color: Colors.white, size: 24),
-              const SizedBox(width: 6),
-              Text(
-                'Aturan',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 17,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
@@ -128,7 +102,8 @@ class _RulesScreenState extends State<RulesScreen> {
               if (rules.isEmpty) {
                 return QuestEmpty(
                   title: 'Belum ada aturan',
-                  hint: 'Aturan bawaan masih dipakai. Tambahkan aturan untuk '
+                  hint:
+                      'Aturan bawaan masih dipakai. Tambahkan aturan untuk '
                       'menggantinya.',
                   actionLabel: 'Buat aturan',
                   onAction: () => _openEditor(),
@@ -148,10 +123,7 @@ class _RulesScreenState extends State<RulesScreen> {
             },
           ),
           const QuestSectionHeader(title: 'Uji coba'),
-          _RuleTestCard(
-            engine: widget.engine,
-            repository: widget.repository,
-          ),
+          _RuleTestCard(engine: widget.engine, repository: widget.repository),
         ],
       ),
     );
@@ -271,7 +243,7 @@ class _RuleTestCardState extends State<_RuleTestCard> {
                 draft == null
                     ? 'Tidak ada aturan yang cocok.'
                     : '${draft.ruleName}: ${draft.direction.label} '
-                        '${Money.format(draft.amount)}',
+                          '${Money.format(draft.amount)}',
                 icon: draft == null
                     ? Icons.help_outline_rounded
                     : Icons.check_circle_rounded,
@@ -314,8 +286,7 @@ class _RuleEditorState extends State<_RuleEditor> {
     _packageCtrl = TextEditingController(text: r?.packageName ?? '');
     _matchCtrl = TextEditingController(text: r?.matchText ?? '');
     _amountCtrl = TextEditingController(text: r?.amountPattern ?? '');
-    _direction =
-        r?.direction ?? UserRuleDirection.out_;
+    _direction = r?.direction ?? UserRuleDirection.out_;
     _kind = r?.kind ?? TxKind.payment;
     _accountId = r?.accountId;
     _loadAccounts();
@@ -325,8 +296,7 @@ class _RuleEditorState extends State<_RuleEditor> {
     final accs = await widget.repository.getAccounts();
     if (!mounted) return;
     setState(() {
-      if (_accountId != null &&
-          !accs.any((a) => a.id == _accountId)) {
+      if (_accountId != null && !accs.any((a) => a.id == _accountId)) {
         _accountId = null;
       }
     });
@@ -346,11 +316,14 @@ class _RuleEditorState extends State<_RuleEditor> {
     final data = UserRulesCompanion.insert(
       name: _nameCtrl.text.trim(),
       packageName: Value(
-          _packageCtrl.text.trim().isEmpty ? null : _packageCtrl.text.trim()),
-      matchText:
-          Value(_matchCtrl.text.trim().isEmpty ? null : _matchCtrl.text.trim()),
+        _packageCtrl.text.trim().isEmpty ? null : _packageCtrl.text.trim(),
+      ),
+      matchText: Value(
+        _matchCtrl.text.trim().isEmpty ? null : _matchCtrl.text.trim(),
+      ),
       amountPattern: Value(
-          _amountCtrl.text.trim().isEmpty ? null : _amountCtrl.text.trim()),
+        _amountCtrl.text.trim().isEmpty ? null : _amountCtrl.text.trim(),
+      ),
       direction: _direction,
       kind: _kind,
       accountId: Value(_accountId),
@@ -379,8 +352,10 @@ class _RuleEditorState extends State<_RuleEditor> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(_isEdit ? 'Ubah aturan' : 'Aturan baru',
-                  style: context.qTitle(20)),
+              Text(
+                _isEdit ? 'Ubah aturan' : 'Aturan baru',
+                style: context.qTitle(20),
+              ),
               const SizedBox(height: Spacing.m),
               TextFormField(
                 controller: _nameCtrl,

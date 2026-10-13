@@ -440,15 +440,11 @@ class QuestBottomNav extends StatelessWidget {
     required this.index,
     required this.onChanged,
     required this.destinations,
-    this.centerAction,
   });
 
   final int index;
   final ValueChanged<int> onChanged;
   final List<QuestDestination> destinations;
-
-  /// Aksi utama di tengah nav (mis. Catat). Null = tanpa tombol tengah.
-  final ({String label, VoidCallback onTap})? centerAction;
 
   @override
   Widget build(BuildContext context) {
@@ -471,48 +467,9 @@ class QuestBottomNav extends StatelessWidget {
         ),
         child: Row(
           children: [
-            for (var i = 0; i < destinations.length; i++) ...[
-              if (centerAction != null && i == destinations.length ~/ 2)
-                _centerButton(context),
+            for (var i = 0; i < destinations.length; i++)
               _navCell(context, i, destinations[i]),
-            ],
           ],
-        ),
-      ),
-    );
-  }
-
-  /// Tombol aksi utama yang menonjol di tengah nav.
-  Widget _centerButton(BuildContext context) {
-    final action = centerAction!;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: Tooltip(
-        message: action.label,
-        child: QuestPress(
-          onTap: action.onTap,
-          child: Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0x73FFA726),
-                  offset: const Offset(0, 8),
-                  blurRadius: 18,
-                ),
-              ],
-            ),
-            child: Icon(
-              Icons.add_rounded,
-              color: Colors.white,
-              size: 32,
-            ),
-          ),
         ),
       ),
     );
@@ -548,6 +505,60 @@ class QuestBottomNav extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Pil aksi melayang — dipakai tiap tab sebagai
+/// `Scaffold.floatingActionButton` (dengan `Padding` bawah agar melayang di
+/// atas navbar floating, bukan tertutup).
+class QuestFab extends StatelessWidget {
+  const QuestFab({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return QuestPress(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
+          ),
+          borderRadius: BorderRadius.circular(999),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x73FFA726),
+              offset: Offset(0, 8),
+              blurRadius: 18,
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white, size: 24),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 17,
+                color: Colors.white,
+              ),
+            ),
+          ],
         ),
       ),
     );

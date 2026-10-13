@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/dates_id.dart';
 import '../core/rekap_filter.dart';
+import '../game/progress.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
@@ -12,14 +13,18 @@ import 'rekap_donat.dart';
 import 'rekap_kalender.dart';
 import 'rekap_transaksi.dart';
 import 'rekap_tren.dart';
+import 'transaction_sheet.dart';
 
 /// Layar Rekap: pil periode (bulan/rentang) di atas segmen; segmen
 /// Transaksi tampil default. State filter (RekapFilter) dimiliki di
 /// sini dan mengalir ke tiap segmen.
 class RekapScreen extends StatefulWidget {
-  const RekapScreen({super.key, required this.repository});
+  const RekapScreen({super.key, required this.repository, this.progress});
 
   final LedgerRepository repository;
+
+  /// Agar hero Beranda ikut segar setelah catat dari tab ini.
+  final ProgressService? progress;
 
   @override
   State<RekapScreen> createState() => _RekapScreenState();
@@ -40,8 +45,7 @@ class _RekapScreenState extends State<RekapScreen> {
     _filter = RekapFilter(month: DateTime(now.year, now.month));
   }
 
-  bool get _isCustom =>
-      _filter.rangeStart != null && _filter.rangeEnd != null;
+  bool get _isCustom => _filter.rangeStart != null && _filter.rangeEnd != null;
 
   String get _periodLabel {
     if (_isCustom) {
@@ -59,17 +63,20 @@ class _RekapScreenState extends State<RekapScreen> {
   }
 
   Future<void> _openPeriodSheet() async {
-    final result = await showQuestSheet<(_RekapPeriod, DateTime?, DateTimeRange?)>(
-      context,
-      (context) => _PeriodSheet(
-        initialPeriod: _isCustom ? _RekapPeriod.custom : _RekapPeriod.month,
-        initialMonth: _filter.month,
-        initialCustom: _isCustom
-            ? DateTimeRange(
-                start: _filter.rangeStart!, end: _filter.rangeEnd!)
-            : null,
-      ),
-    );
+    final result =
+        await showQuestSheet<(_RekapPeriod, DateTime?, DateTimeRange?)>(
+          context,
+          (context) => _PeriodSheet(
+            initialPeriod: _isCustom ? _RekapPeriod.custom : _RekapPeriod.month,
+            initialMonth: _filter.month,
+            initialCustom: _isCustom
+                ? DateTimeRange(
+                    start: _filter.rangeStart!,
+                    end: _filter.rangeEnd!,
+                  )
+                : null,
+          ),
+        );
     if (result != null && mounted) {
       final (period, month, custom) = result;
       setState(() {
@@ -89,6 +96,22 @@ class _RekapScreenState extends State<RekapScreen> {
     return Scaffold(
       backgroundColor: context.q.bg,
       appBar: QuestHeader(title: 'Rekap', subtitle: _periodLabel),
+      // FAB milik tab ini (bukan shell). Padding bawah agar melayang di
+      // atas navbar floating.
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(
+          bottom: 72 + MediaQuery.paddingOf(context).bottom,
+        ),
+        child: QuestFab(
+          label: 'Catat transaksi',
+          icon: Icons.add_rounded,
+          onTap: () => TransactionSheet.show(
+            context,
+            widget.repository,
+            progress: widget.progress,
+          ),
+        ),
+      ),
       // Kolom non-scroll: konten segmen (RekapTransaksi) yang menggulir,
       // jangan sarangkan dua ListView tanpa shrinkWrap. Inset bawah
       // diberikan sekali saja oleh ListView segmen.
@@ -96,7 +119,12 @@ class _RekapScreenState extends State<RekapScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.s, Spacing.m, 0),
+            padding: const EdgeInsets.fromLTRB(
+              Spacing.m,
+              Spacing.s,
+              Spacing.m,
+              0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -162,36 +190,34 @@ class _RekapScreenState extends State<RekapScreen> {
           Expanded(
             child: switch (_segment) {
               _RekapSegment.transaksi => RekapTransaksi(
-                  repository: widget.repository,
-                  filter: _filter,
-                  onFilterChanged: (f) => setState(() => _filter = f),
-                ),
+                repository: widget.repository,
+                filter: _filter,
+                onFilterChanged: (f) => setState(() => _filter = f),
+              ),
               _RekapSegment.donat => RekapDonat(
-                  repository: widget.repository,
-                  filter: _filter,
-                  // Deep-link kategori (alur B): filter hasil applyDonatTap
-                  // + pindah segmen ke Transaksi.
-                  onCategoryTap: (f) => setState(() {
-                    _filter = f;
-                    _segment = _RekapSegment.transaksi;
-                  }),
-                ),
+                repository: widget.repository,
+                filter: _filter,
+                // Deep-link kategori (alur B): filter hasil applyDonatTap
+                // + pindah segmen ke Transaksi.
+                onCategoryTap: (f) => setState(() {
+                  _filter = f;
+                  _segment = _RekapSegment.transaksi;
+                }),
+              ),
               _RekapSegment.tren => RekapTren(
-                  repository: widget.repository,
-                  filter: _filter,
-                ),
+                repository: widget.repository,
+                filter: _filter,
+              ),
               // Deep-link kalender: filter satu tanggal (applyKalenderTap
               // di shell, field lain dipertahankan) + pindah segmen.
               _RekapSegment.kalender => RekapKalender(
-                  repository: widget.repository,
-                  month: _filter.month ??
-                      _filter.rangeStart ??
-                      DateTime.now(),
-                  onDayTap: (day) => setState(() {
-                    _filter = _filter.applyKalenderTap(day);
-                    _segment = _RekapSegment.transaksi;
-                  }),
-                ),
+                repository: widget.repository,
+                month: _filter.month ?? _filter.rangeStart ?? DateTime.now(),
+                onDayTap: (day) => setState(() {
+                  _filter = _filter.applyKalenderTap(day);
+                  _segment = _RekapSegment.transaksi;
+                }),
+              ),
             },
           ),
         ],
@@ -257,9 +283,7 @@ class _PeriodSheetState extends State<_PeriodSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Text('Periode', style: context.qTitle(20)),
-            ),
+            Center(child: Text('Periode', style: context.qTitle(20))),
             const SizedBox(height: Spacing.m),
             QuestSegmented<_RekapPeriod>(
               selected: _period,

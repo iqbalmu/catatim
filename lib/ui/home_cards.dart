@@ -18,16 +18,20 @@ import 'quest.dart';
 /// Semua mengalir via stream/service sehingga selalu segar.
 
 /// Strip peringatan garis anggaran kritis — persisten sampai selesai.
-/// Tap membuka layar Anggaran.
+/// Tap membuka Rencana·Batas.
 class AlertStrip extends StatelessWidget {
   const AlertStrip({
     super.key,
     required this.repository,
     required this.service,
+    this.onOpenBatas,
   });
 
   final LedgerRepository repository;
   final ProgressService service;
+
+  /// Deep-link ke Rencana·Batas (diisi Beranda). Null = layar Anggaran lama.
+  final VoidCallback? onOpenBatas;
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +51,7 @@ class AlertStrip extends StatelessWidget {
                 line: line,
                 repository: repository,
                 service: service,
+                onOpenBatas: onOpenBatas,
               ),
           ],
         );
@@ -60,11 +65,13 @@ class _AlertRow extends StatelessWidget {
     required this.line,
     required this.repository,
     required this.service,
+    this.onOpenBatas,
   });
 
   final LimitLine line;
   final LedgerRepository repository;
   final ProgressService service;
+  final VoidCallback? onOpenBatas;
 
   @override
   Widget build(BuildContext context) {
@@ -73,12 +80,14 @@ class _AlertRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: Spacing.m),
       child: QuestPress(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => BudgetScreen(repository: repository),
-          ),
-        ).whenComplete(service.refresh),
+        onTap:
+            onOpenBatas ??
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BudgetScreen(repository: repository),
+              ),
+            ).whenComplete(service.refresh),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
           decoration: BoxDecoration(
@@ -789,8 +798,7 @@ List<_TopRow> _topRows(
 }
 
 /// Kartu batas Beranda (HARIAN/MINGGUAN/BULANAN): sisa besar + bar fraksi
-/// + sub "dipakai X dari Y · reset …". Tap → Anggaran (fallback sampai
-/// Plan 5 mengganti dengan deep-link Rencana·Batas).
+/// + sub "dipakai X dari Y · reset …". Tap → Rencana·Batas (via [onTap]).
 class LimitCard extends StatelessWidget {
   const LimitCard({
     super.key,
@@ -874,7 +882,7 @@ class LimitCard extends StatelessWidget {
 }
 
 /// Ringkas keluar + masuk bulan berjalan: nominal + delta vs bulan lalu.
-/// Tap → laporan (via [onTap]).
+/// Tap → Rekap (via [onTap]).
 class MiniInOut extends StatelessWidget {
   const MiniInOut({super.key, required this.service, this.onTap});
 

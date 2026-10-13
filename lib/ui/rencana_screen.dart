@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../core/money.dart';
 import '../game/progress.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
@@ -16,6 +19,7 @@ class RencanaScreen extends StatefulWidget {
     required this.repository,
     this.progress,
     this.initialSegment = RencanaSegment.batas,
+    this.onSegmentChanged,
   });
 
   final LedgerRepository repository;
@@ -25,10 +29,14 @@ class RencanaScreen extends StatefulWidget {
   final ProgressService? progress;
   final RencanaSegment initialSegment;
 
-  /// Label FAB per segmen — dipakai Plan 5 (nav bawah) agar tidak menebak.
+  /// Dilaporkan setiap segmen berganti — dipakai shell agar deep-link
+  /// Beranda → Batas selalu sinkron meski user sempat pindah segmen manual.
+  final ValueChanged<RencanaSegment>? onSegmentChanged;
+
+  /// Label FAB per segmen.
   static String fabLabelFor(RencanaSegment segment) => switch (segment) {
-    RencanaSegment.batas => '＋Batas',
-    RencanaSegment.target => '＋Target',
+    RencanaSegment.batas => '＋ Jenis',
+    RencanaSegment.target => 'Sisihkan',
   };
 
   @override
@@ -50,6 +58,104 @@ class _RencanaScreenState extends State<RencanaScreen> {
     }
   }
 
+  void _setSegment(RencanaSegment s) {
+    if (s == _segment) return;
+    setState(() => _segment = s);
+    widget.onSegmentChanged?.call(s);
+  }
+
+  /// FAB Sisihkan: tanpa pos → dialog ＋Target; satu pos → sheet langsung;
+  /// banyak pos → pemilih pos dulu lalu sheet.
+  Future<void> _sisihkanFlow() async {
+    final targets = await widget.repository.watchTargets().first;
+    if (!mounted) return;
+    if (targets.isEmpty) {
+      return showAddTargetFlow(context, widget.repository);
+    }
+    TargetWithProgress chosen;
+    if (targets.length == 1) {
+      chosen = targets.single;
+    } else {
+      final picked = await _askTargetChoice(targets);
+      if (picked == null || !mounted) return;
+      chosen = picked;
+    }
+    if (!mounted) return;
+    await SisihkanSheet.show(
+      context,
+      widget.repository,
+      chosen,
+      progress: widget.progress,
+    );
+  }
+
+  Future<TargetWithProgress?> _askTargetChoice(
+    List<TargetWithProgress> targets,
+  ) {
+    return showQuestSheet<TargetWithProgress>(
+      context,
+      (context) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+          Spacing.m,
+          Spacing.s,
+          Spacing.m,
+          Spacing.m,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Sisihkan ke pos', style: context.qTitle(18)),
+            const SizedBox(height: Spacing.s),
+            for (final t in targets)
+              Padding(
+                padding: const EdgeInsets.only(bottom: Spacing.s),
+                child: QuestPress(
+                  onTap: () => Navigator.pop(context, t),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.q.surface,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: context.q.shadow,
+                          offset: const Offset(0, 6),
+                          blurRadius: 18,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            t.target.name,
+                            style: context
+                                .qBody(15)
+                                .copyWith(fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                        Text(
+                          '${Money.format(t.deposited)} / '
+                          '${Money.format(t.target.goalAmount)}',
+                          style: context.qSmall().copyWith(
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,6 +163,25 @@ class _RencanaScreenState extends State<RencanaScreen> {
       appBar: const QuestHeader(
         title: 'Rencana',
         subtitle: 'Batas & target keuangan',
+      ),
+      // FAB milik tab ini (bukan shell): label + aksi mengikuti segmen.
+      // Padding bawah agar melayang di atas navbar floating.
+      floatingActionButton: Padding(
+        padding: EdgeInsets.only(
+          bottom: 72 + MediaQuery.paddingOf(context).bottom,
+        ),
+        child: switch (_segment) {
+          RencanaSegment.batas => QuestFab(
+            label: RencanaScreen.fabLabelFor(_segment),
+            icon: Icons.add_rounded,
+            onTap: () => showAddJenisFlow(context, widget.repository),
+          ),
+          RencanaSegment.target => QuestFab(
+            label: RencanaScreen.fabLabelFor(_segment),
+            icon: Icons.savings_outlined,
+            onTap: _sisihkanFlow,
+          ),
+        },
       ),
       // Kolom non-scroll: konten segmen (Batas) yang menggulir — pola
       // shell Rekap.
@@ -72,7 +197,7 @@ class _RencanaScreenState extends State<RencanaScreen> {
             ),
             child: QuestSegmented<RencanaSegment>(
               selected: _segment,
-              onChanged: (s) => setState(() => _segment = s),
+              onChanged: _setSegment,
               options: const [
                 (value: RencanaSegment.batas, label: 'Batas', icon: null),
                 (value: RencanaSegment.target, label: 'Target', icon: null),

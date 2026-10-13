@@ -11,6 +11,26 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'quest.dart';
 
+/// Alur tambah pos target baru. Dipakai tombol "＋Target" segmen Target dan
+/// FAB Sisihkan saat belum ada pos yang bisa disisihkan.
+Future<void> showAddTargetFlow(
+  BuildContext context,
+  LedgerRepository repository,
+) async {
+  final result = await _askTarget(context);
+  if (result == null) return;
+  try {
+    await repository.addTarget(
+      name: result.name,
+      goalAmount: result.goal,
+      deadline: result.deadline,
+    );
+  } catch (_) {
+    if (!context.mounted) return;
+    questSnack(context, 'Nama pos "${result.name}" sudah dipakai');
+  }
+}
+
 /// Segmen Target layar Rencana: kartu pos target (progres + laju setoran),
 class RencanaTarget extends StatefulWidget {
   const RencanaTarget({super.key, required this.repository, this.progress});
@@ -82,21 +102,8 @@ class _RencanaTargetState extends State<RencanaTarget> {
     );
   }
 
-  Future<void> _addTargetFlow() async {
-    final result = await _askTarget(context);
-    if (result == null) return;
-    try {
-      await widget.repository.addTarget(
-        name: result.name,
-        goalAmount: result.goal,
-        deadline: result.deadline,
-      );
-    } catch (_) {
-      if (mounted) {
-        questSnack(context, 'Nama pos "${result.name}" sudah dipakai');
-      }
-    }
-  }
+  Future<void> _addTargetFlow() =>
+      showAddTargetFlow(context, widget.repository);
 
   Future<void> _renameFlow(TargetWithProgress entry) async {
     final name = await _askName(
