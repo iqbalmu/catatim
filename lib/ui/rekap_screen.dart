@@ -19,12 +19,20 @@ import 'transaction_sheet.dart';
 /// Transaksi tampil default. State filter (RekapFilter) dimiliki di
 /// sini dan mengalir ke tiap segmen.
 class RekapScreen extends StatefulWidget {
-  const RekapScreen({super.key, required this.repository, this.progress});
+  const RekapScreen({
+    super.key,
+    required this.repository,
+    this.progress,
+    this.headerActions = const [],
+  });
 
   final LedgerRepository repository;
 
   /// Agar hero Beranda ikut segar setelah catat dari tab ini.
   final ProgressService? progress;
+
+  /// Aksi header global dari shell (lonceng + ⋯) — sama di semua tab.
+  final List<Widget> headerActions;
 
   @override
   State<RekapScreen> createState() => _RekapScreenState();
@@ -95,7 +103,11 @@ class _RekapScreenState extends State<RekapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.q.bg,
-      appBar: QuestHeader(title: 'Rekap', subtitle: _periodLabel),
+      appBar: QuestHeader(
+        title: 'Rekap',
+        subtitle: _periodLabel,
+        actions: widget.headerActions,
+      ),
       // FAB milik tab ini (bukan shell). Padding bawah agar melayang di
       // atas navbar floating.
       floatingActionButton: Padding(

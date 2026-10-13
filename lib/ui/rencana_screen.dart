@@ -20,6 +20,7 @@ class RencanaScreen extends StatefulWidget {
     this.progress,
     this.initialSegment = RencanaSegment.batas,
     this.onSegmentChanged,
+    this.headerActions = const [],
   });
 
   final LedgerRepository repository;
@@ -32,6 +33,9 @@ class RencanaScreen extends StatefulWidget {
   /// Dilaporkan setiap segmen berganti — dipakai shell agar deep-link
   /// Beranda → Batas selalu sinkron meski user sempat pindah segmen manual.
   final ValueChanged<RencanaSegment>? onSegmentChanged;
+
+  /// Aksi header global dari shell (lonceng + ⋯) — sama di semua tab.
+  final List<Widget> headerActions;
 
   /// Label FAB per segmen.
   static String fabLabelFor(RencanaSegment segment) => switch (segment) {
@@ -160,9 +164,10 @@ class _RencanaScreenState extends State<RencanaScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.q.bg,
-      appBar: const QuestHeader(
+      appBar: QuestHeader(
         title: 'Rencana',
         subtitle: 'Batas & target keuangan',
+        actions: widget.headerActions,
       ),
       // FAB milik tab ini (bukan shell): label + aksi mengikuti segmen.
       // Padding bawah agar melayang di atas navbar floating.

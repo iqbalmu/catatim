@@ -12,17 +12,25 @@ import '../core/dates_id.dart';
 
 /// Tab Bon: utang-piutang pribadi.
 class BonTab extends StatelessWidget {
-  const BonTab({super.key, required this.repository});
+  const BonTab({
+    super.key,
+    required this.repository,
+    this.headerActions = const [],
+  });
 
   final LedgerRepository repository;
+
+  /// Aksi header global dari shell (lonceng + ⋯) — sama di semua tab.
+  final List<Widget> headerActions;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.q.bg,
-      appBar: const QuestHeader(
+      appBar: QuestHeader(
         title: 'Bon',
         subtitle: 'Utang & piutang pribadi',
+        actions: headerActions,
       ),
       // FAB milik tab ini (bukan shell). Padding bawah agar melayang di
       // atas navbar floating.

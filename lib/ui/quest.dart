@@ -440,11 +440,15 @@ class QuestBottomNav extends StatelessWidget {
     required this.index,
     required this.onChanged,
     required this.destinations,
+    this.badges = const <int>{},
   });
 
   final int index;
   final ValueChanged<int> onChanged;
   final List<QuestDestination> destinations;
+
+  /// Indeks destinasi yang menampilkan titik badge (mis. Bon tua >30 hari).
+  final Set<int> badges;
 
   @override
   Widget build(BuildContext context) {
@@ -492,8 +496,16 @@ class QuestBottomNav extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(dest.icon,
-                  size: 22, color: selected ? q.text : q.muted),
+              Badge(
+                isLabelVisible: badges.contains(i),
+                backgroundColor: q.bad,
+                smallSize: 10,
+                child: Icon(
+                  dest.icon,
+                  size: 22,
+                  color: selected ? q.text : q.muted,
+                ),
+              ),
               const SizedBox(height: 2),
               Text(
                 dest.label,
