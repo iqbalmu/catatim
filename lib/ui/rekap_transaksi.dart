@@ -86,13 +86,23 @@ class _RekapTransaksiState extends State<RekapTransaksi> {
     final query = filter.query ?? '';
 
     final win = filter.window;
-    final stream = win == null
-        ? widget.repository.watchRecentWithCategory(accountId: filter.accountId)
-        : widget.repository.watchBetweenWithCategory(
-            win.start,
-            win.end,
+    final day = filter.day;
+    final stream = day != null
+        // Deep-link kalender: sempitkan jendela ke satu hari itu.
+        ? widget.repository.watchBetweenWithCategory(
+            DateTime(day.year, day.month, day.day),
+            DateTime(day.year, day.month, day.day + 1),
             accountId: filter.accountId,
-          );
+          )
+        : win == null
+            ? widget.repository.watchRecentWithCategory(
+                accountId: filter.accountId,
+              )
+            : widget.repository.watchBetweenWithCategory(
+                win.start,
+                win.end,
+                accountId: filter.accountId,
+              );
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -136,7 +146,9 @@ class _RekapTransaksiState extends State<RekapTransaksi> {
           onChanged: (v) =>
               _update(_QueryPatch(base: filter, query: v).build()),
         ),
-        if (filter.accountId != null || filter.categoryId != null) ...[
+        if (filter.accountId != null ||
+            filter.categoryId != null ||
+            filter.day != null) ...[
           const SizedBox(height: Spacing.s),
           Wrap(
             spacing: Spacing.s,
@@ -149,10 +161,11 @@ class _RekapTransaksiState extends State<RekapTransaksi> {
                     _AccountPatch(base: filter, accountId: null).build(),
                   ),
                 ),
-              // Hasil deep-link Donat: ✕ membersihkan kategori.
-              if (filter.categoryId != null)
+              // Deep-link Kalender: ✕ membersihkan tanggal (dan kategori
+              // — kontrak clearChip sebagaimana dibangun).
+              if (filter.day != null)
                 _FilterChip(
-                  label: 'Kategori',
+                  label: 'Tanggal',
                   onClear: () => _update(filter.clearChip()),
                 ),
             ],
@@ -175,7 +188,8 @@ class _RekapTransaksiState extends State<RekapTransaksi> {
             if (items.isEmpty) {
               final filtering = query.isNotEmpty ||
                   filter.accountId != null ||
-                  filter.categoryId != null;
+                  filter.categoryId != null ||
+                  filter.day != null;
               return QuestEmpty(
                 title: filtering ? 'Tidak ada yang cocok' : 'Belum ada catatan',
                 hint: filtering

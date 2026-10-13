@@ -9,6 +9,7 @@ import 'month_picker.dart';
 import 'quest.dart';
 import 'range_calendar.dart';
 import 'rekap_donat.dart';
+import 'rekap_kalender.dart';
 import 'rekap_transaksi.dart';
 import 'rekap_tren.dart';
 
@@ -179,10 +180,17 @@ class _RekapScreenState extends State<RekapScreen> {
                   repository: widget.repository,
                   filter: _filter,
                 ),
-              // Segmen Kalender diisi tugas berikutnya.
-              _RekapSegment.kalender => QuestEmpty(
-                  title: 'Menyusul',
-                  hint: 'Segmen ini sedang disiapkan.',
+              // Deep-link kalender: filter satu tanggal (applyKalenderTap
+              // di shell, field lain dipertahankan) + pindah segmen.
+              _RekapSegment.kalender => RekapKalender(
+                  repository: widget.repository,
+                  month: _filter.month ??
+                      _filter.rangeStart ??
+                      DateTime.now(),
+                  onDayTap: (day) => setState(() {
+                    _filter = _filter.applyKalenderTap(day);
+                    _segment = _RekapSegment.transaksi;
+                  }),
                 ),
             },
           ),
