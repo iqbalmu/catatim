@@ -194,6 +194,27 @@ DailyPace dailyPace({
   );
 }
 
+/// Jatah harian: plafon kasar per hari dari batas yang ada. Prioritas
+/// batas: harian → mingguan (`~/ 7`) → bulanan (`~/ hariBulanIni`);
+/// limit `<= 0` dilewati (konsisten [LimitLine.level]); null bila
+/// tanpa limit apa pun.
+int? dailyBar({
+  required DateTime now,
+  int? dailyLimit,
+  int? weeklyLimit,
+  int? monthlyTotal,
+}) {
+  if (dailyLimit != null && dailyLimit > 0) return dailyLimit;
+  if (weeklyLimit != null && weeklyLimit > 0) return weeklyLimit ~/ 7;
+  if (monthlyTotal != null && monthlyTotal > 0) {
+    final monthStart = DateTime(now.year, now.month);
+    final daysInMonth =
+        DateTime(now.year, now.month + 1).difference(monthStart).inDays;
+    return monthlyTotal ~/ daysInMonth;
+  }
+  return null;
+}
+
 /// Garis global (bukan alokasi kategori) yang layak ditampilkan di hero:
 /// garis global berbatas yang paling kritis (over → warning → ok);
 /// null bila memang belum ada anggaran apa pun. Batas nol/negatif =

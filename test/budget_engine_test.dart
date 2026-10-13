@@ -211,6 +211,53 @@ void main() {
       expect(feb.idealUsedPercent, 3);
     });
   });
+  group('jatah harian', () {
+    final now = DateTime(2026, 10, 13); // 31 hari.
+
+    test('prioritas harian', () {
+      expect(
+        dailyBar(
+          now: now,
+          dailyLimit: 50000,
+          weeklyLimit: 70000,
+          monthlyTotal: 3100000,
+        ),
+        50000,
+      );
+    });
+
+    test('tanpa harian: mingguan dibagi 7', () {
+      expect(
+        dailyBar(now: now, weeklyLimit: 70000, monthlyTotal: 3100000),
+        10000,
+      );
+    });
+
+    test('bulanan dibagi hari bulan', () {
+      expect(dailyBar(now: now, monthlyTotal: 3100000), 100000);
+      expect(
+        dailyBar(now: DateTime(2024, 2, 15), monthlyTotal: 290000),
+        10000,
+      );
+    });
+
+    test('nol/negatif dilewati', () {
+      expect(
+        dailyBar(
+          now: now,
+          dailyLimit: 0,
+          weeklyLimit: -5,
+          monthlyTotal: 3100000,
+        ),
+        100000,
+      );
+    });
+
+    test('tanpa limit: null', () {
+      expect(dailyBar(now: now), isNull);
+    });
+  });
+
 
 
   group('heroBudgetLine', () {
