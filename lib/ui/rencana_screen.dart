@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../game/progress.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'quest.dart';
 import 'rencana_batas.dart';
+import 'rencana_target.dart';
 
 /// Layar Rencana: akar tab (tanpa tombol kembali) dengan segmen
 /// Batas (default) dan Target. Segmen Batas = eks Anggaran.
@@ -12,11 +14,22 @@ class RencanaScreen extends StatefulWidget {
   const RencanaScreen({
     super.key,
     required this.repository,
+    this.progress,
     this.initialSegment = RencanaSegment.batas,
   });
 
   final LedgerRepository repository;
+
+  /// Agar Beranda (hero pace/streak) ikut segar setelah Sisihkan;
+  /// diisi Plan 5 saat nav bawah memasang layar ini.
+  final ProgressService? progress;
   final RencanaSegment initialSegment;
+
+  /// Label FAB per segmen — dipakai Plan 5 (nav bawah) agar tidak menebak.
+  static String fabLabelFor(RencanaSegment segment) => switch (segment) {
+    RencanaSegment.batas => '＋Batas',
+    RencanaSegment.target => '＋Target',
+  };
 
   @override
   State<RencanaScreen> createState() => _RencanaScreenState();
@@ -41,7 +54,12 @@ class _RencanaScreenState extends State<RencanaScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.s, Spacing.m, 0),
+            padding: const EdgeInsets.fromLTRB(
+              Spacing.m,
+              Spacing.s,
+              Spacing.m,
+              0,
+            ),
             child: QuestSegmented<RencanaSegment>(
               selected: _segment,
               onChanged: (s) => setState(() => _segment = s),
@@ -55,12 +73,12 @@ class _RencanaScreenState extends State<RencanaScreen> {
           Expanded(
             child: switch (_segment) {
               RencanaSegment.batas => RencanaBatas(
-                  repository: widget.repository,
-                ),
-              // Placeholder — diisi Plan 04 Task 3.
-              RencanaSegment.target => const Center(
-                  child: Text('Menyusul'),
-                ),
+                repository: widget.repository,
+              ),
+              RencanaSegment.target => RencanaTarget(
+                repository: widget.repository,
+                progress: widget.progress,
+              ),
             },
           ),
         ],
