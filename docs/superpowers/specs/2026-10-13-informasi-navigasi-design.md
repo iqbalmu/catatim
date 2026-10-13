@@ -122,6 +122,17 @@ saldo-spendable + pace H/M/B, bukan keluar/masuk (jawaban pemilik 2026-10-13);
 badge Bon = ada belum-lunas berumur > 30 hari, tanpa kolom skema baru
 (keputusan saya — pemilik konfirmasi tanpa janji-tanggal).
 
+**Streak = hari disiplin** (usulan pemilik 2026-10-13, belum diimplementasi):
+hari beruntun (mundur dari hari ini) dengan keluar ≤ jatah harian; jatah =
+batas harian, atau jatah harian dari limit minggu (/7) / bulan (/hari-bulan)
+dengan prioritas yang sama seperti pace; hari Rp0 lolos; over hari ini =
+putus sekarang; tanpa limit apa pun = pause (pil 🔥– + hint atur batas);
+berlaku surut dengan limit saat ini (batas: jendela evaluasi + tanggal
+transaksi pertama); milestone {3,7,14,21,30,60,100} tetap, dirayakan sekali
+per run (tersimpan, bukan memori sesi); Jejak tiga warna (over = merah,
+aktif-aman = madu, kosong = garis); mood & "hari catat" menyesuaikan
+("hari disiplin").
+
 ## 8. Diserahkan ke builder
 
 - **Model setoran Target**: syarat anti-tujuan — sisihkan bukan keluar. Opsi:
