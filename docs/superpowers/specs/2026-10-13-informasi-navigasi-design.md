@@ -61,16 +61,29 @@ Chrome global: lonceng 🔔 (Capture log + badge saat listener mati) dan ⋯
 | Beranda ⚡ | Hero sisa aman + Duit + streak; LIMIT H/M/B sekaligus; mini keluar/masuk bln; baris SALDO; strip alert | — | ①②③⑤⑥ (1 ketuk) |
 | Rekap 🪑 | Satu data empat lensa | **Transaksi** · Donat · Kalender · Tren | ⑤⑥ lookup (1), ④ (2) |
 | Rencana 🪑 | Aturan ke depan | **Batas** · Target | ①②③ detail (1–2), 🎯 (2) |
-| Bon 🪑 | Seperti sekarang + badge ≤3 hari | — | utang-piutang (1) |
+| Bon 🪑 | Seperti sekarang + badge | — | utang-piutang (1) |
+
+**Sumber kebenaran batas** (dari kode sekarang): sisa H/M/B Beranda + pace =
+limit global (`app_settings`); baris Jenis = alokasi bulanan per kategori
+(tabel `budgets`, opsional scope akun) yang mengisi garis snapshot/alert
+sebagai garis terpisah. Alur A mengubah global; alur K menambah/mengubah
+baris Jenis.
+
+**Kontrak filter Rekap** (keputusan saya): satu state bersama {periode, akun?,
+cari?, kategori?, tanggal?}; deep-link Donat → set {kategori + periode bulan
+berjalan}; Kalender → set {tanggal} + lompat Transaksi; pindah segmen manual
+mempertahankan periode/akun/cari, menghapus kategori/tanggal; chip ✕
+membersihkan. Filter Riwayat sekarang (search/akun/periode) dilebur ke state ini.
 
 **Operasi halaman:** Riwayat+Laporan+Kalender(baru) → Rekap; Anggaran+Target
 (baru) → Rencana; Beranda dimurnikan (TrendTile/KategoriCard/KewajibanStrip/
 JejakStrip hapus = pindah); JejakStrip dilebur ke Kalender; Bon tetap.
 
-**Halaman/segmen baru:** 📅 Kalender (nominal keluar per tanggal + rincian
-hari terpilih; data `watchOutSumByDaySince` sudah ada); 🎯 Target (pos:
-nama, nominal target, terkumpul, tenggat opsional; aksi Sisihkan via sheet +
-FAB); baris SALDO di Beranda (rumah Kelola Akun).
+**Halaman/segmen baru:** 📅 Kalender (nominal **keluar** per tanggal saja —
+stream tersedia; pemasukan tidak tampil per tanggal — keputusan saya; +
+rincian hari terpilih); 🎯 Target (pos: nama, nominal target, terkumpul,
+tenggat opsional; aksi Sisihkan via sheet + FAB); baris SALDO di Beranda
+(rumah Kelola Akun).
 
 ## 5. Sistem navigasi
 
@@ -102,8 +115,12 @@ Riwayat/Laporan/Anggaran untuk tab gabungan (dipilih: Rekap, Rencana).
 ## 7. Keputusan saya (boleh digugat saat membaca)
 
 Nama "Rekap"/"Rencana"; default segmen Transaksi & Batas; Beranda tanpa Target
-(murni ⚡); Kalender sebagai segmen bukan tab; Jejak dilebur; FAB melayang
-(peak jempol kanan-bawah) bukan di header; back non-Beranda → Beranda.
+(murni ⚡); Kalender sebagai segmen bukan tab; sel kalender = keluar saja;
+kontrak filter Rekap; Jejak dilebur; FAB melayang (mudah dijangkau jempol)
+bukan di header; back non-Beranda → Beranda; Sisihkan mengurangi
+saldo-spendable + pace H/M/B, bukan keluar/masuk (jawaban pemilik 2026-10-13);
+badge Bon = ada belum-lunas berumur > 30 hari, tanpa kolom skema baru
+(keputusan saya — pemilik konfirmasi tanpa janji-tanggal).
 
 ## 8. Diserahkan ke builder
 
@@ -122,3 +139,10 @@ Nama "Rekap"/"Rencana"; default segmen Transaksi & Batas; Beranda tanpa Target
 `audit-dan-calon.html` · `navbar-4item.html` · `navbar-4item-v2.html` ·
 `nav-system.html` · `alur-lengkap.html` (+ `usulan-6-halaman.html`,
 `hifi-5-halaman.html`, `kini-beranda.html` = riwayat proses, kedaluwarsa).
+
+## 10. Terjawab (2026-10-13)
+
+- **T1.** Ya: sisihan mengurangi sisa H/M/B + saldo-spendable; statistik
+  keluar/masuk tidak ikut.
+- **T2.** Tanpa janji-tanggal: badge dari umur bon (> 30 hari); tanpa kolom
+  skema baru.
