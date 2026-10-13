@@ -7,13 +7,14 @@ import '../models.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
 
-/// Streak mencatat yang layak dirayakan.
+/// Streak disiplin yang layak dirayakan.
 const Set<int> kStreakMilestones = {3, 7, 14, 21, 30, 60, 100};
 
 /// Ringkasan kondisi yang tampil di hero card.
 class ProgressSummary {
   const ProgressSummary({
     required this.streakDays,
+    required this.streakPaused,
     required this.recordedToday,
     required this.mood,
     required this.moodLine,
@@ -25,6 +26,11 @@ class ProgressSummary {
   });
 
   final int streakDays;
+
+  /// True bila tanpa limit apa pun (jatah harian null): streak dijeda,
+  /// [streakDays] 0 sampai pengguna mengatur batas.
+  final bool streakPaused;
+
   final bool recordedToday;
   final MascotMood mood;
   final String moodLine;
@@ -78,21 +84,18 @@ class ProgressService extends ChangeNotifier {
     final lastMonthStart = DateTime(now.year, now.month - 1);
     final lastMonthEnd = lastMonthStart.add(dayEnd.difference(monthStart));
 
-    final counts = await _repo.txCountByDaySince(
-      today.subtract(const Duration(days: 70)),
-    );
+    // Jendela evaluasi streak: ≤ 370 hari ke belakang.
+    final streakSince = today.subtract(const Duration(days: 369));
+    final counts = await _repo.txCountByDaySince(streakSince);
     final recordedToday = (counts[today] ?? 0) > 0;
 
-    // Streak: berjalan mundur dari hari ini (atau kemarin, bila hari ini
-    // belum dicatat — belum mencatat hari ini bukan putus).
-    var cursor = recordedToday
-        ? today
-        : today.subtract(const Duration(days: 1));
+    // Hari disiplin: berjalan mundur dari hari ini (atau kemarin, bila
+    // hari ini belum dicatat — hari yang belum berjalan bukan putus).
+    // Hari lolos bila (belanja murni + sisihan) ≤ jatah harian; Rp0
+    // lolos; over berhenti; transfer biasa tidak dihitung; berhenti di
+    // tanggal transaksi pertama (hari kosong sebelumnya bukan streak).
     var streak = 0;
-    while ((counts[cursor] ?? 0) > 0) {
-      streak++;
-      cursor = cursor.subtract(const Duration(days: 1));
-    }
+    var streakPaused = false;
 
     final dayOut = await _repo.sumBetween(today, dayEnd, Direction.outgoing);
     final weekOut = await _repo.sumBetween(
@@ -133,6 +136,31 @@ class ProgressService extends ChangeNotifier {
     final monthTotalLimit = int.tryParse(
       await _repo.getSetting(kKeyMonthlyTotal) ?? '',
     );
+    final bar = dailyBar(
+      now: now,
+      dailyLimit: dailyLimit,
+      weeklyLimit: weekLimit,
+      monthlyTotal: monthTotalLimit,
+    );
+    streakPaused = bar == null;
+    if (!streakPaused) {
+      final spendByDay = await _repo.outSpendByDaySince(streakSince);
+      final targetByDay = await _repo.outTargetByDaySince(streakSince);
+      DateTime? firstDay;
+      for (final day in counts.keys) {
+        if (firstDay == null || day.isBefore(firstDay)) firstDay = day;
+      }
+      var cursor = recordedToday
+          ? today
+          : today.subtract(const Duration(days: 1));
+      while (!cursor.isBefore(streakSince)) {
+        if (firstDay != null && cursor.isBefore(firstDay)) break;
+        final used = (spendByDay[cursor] ?? 0) + (targetByDay[cursor] ?? 0);
+        if (used > bar) break;
+        streak++;
+        cursor = cursor.subtract(const Duration(days: 1));
+      }
+    }
 
     final categoryNames = {for (final c in categories) c.id: c.name};
     final accountNames = {for (final a in accounts) a.id: a.name};
@@ -188,9 +216,10 @@ class ProgressService extends ChangeNotifier {
     );
     latest = ProgressSummary(
       streakDays: streak,
+      streakPaused: streakPaused,
       recordedToday: recordedToday,
       mood: _moodFor(snapshot, recordedToday, streak, wasCelebrating),
-      moodLine: _moodLineFor(snapshot, recordedToday, streak),
+      moodLine: _moodLineFor(snapshot, recordedToday, streak, streakPaused),
       snapshot: snapshot,
       monthIn: monthIn,
       monthOut: monthOut,
@@ -289,10 +318,12 @@ class ProgressService extends ChangeNotifier {
     };
   }
 
-  String _moodLineFor(BudgetSnapshot snap, bool recordedToday, int streak) {
-    if (!snap.hasData) {
-      return 'Duit mengantuk… belum ada catatan bulan ini';
-    }
+  String _moodLineFor(
+    BudgetSnapshot snap,
+    bool recordedToday,
+    int streak,
+    bool streakPaused,
+  ) {
     final critical = snap.criticalLine;
     if (critical != null && critical.level == BudgetLevel.over) {
       return 'Duit khawatir — ${critical.label} terlampaui '
@@ -302,6 +333,13 @@ class ProgressService extends ChangeNotifier {
       return 'Duit waspada — ${critical.label} ${critical.usedPercent}% '
           'terpakai';
     }
+    if (streakPaused) {
+      return 'Duit menunggu… atur batas harian untuk menyalakan '
+          'streak disiplin';
+    }
+    if (!snap.hasData) {
+      return 'Duit mengantuk… belum ada catatan bulan ini';
+    }
     if (snap.outTrend == TrendDirection.worse) {
       return 'Duit memperhatikan — keluaran naik dibanding bulan lalu';
     }
@@ -309,8 +347,8 @@ class ProgressService extends ChangeNotifier {
       final praise = snap.outTrend == TrendDirection.better
           ? 'Duit bangga — dalam anggaran dan keluaran turun! '
           : 'Duit senang — masih dalam batas anggaran! ';
-      return '$praise🔥$streak hari catat';
+      return '$praise🔥$streak hari disiplin';
     }
-    return 'Duit tenang — dalam batas; catat transaksimu hari ini';
+    return 'Duit tenang — dalam batas; jaga jatah harianmu hari ini';
   }
 }
