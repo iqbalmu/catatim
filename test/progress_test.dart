@@ -160,15 +160,62 @@ void main() {
       }
       await progress.refresh();
       expect(progress.latest!.streakDays, 6);
-      expect(progress.consumePendingMilestone(), isNull);
+      expect(await progress.consumePendingMilestone(), isNull);
 
       // Hari ini dalam jatah → streak 7 = milestone.
       await addTxAt(todayAt(8), amount: 1000);
       await progress.onTransactionRecorded();
       expect(progress.latest!.streakDays, 7);
       expect(progress.pendingMilestone, 7);
-      expect(progress.consumePendingMilestone(), 7);
+      expect(await progress.consumePendingMilestone(), 7);
       expect(progress.pendingMilestone, isNull);
+    });
+    test('milestone tidak diulang setelah restart', () async {
+      await setDaily(5000);
+      // 6 hari lalu → hari ini belum dicatat: streak 6.
+      for (var i = 6; i >= 1; i--) {
+        await addTxAt(todayAt(8).subtract(Duration(days: i)), amount: 1000);
+      }
+      await progress.refresh();
+      expect(progress.latest!.streakDays, 6);
+      expect(await progress.consumePendingMilestone(), isNull);
+
+      // Hari ini dalam jatah → streak 7 = milestone, rayakan sekali.
+      await addTxAt(todayAt(8), amount: 1000);
+      await progress.onTransactionRecorded();
+      expect(progress.latest!.streakDays, 7);
+      expect(progress.pendingMilestone, 7);
+      expect(await progress.consumePendingMilestone(), 7);
+
+      // Restart: service baru, repo sama. Refresh tidak mengulang.
+      final restarted = ProgressService(repository: repo);
+      await restarted.refresh();
+      expect(restarted.latest!.streakDays, 7);
+      expect(restarted.pendingMilestone, isNull);
+
+      // Evaluate segar setelah restart TIDAK boleh mengulang 7 yang sama.
+      final restartedFresh = ProgressService(repository: repo);
+      await restartedFresh.onTransactionRecorded();
+      expect(restartedFresh.pendingMilestone, isNull);
+
+      // Streak 8 bukan milestone → tetap null.
+      await addTxAt(todayAt(8).subtract(const Duration(days: 7)), amount: 1000);
+      final atEight = ProgressService(repository: repo);
+      await atEight.refresh();
+      expect(atEight.latest!.streakDays, 8);
+      await atEight.onTransactionRecorded();
+      expect(atEight.pendingMilestone, isNull);
+      expect(await atEight.consumePendingMilestone(), isNull);
+
+      // Run baru: lengkapi ke 14 hari → milestone 14 tetap dirayakan.
+      for (var i = 8; i <= 13; i++) {
+        await addTxAt(todayAt(8).subtract(Duration(days: i)), amount: 1000);
+      }
+      final atFourteen = ProgressService(repository: repo);
+      await atFourteen.onTransactionRecorded();
+      expect(atFourteen.latest!.streakDays, 14);
+      expect(atFourteen.pendingMilestone, 14);
+      expect(await atFourteen.consumePendingMilestone(), 14);
     });
   });
 

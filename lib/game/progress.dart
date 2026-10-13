@@ -271,13 +271,16 @@ class ProgressService extends ChangeNotifier {
       }
     }
 
-    // Milestone streak: dirayakan sekali saat hari ini pertama kali
-    // mengangkat streak ke angka milestone.
+    // Milestone streak: dirayakan sekali per run saat hari ini pertama kali
+    // mengangkat streak ke angka milestone. Run yang sudah dirayakan
+    // tersimpan di setting `milestone_seen_{n}` agar restart tidak mengulang;
+    // milestone berikutnya tetap dirayakan.
     final streak = latest!.streakDays;
     if (!recordedTodayBefore &&
         latest!.recordedToday &&
         kStreakMilestones.contains(streak) &&
-        streak != streakBefore) {
+        streak != streakBefore &&
+        await _repo.getSetting('milestone_seen_$streak') == null) {
       pendingMilestone = streak;
     }
     notifyListeners();
@@ -300,9 +303,12 @@ class ProgressService extends ChangeNotifier {
     return value;
   }
 
-  int? consumePendingMilestone() {
+  Future<int?> consumePendingMilestone() async {
     final value = pendingMilestone;
     pendingMilestone = null;
+    if (value != null) {
+      await _repo.setSetting('milestone_seen_$value', '1');
+    }
     return value;
   }
 

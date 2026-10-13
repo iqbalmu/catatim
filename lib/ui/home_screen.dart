@@ -173,7 +173,7 @@ class _BerandaTabState extends State<_BerandaTab> {
       );
       return;
     }
-    final milestone = widget.progress.consumePendingMilestone();
+    final milestone = await widget.progress.consumePendingMilestone();
     if (milestone != null && mounted) {
       HapticFeedback.lightImpact();
       questSnack(
