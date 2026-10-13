@@ -105,6 +105,13 @@ void main() {
       expect(p.streakPaused, isTrue);
       expect(p.moodLine, contains('batas'));
     });
+    test('limit ada tapi tanpa transaksi: streak 0, tidak pause', () async {
+      await setDaily(5000);
+      await progress.refresh();
+      final p = progress.latest!;
+      expect(p.streakDays, 0);
+      expect(p.streakPaused, isFalse);
+    });
 
     test('surut berhenti di transaksi pertama (bukan 365)', () async {
       await setDaily(5000);

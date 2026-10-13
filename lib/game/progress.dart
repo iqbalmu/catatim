@@ -150,15 +150,19 @@ class ProgressService extends ChangeNotifier {
       for (final day in counts.keys) {
         if (firstDay == null || day.isBefore(firstDay)) firstDay = day;
       }
-      var cursor = recordedToday
-          ? today
-          : today.subtract(const Duration(days: 1));
-      while (!cursor.isBefore(streakSince)) {
-        if (firstDay != null && cursor.isBefore(firstDay)) break;
-        final used = (spendByDay[cursor] ?? 0) + (targetByDay[cursor] ?? 0);
-        if (used > bar) break;
-        streak++;
-        cursor = cursor.subtract(const Duration(days: 1));
+      // Tanpa transaksi apa pun belum ada bukti disiplin: streak 0
+      // (bukan jendela penuh — menghindari milestone palsu).
+      if (firstDay != null) {
+        var cursor = recordedToday
+            ? today
+            : today.subtract(const Duration(days: 1));
+        while (!cursor.isBefore(streakSince)) {
+          if (cursor.isBefore(firstDay)) break;
+          final used = (spendByDay[cursor] ?? 0) + (targetByDay[cursor] ?? 0);
+          if (used > bar) break;
+          streak++;
+          cursor = cursor.subtract(const Duration(days: 1));
+        }
       }
     }
 
