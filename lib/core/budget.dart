@@ -240,3 +240,10 @@ String? deltaLabel(int current, int previous) {
   if (pct == 0) return '±0%';
   return '${pct > 0 ? '▲' : '▼'} ${pct.abs()}%';
 }
+
+/// Keluar efektif: belanja murni + Sisihkan ke pos target. Tanpa floor —
+/// pace boleh negatif sebagai penanda OVER (ditangani UI). Transfer biasa
+/// (antar-akun non-target) tidak masuk ke mana pun (opsi A): bukan belanja,
+/// bukan sisihan. Statistik keluar/masuk tetap belanja murni.
+int spendPlusTarget({required int spend, required int targetTransfer}) =>
+    spend + targetTransfer;

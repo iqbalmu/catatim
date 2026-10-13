@@ -342,6 +342,44 @@ void main() {
       await progress.refresh();
       expect(progress.latest!.dailyPace?.safeToSpend, isNull);
     });
+    test('pace memakai spend + sisihan, statistik murni', () async {
+      await repo.setSetting(kKeyDailyLimit, '50000');
+      await repo.addManual(
+        amount: 40000,
+        direction: Direction.outgoing,
+        kind: TxKind.payment,
+        occurredAt: todayAt(9),
+      );
+      final accounts = await repo.getAccounts();
+      final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
+      final target =
+          await repo.addTarget(name: 'Liburan', goalAmount: 10000000);
+      await repo.depositToTarget(
+        targetId: target.id,
+        accountId: blu.id,
+        amount: 20000,
+        occurredAt: todayAt(10),
+      );
+      await progress.refresh();
+      // Efektif 40rb + 20rb = 60rb → 50rb - 60rb = -10rb (OVER, tanpa floor).
+      expect(progress.latest!.dailyPace!.safeToSpend, -10000);
+      // Statistik tetap belanja murni.
+      expect(progress.latest!.monthOut, 40000);
+      // Garis global memakai keluar efektif.
+      final dayLine = progress.latest!.snapshot.lines
+          .firstWhere((l) => l.label == 'Batas harian');
+      expect(dayLine.used, 60000);
+      // Transfer biasa bukan belanja maupun sisihan: pace tak berubah.
+      await repo.addManual(
+        amount: 5000000,
+        direction: Direction.outgoing,
+        kind: TxKind.transfer,
+        occurredAt: todayAt(11),
+      );
+      await progress.refresh();
+      expect(progress.latest!.dailyPace!.safeToSpend, -10000);
+      expect(progress.latest!.monthOut, 40000);
+    });
   });
 
   group('activeDays jejak duit', () {

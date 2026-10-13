@@ -97,26 +97,30 @@ class ProgressService extends ChangeNotifier {
     var streak = 0;
     var streakPaused = false;
 
-    final dayOut = await _repo.sumBetween(today, dayEnd, Direction.outgoing);
-    final weekOut = await _repo.sumBetween(
-      weekStart,
-      dayEnd,
-      Direction.outgoing,
-    );
-    final monthOut = await _repo.sumBetween(
-      monthStart,
-      monthEnd,
-      Direction.outgoing,
-    );
+    // Keluar efektif (pace + garis global): belanja murni + Sisihkan.
+    // Statistik (monthOut/monthIn, tren, hasData) tetap belanja murni;
+    // transfer biasa tidak masuk ke mana pun (opsi A).
+    final daySpend = await _repo.sumSpendBetween(today, dayEnd);
+    final dayTarget = await _repo.sumTargetTransferBetween(today, dayEnd);
+    final dayOut = spendPlusTarget(spend: daySpend, targetTransfer: dayTarget);
+    final weekSpend = await _repo.sumSpendBetween(weekStart, dayEnd);
+    final weekTarget = await _repo.sumTargetTransferBetween(weekStart, dayEnd);
+    final weekOut =
+        spendPlusTarget(spend: weekSpend, targetTransfer: weekTarget);
+    final monthSpend = await _repo.sumSpendBetween(monthStart, monthEnd);
+    final monthTarget =
+        await _repo.sumTargetTransferBetween(monthStart, monthEnd);
+    final monthEff =
+        spendPlusTarget(spend: monthSpend, targetTransfer: monthTarget);
+    final monthOut = monthSpend;
     final monthIn = await _repo.sumBetween(
       monthStart,
       monthEnd,
       Direction.incoming,
     );
-    final lastMonthOut = await _repo.sumBetween(
+    final lastMonthOut = await _repo.sumSpendBetween(
       lastMonthStart,
       lastMonthEnd,
-      Direction.outgoing,
     );
     final lastMonthIn = await _repo.sumBetween(
       lastMonthStart,
@@ -180,7 +184,7 @@ class ProgressService extends ChangeNotifier {
       LimitLine(label: 'Batas mingguan', used: weekOut, limit: weekLimit),
       LimitLine(
         label: 'Total bulan ini',
-        used: monthOut,
+        used: monthEff,
         limit: monthTotalLimit,
       ),
       for (final b in budgets)
@@ -213,7 +217,7 @@ class ProgressService extends ChangeNotifier {
       now: now,
       dayOut: dayOut,
       weekOut: weekOut,
-      monthOut: monthOut,
+      monthOut: monthEff,
       dailyLimit: dailyLimit,
       weeklyLimit: weekLimit,
       monthlyTotal: monthTotalLimit,
