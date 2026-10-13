@@ -3696,6 +3696,906 @@ class UserRulesCompanion extends UpdateCompanion<UserRule> {
   }
 }
 
+class $TargetsTable extends Targets with TableInfo<$TargetsTable, Target> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TargetsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
+  @override
+  late final GeneratedColumn<String> uuid = GeneratedColumn<String>(
+    'uuid',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _goalAmountMeta = const VerificationMeta(
+    'goalAmount',
+  );
+  @override
+  late final GeneratedColumn<int> goalAmount = GeneratedColumn<int>(
+    'goal_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deadlineMeta = const VerificationMeta(
+    'deadline',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deadline = GeneratedColumn<DateTime>(
+    'deadline',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _archivedAtMeta = const VerificationMeta(
+    'archivedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> archivedAt = GeneratedColumn<DateTime>(
+    'archived_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    uuid,
+    name,
+    goalAmount,
+    deadline,
+    archivedAt,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'targets';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Target> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('uuid')) {
+      context.handle(
+        _uuidMeta,
+        uuid.isAcceptableOrUnknown(data['uuid']!, _uuidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_uuidMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('goal_amount')) {
+      context.handle(
+        _goalAmountMeta,
+        goalAmount.isAcceptableOrUnknown(data['goal_amount']!, _goalAmountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_goalAmountMeta);
+    }
+    if (data.containsKey('deadline')) {
+      context.handle(
+        _deadlineMeta,
+        deadline.isAcceptableOrUnknown(data['deadline']!, _deadlineMeta),
+      );
+    }
+    if (data.containsKey('archived_at')) {
+      context.handle(
+        _archivedAtMeta,
+        archivedAt.isAcceptableOrUnknown(data['archived_at']!, _archivedAtMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Target map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Target(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      uuid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}uuid'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      goalAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}goal_amount'],
+      )!,
+      deadline: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deadline'],
+      ),
+      archivedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}archived_at'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TargetsTable createAlias(String alias) {
+    return $TargetsTable(attachedDatabase, alias);
+  }
+}
+
+class Target extends DataClass implements Insertable<Target> {
+  final int id;
+  final String uuid;
+  final String name;
+  final int goalAmount;
+  final DateTime? deadline;
+  final DateTime? archivedAt;
+  final DateTime createdAt;
+  const Target({
+    required this.id,
+    required this.uuid,
+    required this.name,
+    required this.goalAmount,
+    this.deadline,
+    this.archivedAt,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['uuid'] = Variable<String>(uuid);
+    map['name'] = Variable<String>(name);
+    map['goal_amount'] = Variable<int>(goalAmount);
+    if (!nullToAbsent || deadline != null) {
+      map['deadline'] = Variable<DateTime>(deadline);
+    }
+    if (!nullToAbsent || archivedAt != null) {
+      map['archived_at'] = Variable<DateTime>(archivedAt);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  TargetsCompanion toCompanion(bool nullToAbsent) {
+    return TargetsCompanion(
+      id: Value(id),
+      uuid: Value(uuid),
+      name: Value(name),
+      goalAmount: Value(goalAmount),
+      deadline: deadline == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deadline),
+      archivedAt: archivedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(archivedAt),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory Target.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Target(
+      id: serializer.fromJson<int>(json['id']),
+      uuid: serializer.fromJson<String>(json['uuid']),
+      name: serializer.fromJson<String>(json['name']),
+      goalAmount: serializer.fromJson<int>(json['goalAmount']),
+      deadline: serializer.fromJson<DateTime?>(json['deadline']),
+      archivedAt: serializer.fromJson<DateTime?>(json['archivedAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'uuid': serializer.toJson<String>(uuid),
+      'name': serializer.toJson<String>(name),
+      'goalAmount': serializer.toJson<int>(goalAmount),
+      'deadline': serializer.toJson<DateTime?>(deadline),
+      'archivedAt': serializer.toJson<DateTime?>(archivedAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  Target copyWith({
+    int? id,
+    String? uuid,
+    String? name,
+    int? goalAmount,
+    Value<DateTime?> deadline = const Value.absent(),
+    Value<DateTime?> archivedAt = const Value.absent(),
+    DateTime? createdAt,
+  }) => Target(
+    id: id ?? this.id,
+    uuid: uuid ?? this.uuid,
+    name: name ?? this.name,
+    goalAmount: goalAmount ?? this.goalAmount,
+    deadline: deadline.present ? deadline.value : this.deadline,
+    archivedAt: archivedAt.present ? archivedAt.value : this.archivedAt,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  Target copyWithCompanion(TargetsCompanion data) {
+    return Target(
+      id: data.id.present ? data.id.value : this.id,
+      uuid: data.uuid.present ? data.uuid.value : this.uuid,
+      name: data.name.present ? data.name.value : this.name,
+      goalAmount: data.goalAmount.present
+          ? data.goalAmount.value
+          : this.goalAmount,
+      deadline: data.deadline.present ? data.deadline.value : this.deadline,
+      archivedAt: data.archivedAt.present
+          ? data.archivedAt.value
+          : this.archivedAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Target(')
+          ..write('id: $id, ')
+          ..write('uuid: $uuid, ')
+          ..write('name: $name, ')
+          ..write('goalAmount: $goalAmount, ')
+          ..write('deadline: $deadline, ')
+          ..write('archivedAt: $archivedAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, uuid, name, goalAmount, deadline, archivedAt, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Target &&
+          other.id == this.id &&
+          other.uuid == this.uuid &&
+          other.name == this.name &&
+          other.goalAmount == this.goalAmount &&
+          other.deadline == this.deadline &&
+          other.archivedAt == this.archivedAt &&
+          other.createdAt == this.createdAt);
+}
+
+class TargetsCompanion extends UpdateCompanion<Target> {
+  final Value<int> id;
+  final Value<String> uuid;
+  final Value<String> name;
+  final Value<int> goalAmount;
+  final Value<DateTime?> deadline;
+  final Value<DateTime?> archivedAt;
+  final Value<DateTime> createdAt;
+  const TargetsCompanion({
+    this.id = const Value.absent(),
+    this.uuid = const Value.absent(),
+    this.name = const Value.absent(),
+    this.goalAmount = const Value.absent(),
+    this.deadline = const Value.absent(),
+    this.archivedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  TargetsCompanion.insert({
+    this.id = const Value.absent(),
+    required String uuid,
+    required String name,
+    required int goalAmount,
+    this.deadline = const Value.absent(),
+    this.archivedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : uuid = Value(uuid),
+       name = Value(name),
+       goalAmount = Value(goalAmount);
+  static Insertable<Target> custom({
+    Expression<int>? id,
+    Expression<String>? uuid,
+    Expression<String>? name,
+    Expression<int>? goalAmount,
+    Expression<DateTime>? deadline,
+    Expression<DateTime>? archivedAt,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (uuid != null) 'uuid': uuid,
+      if (name != null) 'name': name,
+      if (goalAmount != null) 'goal_amount': goalAmount,
+      if (deadline != null) 'deadline': deadline,
+      if (archivedAt != null) 'archived_at': archivedAt,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  TargetsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? uuid,
+    Value<String>? name,
+    Value<int>? goalAmount,
+    Value<DateTime?>? deadline,
+    Value<DateTime?>? archivedAt,
+    Value<DateTime>? createdAt,
+  }) {
+    return TargetsCompanion(
+      id: id ?? this.id,
+      uuid: uuid ?? this.uuid,
+      name: name ?? this.name,
+      goalAmount: goalAmount ?? this.goalAmount,
+      deadline: deadline ?? this.deadline,
+      archivedAt: archivedAt ?? this.archivedAt,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (uuid.present) {
+      map['uuid'] = Variable<String>(uuid.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (goalAmount.present) {
+      map['goal_amount'] = Variable<int>(goalAmount.value);
+    }
+    if (deadline.present) {
+      map['deadline'] = Variable<DateTime>(deadline.value);
+    }
+    if (archivedAt.present) {
+      map['archived_at'] = Variable<DateTime>(archivedAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TargetsCompanion(')
+          ..write('id: $id, ')
+          ..write('uuid: $uuid, ')
+          ..write('name: $name, ')
+          ..write('goalAmount: $goalAmount, ')
+          ..write('deadline: $deadline, ')
+          ..write('archivedAt: $archivedAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TargetDepositsTable extends TargetDeposits
+    with TableInfo<$TargetDepositsTable, TargetDeposit> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TargetDepositsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _uuidMeta = const VerificationMeta('uuid');
+  @override
+  late final GeneratedColumn<String> uuid = GeneratedColumn<String>(
+    'uuid',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _targetIdMeta = const VerificationMeta(
+    'targetId',
+  );
+  @override
+  late final GeneratedColumn<int> targetId = GeneratedColumn<int>(
+    'target_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES targets (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<int> accountId = GeneratedColumn<int>(
+    'account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES accounts (id)',
+    ),
+  );
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumn<int> amount = GeneratedColumn<int>(
+    'amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (amount > 0)',
+  );
+  static const VerificationMeta _occurredAtMeta = const VerificationMeta(
+    'occurredAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> occurredAt = GeneratedColumn<DateTime>(
+    'occurred_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    uuid,
+    targetId,
+    accountId,
+    amount,
+    occurredAt,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'target_deposits';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TargetDeposit> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('uuid')) {
+      context.handle(
+        _uuidMeta,
+        uuid.isAcceptableOrUnknown(data['uuid']!, _uuidMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_uuidMeta);
+    }
+    if (data.containsKey('target_id')) {
+      context.handle(
+        _targetIdMeta,
+        targetId.isAcceptableOrUnknown(data['target_id']!, _targetIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_targetIdMeta);
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    }
+    if (data.containsKey('amount')) {
+      context.handle(
+        _amountMeta,
+        amount.isAcceptableOrUnknown(data['amount']!, _amountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMeta);
+    }
+    if (data.containsKey('occurred_at')) {
+      context.handle(
+        _occurredAtMeta,
+        occurredAt.isAcceptableOrUnknown(data['occurred_at']!, _occurredAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_occurredAtMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TargetDeposit map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TargetDeposit(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      uuid: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}uuid'],
+      )!,
+      targetId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}target_id'],
+      )!,
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}account_id'],
+      ),
+      amount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount'],
+      )!,
+      occurredAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}occurred_at'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TargetDepositsTable createAlias(String alias) {
+    return $TargetDepositsTable(attachedDatabase, alias);
+  }
+}
+
+class TargetDeposit extends DataClass implements Insertable<TargetDeposit> {
+  final int id;
+  final String uuid;
+  final int targetId;
+  final int? accountId;
+  final int amount;
+  final DateTime occurredAt;
+  final DateTime createdAt;
+  const TargetDeposit({
+    required this.id,
+    required this.uuid,
+    required this.targetId,
+    this.accountId,
+    required this.amount,
+    required this.occurredAt,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['uuid'] = Variable<String>(uuid);
+    map['target_id'] = Variable<int>(targetId);
+    if (!nullToAbsent || accountId != null) {
+      map['account_id'] = Variable<int>(accountId);
+    }
+    map['amount'] = Variable<int>(amount);
+    map['occurred_at'] = Variable<DateTime>(occurredAt);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  TargetDepositsCompanion toCompanion(bool nullToAbsent) {
+    return TargetDepositsCompanion(
+      id: Value(id),
+      uuid: Value(uuid),
+      targetId: Value(targetId),
+      accountId: accountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountId),
+      amount: Value(amount),
+      occurredAt: Value(occurredAt),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory TargetDeposit.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TargetDeposit(
+      id: serializer.fromJson<int>(json['id']),
+      uuid: serializer.fromJson<String>(json['uuid']),
+      targetId: serializer.fromJson<int>(json['targetId']),
+      accountId: serializer.fromJson<int?>(json['accountId']),
+      amount: serializer.fromJson<int>(json['amount']),
+      occurredAt: serializer.fromJson<DateTime>(json['occurredAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'uuid': serializer.toJson<String>(uuid),
+      'targetId': serializer.toJson<int>(targetId),
+      'accountId': serializer.toJson<int?>(accountId),
+      'amount': serializer.toJson<int>(amount),
+      'occurredAt': serializer.toJson<DateTime>(occurredAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  TargetDeposit copyWith({
+    int? id,
+    String? uuid,
+    int? targetId,
+    Value<int?> accountId = const Value.absent(),
+    int? amount,
+    DateTime? occurredAt,
+    DateTime? createdAt,
+  }) => TargetDeposit(
+    id: id ?? this.id,
+    uuid: uuid ?? this.uuid,
+    targetId: targetId ?? this.targetId,
+    accountId: accountId.present ? accountId.value : this.accountId,
+    amount: amount ?? this.amount,
+    occurredAt: occurredAt ?? this.occurredAt,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  TargetDeposit copyWithCompanion(TargetDepositsCompanion data) {
+    return TargetDeposit(
+      id: data.id.present ? data.id.value : this.id,
+      uuid: data.uuid.present ? data.uuid.value : this.uuid,
+      targetId: data.targetId.present ? data.targetId.value : this.targetId,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      amount: data.amount.present ? data.amount.value : this.amount,
+      occurredAt: data.occurredAt.present
+          ? data.occurredAt.value
+          : this.occurredAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TargetDeposit(')
+          ..write('id: $id, ')
+          ..write('uuid: $uuid, ')
+          ..write('targetId: $targetId, ')
+          ..write('accountId: $accountId, ')
+          ..write('amount: $amount, ')
+          ..write('occurredAt: $occurredAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, uuid, targetId, accountId, amount, occurredAt, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TargetDeposit &&
+          other.id == this.id &&
+          other.uuid == this.uuid &&
+          other.targetId == this.targetId &&
+          other.accountId == this.accountId &&
+          other.amount == this.amount &&
+          other.occurredAt == this.occurredAt &&
+          other.createdAt == this.createdAt);
+}
+
+class TargetDepositsCompanion extends UpdateCompanion<TargetDeposit> {
+  final Value<int> id;
+  final Value<String> uuid;
+  final Value<int> targetId;
+  final Value<int?> accountId;
+  final Value<int> amount;
+  final Value<DateTime> occurredAt;
+  final Value<DateTime> createdAt;
+  const TargetDepositsCompanion({
+    this.id = const Value.absent(),
+    this.uuid = const Value.absent(),
+    this.targetId = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.amount = const Value.absent(),
+    this.occurredAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  TargetDepositsCompanion.insert({
+    this.id = const Value.absent(),
+    required String uuid,
+    required int targetId,
+    this.accountId = const Value.absent(),
+    required int amount,
+    required DateTime occurredAt,
+    this.createdAt = const Value.absent(),
+  }) : uuid = Value(uuid),
+       targetId = Value(targetId),
+       amount = Value(amount),
+       occurredAt = Value(occurredAt);
+  static Insertable<TargetDeposit> custom({
+    Expression<int>? id,
+    Expression<String>? uuid,
+    Expression<int>? targetId,
+    Expression<int>? accountId,
+    Expression<int>? amount,
+    Expression<DateTime>? occurredAt,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (uuid != null) 'uuid': uuid,
+      if (targetId != null) 'target_id': targetId,
+      if (accountId != null) 'account_id': accountId,
+      if (amount != null) 'amount': amount,
+      if (occurredAt != null) 'occurred_at': occurredAt,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  TargetDepositsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? uuid,
+    Value<int>? targetId,
+    Value<int?>? accountId,
+    Value<int>? amount,
+    Value<DateTime>? occurredAt,
+    Value<DateTime>? createdAt,
+  }) {
+    return TargetDepositsCompanion(
+      id: id ?? this.id,
+      uuid: uuid ?? this.uuid,
+      targetId: targetId ?? this.targetId,
+      accountId: accountId ?? this.accountId,
+      amount: amount ?? this.amount,
+      occurredAt: occurredAt ?? this.occurredAt,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (uuid.present) {
+      map['uuid'] = Variable<String>(uuid.value);
+    }
+    if (targetId.present) {
+      map['target_id'] = Variable<int>(targetId.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<int>(accountId.value);
+    }
+    if (amount.present) {
+      map['amount'] = Variable<int>(amount.value);
+    }
+    if (occurredAt.present) {
+      map['occurred_at'] = Variable<DateTime>(occurredAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TargetDepositsCompanion(')
+          ..write('id: $id, ')
+          ..write('uuid: $uuid, ')
+          ..write('targetId: $targetId, ')
+          ..write('accountId: $accountId, ')
+          ..write('amount: $amount, ')
+          ..write('occurredAt: $occurredAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3707,6 +4607,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $BudgetsTable budgets = $BudgetsTable(this);
   late final $BonsTable bons = $BonsTable(this);
   late final $UserRulesTable userRules = $UserRulesTable(this);
+  late final $TargetsTable targets = $TargetsTable(this);
+  late final $TargetDepositsTable targetDeposits = $TargetDepositsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3720,7 +4622,19 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     budgets,
     bons,
     userRules,
+    targets,
+    targetDeposits,
   ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'targets',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('target_deposits', kind: UpdateKind.delete)],
+    ),
+  ]);
 }
 
 typedef $$CategoriesTableCreateCompanionBuilder =
@@ -4155,6 +5069,24 @@ final class $$AccountsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$TargetDepositsTable, List<TargetDeposit>>
+  _targetDepositsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.targetDeposits,
+    aliasName: 'accounts__id__target_deposits__account_id',
+  );
+
+  $$TargetDepositsTableProcessedTableManager get targetDepositsRefs {
+    final manager = $$TargetDepositsTableTableManager(
+      $_db,
+      $_db.targetDeposits,
+    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_targetDepositsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$AccountsTableFilterComposer
@@ -4263,6 +5195,31 @@ class $$AccountsTableFilterComposer
           }) => $$UserRulesTableFilterComposer(
             $db: $db,
             $table: $db.userRules,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> targetDepositsRefs(
+    Expression<bool> Function($$TargetDepositsTableFilterComposer f) f,
+  ) {
+    final $$TargetDepositsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.targetDeposits,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TargetDepositsTableFilterComposer(
+            $db: $db,
+            $table: $db.targetDeposits,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4418,6 +5375,31 @@ class $$AccountsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> targetDepositsRefs<T extends Object>(
+    Expression<T> Function($$TargetDepositsTableAnnotationComposer a) f,
+  ) {
+    final $$TargetDepositsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.targetDeposits,
+      getReferencedColumn: (t) => t.accountId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TargetDepositsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.targetDeposits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$AccountsTableTableManager
@@ -4437,6 +5419,7 @@ class $$AccountsTableTableManager
             bool transactionsRefs,
             bool budgetsRefs,
             bool userRulesRefs,
+            bool targetDepositsRefs,
           })
         > {
   $$AccountsTableTableManager(_$AppDatabase db, $AccountsTable table)
@@ -4495,6 +5478,7 @@ class $$AccountsTableTableManager
                 transactionsRefs = false,
                 budgetsRefs = false,
                 userRulesRefs = false,
+                targetDepositsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -4502,6 +5486,7 @@ class $$AccountsTableTableManager
                     if (transactionsRefs) db.transactions,
                     if (budgetsRefs) db.budgets,
                     if (userRulesRefs) db.userRules,
+                    if (targetDepositsRefs) db.targetDeposits,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -4569,6 +5554,27 @@ class $$AccountsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (targetDepositsRefs)
+                        await $_getPrefetchedData<
+                          Account,
+                          $AccountsTable,
+                          TargetDeposit
+                        >(
+                          currentTable: table,
+                          referencedTable: $$AccountsTableReferences
+                              ._targetDepositsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$AccountsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).targetDepositsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.accountId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -4593,6 +5599,7 @@ typedef $$AccountsTableProcessedTableManager =
         bool transactionsRefs,
         bool budgetsRefs,
         bool userRulesRefs,
+        bool targetDepositsRefs,
       })
     >;
 typedef $$TransactionsTableCreateCompanionBuilder =
@@ -6648,6 +7655,789 @@ typedef $$UserRulesTableProcessedTableManager =
       UserRule,
       PrefetchHooks Function({bool accountId})
     >;
+typedef $$TargetsTableCreateCompanionBuilder =
+    TargetsCompanion Function({
+      Value<int> id,
+      required String uuid,
+      required String name,
+      required int goalAmount,
+      Value<DateTime?> deadline,
+      Value<DateTime?> archivedAt,
+      Value<DateTime> createdAt,
+    });
+typedef $$TargetsTableUpdateCompanionBuilder =
+    TargetsCompanion Function({
+      Value<int> id,
+      Value<String> uuid,
+      Value<String> name,
+      Value<int> goalAmount,
+      Value<DateTime?> deadline,
+      Value<DateTime?> archivedAt,
+      Value<DateTime> createdAt,
+    });
+
+final class $$TargetsTableReferences
+    extends BaseReferences<_$AppDatabase, $TargetsTable, Target> {
+  $$TargetsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$TargetDepositsTable, List<TargetDeposit>>
+  _targetDepositsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.targetDeposits,
+    aliasName: 'targets__id__target_deposits__target_id',
+  );
+
+  $$TargetDepositsTableProcessedTableManager get targetDepositsRefs {
+    final manager = $$TargetDepositsTableTableManager(
+      $_db,
+      $_db.targetDeposits,
+    ).filter((f) => f.targetId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_targetDepositsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$TargetsTableFilterComposer
+    extends Composer<_$AppDatabase, $TargetsTable> {
+  $$TargetsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get uuid => $composableBuilder(
+    column: $table.uuid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get goalAmount => $composableBuilder(
+    column: $table.goalAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deadline => $composableBuilder(
+    column: $table.deadline,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get archivedAt => $composableBuilder(
+    column: $table.archivedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> targetDepositsRefs(
+    Expression<bool> Function($$TargetDepositsTableFilterComposer f) f,
+  ) {
+    final $$TargetDepositsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.targetDeposits,
+      getReferencedColumn: (t) => t.targetId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TargetDepositsTableFilterComposer(
+            $db: $db,
+            $table: $db.targetDeposits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$TargetsTableOrderingComposer
+    extends Composer<_$AppDatabase, $TargetsTable> {
+  $$TargetsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get uuid => $composableBuilder(
+    column: $table.uuid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get goalAmount => $composableBuilder(
+    column: $table.goalAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deadline => $composableBuilder(
+    column: $table.deadline,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get archivedAt => $composableBuilder(
+    column: $table.archivedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TargetsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TargetsTable> {
+  $$TargetsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get uuid =>
+      $composableBuilder(column: $table.uuid, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get goalAmount => $composableBuilder(
+    column: $table.goalAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get deadline =>
+      $composableBuilder(column: $table.deadline, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get archivedAt => $composableBuilder(
+    column: $table.archivedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> targetDepositsRefs<T extends Object>(
+    Expression<T> Function($$TargetDepositsTableAnnotationComposer a) f,
+  ) {
+    final $$TargetDepositsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.targetDeposits,
+      getReferencedColumn: (t) => t.targetId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TargetDepositsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.targetDeposits,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$TargetsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TargetsTable,
+          Target,
+          $$TargetsTableFilterComposer,
+          $$TargetsTableOrderingComposer,
+          $$TargetsTableAnnotationComposer,
+          $$TargetsTableCreateCompanionBuilder,
+          $$TargetsTableUpdateCompanionBuilder,
+          (Target, $$TargetsTableReferences),
+          Target,
+          PrefetchHooks Function({bool targetDepositsRefs})
+        > {
+  $$TargetsTableTableManager(_$AppDatabase db, $TargetsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TargetsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TargetsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TargetsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> uuid = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int> goalAmount = const Value.absent(),
+                Value<DateTime?> deadline = const Value.absent(),
+                Value<DateTime?> archivedAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => TargetsCompanion(
+                id: id,
+                uuid: uuid,
+                name: name,
+                goalAmount: goalAmount,
+                deadline: deadline,
+                archivedAt: archivedAt,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String uuid,
+                required String name,
+                required int goalAmount,
+                Value<DateTime?> deadline = const Value.absent(),
+                Value<DateTime?> archivedAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => TargetsCompanion.insert(
+                id: id,
+                uuid: uuid,
+                name: name,
+                goalAmount: goalAmount,
+                deadline: deadline,
+                archivedAt: archivedAt,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TargetsTable, Target>(table),
+                  $$TargetsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({targetDepositsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (targetDepositsRefs) db.targetDeposits,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (targetDepositsRefs)
+                    await $_getPrefetchedData<
+                      Target,
+                      $TargetsTable,
+                      TargetDeposit
+                    >(
+                      currentTable: table,
+                      referencedTable: $$TargetsTableReferences
+                          ._targetDepositsRefsTable(db),
+                      managerFromTypedResult: (p0) => $$TargetsTableReferences(
+                        db,
+                        table,
+                        p0,
+                      ).targetDepositsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.targetId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TargetsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TargetsTable,
+      Target,
+      $$TargetsTableFilterComposer,
+      $$TargetsTableOrderingComposer,
+      $$TargetsTableAnnotationComposer,
+      $$TargetsTableCreateCompanionBuilder,
+      $$TargetsTableUpdateCompanionBuilder,
+      (Target, $$TargetsTableReferences),
+      Target,
+      PrefetchHooks Function({bool targetDepositsRefs})
+    >;
+typedef $$TargetDepositsTableCreateCompanionBuilder =
+    TargetDepositsCompanion Function({
+      Value<int> id,
+      required String uuid,
+      required int targetId,
+      Value<int?> accountId,
+      required int amount,
+      required DateTime occurredAt,
+      Value<DateTime> createdAt,
+    });
+typedef $$TargetDepositsTableUpdateCompanionBuilder =
+    TargetDepositsCompanion Function({
+      Value<int> id,
+      Value<String> uuid,
+      Value<int> targetId,
+      Value<int?> accountId,
+      Value<int> amount,
+      Value<DateTime> occurredAt,
+      Value<DateTime> createdAt,
+    });
+
+final class $$TargetDepositsTableReferences
+    extends BaseReferences<_$AppDatabase, $TargetDepositsTable, TargetDeposit> {
+  $$TargetDepositsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $TargetsTable _targetIdTable(_$AppDatabase db) =>
+      db.targets.createAlias('target_deposits__target_id__targets__id');
+
+  $$TargetsTableProcessedTableManager get targetId {
+    final $_column = $_itemColumn<int>('target_id')!;
+
+    final manager = $$TargetsTableTableManager(
+      $_db,
+      $_db.targets,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_targetIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $AccountsTable _accountIdTable(_$AppDatabase db) =>
+      db.accounts.createAlias('target_deposits__account_id__accounts__id');
+
+  $$AccountsTableProcessedTableManager? get accountId {
+    final $_column = $_itemColumn<int>('account_id');
+    if ($_column == null) return null;
+    final manager = $$AccountsTableTableManager(
+      $_db,
+      $_db.accounts,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TargetDepositsTableFilterComposer
+    extends Composer<_$AppDatabase, $TargetDepositsTable> {
+  $$TargetDepositsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get uuid => $composableBuilder(
+    column: $table.uuid,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TargetsTableFilterComposer get targetId {
+    final $$TargetsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.targetId,
+      referencedTable: $db.targets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TargetsTableFilterComposer(
+            $db: $db,
+            $table: $db.targets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableFilterComposer get accountId {
+    final $$AccountsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableFilterComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TargetDepositsTableOrderingComposer
+    extends Composer<_$AppDatabase, $TargetDepositsTable> {
+  $$TargetDepositsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get uuid => $composableBuilder(
+    column: $table.uuid,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TargetsTableOrderingComposer get targetId {
+    final $$TargetsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.targetId,
+      referencedTable: $db.targets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TargetsTableOrderingComposer(
+            $db: $db,
+            $table: $db.targets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableOrderingComposer get accountId {
+    final $$AccountsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableOrderingComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TargetDepositsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TargetDepositsTable> {
+  $$TargetDepositsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get uuid =>
+      $composableBuilder(column: $table.uuid, builder: (column) => column);
+
+  GeneratedColumn<int> get amount =>
+      $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$TargetsTableAnnotationComposer get targetId {
+    final $$TargetsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.targetId,
+      referencedTable: $db.targets,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TargetsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.targets,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$AccountsTableAnnotationComposer get accountId {
+    final $$AccountsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.accountId,
+      referencedTable: $db.accounts,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AccountsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.accounts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TargetDepositsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TargetDepositsTable,
+          TargetDeposit,
+          $$TargetDepositsTableFilterComposer,
+          $$TargetDepositsTableOrderingComposer,
+          $$TargetDepositsTableAnnotationComposer,
+          $$TargetDepositsTableCreateCompanionBuilder,
+          $$TargetDepositsTableUpdateCompanionBuilder,
+          (TargetDeposit, $$TargetDepositsTableReferences),
+          TargetDeposit,
+          PrefetchHooks Function({bool targetId, bool accountId})
+        > {
+  $$TargetDepositsTableTableManager(
+    _$AppDatabase db,
+    $TargetDepositsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TargetDepositsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TargetDepositsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TargetDepositsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> uuid = const Value.absent(),
+                Value<int> targetId = const Value.absent(),
+                Value<int?> accountId = const Value.absent(),
+                Value<int> amount = const Value.absent(),
+                Value<DateTime> occurredAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => TargetDepositsCompanion(
+                id: id,
+                uuid: uuid,
+                targetId: targetId,
+                accountId: accountId,
+                amount: amount,
+                occurredAt: occurredAt,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String uuid,
+                required int targetId,
+                Value<int?> accountId = const Value.absent(),
+                required int amount,
+                required DateTime occurredAt,
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => TargetDepositsCompanion.insert(
+                id: id,
+                uuid: uuid,
+                targetId: targetId,
+                accountId: accountId,
+                amount: amount,
+                occurredAt: occurredAt,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TargetDepositsTable, TargetDeposit>(table),
+                  $$TargetDepositsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({targetId = false, accountId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (targetId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.targetId,
+                                referencedTable: $$TargetDepositsTableReferences
+                                    ._targetIdTable(db),
+                                referencedColumn:
+                                    $$TargetDepositsTableReferences
+                                        ._targetIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (accountId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.accountId,
+                                referencedTable: $$TargetDepositsTableReferences
+                                    ._accountIdTable(db),
+                                referencedColumn:
+                                    $$TargetDepositsTableReferences
+                                        ._accountIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TargetDepositsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TargetDepositsTable,
+      TargetDeposit,
+      $$TargetDepositsTableFilterComposer,
+      $$TargetDepositsTableOrderingComposer,
+      $$TargetDepositsTableAnnotationComposer,
+      $$TargetDepositsTableCreateCompanionBuilder,
+      $$TargetDepositsTableUpdateCompanionBuilder,
+      (TargetDeposit, $$TargetDepositsTableReferences),
+      TargetDeposit,
+      PrefetchHooks Function({bool targetId, bool accountId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6667,4 +8457,8 @@ class $AppDatabaseManager {
   $$BonsTableTableManager get bons => $$BonsTableTableManager(_db, _db.bons);
   $$UserRulesTableTableManager get userRules =>
       $$UserRulesTableTableManager(_db, _db.userRules);
+  $$TargetsTableTableManager get targets =>
+      $$TargetsTableTableManager(_db, _db.targets);
+  $$TargetDepositsTableTableManager get targetDeposits =>
+      $$TargetDepositsTableTableManager(_db, _db.targetDeposits);
 }

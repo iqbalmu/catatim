@@ -281,6 +281,102 @@ void main() {
 
     await db.close();
   });
+
+  test('migrasi v6→v7: target kosong, data lama utuh', () async {
+    // Naikkan skema secara manual ke v6 (bentuk terakhir sebelum target:
+    // budgets sudah ber-scope akun, accounts sudah punya saldo awal,
+    // plus tabel aturan capture).
+    final raw = sqlite3.open(dbFile.path);
+    raw.execute(
+      'ALTER TABLE transactions ADD COLUMN category_id INTEGER NULL '
+      'REFERENCES categories (id)',
+    );
+    raw.execute(
+      'ALTER TABLE transactions ADD COLUMN account_id INTEGER NULL '
+      'REFERENCES accounts (id)',
+    );
+    raw.execute('''
+      CREATE TABLE categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        color_index INTEGER NOT NULL
+      )
+    ''');
+    raw.execute('''
+      CREATE TABLE app_settings (
+        key TEXT NOT NULL PRIMARY KEY,
+        value_text TEXT NOT NULL
+      )
+    ''');
+    raw.execute('''
+      CREATE TABLE accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        kind TEXT NOT NULL,
+        color_index INTEGER NOT NULL,
+        opening_balance INTEGER NOT NULL DEFAULT (0),
+        created_at INTEGER NOT NULL
+      )
+    ''');
+    raw.execute('''
+      CREATE TABLE bons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT NOT NULL UNIQUE,
+        person TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        direction TEXT NOT NULL,
+        note TEXT NULL,
+        occurred_at INTEGER NOT NULL,
+        settled_at INTEGER NULL,
+        created_at INTEGER NOT NULL
+      )
+    ''');
+    raw.execute('''
+      CREATE TABLE user_rules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        package_name TEXT NULL,
+        match_text TEXT NULL,
+        amount_pattern TEXT NULL,
+        direction TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        account_id INTEGER NULL REFERENCES accounts (id),
+        enabled INTEGER NOT NULL DEFAULT (1),
+        created_at INTEGER NOT NULL
+      )
+    ''');
+    raw.execute('''
+      CREATE TABLE budgets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category_id INTEGER NOT NULL REFERENCES categories (id),
+        account_id INTEGER NULL REFERENCES accounts (id),
+        monthly_limit INTEGER NOT NULL,
+        UNIQUE (category_id, account_id)
+      )
+    ''');
+    raw.execute('PRAGMA user_version = 6');
+    raw.execute("INSERT INTO categories (name, color_index) VALUES ('Makanan', 0)");
+    raw.execute(
+      "INSERT INTO accounts (name, kind, color_index, created_at) "
+      "VALUES ('blu by BCA', 'bank', 0, 1790000000)",
+    );
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(dbFile));
+
+    // Data lama tetap terbaca.
+    final txs = await db.select(db.transactions).get();
+    expect(txs, hasLength(1));
+    expect(txs.first.uuid, 'legacy-1');
+
+    // Tabel target baru ada dan kosong.
+    final targets = await db.select(db.targets).get();
+    expect(targets, isEmpty);
+    final deposits = await db.select(db.targetDeposits).get();
+    expect(deposits, isEmpty);
+
+    await db.close();
+  });
 }
 
 LedgerRepository repo(AppDatabase db) => LedgerRepository(db);
