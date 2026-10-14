@@ -468,25 +468,43 @@ class QuestBottomNav extends StatelessWidget {
       top: false,
       child: Container(
         margin: const EdgeInsets.fromLTRB(Spacing.m, 0, Spacing.m, Spacing.m),
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: q.surface,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [
-            BoxShadow(
-              color: q.shadow,
-              offset: const Offset(0, 10),
-              blurRadius: 26,
-            ),
-          ],
-        ),
-        child: Row(
+        child: Stack(
+          clipBehavior: Clip.none,
           children: [
-            for (var i = 0; i < destinations.length; i++) ...[
-              if (centerAction != null && i == destinations.length ~/ 2)
-                _centerButton(context),
-              _navCell(context, i, destinations[i]),
-            ],
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: q.surface,
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: [
+                  BoxShadow(
+                    color: q.shadow,
+                    offset: const Offset(0, 10),
+                    blurRadius: 26,
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  for (var i = 0; i < destinations.length; i++) ...[
+                    // Slot kosong untuk tombol + yang melayang di atasnya.
+                    // Lebih lebar dari tombol (64) agar pill menu aktif
+                    // tak menempel ke tombol.
+                    if (centerAction != null &&
+                        i == destinations.length ~/ 2)
+                      const SizedBox(width: 74),
+                    _navCell(context, i, destinations[i]),
+                  ],
+                ],
+              ),
+            ),
+            if (centerAction != null)
+              Positioned(
+                top: -20,
+                left: 0,
+                right: 0,
+                child: Center(child: _centerButton(context)),
+              ),
           ],
         ),
       ),
@@ -497,72 +515,76 @@ class QuestBottomNav extends StatelessWidget {
     final q = context.q;
     final selected = i == index;
     return Expanded(
-      child: QuestPress(
-        onTap: () => onChanged(i),
-        child: AnimatedContainer(
-          duration: QuestMotion.fast,
-          curve: QuestMotion.easeOut,
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: selected ? q.surface2 : Colors.transparent,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Badge(
-                isLabelVisible: badges.contains(i),
-                backgroundColor: q.bad,
-                smallSize: 10,
-                child: Icon(
-                  dest.icon,
-                  size: 22,
-                  color: selected ? q.text : q.muted,
+      // Inset horizontal: pill aktif tak menyentuh tetangga/slot tombol +.
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 3),
+        child: QuestPress(
+          onTap: () => onChanged(i),
+          child: AnimatedContainer(
+            duration: QuestMotion.fast,
+            curve: QuestMotion.easeOut,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: selected ? q.surface2 : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Badge(
+                  isLabelVisible: badges.contains(i),
+                  backgroundColor: q.bad,
+                  smallSize: 10,
+                  child: Icon(
+                    dest.icon,
+                    size: 22,
+                    color: selected ? q.text : q.muted,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                dest.label,
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 10,
-                  color: selected ? q.text : q.muted,
+                const SizedBox(height: 2),
+                Text(
+                  dest.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 10,
+                    color: selected ? q.text : q.muted,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  /// Tombol + bundar di tengah nav — ikon saja, label jadi tooltip.
+  /// Tombol + bundar di tengah nav — menonjol 20px ke atas navbar
+  /// (Positioned di Stack induk). Ikon saja, label jadi tooltip.
   Widget _centerButton(BuildContext context) {
     final action = centerAction!;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: Tooltip(
-        message: action.tooltip,
-        child: QuestPress(
-          onTap: action.onTap,
-          child: Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
-              ),
-              borderRadius: BorderRadius.circular(999),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x73FFA726),
-                  offset: Offset(0, 6),
-                  blurRadius: 14,
-                ),
-              ],
+    return Tooltip(
+      message: action.tooltip,
+      child: QuestPress(
+        onTap: action.onTap,
+        child: Container(
+          width: 64,
+          height: 64,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
             ),
-            child: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
+            borderRadius: BorderRadius.circular(999),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x73FFA726),
+                offset: Offset(0, 6),
+                blurRadius: 14,
+              ),
+            ],
           ),
+          child: const Icon(Icons.add_rounded, color: Colors.white, size: 32),
         ),
       ),
     );
