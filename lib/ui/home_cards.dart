@@ -948,14 +948,18 @@ class _MiniSide extends StatelessWidget {
       children: [
         Text(label, style: context.qEyebrow()),
         const SizedBox(height: 2),
-        Text(
-          Money.format(amount),
-          style: context
-              .qTitle(19)
-              .copyWith(
-                color: incoming ? q.good : q.text,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            Money.format(amount),
+            style: context
+                .qTitle(19)
+                .copyWith(
+                  color: incoming ? q.good : q.text,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+          ),
         ),
         const SizedBox(height: 2),
         Text(

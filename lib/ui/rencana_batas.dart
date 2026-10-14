@@ -187,20 +187,13 @@ class _RencanaBatasState extends State<RencanaBatas> {
             ),
             QuestPress(
               onTap: _addCategoryFlow,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add_rounded, size: 16, color: context.q.honey),
-                  const SizedBox(width: 2),
-                  Text(
-                    'Tambah',
-                    style: TextStyle(
-                      color: context.q.honey,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
+              child: Text(
+                'Tambah',
+                style: TextStyle(
+                  color: context.q.honey,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                ),
               ),
             ),
           ],

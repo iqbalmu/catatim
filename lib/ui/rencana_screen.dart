@@ -39,7 +39,7 @@ class RencanaScreen extends StatefulWidget {
 
   /// Label FAB per segmen.
   static String fabLabelFor(RencanaSegment segment) => switch (segment) {
-    RencanaSegment.batas => '＋ Jenis',
+    RencanaSegment.batas => 'Jenis',
     RencanaSegment.target => 'Sisihkan',
   };
 

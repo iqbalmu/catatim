@@ -82,7 +82,7 @@ class _RencanaTargetState extends State<RencanaTarget> {
                 hint:
                     'Tetapkan tujuan menabung — dana darurat, gadget, '
                     'atau liburan — lalu sisihkan tiap bulan.',
-                actionLabel: '＋Target',
+                actionLabel: 'Target',
                 onAction: _addTargetFlow,
               )
             else
@@ -314,7 +314,7 @@ Future<_TargetDraft?> _askTarget(BuildContext context) {
   DateTime? deadline;
   return showQuestDialog<_TargetDraft>(
     context,
-    title: '＋Target',
+    title: 'Target',
     content: StatefulBuilder(
       builder: (context, setDialogState) => Column(
         mainAxisSize: MainAxisSize.min,
