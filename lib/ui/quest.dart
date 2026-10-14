@@ -328,12 +328,14 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
     required this.title,
     this.subtitle,
     this.showBack = false,
+    this.leading,
     this.actions = const [],
   });
 
   final String title;
   final String? subtitle;
   final bool showBack;
+  final Widget? leading;
   final List<Widget> actions;
 
   @override
@@ -359,6 +361,10 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
                 tooltip: 'Kembali',
                 onPressed: () => Navigator.maybePop(context),
               ),
+              const SizedBox(width: Spacing.s),
+            ],
+            if (leading != null) ...[
+              leading!,
               const SizedBox(width: Spacing.s),
             ],
             Expanded(

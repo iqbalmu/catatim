@@ -45,12 +45,9 @@ class HomeScreen extends StatefulWidget {
   final ProgressService progress;
 
   static const _destinations = [
-    QuestDestination(
-      icon: Icons.account_balance_wallet_rounded,
-      label: 'Beranda',
-    ),
-    QuestDestination(icon: Icons.receipt_long_rounded, label: 'Rekap'),
-    QuestDestination(icon: Icons.savings_rounded, label: 'Rencana'),
+    QuestDestination(icon: Icons.home_rounded, label: 'Beranda'),
+    QuestDestination(icon: Icons.bar_chart_rounded, label: 'Rekap'),
+    QuestDestination(icon: Icons.track_changes_rounded, label: 'Rencana'),
     QuestDestination(icon: Icons.handshake_outlined, label: 'Bon'),
   ];
 
@@ -69,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// tengah navbar.
   final _rencanaKey = GlobalKey<RencanaScreenState>();
 
-  /// Deep-link Beranda (LimitCard/strip) → Rencana·Batas.
+  /// Deep-link Beranda (BatasCard/strip) → Rencana·Batas.
   void _openRencanaBatas() => setState(() {
     _rencanaSegment = RencanaSegment.batas;
     _tab = 2;
@@ -128,8 +125,8 @@ class _HomeScreenState extends State<HomeScreen> {
               enabled: _tab == 0,
               child: _BerandaTab(
                 repository: widget.repository,
+                pipeline: widget.pipeline,
                 progress: widget.progress,
-                headerActions: _globalActions,
                 onOpenRekap: () => setState(() => _tab = 1),
                 onOpenRencanaBatas: _openRencanaBatas,
               ),
@@ -192,9 +189,268 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-/// Lonceng + ⋯ dipakai ulang di keempat tab. Future izin listener di-hoist
-/// ke [initState] agar tidak dibuat ulang tiap build (bebas loop rebuild).
-class _GlobalActions extends StatefulWidget {
+/// Mark logo Bukuduit: squircle madu dua rona.
+class _BukuduitMark extends StatelessWidget {
+  const _BukuduitMark();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: SeedColors.honey100,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: const BoxDecoration(
+                color: SeedColors.honeyDeep,
+                borderRadius: BorderRadius.only(
+                  topRight: Radius.circular(14),
+                  bottomLeft: Radius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 8,
+            bottom: 8,
+            child: Container(
+              width: 14,
+              height: 14,
+              decoration: const BoxDecoration(
+                color: SeedColors.honeyDeep,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(8),
+                  bottomRight: Radius.circular(8),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Pil streak: api + angka disiplin. Dipakai di header Beranda.
+class _StreakPill extends StatelessWidget {
+  const _StreakPill({required this.progress});
+
+  final ProgressService progress;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: progress,
+      builder: (context, _) {
+        final streak = progress.latest?.streakDays ?? 0;
+        final hasStreak = streak > 0;
+        return Container(
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: context.q.surface,
+            borderRadius: BorderRadius.circular(999),
+            boxShadow: [
+              BoxShadow(
+                color: context.q.shadow,
+                offset: const Offset(0, 4),
+                blurRadius: 12,
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.local_fire_department_rounded,
+                size: 15,
+                color: hasStreak ? SeedColors.honeyDeep : context.q.muted,
+              ),
+              const SizedBox(width: 3),
+              Text(
+                '$streak',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                  color: hasStreak ? context.q.text : context.q.muted,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Lonceng capture log. Future izin listener di-hoist ke [initState]
+/// agar tidak dibuat ulang tiap build (bebas loop rebuild).
+class _CaptureBell extends StatefulWidget {
+  const _CaptureBell({required this.repository, required this.pipeline});
+
+  final LedgerRepository repository;
+  final CapturePipeline pipeline;
+
+  @override
+  State<_CaptureBell> createState() => _CaptureBellState();
+}
+
+class _CaptureBellState extends State<_CaptureBell> {
+  late final Future<bool> _listenerEnabled = widget.pipeline.channel
+      .isListenerEnabled();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: _listenerEnabled,
+      builder: (context, snapshot) {
+        final enabled = snapshot.data ?? false;
+        return QuestIconButton(
+          icon: Icons.notifications_active_outlined,
+          tooltip: 'Capture log',
+          badge: !enabled,
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => CaptureLogScreen(
+                repository: widget.repository,
+                channel: widget.pipeline.channel,
+                engine: widget.pipeline.engine,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Menu ⋯: Kelola akun, Rencana·Batas, Backup, Aturan capture.
+class _HomeMenu extends StatelessWidget {
+  const _HomeMenu({
+    required this.repository,
+    required this.pipeline,
+    required this.progress,
+    required this.onOpenRencana,
+  });
+
+  final LedgerRepository repository;
+  final CapturePipeline pipeline;
+  final ProgressService progress;
+  final VoidCallback onOpenRencana;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      tooltip: 'Menu',
+      icon: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: context.q.surface,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: context.q.shadow,
+              offset: const Offset(0, 4),
+              blurRadius: 12,
+            ),
+          ],
+        ),
+        child: Icon(Icons.more_horiz_rounded, color: context.q.text),
+      ),
+      onSelected: (value) {
+        if (value == 'accounts') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  AccountManageScreen(repository: repository),
+            ),
+          );
+        } else if (value == 'budget') {
+          onOpenRencana();
+        } else if (value == 'backup') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => BackupScreen(repository: repository),
+            ),
+          );
+        } else if (value == 'rules') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => RulesScreen(
+                repository: repository,
+                engine: pipeline.engine,
+                progress: progress,
+              ),
+            ),
+          );
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: 'accounts',
+          child: Row(
+            children: [
+              Icon(
+                Icons.account_balance_wallet_rounded,
+                color: context.q.text,
+              ),
+              const SizedBox(width: Spacing.s),
+              const Text('Kelola akun'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'budget',
+          child: Row(
+            children: [
+              Icon(Icons.savings_rounded, color: context.q.text),
+              const SizedBox(width: Spacing.s),
+              const Text('Rencana · Batas'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'backup',
+          child: Row(
+            children: [
+              Icon(Icons.backup_outlined, color: context.q.text),
+              const SizedBox(width: Spacing.s),
+              const Text('Backup & pulihkan'),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: 'rules',
+          child: Row(
+            children: [
+              Icon(Icons.rule_rounded, color: context.q.text),
+              const SizedBox(width: Spacing.s),
+              const Text('Aturan capture'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Lonceng + ⋯ dipakai ulang di tab selain Beranda.
+class _GlobalActions extends StatelessWidget {
   const _GlobalActions({
     required this.repository,
     required this.pipeline,
@@ -208,134 +464,17 @@ class _GlobalActions extends StatefulWidget {
   final VoidCallback onOpenRencana;
 
   @override
-  State<_GlobalActions> createState() => _GlobalActionsState();
-}
-
-class _GlobalActionsState extends State<_GlobalActions> {
-  late final Future<bool> _listenerEnabled = widget.pipeline.channel
-      .isListenerEnabled();
-
-  @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        FutureBuilder<bool>(
-          future: _listenerEnabled,
-          builder: (context, snapshot) {
-            final enabled = snapshot.data ?? false;
-            return QuestIconButton(
-              icon: Icons.notifications_active_outlined,
-              tooltip: 'Capture log',
-              badge: !enabled,
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => CaptureLogScreen(
-                    repository: widget.repository,
-                    channel: widget.pipeline.channel,
-                    engine: widget.pipeline.engine,
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
+        _CaptureBell(repository: repository, pipeline: pipeline),
         const SizedBox(width: Spacing.s),
-        PopupMenuButton<String>(
-          tooltip: 'Menu',
-          icon: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: context.q.surface,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: context.q.shadow,
-                  offset: const Offset(0, 4),
-                  blurRadius: 12,
-                ),
-              ],
-            ),
-            child: Icon(Icons.more_horiz_rounded, color: context.q.text),
-          ),
-          onSelected: (value) {
-            if (value == 'accounts') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      AccountManageScreen(repository: widget.repository),
-                ),
-              );
-            } else if (value == 'budget') {
-              widget.onOpenRencana();
-            } else if (value == 'backup') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BackupScreen(repository: widget.repository),
-                ),
-              );
-            } else if (value == 'rules') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => RulesScreen(
-                    repository: widget.repository,
-                    engine: widget.pipeline.engine,
-                    progress: widget.progress,
-                  ),
-                ),
-              );
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: 'accounts',
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.account_balance_wallet_rounded,
-                    color: context.q.text,
-                  ),
-                  const SizedBox(width: Spacing.s),
-                  const Text('Kelola akun'),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'budget',
-              child: Row(
-                children: [
-                  Icon(Icons.savings_rounded, color: context.q.text),
-                  const SizedBox(width: Spacing.s),
-                  const Text('Rencana · Batas'),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'backup',
-              child: Row(
-                children: [
-                  Icon(Icons.backup_outlined, color: context.q.text),
-                  const SizedBox(width: Spacing.s),
-                  const Text('Backup & pulihkan'),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'rules',
-              child: Row(
-                children: [
-                  Icon(Icons.rule_rounded, color: context.q.text),
-                  const SizedBox(width: Spacing.s),
-                  const Text('Aturan capture'),
-                ],
-              ),
-            ),
-          ],
+        _HomeMenu(
+          repository: repository,
+          pipeline: pipeline,
+          progress: progress,
+          onOpenRencana: onOpenRencana,
         ),
       ],
     );
@@ -344,21 +483,21 @@ class _GlobalActionsState extends State<_GlobalActions> {
 
 String _todaySubtitle(DateTime now) => idFullDate(now);
 
-/// Beranda kilat: hero + strip peringatan + 3 kartu batas + mini
-/// keluar/masuk + baris saldo. Tanpa daftar transaksi — pencatatan via
-/// FAB "Catat transaksi", telaah di tab Rekap.
+/// Beranda ala mock pastel: hero saldo + kartu batas 3 kolom + dua kartu
+/// arus + disiplin bulan berjalan + transaksi terbaru. Warna tetap palet
+/// Quest; pencatatan via tombol + tengah navbar.
 class _BerandaTab extends StatefulWidget {
   const _BerandaTab({
     required this.repository,
+    required this.pipeline,
     required this.progress,
-    required this.headerActions,
     required this.onOpenRekap,
     required this.onOpenRencanaBatas,
   });
 
   final LedgerRepository repository;
+  final CapturePipeline pipeline;
   final ProgressService progress;
-  final List<Widget> headerActions;
   final VoidCallback onOpenRekap;
   final VoidCallback onOpenRencanaBatas;
 
@@ -411,51 +550,21 @@ class _BerandaTabState extends State<_BerandaTab> {
       appBar: QuestHeader(
         title: 'Bukuduit',
         subtitle: _todaySubtitle(DateTime.now()),
+        leading: const _BukuduitMark(),
         actions: [
-          ListenableBuilder(
-            listenable: widget.progress,
-            builder: (context, _) {
-              final streak = widget.progress.latest?.streakDays ?? 0;
-              final hasStreak = streak > 0;
-              return Container(
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: context.q.surface,
-                  borderRadius: BorderRadius.circular(999),
-                  boxShadow: [
-                    BoxShadow(
-                      color: context.q.shadow,
-                      offset: const Offset(0, 4),
-                      blurRadius: 12,
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.local_fire_department_rounded,
-                      size: 15,
-                      color: hasStreak ? SeedColors.honeyDeep : context.q.muted,
-                    ),
-                    const SizedBox(width: 3),
-                    Text(
-                      '$streak',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13,
-                        color: hasStreak ? context.q.text : context.q.muted,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
+          _CaptureBell(
+            repository: widget.repository,
+            pipeline: widget.pipeline,
           ),
           const SizedBox(width: Spacing.s),
-          ...widget.headerActions,
+          _StreakPill(progress: widget.progress),
+          const SizedBox(width: Spacing.s),
+          _HomeMenu(
+            repository: widget.repository,
+            pipeline: widget.pipeline,
+            progress: widget.progress,
+            onOpenRencana: widget.onOpenRencanaBatas,
+          ),
         ],
       ),
       // Tombol + tinggal di tengah navbar (dinamis per tab) — tanpa FAB
@@ -468,10 +577,16 @@ class _BerandaTabState extends State<_BerandaTab> {
           Spacing.m + MediaQuery.paddingOf(context).bottom,
         ),
         children: [
-          GameHeroCard(service: widget.progress),
-          AlertStrip(
+          GameHeroCard(
             service: widget.progress,
-            onOpenBatas: widget.onOpenRencanaBatas,
+            repository: widget.repository,
+            onTapAccounts: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    AccountManageScreen(repository: widget.repository),
+              ),
+            ),
           ),
           const SizedBox(height: Spacing.m),
           ListenableBuilder(
@@ -485,41 +600,30 @@ class _BerandaTabState extends State<_BerandaTab> {
               final monthly = lines != null && lines.length > 2
                   ? lines[2]
                   : null;
-              final onOpenBatas = widget.onOpenRencanaBatas;
 
-              return Column(
-                children: [
-                  LimitCard(
-                    label: 'HARIAN',
-                    limit: daily?.limit,
-                    used: daily?.used ?? 0,
-                    safe: (daily?.limit ?? 0) - (daily?.used ?? 0),
-                    onTap: onOpenBatas,
-                  ),
-                  const SizedBox(height: Spacing.s),
-                  LimitCard(
-                    label: 'MINGGUAN',
-                    limit: weekly?.limit,
-                    used: weekly?.used ?? 0,
-                    safe: (weekly?.limit ?? 0) - (weekly?.used ?? 0),
-                    onTap: onOpenBatas,
-                  ),
-                  const SizedBox(height: Spacing.s),
-                  LimitCard(
-                    label: 'BULANAN',
-                    limit: monthly?.limit,
-                    used: monthly?.used ?? 0,
-                    safe: (monthly?.limit ?? 0) - (monthly?.used ?? 0),
-                    onTap: onOpenBatas,
-                  ),
-                ],
+              return BatasCard(
+                dailyLimit: daily?.limit,
+                dailyUsed: daily?.used ?? 0,
+                weeklyLimit: weekly?.limit,
+                weeklyUsed: weekly?.used ?? 0,
+                monthlyLimit: monthly?.limit,
+                monthlyUsed: monthly?.used ?? 0,
+                onTap: widget.onOpenRencanaBatas,
               );
             },
           ),
           const SizedBox(height: Spacing.m),
           MiniInOut(service: widget.progress, onTap: widget.onOpenRekap),
           const SizedBox(height: Spacing.m),
-          SaldoRow(repository: widget.repository),
+          DisiplinCard(service: widget.progress),
+          const SizedBox(height: Spacing.m),
+          TransaksiTerbaruCard(
+            repository: widget.repository,
+            progress: widget.progress,
+            onSeeAll: widget.onOpenRekap,
+          ),
+          // Clearance navbar melayang di atas konten (extendBody).
+          const SizedBox(height: 96),
         ],
       ),
     );

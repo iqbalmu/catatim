@@ -10,6 +10,28 @@ import '../storage/repository.dart';
 /// Streak disiplin yang layak dirayakan.
 const Set<int> kStreakMilestones = {3, 7, 14, 21, 30, 60, 100};
 
+/// Disiplin satu hari: pakai harian vs jatah harian saat itu.
+class DailyDiscipline {
+  const DailyDiscipline({
+    required this.day,
+    required this.used,
+    required this.within,
+    this.future = false,
+  });
+
+  /// Tengah malam lokal hari tersebut.
+  final DateTime day;
+
+  /// Belanja murni + sisihan hari itu.
+  final int used;
+
+  /// True bila [used] tidak melewati jatah harian.
+  final bool within;
+
+  /// True untuk tanggal depan bulan berjalan (belum terjadi).
+  final bool future;
+}
+
 /// Ringkasan kondisi yang tampil di hero card.
 class ProgressSummary {
   const ProgressSummary({
@@ -23,6 +45,7 @@ class ProgressSummary {
     required this.monthOut,
     required this.dailyPace,
     required this.activeDays,
+    required this.disciplineMonth,
   });
 
   final int streakDays;
@@ -44,6 +67,10 @@ class ProgressSummary {
   /// Hari-hari (tengah malam lokal) 30 hari terakhir yang punya ≥1
   /// transaksi — bahan strip Jejak Duit.
   final Set<DateTime> activeDays;
+
+  /// Disiplin bulan berjalan (tanggal 1 → hari ini); kosong bila tanpa
+  /// batas (streak dijeda).
+  final List<DailyDiscipline> disciplineMonth;
 }
 
 /// Otak di balik Duit: menerjemahkan kondisi anggaran + tren bulanan
@@ -147,9 +174,10 @@ class ProgressService extends ChangeNotifier {
       monthlyTotal: monthTotalLimit,
     );
     streakPaused = bar == null;
+    final spendByDay = await _repo.outSpendByDaySince(streakSince);
+    final targetByDay = await _repo.outTargetByDaySince(streakSince);
+    final disciplineMonth = <DailyDiscipline>[];
     if (!streakPaused) {
-      final spendByDay = await _repo.outSpendByDaySince(streakSince);
-      final targetByDay = await _repo.outTargetByDaySince(streakSince);
       DateTime? firstDay;
       for (final day in counts.keys) {
         if (firstDay == null || day.isBefore(firstDay)) firstDay = day;
@@ -167,6 +195,19 @@ class ProgressService extends ChangeNotifier {
           streak++;
           cursor = cursor.subtract(const Duration(days: 1));
         }
+      }
+    }
+    if (!streakPaused) {
+      for (var day = monthStart;
+          day.isBefore(monthEnd);
+          day = day.add(const Duration(days: 1))) {
+        final future = day.isAfter(today);
+        final used =
+            future ? 0 : (spendByDay[day] ?? 0) + (targetByDay[day] ?? 0);
+        disciplineMonth.add(
+          DailyDiscipline(
+              day: day, used: used, within: used <= bar, future: future),
+        );
       }
     }
 
@@ -233,6 +274,7 @@ class ProgressService extends ChangeNotifier {
       monthOut: monthOut,
       dailyPace: pace,
       activeDays: activeDays,
+      disciplineMonth: disciplineMonth,
     );
     notifyListeners();
   }
