@@ -58,19 +58,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _tab = 0;
 
-  /// Segmen Rencana yang sedang aktif — dimiliki shell agar deep-link
-  /// Beranda → Rencana·Batas selalu sinkron via [RencanaScreen].
-  RencanaSegment _rencanaSegment = RencanaSegment.batas;
-
-  /// Kunci layar Rencana untuk memicu alur FAB segmen dari tombol +
-  /// tengah navbar.
+  /// Kunci layar Rencana untuk memicu aksi tombol + tengah navbar.
   final _rencanaKey = GlobalKey<RencanaScreenState>();
 
   /// Deep-link Beranda (BatasCard/strip) → Rencana·Batas.
-  void _openRencanaBatas() => setState(() {
-    _rencanaSegment = RencanaSegment.batas;
-    _tab = 2;
-  });
+  void _openRencanaBatas() => setState(() => _tab = 2);
 
   /// Aksi tombol + tengah navbar — dinamis per tab/segmen.
   void _primaryAction() {
@@ -144,9 +136,6 @@ class _HomeScreenState extends State<HomeScreen> {
               child: RencanaScreen(
                 key: _rencanaKey,
                 repository: widget.repository,
-                progress: widget.progress,
-                initialSegment: _rencanaSegment,
-                onSegmentChanged: (s) => _rencanaSegment = s,
                 headerActions: _globalActions,
               ),
             ),
@@ -172,13 +161,11 @@ class _HomeScreenState extends State<HomeScreen> {
               destinations: HomeScreen._destinations,
               badges: hasOld ? const {3} : const <int>{},
               centerAction: (
-                tooltip: _tab == 2 && _rencanaSegment == RencanaSegment.target
-                    ? 'Sisihkan'
-                    : _tab == 2
-                        ? 'Jenis'
-                        : _tab == 3
-                            ? 'Catat bon'
-                            : 'Catat transaksi',
+                tooltip: _tab == 2
+                    ? 'Jenis'
+                    : _tab == 3
+                        ? 'Catat bon'
+                        : 'Catat transaksi',
                 onTap: _primaryAction,
               ),
             );

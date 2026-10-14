@@ -282,10 +282,10 @@ void main() {
     await db.close();
   });
 
-  test('migrasi v6→v7: target kosong, data lama utuh', () async {
-    // Naikkan skema secara manual ke v6 (bentuk terakhir sebelum target:
-    // budgets sudah ber-scope akun, accounts sudah punya saldo awal,
-    // plus tabel aturan capture).
+  test('migrasi v7→v8: tabel target dibuang, data lama utuh', () async {
+    // Naikkan skema secara manual ke v7 (bentuk terakhir dengan fitur
+    // Target): skema v6 plus tabel targets & target_deposits berisi satu
+    // pos.
     final raw = sqlite3.open(dbFile.path);
     raw.execute(
       'ALTER TABLE transactions ADD COLUMN category_id INTEGER NULL '
@@ -354,11 +354,37 @@ void main() {
         UNIQUE (category_id, account_id)
       )
     ''');
+    raw.execute('''
+      CREATE TABLE targets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL UNIQUE,
+        goal_amount INTEGER NOT NULL,
+        deadline INTEGER NULL,
+        archived_at INTEGER NULL,
+        created_at INTEGER NOT NULL
+      )
+    ''');
+    raw.execute('''
+      CREATE TABLE target_deposits (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT NOT NULL UNIQUE,
+        target_id INTEGER NOT NULL REFERENCES targets (id) ON DELETE CASCADE,
+        account_id INTEGER NULL REFERENCES accounts (id),
+        amount INTEGER NOT NULL CHECK (amount > 0),
+        occurred_at INTEGER NOT NULL,
+        created_at INTEGER NOT NULL
+      )
+    ''');
     raw.execute('PRAGMA user_version = 6');
     raw.execute("INSERT INTO categories (name, color_index) VALUES ('Makanan', 0)");
     raw.execute(
       "INSERT INTO accounts (name, kind, color_index, created_at) "
       "VALUES ('blu by BCA', 'bank', 0, 1790000000)",
+    );
+    raw.execute(
+      "INSERT INTO targets (uuid, name, goal_amount, created_at) "
+      "VALUES ('tgt-1', 'Dana Darurat', 1000000, 1790000000)",
     );
     raw.close();
 
@@ -369,11 +395,15 @@ void main() {
     expect(txs, hasLength(1));
     expect(txs.first.uuid, 'legacy-1');
 
-    // Tabel target baru ada dan kosong.
-    final targets = await db.select(db.targets).get();
-    expect(targets, isEmpty);
-    final deposits = await db.select(db.targetDeposits).get();
-    expect(deposits, isEmpty);
+    // Tabel target dibuang migrasi v8; riwayat setoran tetap ada sebagai
+    // transaksi transfer biasa.
+    final leftovers = await db
+        .customSelect(
+          "SELECT name FROM sqlite_master WHERE type = 'table' "
+          "AND name IN ('targets', 'target_deposits')",
+        )
+        .get();
+    expect(leftovers, isEmpty);
 
     await db.close();
   });

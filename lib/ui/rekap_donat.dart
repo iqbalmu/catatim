@@ -14,7 +14,7 @@ import 'quest.dart';
 
 /// Segmen Donat pada layar Rekap: headline keluar/masuk + donut kategori
 /// sesuai periode [filter]. Statistik keluar MURNI (keputusan A): transfer
-/// biasa & Sisihkan tidak masuk headline maupun donut. Tap kategori →
+/// biasa tidak masuk headline maupun donat. Tap kategori →
 /// [onCategoryTap] dengan filter hasil [RekapFilter.applyDonatTap]
 /// (shell yang memindah segmen ke Transaksi).
 class RekapDonat extends StatelessWidget {
@@ -166,7 +166,7 @@ class _PeriodHeadlines extends StatelessWidget {
     final prevEnd = winStart;
     return Column(
       children: [
-        // KELUAR MURNI: sumSpendBetween (transfer biasa & Sisihkan
+        // KELUAR MURNI: sumSpendBetween (transfer biasa
         // dikecualikan) — keputusan A, bukan sumBetween.
         _HeadlineFuture(
           repository: repository,
@@ -250,8 +250,8 @@ class _Bucket {
   const _Bucket(this.label, this.categoryId, this.amount, this.color);
 }
 
-/// Donut kategori pengeluaran: keluar MURNI (kind transfer — transfer
-/// antar-akun & Sisihkan — tidak dihitung). Tap baris legend/slice →
+/// Donut kategori pengeluaran: keluar MURNI (kind transfer tidak
+/// dihitung). Tap baris legend/slice →
 /// [onTap] dengan id kategori (Tanpa kategori tidak bisa deep-link).
 class _CategoryDonutCard extends StatelessWidget {
   const _CategoryDonutCard({required this.rows, required this.onTap});

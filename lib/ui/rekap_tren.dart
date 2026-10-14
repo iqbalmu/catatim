@@ -12,7 +12,7 @@ import 'quest.dart';
 
 /// Segmen Tren pada layar Rekap: batang masuk/keluar per minggu/bulan
 /// sesuai periode [filter]. Batang keluar MURNI (keputusan A): transfer
-/// biasa & Sisihkan tidak dihitung.
+/// biasa tidak dihitung.
 class RekapTren extends StatelessWidget {
   const RekapTren({super.key, required this.repository, required this.filter});
 

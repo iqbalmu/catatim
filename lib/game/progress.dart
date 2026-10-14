@@ -118,28 +118,17 @@ class ProgressService extends ChangeNotifier {
 
     // Hari disiplin: berjalan mundur dari hari ini (atau kemarin, bila
     // hari ini belum dicatat — hari yang belum berjalan bukan putus).
-    // Hari lolos bila (belanja murni + sisihan) ≤ jatah harian; Rp0
-    // lolos; over berhenti; transfer biasa tidak dihitung; berhenti di
-    // tanggal transaksi pertama (hari kosong sebelumnya bukan streak).
+    // Hari lolos bila belanja murni ≤ jatah harian; Rp0 lolos; over
+    // berhenti; transfer biasa tidak dihitung; berhenti di tanggal
+    // transaksi pertama (hari kosong sebelumnya bukan streak).
     var streak = 0;
     var streakPaused = false;
 
-    // Keluar efektif (pace + garis global): belanja murni + Sisihkan.
-    // Statistik (monthOut/monthIn, tren, hasData) tetap belanja murni;
-    // transfer biasa tidak masuk ke mana pun (opsi A).
-    final daySpend = await _repo.sumSpendBetween(today, dayEnd);
-    final dayTarget = await _repo.sumTargetTransferBetween(today, dayEnd);
-    final dayOut = spendPlusTarget(spend: daySpend, targetTransfer: dayTarget);
-    final weekSpend = await _repo.sumSpendBetween(weekStart, dayEnd);
-    final weekTarget = await _repo.sumTargetTransferBetween(weekStart, dayEnd);
-    final weekOut =
-        spendPlusTarget(spend: weekSpend, targetTransfer: weekTarget);
-    final monthSpend = await _repo.sumSpendBetween(monthStart, monthEnd);
-    final monthTarget =
-        await _repo.sumTargetTransferBetween(monthStart, monthEnd);
-    final monthEff =
-        spendPlusTarget(spend: monthSpend, targetTransfer: monthTarget);
-    final monthOut = monthSpend;
+    // Keluar (pace + garis global) = belanja murni; transfer biasa tidak
+    // masuk ke mana pun (opsi A).
+    final dayOut = await _repo.sumSpendBetween(today, dayEnd);
+    final weekOut = await _repo.sumSpendBetween(weekStart, dayEnd);
+    final monthOut = await _repo.sumSpendBetween(monthStart, monthEnd);
     final monthIn = await _repo.sumBetween(
       monthStart,
       monthEnd,
@@ -175,7 +164,6 @@ class ProgressService extends ChangeNotifier {
     );
     streakPaused = bar == null;
     final spendByDay = await _repo.outSpendByDaySince(streakSince);
-    final targetByDay = await _repo.outTargetByDaySince(streakSince);
     final disciplineMonth = <DailyDiscipline>[];
     if (!streakPaused) {
       DateTime? firstDay;
@@ -190,7 +178,7 @@ class ProgressService extends ChangeNotifier {
             : today.subtract(const Duration(days: 1));
         while (!cursor.isBefore(streakSince)) {
           if (cursor.isBefore(firstDay)) break;
-          final used = (spendByDay[cursor] ?? 0) + (targetByDay[cursor] ?? 0);
+          final used = spendByDay[cursor] ?? 0;
           if (used > bar) break;
           streak++;
           cursor = cursor.subtract(const Duration(days: 1));
@@ -202,8 +190,7 @@ class ProgressService extends ChangeNotifier {
           day.isBefore(monthEnd);
           day = day.add(const Duration(days: 1))) {
         final future = day.isAfter(today);
-        final used =
-            future ? 0 : (spendByDay[day] ?? 0) + (targetByDay[day] ?? 0);
+        final used = future ? 0 : (spendByDay[day] ?? 0);
         disciplineMonth.add(
           DailyDiscipline(
               day: day, used: used, within: used <= bar, future: future),
@@ -225,7 +212,7 @@ class ProgressService extends ChangeNotifier {
       LimitLine(label: 'Batas mingguan', used: weekOut, limit: weekLimit),
       LimitLine(
         label: 'Total bulan ini',
-        used: monthEff,
+        used: monthOut,
         limit: monthTotalLimit,
       ),
       for (final b in budgets)
@@ -258,7 +245,7 @@ class ProgressService extends ChangeNotifier {
       now: now,
       dayOut: dayOut,
       weekOut: weekOut,
-      monthOut: monthEff,
+      monthOut: monthOut,
       dailyLimit: dailyLimit,
       weeklyLimit: weekLimit,
       monthlyTotal: monthTotalLimit,

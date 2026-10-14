@@ -27,11 +27,9 @@ tab.
   **Donat** (kategori interaktif, statistik keluar murni — transfer
   tidak dihitung), **Tren** (mingguan/bulanan), dan **Kalender**
   (aktivitas per hari, rentang bebas).
-- **Rencana** (2 segmen): **Batas** — batas harian/mingguan/bulanan +
+- **Rencana**: **Batas** — batas harian/mingguan/bulanan +
   alokasi per jenis anggaran, bisa di-scope ke akun tertentu (mis.
-  "Makanan @ e-wallet"), progres vs bulan lalu; **Target** — pos
-  menabung + tindakan **Sisihkan** yang langsung menggerakkan hero
-  Beranda.
+  "Makanan @ e-wallet"), progres vs bulan lalu.
 
 - **Bukuduit Quest**: maskot Duit mencerminkan kondisi batas — khawatir
   saat terlampaui, tenang saat aman. **Streak disiplin** menghitung

@@ -86,31 +86,6 @@ class Bons extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
-/// Pos tabungan berprogres (target menabung) — bukan kategori, bukan akun.
-class Targets extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get uuid => text().unique()();
-  TextColumn get name => text().unique()();
-  IntColumn get goalAmount => integer()();
-  DateTimeColumn get deadline => dateTime().nullable()();
-  DateTimeColumn get archivedAt => dateTime().nullable()();
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
-}
-
-/// Setoran ke pos target (sisihkan) — bukan transaksi keluar.
-class TargetDeposits extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get uuid => text().unique()();
-  IntColumn get targetId =>
-      integer().references(Targets, #id, onDelete: KeyAction.cascade)();
-  IntColumn get accountId =>
-      integer().nullable().references(Accounts, #id)();
-  IntColumn get amount =>
-      integer().customConstraint('NOT NULL CHECK (amount > 0)')();
-  DateTimeColumn get occurredAt => dateTime()();
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
-}
-
 /// Log notifikasi mentah untuk audit & penyetelan template parser.
 class CaptureLogs extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -154,15 +129,13 @@ class UserRules extends Table {
     Budgets,
     Bons,
     UserRules,
-    Targets,
-    TargetDeposits,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -204,9 +177,11 @@ class AppDatabase extends _$AppDatabase {
               await m.addColumn(accounts, accounts.openingBalance);
             }
           }
-          if (from < 7) {
-            await m.createTable(targets);
-            await m.createTable(targetDeposits);
+          if (from < 8) {
+            // Fitur Target/Sisihkan dipensiunkan: tabel pos dibuang. Riwayat
+            // setoran tetap ada sebagai transaksi transfer (bankId 'target').
+            await customStatement('DROP TABLE IF EXISTS target_deposits');
+            await customStatement('DROP TABLE IF EXISTS targets');
           }
         },
     beforeOpen: (details) async {
@@ -220,8 +195,6 @@ class AppDatabase extends _$AppDatabase {
       await m.createTable(bons);
       await m.createTable(userRules);
       await m.createTable(budgets);
-      await m.createTable(targets);
-      await m.createTable(targetDeposits);
       // Seed kategori bawaan sekali — berlaku untuk DB baru maupun hasil
       // upgrade.
       final existing = await select(categories).get();

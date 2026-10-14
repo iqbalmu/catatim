@@ -121,26 +121,13 @@ class _RekapKalenderState extends State<RekapKalender> {
     );
   }
 
-  /// Keluaran EFEKTIF per hari (ruling 5): belanja murni
-  /// (outSpendByDaySince) + sisihan target (outTargetByDaySince);
-  /// transfer biasa tak terlihat. Reaktivitas memakai
-  /// watchOutSumByDaySince sebagai pemicu (query tunggal tak ber-stream).
+  /// Keluaran per hari = belanja murni (transfer biasa tak terlihat).
+  /// Reaktivitas memakai watchOutSumByDaySince sebagai pemicu (query
+  /// tunggal tak ber-stream).
   Stream<Map<DateTime, int>> _effectiveOutByDay(DateTime since) {
     return widget.repository
         .watchOutSumByDaySince(since)
-        .asyncMap((_) async {
-          final spend = await widget.repository.outSpendByDaySince(since);
-          final target = await widget.repository.outTargetByDaySince(since);
-          return mergeSum(spend, target);
-        });
-  }
-
-  /// Gabung dua peta nominal per hari (jumlahkan kunci sama).
-  static Map<DateTime, int> mergeSum(
-    Map<DateTime, int> a,
-    Map<DateTime, int> b,
-  ) {
-    return {...a, ...b.map((k, v) => MapEntry(k, (a[k] ?? 0) + v))};
+        .asyncMap((_) => widget.repository.outSpendByDaySince(since));
   }
 }
 

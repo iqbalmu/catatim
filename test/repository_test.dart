@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bukuduit/models.dart';
 import 'package:bukuduit/storage/database.dart';
 import 'package:bukuduit/storage/repository.dart';
-import 'package:bukuduit/ui/transaction_sheet.dart';
 
 void main() {
   late AppDatabase db;
@@ -394,87 +393,7 @@ void main() {
     });
   });
 
-  group('target & sisihkan', () {
-    Future<void> depositSisihkan({
-      required int targetId,
-      required int accountId,
-      required int amount,
-      DateTime? occurredAt,
-    }) => repo.depositToTarget(
-      targetId: targetId,
-      accountId: accountId,
-      amount: amount,
-      occurredAt: occurredAt,
-    );
-
-    test('sisihkan tercatat sebagai transfer, bukan keluar', () async {
-      final accounts = await repo.getAccounts();
-      final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
-      await repo.setOpeningBalance(blu.id, 1000000);
-      final target = await repo.addTarget(
-        name: 'Dana Darurat',
-        goalAmount: 1000000,
-      );
-      await depositSisihkan(
-        targetId: target.id,
-        accountId: blu.id,
-        amount: 200000,
-        occurredAt: DateTime(2026, 10, 10, 9),
-      );
-
-      final balances = await repo.watchAccountBalances().first;
-      expect(balances[blu.id], 800000);
-      expect(await repo.targetDeposited(target.id), 200000);
-
-      final watched = await repo.watchTargets().first;
-      expect(watched, hasLength(1));
-      expect(watched.single.target.id, target.id);
-      expect(watched.single.deposited, 200000);
-      expect(watched.single.progress, 200000 / 1000000);
-
-      final txs = await db.select(db.transactions).get();
-      expect(txs, hasLength(1));
-      expect(txs.single.kind, TxKind.transfer);
-      expect(txs.single.bankId, 'target');
-      expect(txs.single.direction, Direction.outgoing);
-
-      final day = DateTime(2026, 10, 10);
-      final next = day.add(const Duration(days: 1));
-      expect(await repo.sumSpendBetween(day, next), 0);
-      expect(await repo.sumTargetTransferBetween(day, next), 200000);
-    });
-
-    test('baris sisihkan dikenali isSisihkanRow, baris biasa tidak', () async {
-      final accounts = await repo.getAccounts();
-      final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
-      await repo.setOpeningBalance(blu.id, 1000000);
-      final target = await repo.addTarget(
-        name: 'Dana Darurat',
-        goalAmount: 1000000,
-      );
-      await depositSisihkan(
-        targetId: target.id,
-        accountId: blu.id,
-        amount: 200000,
-        occurredAt: DateTime(2026, 10, 10, 9),
-      );
-      await repo.addManual(
-        amount: 15000,
-        direction: Direction.outgoing,
-        kind: TxKind.payment,
-        occurredAt: DateTime(2026, 10, 10, 10),
-      );
-
-      final txs = await db.select(db.transactions).get();
-      expect(txs, hasLength(2));
-      final sisihkan = txs.singleWhere((t) => t.bankId == 'target');
-      final payment = txs.singleWhere((t) => t.kind == TxKind.payment);
-      // Guard TransactionSheet: hanya baris Sisihkan yang ditolak
-      // edit/hapus (mode lihat-saja).
-      expect(isSisihkanRow(sisihkan), isTrue);
-      expect(isSisihkanRow(payment), isFalse);
-    });
-
+  group('belanja murni', () {
     test('transfer biasa bukan belanja', () async {
       await repo.recordFromCapture(
         raw: capture(postedAt: DateTime(2026, 10, 10, 9)),
@@ -490,7 +409,6 @@ void main() {
       final day = DateTime(2026, 10, 10);
       final next = day.add(const Duration(days: 1));
       expect(await repo.sumSpendBetween(day, next), 0);
-      expect(await repo.sumTargetTransferBetween(day, next), 0);
 
       await repo.addManual(
         amount: 40000,
@@ -499,95 +417,6 @@ void main() {
         occurredAt: DateTime(2026, 10, 10, 10),
       );
       expect(await repo.sumSpendBetween(day, next), 40000);
-
-      final accounts = await repo.getAccounts();
-      final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
-      final target = await repo.addTarget(name: 'Liburan', goalAmount: 500000);
-      await depositSisihkan(
-        targetId: target.id,
-        accountId: blu.id,
-        amount: 20000,
-        occurredAt: DateTime(2026, 10, 10, 11),
-      );
-      expect(await repo.sumSpendBetween(day, next), 40000);
-      expect(await repo.sumTargetTransferBetween(day, next), 20000);
-    });
-
-    test('deposit ≤0 ditolak', () async {
-      final accounts = await repo.getAccounts();
-      final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
-      final target = await repo.addTarget(name: 'HP', goalAmount: 3000000);
-      expect(
-        () =>
-            depositSisihkan(targetId: target.id, accountId: blu.id, amount: 0),
-        throwsArgumentError,
-      );
-      expect(
-        () => depositSisihkan(
-          targetId: target.id,
-          accountId: blu.id,
-          amount: -1000,
-        ),
-        throwsArgumentError,
-      );
-      expect(await repo.targetDeposited(target.id), 0);
-    });
-
-    test('deposit ke target yang sudah dihapus ditolak', () async {
-      final accounts = await repo.getAccounts();
-      final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
-      final target = await repo.addTarget(
-        name: 'Sementara',
-        goalAmount: 100000,
-      );
-      await repo.deleteTarget(target.id);
-      expect(
-        () => depositSisihkan(
-          targetId: target.id,
-          accountId: blu.id,
-          amount: 10000,
-        ),
-        throwsArgumentError,
-      );
-    });
-
-    test('nama duplikat ditolak', () async {
-      await repo.addTarget(name: 'Dana Darurat', goalAmount: 1000000);
-      expect(
-        () => repo.addTarget(name: 'Dana Darurat', goalAmount: 500000),
-        throwsException,
-      );
-      final other = await repo.addTarget(name: 'Liburan', goalAmount: 500000);
-      expect(
-        () => repo.renameTarget(other.id, 'Dana Darurat'),
-        throwsException,
-      );
-
-      await repo.renameTarget(other.id, '  Jalan-Jalan  ');
-      final watched = await repo.watchTargets().first;
-      expect(
-        watched.firstWhere((t) => t.target.id == other.id).target.name,
-        'Jalan-Jalan',
-      );
-    });
-
-    test('hapus target: deposit hilang, transaksi tetap', () async {
-      final accounts = await repo.getAccounts();
-      final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
-      final target = await repo.addTarget(name: 'Motor', goalAmount: 10000000);
-      await depositSisihkan(
-        targetId: target.id,
-        accountId: blu.id,
-        amount: 500000,
-      );
-
-      await repo.deleteTarget(target.id);
-
-      expect(await db.select(db.targetDeposits).get(), isEmpty);
-      expect(await repo.watchTargets().first, isEmpty);
-      final txs = await db.select(db.transactions).get();
-      expect(txs, hasLength(1));
-      expect(txs.single.bankId, 'target');
     });
 
     test('outSpendPairsBetween hanya belanja murni', () async {
@@ -618,60 +447,32 @@ void main() {
       expect(pairs[(category: makanan.id, account: blu.id)], 100000);
     });
 
-    group('rekap harian sisihan (Ruling 1)', () {
-      test('outSpendByDaySince: kunci tengah-malam lokal, inklusif', () async {
-        final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
-        final yesterday = today.subtract(const Duration(days: 1));
-        await repo.addManual(
-          amount: 5000,
-          direction: Direction.outgoing,
-          kind: TxKind.payment,
-          occurredAt: today.add(const Duration(hours: 9)),
-        );
-        await repo.addManual(
-          amount: 7000,
-          direction: Direction.outgoing,
-          kind: TxKind.payment,
-          occurredAt: yesterday.add(const Duration(hours: 10)),
-        );
-        await repo.addManual(
-          amount: 9000,
-          direction: Direction.outgoing,
-          kind: TxKind.transfer,
-          occurredAt: today.add(const Duration(hours: 11)),
-        );
-        final map = await repo.outSpendByDaySince(yesterday);
-        expect(map[today], 5000);
-        expect(map[yesterday], 7000);
-        expect(map, hasLength(2));
-      });
-
-      test('outTargetByDaySince: hanya sisihan bankId target', () async {
-        final accounts = await repo.getAccounts();
-        final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
-        final target = await repo.addTarget(
-          name: 'Umroh',
-          goalAmount: 30000000,
-        );
-        final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
-        await depositSisihkan(
-          targetId: target.id,
-          accountId: blu.id,
-          amount: 20000,
-          occurredAt: today.add(const Duration(hours: 9)),
-        );
-        await repo.addManual(
-          amount: 5000000,
-          direction: Direction.outgoing,
-          kind: TxKind.transfer,
-          occurredAt: today.add(const Duration(hours: 10)),
-        );
-        final map = await repo.outTargetByDaySince(today);
-        expect(map[today], 20000);
-        expect(map, hasLength(1));
-      });
+    test('outSpendByDaySince: kunci tengah-malam lokal, inklusif', () async {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final yesterday = today.subtract(const Duration(days: 1));
+      await repo.addManual(
+        amount: 5000,
+        direction: Direction.outgoing,
+        kind: TxKind.payment,
+        occurredAt: today.add(const Duration(hours: 9)),
+      );
+      await repo.addManual(
+        amount: 7000,
+        direction: Direction.outgoing,
+        kind: TxKind.payment,
+        occurredAt: yesterday.add(const Duration(hours: 10)),
+      );
+      await repo.addManual(
+        amount: 9000,
+        direction: Direction.outgoing,
+        kind: TxKind.transfer,
+        occurredAt: today.add(const Duration(hours: 11)),
+      );
+      final map = await repo.outSpendByDaySince(yesterday);
+      expect(map[today], 5000);
+      expect(map[yesterday], 7000);
+      expect(map, hasLength(2));
     });
   });
 }

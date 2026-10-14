@@ -314,15 +314,6 @@ void main() {
     });
   });
 
-  group('keluar efektif', () {
-    test('belanja + sisihan dijumlah tanpa floor', () {
-      expect(spendPlusTarget(spend: 40000, targetTransfer: 20000), 60000);
-    });
-
-    test('nol + nol = nol', () {
-      expect(spendPlusTarget(spend: 0, targetTransfer: 0), 0);
-    });
-  });
   group('deltaLabel', () {
     test('naik 12 persen', () {
       expect(deltaLabel(1120000, 1000000), '▲ 12%');

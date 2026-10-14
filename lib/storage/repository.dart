@@ -13,18 +13,6 @@ class TxWithCategory {
   final Category? category;
 }
 
-/// Pos target + total setorannya (progres = [deposited]/goal).
-class TargetWithProgress {
-  const TargetWithProgress({required this.target, required this.deposited});
-
-  final Target target;
-  final int deposited;
-
-  /// 0–1+; 0 bila goal 0 (pengaman bagi-nol).
-  double get progress =>
-      target.goalAmount <= 0 ? 0 : deposited / target.goalAmount;
-}
-
 /// Akses data transaksi, kategori, settings, dan dedup capture.
 class LedgerRepository {
   LedgerRepository(this._db);
@@ -316,7 +304,7 @@ class LedgerRepository {
 
   /// Total belanja MURNI per hari lokal sejak [since] (inklusif) —
   /// kunci tengah-malam lokal seperti [txCountByDaySince]. Transfer
-  /// (antar-akun maupun Sisihkan) tidak ikut.
+  /// tidak ikut.
   Future<Map<DateTime, int>> outSpendByDaySince(DateTime since) async {
     final rows = await (_db.select(
       _db.transactions,
@@ -324,30 +312,6 @@ class LedgerRepository {
         (t) =>
             t.direction.equalsValue(Direction.outgoing) &
             t.kind.equalsValue(TxKind.transfer).not() &
-            t.occurredAt.isBiggerOrEqualValue(since),
-      )).get();
-    final map = <DateTime, int>{};
-    for (final t in rows) {
-      final d = DateTime(
-        t.occurredAt.year,
-        t.occurredAt.month,
-        t.occurredAt.day,
-      );
-      map.update(d, (v) => v + t.amount, ifAbsent: () => t.amount);
-    }
-    return map;
-  }
-
-  /// Total Sisihkan per hari lokal sejak [since] (inklusif) — hanya
-  /// transfer keluar dengan bankId 'target'.
-  Future<Map<DateTime, int>> outTargetByDaySince(DateTime since) async {
-    final rows = await (_db.select(
-      _db.transactions,
-    )..where(
-        (t) =>
-            t.direction.equalsValue(Direction.outgoing) &
-            t.kind.equalsValue(TxKind.transfer) &
-            t.bankId.equals('target') &
             t.occurredAt.isBiggerOrEqualValue(since),
       )).get();
     final map = <DateTime, int>{};
@@ -525,134 +489,8 @@ class LedgerRepository {
     return row.read(amountSum) ?? 0;
   }
 
-  // --- target & sisihkan (model akun-virtual) -------------------------------
-
-  /// Tambah pos target; melempar bila nama sudah dipakai (unique).
-  Future<Target> addTarget({
-    required String name,
-    required int goalAmount,
-    DateTime? deadline,
-  }) async {
-    final id = await _db
-        .into(_db.targets)
-        .insert(
-          TargetsCompanion.insert(
-            uuid: newUuid(),
-            name: name.trim(),
-            goalAmount: goalAmount,
-            deadline: Value(deadline),
-          ),
-        );
-    return (await (_db.select(
-      _db.targets,
-    )..where((t) => t.id.equals(id))).getSingle());
-  }
-
-  /// Ubah nama pos target; melempar bila nama sudah dipakai (unique).
-  Future<void> renameTarget(int id, String name) {
-    return (_db.update(
-      _db.targets,
-    )..where((t) => t.id.equals(id))).write(
-      TargetsCompanion(name: Value(name.trim())),
-    );
-  }
-
-  /// Hapus pos target: setorannya ikut hilang, transaksi transfer
-  /// 'target' TIDAK ikut hapus (riwayat utuh).
-  Future<void> deleteTarget(int id) async {
-    await (_db.delete(
-      _db.targetDeposits,
-    )..where((d) => d.targetId.equals(id))).go();
-    await (_db.delete(_db.targets)..where((t) => t.id.equals(id))).go();
-  }
-
-  /// Sisihkan: catat setoran ke pos + transaksi transfer keluar dari
-  /// akun sumber (bankId 'target', kategori Transfer). Bukan belanja:
-  /// tidak masuk [sumSpendBetween], hanya [sumTargetTransferBetween].
-  /// Melempar bila nominal ≤ 0 atau target tidak ada.
-  Future<TargetDeposit> depositToTarget({
-    required int targetId,
-    required int accountId,
-    required int amount,
-    DateTime? occurredAt,
-  }) async {
-    if (amount <= 0) {
-      throw ArgumentError.value(amount, 'amount', 'harus lebih dari 0');
-    }
-    final target = await (_db.select(
-      _db.targets,
-    )..where((t) => t.id.equals(targetId))).getSingleOrNull();
-    if (target == null) {
-      throw ArgumentError.value(targetId, 'targetId', 'target tidak ada');
-    }
-    final when = occurredAt ?? DateTime.now();
-    final categoryId = await _defaultCategoryId(TxKind.transfer);
-    return _db.transaction(() async {
-      final id = await _db.into(_db.targetDeposits).insert(
-            TargetDepositsCompanion.insert(
-              uuid: newUuid(),
-              targetId: targetId,
-              accountId: Value(accountId),
-              amount: amount,
-              occurredAt: when,
-            ),
-          );
-      await _db.into(_db.transactions).insert(
-            TransactionsCompanion.insert(
-              uuid: newUuid(),
-              bankId: 'target',
-              kind: TxKind.transfer,
-              direction: Direction.outgoing,
-              amount: amount,
-              counterparty: Value(target.name),
-              occurredAt: when,
-              source: TxSource.manual,
-              categoryId: Value(categoryId),
-              accountId: Value(accountId),
-            ),
-          );
-      return (await (_db.select(
-        _db.targetDeposits,
-      )..where((d) => d.id.equals(id))).getSingle());
-    });
-  }
-
-  /// Semua pos target + progres setorannya, terurut id. Re-emit tiap
-  /// tabel target maupun setoran berubah (join agregat).
-  Stream<List<TargetWithProgress>> watchTargets() {
-    final depSum = _db.targetDeposits.amount.sum();
-    final query = _db.select(_db.targets).join([
-      leftOuterJoin(
-        _db.targetDeposits,
-        _db.targetDeposits.targetId.equalsExp(_db.targets.id),
-      ),
-    ]);
-    query.addColumns([depSum]);
-    query.groupBy([_db.targets.id]);
-    query.orderBy([OrderingTerm.asc(_db.targets.id)]);
-    return query.watch().map(
-          (rows) => [
-            for (final row in rows)
-              TargetWithProgress(
-                target: row.readTable(_db.targets),
-                deposited: row.read(depSum) ?? 0,
-              ),
-          ],
-        );
-  }
-
-  /// Total setoran ke satu pos target.
-  Future<int> targetDeposited(int targetId) async {
-    final depSum = _db.targetDeposits.amount.sum();
-    final query = _db.selectOnly(_db.targetDeposits)
-      ..addColumns([depSum])
-      ..where(_db.targetDeposits.targetId.equals(targetId));
-    final row = await query.getSingle();
-    return row.read(depSum) ?? 0;
-  }
-
   /// Total keluar MURNI dalam [start, end): outgoing TANPA kind
-  /// transfer (transfer antar-akun & Sisihkan dikecualikan).
+  /// transfer (transfer dikecualikan).
   Future<int> sumSpendBetween(DateTime start, DateTime end) async {
     final amountSum = _db.transactions.amount.sum();
     final query = _db.selectOnly(_db.transactions)
@@ -660,22 +498,6 @@ class LedgerRepository {
       ..where(
         _db.transactions.direction.equalsValue(Direction.outgoing) &
             _db.transactions.kind.equalsValue(TxKind.transfer).not() &
-            _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
-            _db.transactions.occurredAt.isSmallerThanValue(end),
-      );
-    final row = await query.getSingle();
-    return row.read(amountSum) ?? 0;
-  }
-
-  /// Total Sisihkan dalam [start, end): kind transfer + bankId 'target'.
-  Future<int> sumTargetTransferBetween(DateTime start, DateTime end) async {
-    final amountSum = _db.transactions.amount.sum();
-    final query = _db.selectOnly(_db.transactions)
-      ..addColumns([amountSum])
-      ..where(
-        _db.transactions.direction.equalsValue(Direction.outgoing) &
-            _db.transactions.kind.equalsValue(TxKind.transfer) &
-            _db.transactions.bankId.equals('target') &
             _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
             _db.transactions.occurredAt.isSmallerThanValue(end),
       );

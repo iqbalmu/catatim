@@ -291,7 +291,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
             Direction.incoming,
           ),
           builder: (context, snap) => StreamBuilder<int>(
-            // Keluar murni: transfer & Sisihkan dikecualikan (pola
+            // Keluar murni: transfer dikecualikan (pola
             // asyncMap yang sama dengan baris alokasi di atas).
             stream: widget.repository
                 .watchSumBetween(monthStart, monthEnd, Direction.outgoing)

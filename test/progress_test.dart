@@ -38,21 +38,6 @@ void main() {
     Future<void> setDaily(int limit) =>
         repo.setSetting(kKeyDailyLimit, '$limit');
 
-    Future<void> sisihkanAt(DateTime when, int amount) async {
-      final accounts = await repo.getAccounts();
-      final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
-      final target = await repo.addTarget(
-        name: 'Disiplin',
-        goalAmount: 10000000,
-      );
-      await repo.depositToTarget(
-        targetId: target.id,
-        accountId: blu.id,
-        amount: amount,
-        occurredAt: when,
-      );
-    }
-
     Future<void> transferAt(DateTime when, int amount) => repo.addManual(
           amount: amount,
           direction: Direction.outgoing,
@@ -120,16 +105,6 @@ void main() {
       await progress.refresh();
       // Hari ini + 9 hari Rp0 + hari transaksi pertama = 11, bukan 370.
       expect(progress.latest!.streakDays, 11);
-    });
-
-    test('sisihan ikut menggerus jatah (T1)', () async {
-      await setDaily(5000);
-      await addTxAt(todayAt(9).subtract(const Duration(days: 1)), amount: 1000);
-      await addTxAt(todayAt(9), amount: 3000);
-      // 3000 belanja + 3000 sisihan > 5000 → hari ini over.
-      await sisihkanAt(todayAt(10), 3000);
-      await progress.refresh();
-      expect(progress.latest!.streakDays, 0);
     });
 
     test('transfer biasa bukan belanja (opsi A)', () async {
@@ -342,7 +317,7 @@ void main() {
       await progress.refresh();
       expect(progress.latest!.dailyPace?.safeToSpend, isNull);
     });
-    test('pace memakai spend + sisihan, statistik murni', () async {
+    test('pace memakai belanja murni, transfer biasa diabaikan', () async {
       await repo.setSetting(kKeyDailyLimit, '50000');
       await repo.addManual(
         amount: 40000,
@@ -350,26 +325,14 @@ void main() {
         kind: TxKind.payment,
         occurredAt: todayAt(9),
       );
-      final accounts = await repo.getAccounts();
-      final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
-      final target =
-          await repo.addTarget(name: 'Liburan', goalAmount: 10000000);
-      await repo.depositToTarget(
-        targetId: target.id,
-        accountId: blu.id,
-        amount: 20000,
-        occurredAt: todayAt(10),
-      );
       await progress.refresh();
-      // Efektif 40rb + 20rb = 60rb → 50rb - 60rb = -10rb (OVER, tanpa floor).
-      expect(progress.latest!.dailyPace!.safeToSpend, -10000);
-      // Statistik tetap belanja murni.
+      // 50rb - 40rb = 10rb.
+      expect(progress.latest!.dailyPace!.safeToSpend, 10000);
       expect(progress.latest!.monthOut, 40000);
-      // Garis global memakai keluar efektif.
       final dayLine = progress.latest!.snapshot.lines
           .firstWhere((l) => l.label == 'Batas harian');
-      expect(dayLine.used, 60000);
-      // Transfer biasa bukan belanja maupun sisihan: pace tak berubah.
+      expect(dayLine.used, 40000);
+      // Transfer biasa bukan belanja: pace tak berubah.
       await repo.addManual(
         amount: 5000000,
         direction: Direction.outgoing,
@@ -377,7 +340,7 @@ void main() {
         occurredAt: todayAt(11),
       );
       await progress.refresh();
-      expect(progress.latest!.dailyPace!.safeToSpend, -10000);
+      expect(progress.latest!.dailyPace!.safeToSpend, 10000);
       expect(progress.latest!.monthOut, 40000);
     });
   });
