@@ -228,7 +228,9 @@ class _BatasColumn extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              'dari ${Money.format(limit!)}',
+              // Ringkas agar muat di kolom sempit tanpa terpotong:
+              // 'dari Rp50rb', 'dari Rp1,5jt'.
+              'dari Rp${_shortMoney(limit!)}',
               overflow: TextOverflow.ellipsis,
               style: context.qSmall(11),
             ),
