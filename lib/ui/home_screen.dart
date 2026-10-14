@@ -240,59 +240,6 @@ class _BukuduitMark extends StatelessWidget {
   }
 }
 
-/// Pil streak: api + angka disiplin. Dipakai di header Beranda.
-class _StreakPill extends StatelessWidget {
-  const _StreakPill({required this.progress});
-
-  final ProgressService progress;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: progress,
-      builder: (context, _) {
-        final streak = progress.latest?.streakDays ?? 0;
-        final hasStreak = streak > 0;
-        return Container(
-          height: 40,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: context.q.surface,
-            borderRadius: BorderRadius.circular(999),
-            boxShadow: [
-              BoxShadow(
-                color: context.q.shadow,
-                offset: const Offset(0, 4),
-                blurRadius: 12,
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.local_fire_department_rounded,
-                size: 15,
-                color: hasStreak ? SeedColors.honeyDeep : context.q.muted,
-              ),
-              const SizedBox(width: 3),
-              Text(
-                '$streak',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
-                  color: hasStreak ? context.q.text : context.q.muted,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
 /// Lonceng capture log. Future izin listener di-hoist ke [initState]
 /// agar tidak dibuat ulang tiap build (bebas loop rebuild).
 class _CaptureBell extends StatefulWidget {
@@ -556,8 +503,6 @@ class _BerandaTabState extends State<_BerandaTab> {
             repository: widget.repository,
             pipeline: widget.pipeline,
           ),
-          const SizedBox(width: Spacing.s),
-          _StreakPill(progress: widget.progress),
           const SizedBox(width: Spacing.s),
           _HomeMenu(
             repository: widget.repository,

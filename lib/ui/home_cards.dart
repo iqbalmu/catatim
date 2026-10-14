@@ -50,20 +50,6 @@ class BatasCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: q.surface2,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.donut_small_rounded,
-                  size: 19,
-                  color: SeedColors.honeyDeep,
-                ),
-              ),
-              const SizedBox(width: Spacing.s),
               Expanded(
                 child: Text(
                   'Sisa Batas Pengeluaran',
@@ -87,7 +73,6 @@ class BatasCard extends StatelessWidget {
                 Expanded(
                   child: _BatasColumn(
                     label: 'Harian',
-                    icon: Icons.calendar_today_rounded,
                     limit: dailyLimit,
                     used: dailyUsed,
                   ),
@@ -100,7 +85,6 @@ class BatasCard extends StatelessWidget {
                 Expanded(
                   child: _BatasColumn(
                     label: 'Mingguan',
-                    icon: Icons.calendar_month_rounded,
                     limit: weeklyLimit,
                     used: weeklyUsed,
                   ),
@@ -113,7 +97,6 @@ class BatasCard extends StatelessWidget {
                 Expanded(
                   child: _BatasColumn(
                     label: 'Bulanan',
-                    icon: Icons.event_note_rounded,
                     limit: monthlyLimit,
                     used: monthlyUsed,
                   ),
@@ -147,13 +130,11 @@ String _shortMoney(int v) {
 class _BatasColumn extends StatelessWidget {
   const _BatasColumn({
     required this.label,
-    required this.icon,
     required this.limit,
     required this.used,
   });
 
   final String label;
-  final IconData icon;
   final int? limit;
   final int used;
 
@@ -164,35 +145,21 @@ class _BatasColumn extends StatelessWidget {
     final sisa = (limit ?? 0) - used;
     final over = hasLimit && sisa < 0;
     final fraction = hasLimit ? (sisa / limit!).clamp(0.0, 1.0) : 0.0;
+    // Bar tenang saat aman (netral); warna menyala hanya saat ada kabar:
+    // warning madu, OVER merah. Tiga bar hijau serentak = kartu berisik.
     final barColor = switch (LimitLine(label: label, used: used, limit: limit)
         .level) {
       BudgetLevel.over => q.bad,
       BudgetLevel.warning => q.honey,
-      BudgetLevel.ok => q.good,
+      BudgetLevel.ok => q.muted.withValues(alpha: 0.55),
     };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: q.surface2,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 16, color: q.text),
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-                style: context.qSmall(12).copyWith(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
+        Text(
+          label,
+          overflow: TextOverflow.ellipsis,
+          style: context.qSmall(12).copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: Spacing.s),
         FittedBox(
@@ -377,7 +344,6 @@ class _ArusRow extends StatelessWidget {
             ],
           ),
         ),
-        Icon(Icons.chevron_right_rounded, size: 18, color: q.muted),
       ],
     );
   }
@@ -427,12 +393,6 @@ class DisiplinCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(
-                    Icons.track_changes_rounded,
-                    size: 22,
-                    color: q.text,
-                  ),
-                  const SizedBox(width: Spacing.s),
                   Expanded(
                     child: Text(
                       'Disiplin Bulan Ini',
@@ -466,16 +426,16 @@ class DisiplinCard extends StatelessWidget {
                     Expanded(
                       child: Center(
                         child: Container(
-                          width: 10,
-                          height: 10,
+                          width: 7,
+                          height: 7,
                           decoration: BoxDecoration(
                             color: d.future
-                                ? q.line.withValues(alpha: 0.7)
+                                ? q.line.withValues(alpha: 0.5)
                                 : !d.within
-                                    ? q.bad
+                                    ? q.bad.withValues(alpha: 0.8)
                                     : snap.activeDays.contains(d.day)
-                                        ? q.good
-                                        : q.line,
+                                        ? q.good.withValues(alpha: 0.75)
+                                        : q.line.withValues(alpha: 0.5),
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -483,6 +443,24 @@ class DisiplinCard extends StatelessWidget {
                     ),
                 ],
               ),
+              if (snap.streakDays > 0) ...[
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.local_fire_department_rounded,
+                      size: 13,
+                      color: SeedColors.honeyDeep,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${snap.streakDays} hari streak',
+                      style: context.qSmall(11),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         );
@@ -518,12 +496,6 @@ class TransaksiTerbaruCard extends StatelessWidget {
             onTap: onSeeAll,
             child: Row(
               children: [
-                Icon(
-                  Icons.schedule_rounded,
-                  size: 22,
-                  color: SeedColors.honeyDeep,
-                ),
-                const SizedBox(width: Spacing.s),
                 Expanded(
                   child: Text(
                     'Transaksi Terbaru',
