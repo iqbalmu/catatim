@@ -1,6 +1,6 @@
 # Roadmap Bukuduit
 
-Status: v1.0.0+1, belum dirilis. Diperbarui 2026-10-11.
+Status: v1.0.0+1, belum dirilis. Diperbarui 2026-10-14.
 
 **Arah yang disepakati**: kedalaman produk dulu, rilis menyusul. User
 primer = pemilik proyek (pemakaian harian sendiri); publik menjadi
@@ -40,6 +40,14 @@ dari batas harian Rp50.000 − keluar hari ini Rp40.000, fallback
 sparkline 7/30, navigasi ke Laporan dan Kelola Akun. Ditemukan & diperbaiki
 saat smoke: pace tidak segar setelah edit anggaran (refresh saat kembali
 dari layar Anggaran).
+
+> **Arsitektur info v2** (2026-10-14, post-M1): navigasi ditata ulang
+> menjadi shell 4 tab — **Beranda · Rekap · Rencana · Bon** — dengan FAB
+> kontekstual per tab. Tab Riwayat/Laporan digantikan **Rekap** (4 segmen:
+> Transaksi, Donat, Tren, Kalender) dan tab Anggaran digantikan **Rencana**
+> (segmen Batas + Target/Sisihkan); statistik memakai keluar murni
+> (transfer dikecualikan). Layar lama (Riwayat/Laporan/Anggaran) dipensiunkan.
+> Status M1–M5 di atas tidak berubah.
 
 ### M2 — Misi harian
 

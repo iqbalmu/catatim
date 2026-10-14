@@ -10,6 +10,9 @@ Rancangan lengkap: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ·
 
 ## Fitur
 
+Navigasi utama 4 tab: **Beranda · Rekap · Rencana · Bon**, dengan FAB
+kontekstual per tab dan header global (lonceng capture + menu) di semua
+tab.
 - **Catat manual**: tombol Catat / FAB kontekstual — nominal, arah
   masuk/keluar, kategori (+ tambah kategori), jenis, tanggal, akun,
   dan pihak/keterangan. Tap transaksi untuk ubah/hapus.
@@ -20,14 +23,20 @@ Rancangan lengkap: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ·
   berjalan (`awal + masuk − keluar`).
 - **Bon**: tab utang-piutang — tambah/edit, tandai lunas, total piutang
   vs utang belum lunas.
-- **Anggaran**: batas harian/mingguan/bulanan + alokasi per jenis
-  anggaran, bisa di-scope ke akun tertentu (mis. "Makanan @ e-wallet").
-  Progres dibanding bulan lalu dengan penilaian membaik/memburuk.
-- **Bukuduit Quest**: maskot Duit mencerminkan kondisi anggaran —
-  khawatir saat batas terlampaui, tenang saat aman. Streak mencatat dari
-  data asli (milestone 3/7/14/21/30/60/100 hari).
-- **Laporan**: donut kategori interaktif + tren mingguan/bulanan sesuai
-  periode (bulan terpilih atau rentang tanggal).
+- **Rekap** (4 segmen): **Transaksi** (cari + filter akun & periode),
+  **Donat** (kategori interaktif, statistik keluar murni — transfer
+  tidak dihitung), **Tren** (mingguan/bulanan), dan **Kalender**
+  (aktivitas per hari, rentang bebas).
+- **Rencana** (2 segmen): **Batas** — batas harian/mingguan/bulanan +
+  alokasi per jenis anggaran, bisa di-scope ke akun tertentu (mis.
+  "Makanan @ e-wallet"), progres vs bulan lalu; **Target** — pos
+  menabung + tindakan **Sisihkan** yang langsung menggerakkan hero
+  Beranda.
+
+- **Bukuduit Quest**: maskot Duit mencerminkan kondisi batas — khawatir
+  saat terlampaui, tenang saat aman. **Streak disiplin** menghitung
+  hari berturut jaga batas dari data asli (milestone 3/7/14/21/30/60/
+  100 hari).
 - **Backup**: ekspor CSV + backup `.sqlite` terenkripsi (simpan
   passphrase terpisah!) + restore.
 
@@ -69,7 +78,7 @@ sama dalam ±120 detik hanya jadi satu transaksi.
 | `lib/rules/` | Rules engine + seed rules (`assets/rules/seed_rules.json`) |
 | `lib/capture/` | Channel native + pipeline capture→parse→simpan |
 | `lib/storage/` | Drift schema v6 + repository (dedup 120 detik) |
-| `lib/ui/` | Beranda, Riwayat, Laporan, Bon, anggaran, akun, aturan, capture log, backup |
+| `lib/ui/` | Shell 4 tab (Beranda, Rekap, Rencana, Bon) + sheet transaksi, akun, aturan, capture log, backup |
 | `lib/game/` | Maskot, hero card, streak & mood |
 | `lib/theme/` + `lib/ui/quest.dart` | Sistem desain Quest (bukan default Material) |
 | `android/.../MainActivity.kt` | MethodChannel/EventChannel + `NotificationCatcher` |

@@ -74,7 +74,7 @@ Future<void> showAddJenisFlow(
   }
 }
 
-/// Segmen Batas layar Rencana (eks BudgetScreen): batas
+/// Segmen Batas layar Rencana (eks layar Anggaran): batas
 /// harian/mingguan/bulanan, jenis anggaran yang bisa dikelola user +
 /// alokasi dana (opsional di-scope per akun), dan progres masuk/keluar
 /// bulan ini vs bulan lalu.

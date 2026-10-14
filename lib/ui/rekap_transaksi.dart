@@ -8,9 +8,23 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'account_filter.dart';
 import 'account_manage_screen.dart';
-import 'history_screen.dart' show matchesQuery;
 import 'quest.dart';
 import 'transaction_tile.dart';
+
+/// Cocokkan transaksi dengan query: pihak, kategori, bank, jenis, nominal.
+bool matchesQuery(TxWithCategory item, String query) {
+  final q = query.trim().toLowerCase();
+  if (q.isEmpty) return true;
+  final tx = item.tx;
+  final haystacks = [
+    tx.counterparty ?? '',
+    item.category?.name ?? '',
+    tx.bankId,
+    tx.kind.label,
+    tx.amount.toString(),
+  ].map((s) => s.toLowerCase());
+  return haystacks.any((h) => h.contains(q));
+}
 
 /// Segmen Transaksi pada layar Rekap: pencarian + filter akun + daftar
 /// transaksi sesuai [filter]. State filter dimiliki shell; perubahan

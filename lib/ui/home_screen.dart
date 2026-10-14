@@ -14,7 +14,6 @@ import '../theme/tokens.dart';
 import 'account_manage_screen.dart';
 import 'backup_screen.dart';
 import 'bon_screen.dart';
-import 'budget_screen.dart';
 import 'capture_log_screen.dart';
 import 'home_cards.dart';
 import 'quest.dart';
@@ -85,6 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
       repository: widget.repository,
       pipeline: widget.pipeline,
       progress: widget.progress,
+      onOpenRencana: _openRencanaBatas,
     ),
   ];
 
@@ -169,11 +169,13 @@ class _GlobalActions extends StatefulWidget {
     required this.repository,
     required this.pipeline,
     required this.progress,
+    required this.onOpenRencana,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
   final ProgressService progress;
+  final VoidCallback onOpenRencana;
 
   @override
   State<_GlobalActions> createState() => _GlobalActionsState();
@@ -238,12 +240,7 @@ class _GlobalActionsState extends State<_GlobalActions> {
                 ),
               );
             } else if (value == 'budget') {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BudgetScreen(repository: widget.repository),
-                ),
-              ).whenComplete(widget.progress.refresh);
+              widget.onOpenRencana();
             } else if (value == 'backup') {
               Navigator.push(
                 context,
@@ -284,7 +281,7 @@ class _GlobalActionsState extends State<_GlobalActions> {
                 children: [
                   Icon(Icons.savings_rounded, color: context.q.text),
                   const SizedBox(width: Spacing.s),
-                  const Text('Anggaran'),
+                  const Text('Rencana · Batas'),
                 ],
               ),
             ),

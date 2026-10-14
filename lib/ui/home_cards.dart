@@ -11,8 +11,8 @@ import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'account_manage_screen.dart';
-import 'budget_screen.dart';
 import 'quest.dart';
+import 'rencana_screen.dart';
 
 /// Strip peringatan + ubin dashboard beranda: saldo, tren, keluar, masuk.
 /// Semua mengalir via stream/service sehingga selalu segar.
@@ -85,7 +85,7 @@ class _AlertRow extends StatelessWidget {
             () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => BudgetScreen(repository: repository),
+                builder: (_) => RencanaScreen(repository: repository),
               ),
             ).whenComplete(service.refresh),
         child: Container(
