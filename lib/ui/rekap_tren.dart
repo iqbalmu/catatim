@@ -240,5 +240,14 @@ class _BarsPainter extends CustomPainter {
       oldDelegate.maxAmount != maxAmount ||
       oldDelegate.labelColor != labelColor ||
       oldDelegate.inColor != inColor ||
-      oldDelegate.outColor != outColor;
+      oldDelegate.outColor != outColor ||
+      oldDelegate.months.length != months.length ||
+      [
+        for (var i = 0; i < months.length; i++)
+          oldDelegate.months[i].label != months[i].label ||
+              oldDelegate.months[i].totals.incoming !=
+                  months[i].totals.incoming ||
+              oldDelegate.months[i].totals.outgoing !=
+                  months[i].totals.outgoing,
+      ].any((differs) => differs);
 }

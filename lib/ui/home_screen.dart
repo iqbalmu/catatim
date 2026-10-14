@@ -112,7 +112,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 headerActions: _globalActions,
                 onOpenRekap: () => setState(() => _tab = 1),
                 onOpenRencanaBatas: _openRencanaBatas,
-                onOpenBon: () => setState(() => _tab = 3),
               ),
             ),
             TickerMode(
@@ -324,7 +323,6 @@ class _BerandaTab extends StatefulWidget {
     required this.headerActions,
     required this.onOpenRekap,
     required this.onOpenRencanaBatas,
-    required this.onOpenBon,
   });
 
   final LedgerRepository repository;
@@ -332,7 +330,6 @@ class _BerandaTab extends StatefulWidget {
   final List<Widget> headerActions;
   final VoidCallback onOpenRekap;
   final VoidCallback onOpenRencanaBatas;
-  final VoidCallback onOpenBon;
 
   @override
   State<_BerandaTab> createState() => _BerandaTabState();
@@ -456,7 +453,6 @@ class _BerandaTabState extends State<_BerandaTab> {
         children: [
           GameHeroCard(service: widget.progress),
           AlertStrip(
-            repository: widget.repository,
             service: widget.progress,
             onOpenBatas: widget.onOpenRencanaBatas,
           ),

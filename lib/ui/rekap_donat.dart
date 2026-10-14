@@ -44,11 +44,7 @@ class RekapDonat extends StatelessWidget {
         Spacing.m + MediaQuery.paddingOf(context).bottom,
       ),
       children: [
-        _PeriodHeadlines(
-          repository: repository,
-          winStart: start,
-          winEnd: end,
-        ),
+        _PeriodHeadlines(repository: repository, winStart: start, winEnd: end),
         const SizedBox(height: Spacing.m),
         StreamBuilder<List<TxWithCategory>>(
           stream: repository.watchBetweenWithCategory(
@@ -76,7 +72,6 @@ class RekapDonat extends StatelessWidget {
     );
   }
 }
-
 
 /// Kartu headline: nominal besar + delta vs periode pembanding.
 class _HeadlineCard extends StatelessWidget {
@@ -132,8 +127,7 @@ class _HeadlineCard extends StatelessWidget {
           ),
           if (delta != null)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
                 color: deltaColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(999),
@@ -417,5 +411,11 @@ class _DonutPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DonutPainter oldDelegate) =>
-      oldDelegate.total != total || oldDelegate.buckets.length != buckets.length;
+      oldDelegate.total != total ||
+      oldDelegate.buckets.length != buckets.length ||
+      [
+        for (var i = 0; i < buckets.length; i++)
+          oldDelegate.buckets[i].amount != buckets[i].amount ||
+              oldDelegate.buckets[i].color != buckets[i].color,
+      ].any((differs) => differs);
 }

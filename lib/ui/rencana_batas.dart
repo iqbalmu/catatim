@@ -298,11 +298,14 @@ class _RencanaBatasState extends State<RencanaBatas> {
             Direction.incoming,
           ),
           builder: (context, snap) => StreamBuilder<int>(
-            stream: widget.repository.watchSumBetween(
-              monthStart,
-              monthEnd,
-              Direction.outgoing,
-            ),
+            // Keluar murni: transfer & Sisihkan dikecualikan (pola
+            // asyncMap yang sama dengan baris alokasi di atas).
+            stream: widget.repository
+                .watchSumBetween(monthStart, monthEnd, Direction.outgoing)
+                .asyncMap(
+                  (_) =>
+                      widget.repository.sumSpendBetween(monthStart, monthEnd),
+                ),
             builder: (context, outSnap) => StreamBuilder<int>(
               stream: widget.repository.watchSumBetween(
                 lastMonthStart,
@@ -310,11 +313,18 @@ class _RencanaBatasState extends State<RencanaBatas> {
                 Direction.incoming,
               ),
               builder: (context, lastInSnap) => StreamBuilder<int>(
-                stream: widget.repository.watchSumBetween(
-                  lastMonthStart,
-                  lastMonthEnd,
-                  Direction.outgoing,
-                ),
+                stream: widget.repository
+                    .watchSumBetween(
+                      lastMonthStart,
+                      lastMonthEnd,
+                      Direction.outgoing,
+                    )
+                    .asyncMap(
+                      (_) => widget.repository.sumSpendBetween(
+                        lastMonthStart,
+                        lastMonthEnd,
+                      ),
+                    ),
                 builder: (context, lastOutSnap) {
                   final monthIn = snap.data ?? 0;
                   final monthOut = outSnap.data ?? 0;

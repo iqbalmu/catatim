@@ -12,7 +12,6 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'account_manage_screen.dart';
 import 'quest.dart';
-import 'rencana_screen.dart';
 
 /// Strip peringatan + ubin dashboard beranda: saldo, tren, keluar, masuk.
 /// Semua mengalir via stream/service sehingga selalu segar.
@@ -22,16 +21,14 @@ import 'rencana_screen.dart';
 class AlertStrip extends StatelessWidget {
   const AlertStrip({
     super.key,
-    required this.repository,
     required this.service,
-    this.onOpenBatas,
+    required this.onOpenBatas,
   });
 
-  final LedgerRepository repository;
   final ProgressService service;
 
-  /// Deep-link ke Rencana·Batas (diisi Beranda). Null = layar Anggaran lama.
-  final VoidCallback? onOpenBatas;
+  /// Deep-link ke Rencana·Batas (diisi shell Beranda).
+  final VoidCallback onOpenBatas;
 
   @override
   Widget build(BuildContext context) {
@@ -47,12 +44,7 @@ class AlertStrip extends StatelessWidget {
         return Column(
           children: [
             for (final line in critical)
-              _AlertRow(
-                line: line,
-                repository: repository,
-                service: service,
-                onOpenBatas: onOpenBatas,
-              ),
+              _AlertRow(line: line, onOpenBatas: onOpenBatas),
           ],
         );
       },
@@ -61,17 +53,10 @@ class AlertStrip extends StatelessWidget {
 }
 
 class _AlertRow extends StatelessWidget {
-  const _AlertRow({
-    required this.line,
-    required this.repository,
-    required this.service,
-    this.onOpenBatas,
-  });
+  const _AlertRow({required this.line, required this.onOpenBatas});
 
   final LimitLine line;
-  final LedgerRepository repository;
-  final ProgressService service;
-  final VoidCallback? onOpenBatas;
+  final VoidCallback onOpenBatas;
 
   @override
   Widget build(BuildContext context) {
@@ -80,14 +65,7 @@ class _AlertRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: Spacing.m),
       child: QuestPress(
-        onTap:
-            onOpenBatas ??
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => RencanaScreen(repository: repository),
-              ),
-            ).whenComplete(service.refresh),
+        onTap: onOpenBatas,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
           decoration: BoxDecoration(
@@ -179,7 +157,9 @@ class SaldoTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     Money.format(total),
-                    style: context.qTitle(19).copyWith(
+                    style: context
+                        .qTitle(19)
+                        .copyWith(
                           color: total < 0 ? context.q.bad : context.q.text,
                         ),
                   ),
@@ -188,9 +168,11 @@ class SaldoTile extends StatelessWidget {
                     accounts.isEmpty
                         ? 'Belum ada akun'
                         : accounts
-                            .map((a) =>
-                                '${a.name} ${_shortMoney(balances[a.id] ?? 0)}')
-                            .join(' · '),
+                              .map(
+                                (a) =>
+                                    '${a.name} ${_shortMoney(balances[a.id] ?? 0)}',
+                              )
+                              .join(' · '),
                     style: context.qSmall(11),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -282,11 +264,7 @@ class TrendTile extends StatelessWidget {
 /// Ubin keluar bulan ini: nominal + delta vs bulan lalu + bar anggaran.
 /// Tap → Anggaran.
 class OutTile extends StatelessWidget {
-  const OutTile({
-    super.key,
-    required this.service,
-    required this.onOpenBudget,
-  });
+  const OutTile({super.key, required this.service, required this.onOpenBudget});
 
   final ProgressService service;
   final VoidCallback onOpenBudget;
@@ -304,10 +282,8 @@ class OutTile extends StatelessWidget {
         final now = DateTime.now();
         final lastShort = idMonthsShort[(now.month + 10) % 12];
         final delta = deltaLabel(snap.monthOut, shot.lastMonthOut);
-        final up =
-            shot.lastMonthOut > 0 && snap.monthOut > shot.lastMonthOut;
-        final down =
-            shot.lastMonthOut > 0 && snap.monthOut < shot.lastMonthOut;
+        final up = shot.lastMonthOut > 0 && snap.monthOut > shot.lastMonthOut;
+        final down = shot.lastMonthOut > 0 && snap.monthOut < shot.lastMonthOut;
         final worst = heroBudgetLine(shot);
         final q = context.q;
         return _Tile(
@@ -317,21 +293,20 @@ class OutTile extends StatelessWidget {
             children: [
               Text('KELUAR', style: context.qEyebrow()),
               const SizedBox(height: 2),
-              Text(
-                Money.format(snap.monthOut),
-                style: context.qTitle(19),
-              ),
+              Text(Money.format(snap.monthOut), style: context.qTitle(19)),
               const SizedBox(height: 2),
               Text(
                 delta == null ? 'bulan pertama' : '$delta · $lastShort',
-                style: context.qSmall(11).copyWith(
+                style: context
+                    .qSmall(11)
+                    .copyWith(
                       color: delta == null
                           ? q.muted
                           : up
-                              ? q.bad
-                              : down
-                                  ? q.good
-                                  : q.muted,
+                          ? q.bad
+                          : down
+                          ? q.good
+                          : q.muted,
                     ),
               ),
               if (worst != null) ...[
@@ -374,8 +349,7 @@ class InTile extends StatelessWidget {
         final lastShort = idMonthsShort[(now.month + 10) % 12];
         final delta = deltaLabel(snap.monthIn, shot.lastMonthIn);
         final up = shot.lastMonthIn > 0 && snap.monthIn > shot.lastMonthIn;
-        final down =
-            shot.lastMonthIn > 0 && snap.monthIn < shot.lastMonthIn;
+        final down = shot.lastMonthIn > 0 && snap.monthIn < shot.lastMonthIn;
         final q = context.q;
         return _Tile(
           onTap: null,
@@ -391,14 +365,16 @@ class InTile extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 delta == null ? 'bulan pertama' : '$delta · $lastShort',
-                style: context.qSmall(11).copyWith(
+                style: context
+                    .qSmall(11)
+                    .copyWith(
                       color: delta == null
                           ? q.muted
                           : up
-                              ? q.good
-                              : down
-                                  ? q.bad
-                                  : q.muted,
+                          ? q.good
+                          : down
+                          ? q.bad
+                          : q.muted,
                     ),
               ),
             ],
@@ -528,10 +504,7 @@ class JejakStrip extends StatelessWidget {
                 children: [
                   Text('JEJAK 30 HARI', style: context.qEyebrow()),
                   const Spacer(),
-                  Text(
-                    '${active.length}/30',
-                    style: context.qSmall(11),
-                  ),
+                  Text('${active.length}/30', style: context.qSmall(11)),
                 ],
               ),
               const SizedBox(height: Spacing.s),
@@ -620,8 +593,7 @@ class KewajibanStrip extends StatelessWidget {
           child: QuestPress(
             onTap: onOpenBon,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
               decoration: BoxDecoration(
                 color: context.q.surface,
                 borderRadius: BorderRadius.circular(14),
@@ -856,12 +828,14 @@ class LimitCard extends StatelessWidget {
                       ? '${Money.format(safe)} · OVER'
                       : 'Sisa ${Money.format(safe)}')
                 : 'Tanpa batas',
-            style: context.qTitle(22).copyWith(
+            style: context
+                .qTitle(22)
+                .copyWith(
                   color: over
                       ? q.bad
                       : hasLimit
-                          ? q.text
-                          : q.muted,
+                      ? q.text
+                      : q.muted,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
           ),
@@ -871,7 +845,7 @@ class LimitCard extends StatelessWidget {
           Text(
             hasLimit
                 ? 'dipakai ${Money.format(used)} dari '
-                    '${Money.format(limit!)} · $_reset'
+                      '${Money.format(limit!)} · $_reset'
                 : 'Belum ada batas · ketuk untuk atur',
             style: context.qSmall(11),
           ),
@@ -965,10 +939,10 @@ class _MiniSide extends StatelessWidget {
     final deltaColor = delta == null
         ? q.muted
         : up
-            ? (incoming ? q.good : q.bad)
-            : down
-                ? (incoming ? q.bad : q.good)
-                : q.muted;
+        ? (incoming ? q.good : q.bad)
+        : down
+        ? (incoming ? q.bad : q.good)
+        : q.muted;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -976,7 +950,9 @@ class _MiniSide extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           Money.format(amount),
-          style: context.qTitle(19).copyWith(
+          style: context
+              .qTitle(19)
+              .copyWith(
                 color: incoming ? q.good : q.text,
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
@@ -1028,10 +1004,12 @@ class SaldoRow extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           Money.format(total),
-                          style: context.qTitle(19).copyWith(
+                          style: context
+                              .qTitle(19)
+                              .copyWith(
                                 color: total < 0 ? q.bad : q.text,
                                 fontFeatures: const [
-                                  FontFeature.tabularFigures()
+                                  FontFeature.tabularFigures(),
                                 ],
                               ),
                         ),
@@ -1040,9 +1018,11 @@ class SaldoRow extends StatelessWidget {
                           accounts.isEmpty
                               ? 'Belum ada akun'
                               : accounts
-                                  .map((a) =>
-                                      '${a.name} ${_shortMoney(balances[a.id] ?? 0)}')
-                                  .join(' · '),
+                                    .map(
+                                      (a) =>
+                                          '${a.name} ${_shortMoney(balances[a.id] ?? 0)}',
+                                    )
+                                    .join(' · '),
                           style: context.qSmall(11),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -1050,11 +1030,7 @@ class SaldoRow extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 16,
-                    color: q.muted,
-                  ),
+                  Icon(Icons.arrow_forward_rounded, size: 16, color: q.muted),
                 ],
               );
             },

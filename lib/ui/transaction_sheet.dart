@@ -12,7 +12,11 @@ import '../theme/tokens.dart';
 import 'quest.dart';
 import '../core/dates_id.dart';
 
-/// Sheet tambah/ubah transaksi. Mode edit bila [existing] diberikan.
+/// Baris Sisihkan (transfer ke target): dimiliki alur Rencana·Target —
+/// sheet transaksi menolak mengubah/menghapusnya (lihat mode lihat-saja).
+bool isSisihkanRow(Transaction tx) =>
+    tx.bankId == 'target' && tx.kind == TxKind.transfer;
+
 class TransactionSheet extends StatefulWidget {
   const TransactionSheet({
     super.key,
@@ -67,6 +71,12 @@ class _TransactionSheetState extends State<TransactionSheet> {
   List<Account> _accounts = const [];
 
   bool get _isEdit => widget.existing != null;
+
+  /// Mode lihat-saja untuk baris Sisihkan — alur Rencana·Target yang
+  /// berhak mengubah/menghapus (mengubah di sini membuat saldo target
+  /// di target_deposits menyimpang).
+  bool get _isSisihkan =>
+      widget.existing != null && isSisihkanRow(widget.existing!.tx);
 
   @override
   void initState() {
@@ -169,6 +179,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
   }
 
   Future<void> _save() async {
+    if (_isSisihkan) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final amount = int.tryParse(
       _amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''),
@@ -210,6 +221,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
   }
 
   Future<void> _delete() async {
+    if (_isSisihkan) return;
     final confirmed = await showQuestDialog<bool>(
       context,
       title: 'Hapus transaksi?',
@@ -239,6 +251,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isSisihkan) return _buildSisihkanView(context);
     return SafeArea(
       child: SingleChildScrollView(
         child: Form(
@@ -391,6 +404,50 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 onPressed: _save,
               ),
               const SizedBox(height: Spacing.s),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Tampilan lihat-saja untuk baris Sisihkan: tanpa tombol hapus/simpan
+  /// dan tanpa field yang bisa diedit.
+  Widget _buildSisihkanView(BuildContext context) {
+    final tx = widget.existing!.tx;
+    return SafeArea(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: Spacing.m,
+            right: Spacing.m,
+            top: Spacing.s,
+            bottom: MediaQuery.of(context).viewInsets.bottom + Spacing.m,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Sisihkan', style: context.qTitle(20)),
+              const SizedBox(height: Spacing.s),
+              Text(
+                'Baris Sisihkan dikelola lewat Rencana·Target agar saldo '
+                'target tetap sinkron — tidak bisa diubah atau dihapus di sini.',
+                style: context.qBody(),
+              ),
+              const SizedBox(height: Spacing.m),
+              Text(Money.format(tx.amount), style: context.qDisplay(30)),
+              const SizedBox(height: Spacing.s),
+              Text(
+                '${_dateLabel(tx.occurredAt)}'
+                '${tx.counterparty == null ? '' : ' · ${tx.counterparty}'}',
+                style: context.qSmall(),
+              ),
+              const SizedBox(height: Spacing.l),
+              QuestButton(
+                label: 'Tutup',
+                onPressed: () => Navigator.pop(context),
+              ),
             ],
           ),
         ),

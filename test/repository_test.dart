@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bukuduit/models.dart';
 import 'package:bukuduit/storage/database.dart';
 import 'package:bukuduit/storage/repository.dart';
+import 'package:bukuduit/ui/transaction_sheet.dart';
 
 void main() {
   late AppDatabase db;
@@ -324,38 +325,40 @@ void main() {
     expect(balances[blu.id], 1100000);
   });
 
-  test('hapus kategori: transaksi pindah ke fallback, alokasi ikut hilang',
-      () async {
-    final cats = await repo.watchCategories().first;
-    final makanan = cats.firstWhere((c) => c.name == 'Makanan');
-    final lainnya = cats.firstWhere((c) => c.name == 'Lainnya');
-    await repo.setBudget(makanan.id, 100000);
-    final now = DateTime.now();
-    await repo.addManual(
-      amount: 25000,
-      direction: Direction.outgoing,
-      kind: TxKind.payment,
-      categoryId: makanan.id,
-      occurredAt: DateTime(now.year, now.month, now.day, 10),
-    );
+  test(
+    'hapus kategori: transaksi pindah ke fallback, alokasi ikut hilang',
+    () async {
+      final cats = await repo.watchCategories().first;
+      final makanan = cats.firstWhere((c) => c.name == 'Makanan');
+      final lainnya = cats.firstWhere((c) => c.name == 'Lainnya');
+      await repo.setBudget(makanan.id, 100000);
+      final now = DateTime.now();
+      await repo.addManual(
+        amount: 25000,
+        direction: Direction.outgoing,
+        kind: TxKind.payment,
+        categoryId: makanan.id,
+        occurredAt: DateTime(now.year, now.month, now.day, 10),
+      );
 
-    await repo.deleteCategory(makanan.id, fallbackId: lainnya.id);
+      await repo.deleteCategory(makanan.id, fallbackId: lainnya.id);
 
-    final rows = await repo.watchRecentWithCategory().first;
-    expect(rows.single.category?.name, 'Lainnya');
-    final budgets = await repo.watchBudgets().first;
-    expect(budgets.where((b) => b.categoryId == makanan.id), isEmpty);
-    final catsAfter = await repo.watchCategories().first;
-    expect(catsAfter.map((c) => c.name), isNot(contains('Makanan')));
-  });
+      final rows = await repo.watchRecentWithCategory().first;
+      expect(rows.single.category?.name, 'Lainnya');
+      final budgets = await repo.watchBudgets().first;
+      expect(budgets.where((b) => b.categoryId == makanan.id), isEmpty);
+      final catsAfter = await repo.watchCategories().first;
+      expect(catsAfter.map((c) => c.name), isNot(contains('Makanan')));
+    },
+  );
 
   group('outSumByDaySince', () {
     Future<void> addOutAt(DateTime when, int amount) => repo.addManual(
-          amount: amount,
-          direction: Direction.outgoing,
-          kind: TxKind.payment,
-          occurredAt: when,
-        );
+      amount: amount,
+      direction: Direction.outgoing,
+      kind: TxKind.payment,
+      occurredAt: when,
+    );
 
     test('jumlah keluar per hari lokal, inklusif batas sejak', () async {
       final now = DateTime.now();
@@ -371,8 +374,10 @@ void main() {
       expect(sums[today], 5000);
       expect(sums[today.subtract(const Duration(days: 1))], 7000);
       expect(sums[today.subtract(const Duration(days: 6))], 9000);
-      expect(sums.containsKey(today.subtract(const Duration(days: 31))),
-          isFalse);
+      expect(
+        sums.containsKey(today.subtract(const Duration(days: 31))),
+        isFalse,
+      );
     });
 
     test('hanya masuk tidak terhitung', () async {
@@ -396,11 +401,11 @@ void main() {
       required int amount,
       DateTime? occurredAt,
     }) => repo.depositToTarget(
-          targetId: targetId,
-          accountId: accountId,
-          amount: amount,
-          occurredAt: occurredAt,
-        );
+      targetId: targetId,
+      accountId: accountId,
+      amount: amount,
+      occurredAt: occurredAt,
+    );
 
     test('sisihkan tercatat sebagai transfer, bukan keluar', () async {
       final accounts = await repo.getAccounts();
@@ -437,6 +442,37 @@ void main() {
       final next = day.add(const Duration(days: 1));
       expect(await repo.sumSpendBetween(day, next), 0);
       expect(await repo.sumTargetTransferBetween(day, next), 200000);
+    });
+
+    test('baris sisihkan dikenali isSisihkanRow, baris biasa tidak', () async {
+      final accounts = await repo.getAccounts();
+      final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
+      await repo.setOpeningBalance(blu.id, 1000000);
+      final target = await repo.addTarget(
+        name: 'Dana Darurat',
+        goalAmount: 1000000,
+      );
+      await depositSisihkan(
+        targetId: target.id,
+        accountId: blu.id,
+        amount: 200000,
+        occurredAt: DateTime(2026, 10, 10, 9),
+      );
+      await repo.addManual(
+        amount: 15000,
+        direction: Direction.outgoing,
+        kind: TxKind.payment,
+        occurredAt: DateTime(2026, 10, 10, 10),
+      );
+
+      final txs = await db.select(db.transactions).get();
+      expect(txs, hasLength(2));
+      final sisihkan = txs.singleWhere((t) => t.bankId == 'target');
+      final payment = txs.singleWhere((t) => t.kind == TxKind.payment);
+      // Guard TransactionSheet: hanya baris Sisihkan yang ditolak
+      // edit/hapus (mode lihat-saja).
+      expect(isSisihkanRow(sisihkan), isTrue);
+      expect(isSisihkanRow(payment), isFalse);
     });
 
     test('transfer biasa bukan belanja', () async {
@@ -482,11 +518,8 @@ void main() {
       final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
       final target = await repo.addTarget(name: 'HP', goalAmount: 3000000);
       expect(
-        () => depositSisihkan(
-          targetId: target.id,
-          accountId: blu.id,
-          amount: 0,
-        ),
+        () =>
+            depositSisihkan(targetId: target.id, accountId: blu.id, amount: 0),
         throwsArgumentError,
       );
       expect(

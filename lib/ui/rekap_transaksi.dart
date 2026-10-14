@@ -109,14 +109,12 @@ class _RekapTransaksiState extends State<RekapTransaksi> {
             accountId: filter.accountId,
           )
         : win == null
-            ? widget.repository.watchRecentWithCategory(
-                accountId: filter.accountId,
-              )
-            : widget.repository.watchBetweenWithCategory(
-                win.start,
-                win.end,
-                accountId: filter.accountId,
-              );
+        ? widget.repository.watchRecentWithCategory(accountId: filter.accountId)
+        : widget.repository.watchBetweenWithCategory(
+            win.start,
+            win.end,
+            accountId: filter.accountId,
+          );
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -175,6 +173,11 @@ class _RekapTransaksiState extends State<RekapTransaksi> {
                     _AccountPatch(base: filter, accountId: null).build(),
                   ),
                 ),
+              if (filter.categoryId != null)
+                _FilterChip(
+                  label: 'Kategori',
+                  onClear: () => _update(filter.clearChip()),
+                ),
               // Deep-link Kalender: ✕ membersihkan tanggal (dan kategori
               // — kontrak clearChip sebagaimana dibangun).
               if (filter.day != null)
@@ -200,7 +203,8 @@ class _RekapTransaksiState extends State<RekapTransaksi> {
                   r,
             ];
             if (items.isEmpty) {
-              final filtering = query.isNotEmpty ||
+              final filtering =
+                  query.isNotEmpty ||
                   filter.accountId != null ||
                   filter.categoryId != null ||
                   filter.day != null;
@@ -251,14 +255,14 @@ class _AccountPatch {
   final int? accountId;
 
   RekapFilter build() => RekapFilter(
-        month: base.month,
-        rangeStart: base.rangeStart,
-        rangeEnd: base.rangeEnd,
-        accountId: accountId,
-        query: base.query,
-        categoryId: base.categoryId,
-        day: base.day,
-      );
+    month: base.month,
+    rangeStart: base.rangeStart,
+    rangeEnd: base.rangeEnd,
+    accountId: accountId,
+    query: base.query,
+    categoryId: base.categoryId,
+    day: base.day,
+  );
 }
 
 /// Salin field filter, ganti query.
@@ -269,14 +273,14 @@ class _QueryPatch {
   final String query;
 
   RekapFilter build() => RekapFilter(
-        month: base.month,
-        rangeStart: base.rangeStart,
-        rangeEnd: base.rangeEnd,
-        accountId: base.accountId,
-        query: query,
-        categoryId: base.categoryId,
-        day: base.day,
-      );
+    month: base.month,
+    rangeStart: base.rangeStart,
+    rangeEnd: base.rangeEnd,
+    accountId: base.accountId,
+    query: query,
+    categoryId: base.categoryId,
+    day: base.day,
+  );
 }
 
 /// Chip filter aktif (akun/kategori) yang bisa dihapus.
@@ -363,9 +367,8 @@ class _AccountSheetState extends State<_AccountSheet> {
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => AccountManageScreen(
-                        repository: widget.repository,
-                      ),
+                      builder: (_) =>
+                          AccountManageScreen(repository: widget.repository),
                     ),
                   ),
                   child: Text(
