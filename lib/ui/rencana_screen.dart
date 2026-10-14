@@ -173,7 +173,7 @@ class _RencanaScreenState extends State<RencanaScreen> {
       // Padding bawah agar melayang di atas navbar floating.
       floatingActionButton: Padding(
         padding: EdgeInsets.only(
-          bottom: 72 + MediaQuery.paddingOf(context).bottom,
+          bottom: 110 + Spacing.s,
         ),
         child: switch (_segment) {
           RencanaSegment.batas => QuestFab(

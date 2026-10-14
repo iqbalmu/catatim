@@ -430,9 +430,9 @@ class _BerandaTabState extends State<_BerandaTab> {
       // FAB milik tab ini (bukan shell). Padding bawah agar melayang di
       // atas navbar floating.
       floatingActionButton: Padding(
-        padding: EdgeInsets.only(
-          bottom: 72 + MediaQuery.paddingOf(context).bottom,
-        ),
+        // Navbar floating ≈ 110px (margin 16 + isi ±78 + safe bawah):
+        // FAB duduk tepat di atasnya, tidak mengambang jauh.
+        padding: EdgeInsets.only(bottom: 110 + Spacing.s),
         child: QuestFab(
           label: 'Catat transaksi',
           icon: Icons.add_rounded,

@@ -36,7 +36,7 @@ class BonTab extends StatelessWidget {
       // atas navbar floating.
       floatingActionButton: Padding(
         padding: EdgeInsets.only(
-          bottom: 72 + MediaQuery.paddingOf(context).bottom,
+          bottom: 110 + Spacing.s,
         ),
         child: QuestFab(
           label: 'Catat bon',
