@@ -13,7 +13,6 @@ import 'rekap_donat.dart';
 import 'rekap_kalender.dart';
 import 'rekap_transaksi.dart';
 import 'rekap_tren.dart';
-import 'transaction_sheet.dart';
 
 /// Layar Rekap: pil periode (bulan/rentang) di atas segmen; segmen
 /// Transaksi tampil default. State filter (RekapFilter) dimiliki di
@@ -108,22 +107,8 @@ class _RekapScreenState extends State<RekapScreen> {
         subtitle: _periodLabel,
         actions: widget.headerActions,
       ),
-      // FAB milik tab ini (bukan shell). Padding bawah agar melayang di
-      // atas navbar floating.
-      floatingActionButton: Padding(
-        padding: EdgeInsets.only(
-          bottom: 110 + Spacing.s,
-        ),
-        child: QuestFab(
-          label: 'Catat transaksi',
-          icon: Icons.add_rounded,
-          onTap: () => TransactionSheet.show(
-            context,
-            widget.repository,
-            progress: widget.progress,
-          ),
-        ),
-      ),
+      // Tombol + tinggal di tengah navbar (dinamis per tab) — tanpa FAB
+      // melayang di tab ini.
       // Kolom non-scroll: konten segmen (RekapTransaksi) yang menggulir,
       // jangan sarangkan dua ListView tanpa shrinkWrap. Inset bawah
       // diberikan sekali saja oleh ListView segmen.

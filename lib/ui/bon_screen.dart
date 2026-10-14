@@ -32,18 +32,8 @@ class BonTab extends StatelessWidget {
         subtitle: 'Utang & piutang pribadi',
         actions: headerActions,
       ),
-      // FAB milik tab ini (bukan shell). Padding bawah agar melayang di
-      // atas navbar floating.
-      floatingActionButton: Padding(
-        padding: EdgeInsets.only(
-          bottom: 110 + Spacing.s,
-        ),
-        child: QuestFab(
-          label: 'Catat bon',
-          icon: Icons.add_rounded,
-          onTap: () => BonSheet.show(context, repository),
-        ),
-      ),
+      // Tombol + tinggal di tengah navbar (dinamis per tab) — tanpa FAB
+      // melayang di tab ini.
       body: StreamBuilder<List<Bon>>(
         stream: repository.watchBons(),
         builder: (context, snapshot) {

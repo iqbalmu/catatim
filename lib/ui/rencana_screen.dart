@@ -44,12 +44,12 @@ class RencanaScreen extends StatefulWidget {
   };
 
   @override
-  State<RencanaScreen> createState() => _RencanaScreenState();
+  State<RencanaScreen> createState() => RencanaScreenState();
 }
 
 enum RencanaSegment { batas, target }
 
-class _RencanaScreenState extends State<RencanaScreen> {
+class RencanaScreenState extends State<RencanaScreen> {
   late RencanaSegment _segment = widget.initialSegment;
 
   @override
@@ -66,6 +66,16 @@ class _RencanaScreenState extends State<RencanaScreen> {
     if (s == _segment) return;
     setState(() => _segment = s);
     widget.onSegmentChanged?.call(s);
+  }
+
+  /// Aksi tombol + tengah navbar — Jenis di segmen Batas,
+  /// Sisihkan di segmen Target.
+  void openPrimaryAction() {
+    if (_segment == RencanaSegment.batas) {
+      showAddJenisFlow(context, widget.repository);
+    } else {
+      _sisihkanFlow();
+    }
   }
 
   /// FAB Sisihkan: tanpa pos → dialog ＋Target; satu pos → sheet langsung;

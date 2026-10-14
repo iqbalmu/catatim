@@ -441,6 +441,7 @@ class QuestBottomNav extends StatelessWidget {
     required this.onChanged,
     required this.destinations,
     this.badges = const <int>{},
+    this.centerAction,
   });
 
   final int index;
@@ -449,6 +450,10 @@ class QuestBottomNav extends StatelessWidget {
 
   /// Indeks destinasi yang menampilkan titik badge (mis. Bon tua >30 hari).
   final Set<int> badges;
+
+  /// Tombol + di tengah nav, dinamis per tab (label + aksi ikut konteks).
+  /// Null = tanpa tombol tengah.
+  final ({String tooltip, VoidCallback onTap})? centerAction;
 
   @override
   Widget build(BuildContext context) {
@@ -471,8 +476,11 @@ class QuestBottomNav extends StatelessWidget {
         ),
         child: Row(
           children: [
-            for (var i = 0; i < destinations.length; i++)
+            for (var i = 0; i < destinations.length; i++) ...[
+              if (centerAction != null && i == destinations.length ~/ 2)
+                _centerButton(context),
               _navCell(context, i, destinations[i]),
+            ],
           ],
         ),
       ),
@@ -516,6 +524,38 @@ class QuestBottomNav extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Tombol + bundar di tengah nav — ikon saja, label jadi tooltip.
+  Widget _centerButton(BuildContext context) {
+    final action = centerAction!;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Tooltip(
+        message: action.tooltip,
+        child: QuestPress(
+          onTap: action.onTap,
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
+              ),
+              borderRadius: BorderRadius.circular(999),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x73FFA726),
+                  offset: Offset(0, 6),
+                  blurRadius: 14,
+                ),
+              ],
+            ),
+            child: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
           ),
         ),
       ),

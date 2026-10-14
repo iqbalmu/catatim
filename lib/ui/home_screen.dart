@@ -65,11 +65,31 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Beranda → Rencana·Batas selalu sinkron via [RencanaScreen].
   RencanaSegment _rencanaSegment = RencanaSegment.batas;
 
+  /// Kunci layar Rencana untuk memicu alur FAB segmen dari tombol +
+  /// tengah navbar.
+  final _rencanaKey = GlobalKey<RencanaScreenState>();
+
   /// Deep-link Beranda (LimitCard/strip) → Rencana·Batas.
   void _openRencanaBatas() => setState(() {
     _rencanaSegment = RencanaSegment.batas;
     _tab = 2;
   });
+
+  /// Aksi tombol + tengah navbar — dinamis per tab/segmen.
+  void _primaryAction() {
+    switch (_tab) {
+      case 3:
+        BonSheet.show(context, widget.repository);
+      case 2:
+        _rencanaKey.currentState?.openPrimaryAction();
+      default:
+        TransactionSheet.show(
+          context,
+          widget.repository,
+          progress: widget.progress,
+        );
+    }
+  }
 
   void _onTabChanged(int i) {
     setState(() => _tab = i);
@@ -125,6 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
             TickerMode(
               enabled: _tab == 2,
               child: RencanaScreen(
+                key: _rencanaKey,
                 repository: widget.repository,
                 progress: widget.progress,
                 initialSegment: _rencanaSegment,
@@ -141,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        // Shell hanya navigasi — tiap tab punya FAB sendiri.
+        // Tombol + di tengah navbar, dinamis per tab.
         bottomNavigationBar: StreamBuilder<List<Bon>>(
           stream: widget.repository.watchBons(),
           builder: (context, snapshot) {
@@ -153,6 +174,16 @@ class _HomeScreenState extends State<HomeScreen> {
               onChanged: _onTabChanged,
               destinations: HomeScreen._destinations,
               badges: hasOld ? const {3} : const <int>{},
+              centerAction: (
+                tooltip: _tab == 2 && _rencanaSegment == RencanaSegment.target
+                    ? 'Sisihkan'
+                    : _tab == 2
+                        ? 'Jenis'
+                        : _tab == 3
+                            ? 'Catat bon'
+                            : 'Catat transaksi',
+                onTap: _primaryAction,
+              ),
             );
           },
         ),
@@ -427,22 +458,8 @@ class _BerandaTabState extends State<_BerandaTab> {
           ...widget.headerActions,
         ],
       ),
-      // FAB milik tab ini (bukan shell). Padding bawah agar melayang di
-      // atas navbar floating.
-      floatingActionButton: Padding(
-        // Navbar floating ≈ 110px (margin 16 + isi ±78 + safe bawah):
-        // FAB duduk tepat di atasnya, tidak mengambang jauh.
-        padding: EdgeInsets.only(bottom: 110 + Spacing.s),
-        child: QuestFab(
-          label: 'Catat transaksi',
-          icon: Icons.add_rounded,
-          onTap: () => TransactionSheet.show(
-            context,
-            widget.repository,
-            progress: widget.progress,
-          ),
-        ),
-      ),
+      // Tombol + tinggal di tengah navbar (dinamis per tab) — tanpa FAB
+      // melayang di tab ini.
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           Spacing.m,
