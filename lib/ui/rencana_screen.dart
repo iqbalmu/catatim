@@ -179,25 +179,8 @@ class RencanaScreenState extends State<RencanaScreen> {
         subtitle: 'Batas & target keuangan',
         actions: widget.headerActions,
       ),
-      // FAB milik tab ini (bukan shell): label + aksi mengikuti segmen.
-      // Padding bawah agar melayang di atas navbar floating.
-      floatingActionButton: Padding(
-        padding: EdgeInsets.only(
-          bottom: 110 + Spacing.s,
-        ),
-        child: switch (_segment) {
-          RencanaSegment.batas => QuestFab(
-            label: RencanaScreen.fabLabelFor(_segment),
-            icon: Icons.add_rounded,
-            onTap: () => showAddJenisFlow(context, widget.repository),
-          ),
-          RencanaSegment.target => QuestFab(
-            label: RencanaScreen.fabLabelFor(_segment),
-            icon: Icons.savings_outlined,
-            onTap: _sisihkanFlow,
-          ),
-        },
-      ),
+      // Tombol + tinggal di tengah navbar (dinamis per tab/segmen) —
+      // tanpa FAB melayang di tab ini.
       // Kolom non-scroll: konten segmen (Batas) yang menggulir — pola
       // shell Rekap.
       body: Column(
