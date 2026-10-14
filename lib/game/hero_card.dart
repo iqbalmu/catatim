@@ -124,7 +124,7 @@ class _HeroSaldoState extends State<_HeroSaldo> {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       amount,
-                      style: context.qDisplay(38).copyWith(
+                      style: context.qDisplay(30).copyWith(
                         color: widget.total < 0 ? q.bad : q.text,
                       ),
                     ),

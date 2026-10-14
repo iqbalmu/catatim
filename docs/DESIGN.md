@@ -45,7 +45,7 @@ konteks kategorinya.
 
 | Peran | Ukuran/berat | Pakai |
 |---|---|---|
-| Display angka | 34–40 / 800, `tabularFigures` | sisa aman, saldo, total |
+| Display angka | 30–40 / 800, `tabularFigures` | sisa aman, saldo, total |
 | Judul | 17–20 / 800 | judul kartu, layar |
 | Body | 14–15 / 400–600 | konten |
 | Kecil | 12–13 / 600 | meta, subjudul |
