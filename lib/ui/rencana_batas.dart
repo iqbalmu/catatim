@@ -128,53 +128,71 @@ class _RencanaBatasState extends State<RencanaBatas> {
     final lastMonthEnd = lastMonthStart.add(monthEnd.difference(monthStart));
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
+      // Ekor list diberi clearance navbar floating (extendBody menyuntik
+      // tinggi navbar sebagai padding.bottom).
+      padding: EdgeInsets.fromLTRB(
         Spacing.m,
         Spacing.s,
         Spacing.m,
-        Spacing.l,
+        Spacing.l + MediaQuery.of(context).padding.bottom,
       ),
       children: [
-        Text('Batas pengeluaran', style: context.qEyebrow()),
-        const SizedBox(height: Spacing.s),
-        _LimitRow(
-          label: 'Batas harian',
-          hint: 'Maks keluar per hari',
-          value: _dailyLimit,
-          onEdit: () => _editLimit(
-            title: 'Batas harian',
-            current: _dailyLimit,
-            save: (v) async {
-              await _saveLimit(kKeyDailyLimit, v);
-              setState(() => _dailyLimit = v);
-            },
-          ),
-        ),
-        _LimitRow(
-          label: 'Batas mingguan',
-          hint: 'Maks keluar per minggu',
-          value: _weeklyLimit,
-          onEdit: () => _editLimit(
-            title: 'Batas mingguan',
-            current: _weeklyLimit,
-            save: (v) async {
-              await _saveLimit(kKeyWeeklyLimit, v);
-              setState(() => _weeklyLimit = v);
-            },
-          ),
-        ),
-        _LimitRow(
-          label: 'Total bulanan',
-          hint: 'Maks keluar sebulan',
-          value: _monthlyTotal,
-          onEdit: () => _editLimit(
-            title: 'Total bulanan',
-            current: _monthlyTotal,
-            save: (v) async {
-              await _saveLimit(kKeyMonthlyTotal, v);
-              setState(() => _monthlyTotal = v);
-            },
-          ),
+        StreamBuilder<({int day, int week, int month})>(
+          stream: _limitsUsage(),
+          builder: (context, usageSnap) {
+            final usage = usageSnap.data;
+            return Row(
+              children: [
+                Expanded(
+                  child: _LimitMiniCard(
+                    label: 'Harian',
+                    used: usage?.day ?? 0,
+                    limit: _dailyLimit,
+                    onTap: () => _editLimit(
+                      title: 'Batas harian',
+                      current: _dailyLimit,
+                      save: (v) async {
+                        await _saveLimit(kKeyDailyLimit, v);
+                        setState(() => _dailyLimit = v);
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(width: Spacing.s),
+                Expanded(
+                  child: _LimitMiniCard(
+                    label: 'Mingguan',
+                    used: usage?.week ?? 0,
+                    limit: _weeklyLimit,
+                    onTap: () => _editLimit(
+                      title: 'Batas mingguan',
+                      current: _weeklyLimit,
+                      save: (v) async {
+                        await _saveLimit(kKeyWeeklyLimit, v);
+                        setState(() => _weeklyLimit = v);
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(width: Spacing.s),
+                Expanded(
+                  child: _LimitMiniCard(
+                    label: 'Bulanan',
+                    used: usage?.month ?? 0,
+                    limit: _monthlyTotal,
+                    onTap: () => _editLimit(
+                      title: 'Total bulanan',
+                      current: _monthlyTotal,
+                      save: (v) async {
+                        await _saveLimit(kKeyMonthlyTotal, v);
+                        setState(() => _monthlyTotal = v);
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
         const SizedBox(height: Spacing.m),
         Row(
@@ -235,41 +253,60 @@ class _RencanaBatasState extends State<RencanaBatas> {
                         final accountNames = {
                           for (final a in accounts) a.id: a.name,
                         };
+                        final totalLimit = budgets.fold<int>(
+                          0,
+                          (t, b) => t + b.monthlyLimit,
+                        );
+                        final totalUsed = budgets.fold<int>(
+                          0,
+                          (t, b) => t + _usedFor(used, b),
+                        );
                         return Column(
                           children: [
-                            for (final c in categories) ...[
-                              // Alokasi yang sudah ada (global + per akun).
-                              for (final b in budgets.where(
-                                (b) => b.categoryId == c.id,
-                              ))
-                                _AllocationRow(
-                                  name: c.name,
-                                  scopeLabel: b.accountId == null
-                                      ? null
-                                      : accountNames[b.accountId],
-                                  used: _usedFor(used, b),
-                                  limit: b.monthlyLimit,
-                                  onEdit: () => _editAllocation(
-                                    c,
-                                    existing: b,
-                                    accounts: accounts,
-                                  ),
-                                  onManage: () => _manageCategory(c),
-                                ),
-                              // Kategori tanpa alokasi sama sekali.
-                              if (!budgets.any((b) => b.categoryId == c.id))
-                                _AllocationRow(
-                                  name: c.name,
-                                  used: _usedForCategory(used, c.id),
-                                  limit: null,
-                                  onEdit: () => _editAllocation(
-                                    c,
-                                    existing: null,
-                                    accounts: accounts,
-                                  ),
-                                  onManage: () => _manageCategory(c),
-                                ),
-                            ],
+                            // Satu kartu grup menggantikan tumpukan kartu
+                            // terpisah per jenis; kepala berisi ringkasan
+                            // terpakai / plafon alokasi bulan ini.
+                            _AllocationCard(
+                              used: totalUsed,
+                              limit: totalLimit,
+                              children: [
+                                for (final c in categories) ...[
+                                  // Alokasi yang sudah ada (global + per akun).
+                                  for (final b in budgets.where(
+                                    (b) => b.categoryId == c.id,
+                                  ))
+                                    _AllocationRow(
+                                      name: c.name,
+                                      scopeLabel: b.accountId == null
+                                          ? null
+                                          : accountNames[b.accountId],
+                                      used: _usedFor(used, b),
+                                      limit: b.monthlyLimit,
+                                      onEdit: () => _editAllocation(
+                                        c,
+                                        existing: b,
+                                        accounts: accounts,
+                                      ),
+                                      onManage: () => _manageCategory(c),
+                                    ),
+                                  // Kategori tanpa alokasi sama sekali.
+                                  if (!budgets.any(
+                                    (b) => b.categoryId == c.id,
+                                  ))
+                                    _AllocationRow(
+                                      name: c.name,
+                                      used: _usedForCategory(used, c.id),
+                                      limit: null,
+                                      onEdit: () => _editAllocation(
+                                        c,
+                                        existing: null,
+                                        accounts: accounts,
+                                      ),
+                                      onManage: () => _manageCategory(c),
+                                    ),
+                                ],
+                              ],
+                            ),
                             const SizedBox(height: Spacing.s),
                           ],
                         );
@@ -282,8 +319,6 @@ class _RencanaBatasState extends State<RencanaBatas> {
           },
         ),
         const SizedBox(height: Spacing.m),
-        Text('Progres bulan ini', style: context.qEyebrow()),
-        const SizedBox(height: Spacing.s),
         StreamBuilder<int>(
           stream: widget.repository.watchSumBetween(
             monthStart,
@@ -326,7 +361,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
                   return Row(
                     children: [
                       Expanded(
-                        child: _ProgressCard(
+                        child: _TrendChip(
                           label: 'Masuk',
                           amount: monthIn,
                           previous: lastIn,
@@ -335,7 +370,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
                       ),
                       const SizedBox(width: Spacing.s),
                       Expanded(
-                        child: _ProgressCard(
+                        child: _TrendChip(
                           label: 'Keluar',
                           amount: monthOut,
                           previous: lastOut,
@@ -359,6 +394,32 @@ class _RencanaBatasState extends State<RencanaBatas> {
   ) => used.entries
       .where((e) => e.key.category == categoryId)
       .fold(0, (total, e) => total + e.value);
+
+  /// Pemakaian belanja murni hari/minggu/bulan berjalan untuk kartu mini
+  /// batas. Trigger reaktif: watchOutSumByDaySince (emit tiap transaksi
+  /// keluar berubah); rentang dihitung ulang tiap emit — pola asyncMap
+  /// yang sama dengan baris alokasi.
+  Stream<({int day, int week, int month})> _limitsUsage() {
+    final now = DateTime.now();
+    return widget.repository
+        .watchOutSumByDaySince(DateTime(now.year, now.month))
+        .asyncMap((_) async {
+          final at = DateTime.now();
+          final today = DateTime(at.year, at.month, at.day);
+          final dayEnd = DateTime(at.year, at.month, at.day + 1);
+          final weekStart = today.subtract(Duration(days: at.weekday - 1));
+          final monthStart = DateTime(at.year, at.month);
+          final monthEnd = DateTime(at.year, at.month + 1);
+          return (
+            day: await widget.repository.sumSpendBetween(today, dayEnd),
+            week: await widget.repository.sumSpendBetween(weekStart, dayEnd),
+            month: await widget.repository.sumSpendBetween(
+              monthStart,
+              monthEnd,
+            ),
+          );
+        });
+  }
 
   int _usedFor(Map<({int? category, int? account}), int> used, Budget b) => used
       .entries
@@ -728,30 +789,50 @@ class _ManageCategoryFormState extends State<_ManageCategoryForm> {
   }
 }
 
-class _LimitRow extends StatelessWidget {
-  const _LimitRow({
+/// Format ringkas untuk kartu mini: '18rb', '1,4jt' — tanpa 'Rp' agar
+/// muat di sepertiga lebar layar.
+String _ringkasRp(int v) {
+  if (v >= 1000000) {
+    final jt = v / 1000000;
+    final s = jt == jt.roundToDouble()
+        ? jt.round().toString()
+        : jt.toStringAsFixed(1).replaceAll('.', ',');
+    return '${s}jt';
+  }
+  if (v >= 1000) return '${(v / 1000).round()}rb';
+  return '$v';
+}
+
+/// Kartu mini satu batas: terpakai berjalan + bar status + plafon.
+/// Tap → dialog edit plafon. Pola visual sama dengan [_AllocationRow]
+/// (over = latar merah pudar, warning = madu, ok = hijau).
+class _LimitMiniCard extends StatelessWidget {
+  const _LimitMiniCard({
     required this.label,
-    required this.hint,
-    required this.value,
-    required this.onEdit,
+    required this.used,
+    required this.limit,
+    required this.onTap,
   });
 
   final String label;
-  final String hint;
-  final int? value;
-  final VoidCallback onEdit;
+  final int used;
+  final int? limit;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final q = context.q;
+    final line = limit == null
+        ? null
+        : LimitLine(label: label, used: used, limit: limit!);
+    final over = line?.level == BudgetLevel.over;
     return QuestPress(
-      onTap: onEdit,
+      onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        margin: const EdgeInsets.only(bottom: Spacing.s),
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
         decoration: BoxDecoration(
-          color: q.surface,
-          borderRadius: BorderRadius.circular(16),
+          color: over ? q.bad.withValues(alpha: 0.12) : q.surface,
+          borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
               color: q.shadow,
@@ -760,28 +841,57 @@ class _LimitRow extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: context.qTitle(14)),
-                  Text(hint, style: TextStyle(color: q.muted, fontSize: 11)),
-                ],
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(fontSize: 10, color: q.muted),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(Icons.edit_rounded, size: 13, color: q.muted),
+              ],
             ),
+            const SizedBox(height: 2),
             Text(
-              value == null ? 'Tidak diatur' : Money.format(value!),
+              line == null ? 'Tidak diatur' : _ringkasRp(used),
               style: TextStyle(
+                fontSize: 14,
                 fontWeight: FontWeight.w800,
-                fontSize: 13,
-                color: value == null ? q.muted : q.text,
+                color: line == null ? q.muted : (over ? q.bad : q.text),
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
-            const SizedBox(width: Spacing.s),
-            Icon(Icons.edit_rounded, size: 18, color: q.muted),
+            const SizedBox(height: 6),
+            if (line != null) ...[
+              QuestBar(
+                value: line.fraction,
+                height: 5,
+                color: switch (line.level) {
+                  BudgetLevel.over => q.bad,
+                  BudgetLevel.warning => q.honey,
+                  BudgetLevel.ok => q.good,
+                },
+              ),
+              const SizedBox(height: 4),
+              Text(
+                over ? 'over · plafon ${_ringkasRp(limit!)}' : '/ ${_ringkasRp(limit!)}',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: over ? FontWeight.w700 : FontWeight.w400,
+                  color: over ? q.bad : q.muted,
+                ),
+              ),
+            ] else
+              Text(
+                'tap untuk atur',
+                style: TextStyle(fontSize: 9, color: q.muted),
+              ),
           ],
         ),
       ),
@@ -789,6 +899,67 @@ class _LimitRow extends StatelessWidget {
   }
 }
 
+/// Kartu grup daftar jenis alokasi: kepala ringkasan bulan ini + baris
+/// per jenis dipisah divider tipis. Over ditandai merah di baris (teks +
+/// bar), bukan latar kartu utuh.
+class _AllocationCard extends StatelessWidget {
+  const _AllocationCard({
+    required this.used,
+    required this.limit,
+    required this.children,
+  });
+
+  /// Terpakai & plafon total alokasi bulan ini (hanya baris ber-plafon).
+  final int used;
+  final int limit;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
+      decoration: BoxDecoration(
+        color: q.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: q.shadow,
+            offset: const Offset(0, 6),
+            blurRadius: 18,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (limit > 0)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                'Bulan ini · terpakai ${_ringkasRp(used)} / '
+                '${_ringkasRp(limit)}',
+                style: TextStyle(fontSize: 10, color: q.muted),
+              ),
+            ),
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0)
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: q.line.withValues(alpha: 0.6),
+              ),
+            children[i],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Baris satu jenis di dalam [_AllocationCard]: nama + ikon kelola di
+/// kiri, angka ringkas di kanan, bar tipis di bawah. Tap baris = edit
+/// alokasi; tap nama = kelola jenis.
 class _AllocationRow extends StatelessWidget {
   const _AllocationRow({
     required this.name,
@@ -809,91 +980,78 @@ class _AllocationRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final q = context.q;
-    final line = LimitLine(label: name, used: used, limit: limit);
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
-      margin: const EdgeInsets.only(bottom: Spacing.s),
-      decoration: BoxDecoration(
-        color: line.level == BudgetLevel.over
-            ? q.bad.withValues(alpha: 0.12)
-            : q.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: q.shadow,
-            offset: const Offset(0, 6),
-            blurRadius: 18,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: QuestPress(
-                  onTap: onManage,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          scopeLabel == null ? name : '$name · $scopeLabel',
-                          style: context.qTitle(14),
-                          overflow: TextOverflow.ellipsis,
+    final line = limit == null
+        ? null
+        : LimitLine(label: name, used: used, limit: limit!);
+    final over = line?.level == BudgetLevel.over;
+    return QuestPress(
+      onTap: onEdit,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: QuestPress(
+                    onTap: onManage,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            scopeLabel == null ? name : '$name · $scopeLabel',
+                            style: context.qTitle(13).copyWith(
+                              color: line == null ? q.muted : null,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(Icons.tune_rounded, size: 15, color: q.muted),
-                    ],
+                        const SizedBox(width: 4),
+                        Icon(Icons.tune_rounded, size: 14, color: q.muted),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Text(
-                limit == null
-                    ? 'Belum dialokasikan · terpakai ${Money.format(used)}'
-                    : '${Money.format(used)} / ${Money.format(limit!)}'
-                          ' (${line.usedPercent}%)',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: line.level == BudgetLevel.over ? q.bad : q.muted,
-                  fontWeight: FontWeight.w600,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
-              const SizedBox(width: Spacing.s),
-              QuestPress(
-                onTap: onEdit,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: q.surface2,
-                    shape: BoxShape.circle,
+                const SizedBox(width: Spacing.s),
+                Text(
+                  line == null
+                      ? 'belum dialokasikan'
+                      : '${_ringkasRp(used)} / ${_ringkasRp(limit!)}'
+                            '${over ? ' over' : ''}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: over ? q.bad : q.muted,
+                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
-                  child: Icon(Icons.edit_rounded, size: 16, color: q.text),
                 ),
+              ],
+            ),
+            if (line != null) ...[
+              const SizedBox(height: 6),
+              QuestBar(
+                value: line.fraction,
+                height: 5,
+                color: switch (line.level) {
+                  BudgetLevel.over => q.bad,
+                  BudgetLevel.warning => q.honey,
+                  BudgetLevel.ok => q.good,
+                },
               ),
             ],
-          ),
-          const SizedBox(height: Spacing.s),
-          QuestBar(
-            value: line.fraction,
-            height: 10,
-            color: switch (line.level) {
-              BudgetLevel.over => q.bad,
-              BudgetLevel.warning => q.honey,
-              BudgetLevel.ok => q.good,
-            },
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
-class _ProgressCard extends StatelessWidget {
-  const _ProgressCard({
+/// Chip ringkas arus bulan berjalan: label, nominal, arah tren vs bulan
+/// lalu (masuk naik = membaik; keluar naik = memburuk; ±5% = datar).
+class _TrendChip extends StatelessWidget {
+  const _TrendChip({
     required this.label,
     required this.amount,
     required this.previous,
@@ -905,7 +1063,6 @@ class _ProgressCard extends StatelessWidget {
   final int previous;
   final bool incoming;
 
-  /// Masuk naik = membaik; keluar naik = memburuk. Toleransi ±5% = datar.
   TrendDirection _trend() {
     final (current, baseline) = incoming
         ? (amount, previous)
@@ -939,28 +1096,31 @@ class _ProgressCard extends StatelessWidget {
       TrendDirection.flat => Icons.trending_flat_rounded,
     };
     return QuestCard(
-      radius: 16,
+      radius: 14,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: context.qEyebrow()),
-          const SizedBox(height: 4),
-          FittedBox(
-            child: Text(Money.format(amount), style: context.qDisplay(22)),
-          ),
-          const SizedBox(height: Spacing.s),
+          const SizedBox(height: 2),
           Row(
             children: [
-              Icon(icon, size: 14, color: color),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  'bulan lalu: ${Money.format(previous)}',
-                  style: TextStyle(fontSize: 11, color: q.muted),
-                  overflow: TextOverflow.ellipsis,
+              Flexible(
+                child: FittedBox(
+                  child: Text(
+                    Money.format(amount),
+                    style: context.qTitle(13),
+                  ),
                 ),
               ),
+              const SizedBox(width: 4),
+              Icon(icon, size: 14, color: color),
             ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'bulan lalu ${_ringkasRp(previous)}',
+            style: TextStyle(fontSize: 9, color: q.muted),
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
