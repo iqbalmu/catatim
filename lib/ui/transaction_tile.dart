@@ -93,10 +93,10 @@ class TransactionTile extends StatelessWidget {
       ),
       child: Container(
         margin: const EdgeInsets.only(bottom: Spacing.s),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding: Insets.tile,
         decoration: BoxDecoration(
           color: context.q.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppRadius.tile),
           boxShadow: [
             BoxShadow(
               color: context.q.shadow,
@@ -126,7 +126,7 @@ class TransactionTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: context.qTitle(15),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: Spacing.xxs),
                   Row(
                     children: [
                       Container(
@@ -137,7 +137,7 @@ class TransactionTile extends StatelessWidget {
                           color: dotColor,
                         ),
                       ),
-                      const SizedBox(width: 5),
+                      const SizedBox(width: Spacing.xs),
                       Flexible(
                         child: Text(
                           '${category?.name ?? tx.kind.label} · ${tx.bankId} · '

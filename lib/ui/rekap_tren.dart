@@ -138,7 +138,7 @@ class _LegendDot extends StatelessWidget {
             border: Border.all(color: context.q.line, width: 1.5),
           ),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: Spacing.xs),
         Text(label, style: context.qSmall()),
       ],
     );

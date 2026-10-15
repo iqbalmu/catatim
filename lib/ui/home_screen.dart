@@ -187,7 +187,7 @@ class _BukuduitMark extends StatelessWidget {
       height: 42,
       decoration: BoxDecoration(
         color: SeedColors.honey100,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.tile),
       ),
       child: Stack(
         children: [
@@ -200,8 +200,8 @@ class _BukuduitMark extends StatelessWidget {
               decoration: const BoxDecoration(
                 color: SeedColors.honeyDeep,
                 borderRadius: BorderRadius.only(
-                  topRight: Radius.circular(14),
-                  bottomLeft: Radius.circular(12),
+                  topRight: Radius.circular(AppRadius.tile),
+                  bottomLeft: Radius.circular(AppRadius.cell),
                 ),
               ),
             ),
@@ -215,8 +215,8 @@ class _BukuduitMark extends StatelessWidget {
               decoration: const BoxDecoration(
                 color: SeedColors.honeyDeep,
                 borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(8),
-                  bottomRight: Radius.circular(8),
+                  topLeft: Radius.circular(AppRadius.cell),
+                  bottomRight: Radius.circular(AppRadius.cell),
                 ),
               ),
             ),

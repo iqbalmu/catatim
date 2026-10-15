@@ -99,7 +99,7 @@ class _HeadlineCard extends StatelessWidget {
       padding: const EdgeInsets.all(Spacing.m),
       decoration: BoxDecoration(
         color: q.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         boxShadow: [
           BoxShadow(
             color: q.shadow,
@@ -115,7 +115,7 @@ class _HeadlineCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label, style: context.qEyebrow()),
-                const SizedBox(height: 2),
+                const SizedBox(height: Spacing.xxs),
                 FittedBox(
                   child: Text(
                     Money.format(amount),
@@ -127,10 +127,10 @@ class _HeadlineCard extends StatelessWidget {
           ),
           if (delta != null)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: Insets.chip,
               decoration: BoxDecoration(
                 color: deltaColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
               ),
               child: Text(
                 delta!,
@@ -336,14 +336,14 @@ class _CategoryDonutCard extends StatelessWidget {
 
   Widget _legendRow(BuildContext context, _Bucket b, int total) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: Spacing.xs),
       child: QuestPress(
         onTap: b.categoryId == null ? null : () => onTap(b.categoryId!),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          padding: Insets.chip,
           decoration: BoxDecoration(
             color: Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.cell),
           ),
           child: Row(
             children: [

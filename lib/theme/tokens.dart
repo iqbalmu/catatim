@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 class Spacing {
   Spacing._();
 
+  /// Micro-gap pasangan teks rapat (judul → subjudul, ikon → label nav).
+  static const double xxs = 2;
   static const double xs = 4;
   static const double s = 8;
   static const double m = 16;
@@ -11,11 +13,39 @@ class Spacing {
   static const double xl = 32;
 }
 
+/// Inset berulang berbasis peran. Pakai ini, jangan nilai hardcoded.
+class Insets {
+  Insets._();
+
+  /// Baris kartu kecil: item bon, log capture, tile transaksi, input.
+  static const EdgeInsets tile =
+      EdgeInsets.symmetric(horizontal: 14, vertical: 12);
+
+  /// Pil/badge mini: chip delta, badge status, pil tanggal.
+  static const EdgeInsets chip =
+      EdgeInsets.symmetric(horizontal: 10, vertical: 5);
+}
+
 class AppRadius {
   AppRadius._();
 
-  static const double card = 16;
+  /// Kartu standar — QuestCard & Container kartu permukaan.
+  static const double card = 20;
+
+  /// Tile/baris di dalam halaman atau kartu, sel kontrol dalam bingkai.
+  static const double tile = 18;
+
+  /// Bingkai kontrol: segmented, bottom nav.
+  static const double frame = 22;
+
+  /// Sel kecil padat: picker bulan, legenda donat, sel kalender.
+  static const double cell = 12;
+
+  /// Permukaan hero: kartu utama home, dialog, sheet.
   static const double sheet = 24;
+
+  /// Bentuk pil: chip, tombol, bar progres, switch.
+  static const double pill = 999;
 }
 
 class SeedColors {

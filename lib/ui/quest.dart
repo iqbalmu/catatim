@@ -61,7 +61,7 @@ class QuestCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(Spacing.m),
     this.onTap,
-    this.radius = 20,
+    this.radius = AppRadius.card,
   });
 
   final Widget child;
@@ -131,7 +131,7 @@ class QuestButton extends StatelessWidget {
         fg = q.text;
     }
     final button = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: tone == QuestTone.primary ? null : fill,
         gradient: tone == QuestTone.primary
@@ -139,7 +139,7 @@ class QuestButton extends StatelessWidget {
                 colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
               )
             : null,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
         boxShadow: tone == QuestTone.primary
             ? const [
                 BoxShadow(
@@ -204,10 +204,10 @@ class QuestChip extends StatelessWidget {
         onTap: onTap,
         onLongPress: onLongPress,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: selected ? q.honey : q.surface2,
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
             boxShadow: selected
                 ? const [
                     BoxShadow(
@@ -251,7 +251,7 @@ class QuestSegmented<T> extends StatelessWidget {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: context.q.surface2,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppRadius.frame),
       ),
       child: Row(
         children: [
@@ -288,10 +288,10 @@ class _SegmentCell<T> extends StatelessWidget {
       child: AnimatedContainer(
         duration: QuestMotion.fast,
         curve: QuestMotion.easeOut,
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
           color: selected ? q.surface : Colors.transparent,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(AppRadius.tile),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -302,7 +302,7 @@ class _SegmentCell<T> extends StatelessWidget {
                 size: 18,
                 color: selected ? q.honeyInk : q.muted,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: Spacing.xs),
             ],
             Flexible(
               child: Text(
@@ -472,10 +472,10 @@ class QuestBottomNav extends StatelessWidget {
           clipBehavior: Clip.none,
           children: [
             Container(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(Spacing.xs),
               decoration: BoxDecoration(
                 color: q.surface,
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(AppRadius.frame),
                 boxShadow: [
                   BoxShadow(
                     color: q.shadow,
@@ -517,7 +517,7 @@ class QuestBottomNav extends StatelessWidget {
     return Expanded(
       // Inset horizontal: pill aktif tak menyentuh tetangga/slot tombol +.
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 3),
+        padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
         child: QuestPress(
           onTap: () => onChanged(i),
           child: AnimatedContainer(
@@ -526,7 +526,7 @@ class QuestBottomNav extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
               color: selected ? q.surface2 : Colors.transparent,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadius.tile),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -541,7 +541,7 @@ class QuestBottomNav extends StatelessWidget {
                     color: selected ? q.text : q.muted,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: Spacing.xxs),
                 Text(
                   dest.label,
                   maxLines: 1,
@@ -575,7 +575,7 @@ class QuestBottomNav extends StatelessWidget {
             gradient: const LinearGradient(
               colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
             ),
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x73FFA726),
@@ -611,12 +611,12 @@ class QuestFab extends StatelessWidget {
     return QuestPress(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
           ),
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
           boxShadow: const [
             BoxShadow(
               color: Color(0x73FFA726),
@@ -629,7 +629,7 @@ class QuestFab extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, color: Colors.white, size: 24),
-            const SizedBox(width: 6),
+            const SizedBox(width: Spacing.s),
             Text(
               label,
               style: const TextStyle(
@@ -704,10 +704,10 @@ class QuestBar extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: q.surface2,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
         child: LayoutBuilder(
           builder: (context, constraints) {
             final w = constraints.maxWidth * value.clamp(0.0, 1.0);
@@ -755,10 +755,10 @@ class QuestSwitch extends StatelessWidget {
           curve: QuestMotion.easeOut,
           width: 56,
           height: 32,
-          padding: const EdgeInsets.all(3),
+          padding: const EdgeInsets.all(Spacing.xs),
           decoration: BoxDecoration(
             color: value ? q.honey : q.surface2,
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
           ),
           child: AnimatedAlign(
             duration: QuestMotion.fast,
@@ -831,10 +831,10 @@ class QuestGrabber extends StatelessWidget {
       child: Container(
         width: 48,
         height: 6,
-        margin: const EdgeInsets.only(top: 10, bottom: 4),
+        margin: const EdgeInsets.only(top: Spacing.s, bottom: Spacing.xs),
         decoration: BoxDecoration(
           color: context.q.muted.withValues(alpha: 0.5),
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
         ),
       ),
     );
@@ -871,7 +871,7 @@ Future<T?> showQuestDialog<T>(
       insetPadding: const EdgeInsets.all(Spacing.l),
       backgroundColor: Colors.transparent,
       child: QuestCard(
-        radius: 24,
+        radius: AppRadius.sheet,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -922,7 +922,7 @@ class QuestSkeleton extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: Spacing.s),
             decoration: BoxDecoration(
               color: context.q.surface2,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(AppRadius.tile),
             ),
           ),
       ],

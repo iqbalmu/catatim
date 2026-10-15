@@ -132,7 +132,7 @@ class _NetCard extends StatelessWidget {
         gradient: const LinearGradient(
           colors: [SeedColors.honeyBright, SeedColors.honey],
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppRadius.sheet),
       ),
       child: Column(
         children: [
@@ -140,7 +140,7 @@ class _NetCard extends StatelessWidget {
             'POSISI BERSIH',
             style: context.qEyebrow().copyWith(color: q.honeyInk),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: Spacing.xxs),
           Text(
             '${positive ? '+' : '-'}${Money.format(net.abs())}',
             style: context.qDisplay(30).copyWith(color: q.text),
@@ -178,7 +178,7 @@ class _TotalCard extends StatelessWidget {
         children: [
           Text(label, style: context.qTitle(15)),
           Text(hint, style: context.qSmall(11)),
-          const SizedBox(height: 4),
+          const SizedBox(height: Spacing.xs),
           FittedBox(
             child: Text(
               Money.format(amount),
@@ -227,10 +227,10 @@ class _BonTile extends StatelessWidget {
         opacity: settled ? 0.6 : 1,
         child: Container(
           margin: const EdgeInsets.only(bottom: Spacing.s),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          padding: Insets.tile,
           decoration: BoxDecoration(
             color: context.q.surface,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(AppRadius.tile),
             boxShadow: [
               BoxShadow(
                 color: context.q.shadow,
@@ -263,7 +263,7 @@ class _BonTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: context.qTitle(15),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: Spacing.xxs),
                     Text(
                       '${lent ? 'Dipinjamkan' : 'Dipinjam'} · '
                       '${_date(bon.occurredAt)}'
@@ -279,7 +279,7 @@ class _BonTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   QuestAmount(amount: bon.amount, incoming: !lent, size: 15),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: Spacing.xxs),
                   if (settled)
                     Text(
                       'Lunas ✓',

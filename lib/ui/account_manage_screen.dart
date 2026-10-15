@@ -261,10 +261,10 @@ class _AccountRow extends StatelessWidget {
     return QuestPress(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: Insets.tile,
         decoration: BoxDecoration(
           color: q.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppRadius.tile),
           boxShadow: [
             BoxShadow(
               color: q.shadow,

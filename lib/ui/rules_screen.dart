@@ -158,7 +158,7 @@ class _RuleTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(rule.name, style: context.qTitle(15)),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: Spacing.xxs),
                   Text(
                     '$scope · mengandung "$match"',
                     overflow: TextOverflow.ellipsis,

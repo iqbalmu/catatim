@@ -43,7 +43,7 @@ class BatasCard extends StatelessWidget {
     final q = context.q;
     return QuestCard(
       onTap: onTap,
-      radius: 24,
+      radius: AppRadius.sheet,
       padding: const EdgeInsets.all(Spacing.m),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,7 +57,7 @@ class BatasCard extends StatelessWidget {
                 ),
               ),
               Text('Lihat detail', style: context.qSmall(13)),
-              const SizedBox(width: 2),
+              const SizedBox(width: Spacing.xxs),
               Icon(
                 Icons.chevron_right_rounded,
                 size: 17,
@@ -177,9 +177,9 @@ class _BatasColumn extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: Spacing.s),
         ClipRRect(
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
           child: Stack(
             children: [
               Container(height: 8, color: q.line.withValues(alpha: 0.6)),
@@ -226,7 +226,7 @@ class MiniInOut extends StatelessWidget {
             children: [
               Expanded(
                 child: QuestCard(
-                  radius: 24,
+                  radius: AppRadius.sheet,
                   padding: EdgeInsets.all(Spacing.m),
                   child: SizedBox(height: 56),
                 ),
@@ -234,7 +234,7 @@ class MiniInOut extends StatelessWidget {
               SizedBox(width: Spacing.s),
               Expanded(
                 child: QuestCard(
-                  radius: 24,
+                  radius: AppRadius.sheet,
                   padding: EdgeInsets.all(Spacing.m),
                   child: SizedBox(height: 56),
                 ),
@@ -250,8 +250,8 @@ class MiniInOut extends StatelessWidget {
             Expanded(
               child: QuestCard(
                 onTap: onTap,
-                radius: 24,
-                padding: const EdgeInsets.all(14),
+                radius: AppRadius.sheet,
+                padding: const EdgeInsets.all(Spacing.m),
                 child: _ArusRow(
                   icon: Icons.arrow_downward_rounded,
                   label: 'Keluar',
@@ -266,8 +266,8 @@ class MiniInOut extends StatelessWidget {
             Expanded(
               child: QuestCard(
                 onTap: onTap,
-                radius: 24,
-                padding: const EdgeInsets.all(14),
+                radius: AppRadius.sheet,
+                padding: const EdgeInsets.all(Spacing.m),
                 child: _ArusRow(
                   icon: Icons.arrow_upward_rounded,
                   label: 'Masuk',
@@ -317,14 +317,14 @@ class _ArusRow extends StatelessWidget {
           ),
           child: Icon(icon, size: 23, color: incoming ? q.good : q.bad),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: Spacing.s),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(label, style: context.qSmall(13)),
-              const SizedBox(height: 2),
+              const SizedBox(height: Spacing.xxs),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
@@ -335,7 +335,7 @@ class _ArusRow extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: Spacing.xxs),
               Text(
                 delta == null ? 'bulan pertama' : '$delta · $lastShort',
                 overflow: TextOverflow.ellipsis,
@@ -364,7 +364,7 @@ class DisiplinCard extends StatelessWidget {
         final snap = service.latest;
         if (snap == null) {
           return const QuestCard(
-            radius: 24,
+            radius: AppRadius.sheet,
             padding: EdgeInsets.all(Spacing.m),
             child: SizedBox(height: 120),
           );
@@ -373,7 +373,7 @@ class DisiplinCard extends StatelessWidget {
         final rows = snap.disciplineMonth;
         if (rows.isEmpty) {
           return QuestCard(
-            radius: 24,
+            radius: AppRadius.sheet,
             padding: const EdgeInsets.all(Spacing.m),
             child: Text(
               'Atur batas untuk melihat disiplin harian',
@@ -386,7 +386,7 @@ class DisiplinCard extends StatelessWidget {
             .where((d) => d.within && snap.activeDays.contains(d.day))
             .length;
         return QuestCard(
-          radius: 24,
+          radius: AppRadius.sheet,
           padding: const EdgeInsets.all(Spacing.m),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -419,7 +419,7 @@ class DisiplinCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: Spacing.s),
               Row(
                 children: [
                   for (final d in rows)
@@ -444,7 +444,7 @@ class DisiplinCard extends StatelessWidget {
                 ],
               ),
               if (snap.streakDays > 0) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: Spacing.s),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -453,7 +453,7 @@ class DisiplinCard extends StatelessWidget {
                       size: 13,
                       color: SeedColors.honeyDeep,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: Spacing.xs),
                     Text(
                       '${snap.streakDays} hari streak',
                       style: context.qSmall(11),
@@ -487,7 +487,7 @@ class TransaksiTerbaruCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final q = context.q;
     return QuestCard(
-      radius: 24,
+      radius: AppRadius.sheet,
       padding: const EdgeInsets.all(Spacing.m),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -503,7 +503,7 @@ class TransaksiTerbaruCard extends StatelessWidget {
                   ),
                 ),
                 Text('Lihat semua', style: context.qSmall(13)),
-                const SizedBox(width: 2),
+                const SizedBox(width: Spacing.xxs),
                 Icon(
                   Icons.chevron_right_rounded,
                   size: 17,
@@ -578,7 +578,7 @@ class _RecentRow extends StatelessWidget {
         progress: progress,
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: Spacing.s),
         child: Row(
           children: [
             Container(
@@ -593,7 +593,7 @@ class _RecentRow extends StatelessWidget {
                 color: tintIcon,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: Spacing.s),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -604,7 +604,7 @@ class _RecentRow extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: context.qTitle(14),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: Spacing.xxs),
                   Text(
                     subtitle,
                     overflow: TextOverflow.ellipsis,

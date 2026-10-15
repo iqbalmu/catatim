@@ -296,10 +296,10 @@ class _FilterChip extends StatelessWidget {
     return QuestPress(
       onTap: onClear,
       child: Container(
-        padding: const EdgeInsets.only(left: 12, right: 6, top: 5, bottom: 5),
+        padding: Insets.chip,
         decoration: BoxDecoration(
           color: q.honey.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -312,7 +312,7 @@ class _FilterChip extends StatelessWidget {
                 color: q.text,
               ),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: Spacing.xs),
             GestureDetector(
               onTap: onClear,
               child: Icon(Icons.close_rounded, size: 16, color: q.muted),

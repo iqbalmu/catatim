@@ -751,10 +751,10 @@ class _LimitMiniCard extends StatelessWidget {
     return QuestPress(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+        padding: Insets.tile,
         decoration: BoxDecoration(
           color: over ? q.bad.withValues(alpha: 0.12) : q.surface,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppRadius.tile),
           boxShadow: [
             BoxShadow(
               color: q.shadow,
@@ -779,11 +779,11 @@ class _LimitMiniCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: Spacing.xs),
                 Icon(Icons.edit_rounded, size: 13, color: q.muted),
               ],
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: Spacing.xxs),
             Text(
               line == null ? 'Tidak diatur' : _ringkasRp(used),
               style: TextStyle(
@@ -793,7 +793,7 @@ class _LimitMiniCard extends StatelessWidget {
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: Spacing.xs),
             if (line != null) ...[
               QuestBar(
                 value: line.fraction,
@@ -804,7 +804,7 @@ class _LimitMiniCard extends StatelessWidget {
                   BudgetLevel.ok => q.good,
                 },
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: Spacing.xs),
               Text(
                 over ? 'over · plafon ${_ringkasRp(limit!)}' : '/ ${_ringkasRp(limit!)}',
                 style: TextStyle(
@@ -856,7 +856,7 @@ class _AllocationRow extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: over ? q.bad.withValues(alpha: 0.12) : q.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.tile),
         boxShadow: [
           BoxShadow(
             color: q.shadow,
@@ -871,7 +871,7 @@ class _AllocationRow extends StatelessWidget {
           // Transparan tapi opaque untuk hit-test: seluruh permukaan kartu
           // bisa ditap, bukan hanya teks/barnya.
           color: Colors.transparent,
-          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+          padding: Insets.tile,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -891,7 +891,7 @@ class _AllocationRow extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: Spacing.xs),
                   Icon(Icons.edit_rounded, size: 14, color: q.muted),
                 ],
               ),

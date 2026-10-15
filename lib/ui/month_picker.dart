@@ -106,10 +106,10 @@ class _MonthCell extends StatelessWidget {
       onTap: onTap,
       child: Container(
         height: 40,
-        margin: const EdgeInsets.all(2),
+        margin: const EdgeInsets.all(Spacing.xxs),
         decoration: BoxDecoration(
           color: selected ? q.honey : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.cell),
         ),
         alignment: Alignment.center,
         child: Text(

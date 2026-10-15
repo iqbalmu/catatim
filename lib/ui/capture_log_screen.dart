@@ -193,7 +193,7 @@ class _CaptureLogScreenState extends State<CaptureLogScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Mode pelajaran', style: context.qTitle(15)),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: Spacing.xxs),
                       Text(
                         'Catat SEMUA notifikasi ke log (untuk tuning '
                         'template). Nonaktif = hanya notifikasi bank.',
@@ -281,13 +281,10 @@ class _CaptureLogScreenState extends State<CaptureLogScreen> {
                       onTap: () => _showFullText(log),
                       child: Container(
                         margin: const EdgeInsets.only(bottom: Spacing.s),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 12,
-                        ),
+                        padding: Insets.tile,
                         decoration: BoxDecoration(
                           color: context.q.surface,
-                          borderRadius: BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(AppRadius.tile),
                           boxShadow: [
                             BoxShadow(
                               color: context.q.shadow,
@@ -345,14 +342,11 @@ class _CaptureLogScreenState extends State<CaptureLogScreen> {
                             ),
                             if (log.parsed)
                               Container(
-                                margin: const EdgeInsets.only(left: 8),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 5,
-                                ),
+                                margin: const EdgeInsets.only(left: Spacing.s),
+                                padding: Insets.chip,
                                 decoration: BoxDecoration(
                                   color: context.q.good.withValues(alpha: 0.18),
-                                  borderRadius: BorderRadius.circular(999),
+                                  borderRadius: BorderRadius.circular(AppRadius.pill),
                                 ),
                                 child: Text(
                                   'Tercatat',

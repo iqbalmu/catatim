@@ -190,7 +190,7 @@ class _BackupScreenState extends State<BackupScreen> {
             padding: const EdgeInsets.all(Spacing.m),
             decoration: BoxDecoration(
               color: context.q.bad.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadius.card),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

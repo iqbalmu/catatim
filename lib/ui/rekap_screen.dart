@@ -129,13 +129,10 @@ class _RekapScreenState extends State<RekapScreen> {
                 QuestPress(
                   onTap: _openPeriodSheet,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
+                    padding: Insets.tile,
                     decoration: BoxDecoration(
                       color: context.q.surface,
-                      borderRadius: BorderRadius.circular(18),
+                      borderRadius: BorderRadius.circular(AppRadius.tile),
                       boxShadow: [
                         BoxShadow(
                           color: context.q.shadow,
@@ -293,7 +290,7 @@ class _PeriodSheetState extends State<_PeriodSheet> {
             if (_period == _RekapPeriod.month) ...[
               const SizedBox(height: Spacing.m),
               QuestCard(
-                radius: 16,
+
                 child: QuestMonthPicker(
                   initialMonth: _month,
                   onChanged: (m) => setState(() => _month = m),
@@ -303,7 +300,7 @@ class _PeriodSheetState extends State<_PeriodSheet> {
             if (_period == _RekapPeriod.custom) ...[
               const SizedBox(height: Spacing.m),
               QuestCard(
-                radius: 16,
+
                 child: QuestRangeCalendar(
                   initialRange: _custom,
                   onChanged: (r) => setState(() => _custom = r),

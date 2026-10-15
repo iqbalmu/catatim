@@ -185,7 +185,7 @@ class _CalendarGrid extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: Spacing.xs),
         for (var row = 0; row < 6; row++)
           Row(
             children: [
@@ -250,13 +250,13 @@ class _KalenderCell extends StatelessWidget {
         margin: const EdgeInsets.all(1),
         decoration: BoxDecoration(
           color: isSelected ? q.honey : heat,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.cell),
           border: Border.all(
             color: isSelected || isToday ? q.text : q.line,
             width: isToday || isSelected ? 1.5 : 0,
           ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
+        padding: EdgeInsets.symmetric(horizontal: Spacing.xxs, vertical: Spacing.xs),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -328,7 +328,7 @@ class _DayDetail extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(idFullDate(day), style: context.qTitle(15)),
-                        const SizedBox(height: 2),
+                    const SizedBox(height: Spacing.xxs),
                         Text(
                           rows.isEmpty
                               ? 'Tidak ada transaksi'

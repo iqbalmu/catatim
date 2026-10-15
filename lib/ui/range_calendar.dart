@@ -139,7 +139,7 @@ class _QuestRangeCalendarState extends State<QuestRangeCalendar> {
               ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: Spacing.xs),
         // Grid tanggal
         ...[
           for (var row = 0; row < 6; row++)
@@ -247,7 +247,7 @@ class _DayCell extends StatelessWidget {
         decoration: BoxDecoration(
           color: bg,
           shape: isEdge ? BoxShape.circle : BoxShape.rectangle,
-          borderRadius: isEdge ? null : BorderRadius.circular(8),
+          borderRadius: isEdge ? null : BorderRadius.circular(AppRadius.cell),
           border: Border.all(color: q.line, width: isEdge ? 2 : 0),
         ),
         alignment: Alignment.center,
