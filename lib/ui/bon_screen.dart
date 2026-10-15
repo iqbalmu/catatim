@@ -92,11 +92,9 @@ class BonTab extends StatelessWidget {
                 ],
               ),
               if (bons.isEmpty)
-                QuestEmpty(
+                const QuestEmpty(
                   title: 'Belum ada bon',
-                  hint: 'Catat bon saat meminjam atau dipinjami.',
-                  actionLabel: 'Catat bon',
-                  onAction: () => BonSheet.show(context, repository),
+                  hint: 'Catat bon lewat tombol + di navbar bawah.',
                 )
               else ...[
                 if (open.isNotEmpty) ...[

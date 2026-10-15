@@ -64,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Deep-link Beranda (BatasCard/strip) → Rencana·Batas.
   void _openRencanaBatas() => setState(() => _tab = 2);
 
-  /// Aksi tombol + tengah navbar — dinamis per tab/segmen.
+  /// Aksi tombol + tengah navbar — dinamis per tab.
   void _primaryAction() {
     switch (_tab) {
       case 3:
