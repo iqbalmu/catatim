@@ -12,14 +12,13 @@ import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'account_manage_screen.dart';
-import 'backup_screen.dart';
 import 'bon_screen.dart';
 import 'capture_log_screen.dart';
 import 'home_cards.dart';
+import 'menu_screen.dart';
 import 'quest.dart';
 import 'rekap_screen.dart';
 import 'rencana_screen.dart';
-import 'rules_screen.dart';
 import 'transaction_sheet.dart';
 
 /// Bon tua: belum lunas dan umur kalender (today − occurredAt) > 30 hari.
@@ -269,7 +268,8 @@ class _CaptureBellState extends State<_CaptureBell> {
   }
 }
 
-/// Menu ⋯: Kelola akun, Rencana·Batas, Backup, Aturan capture.
+/// Tombol ⋯: buka layar Menu (Kelola akun, Rencana·Batas, Backup, Aturan
+/// capture).
 class _HomeMenu extends StatelessWidget {
   const _HomeMenu({
     required this.repository,
@@ -285,100 +285,20 @@ class _HomeMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
+    return QuestIconButton(
+      icon: Icons.more_horiz_rounded,
       tooltip: 'Menu',
-      icon: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: context.q.surface,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: context.q.shadow,
-              offset: const Offset(0, 4),
-              blurRadius: 12,
-            ),
-          ],
+      onPressed: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MenuScreen(
+            repository: repository,
+            engine: pipeline.engine,
+            progress: progress,
+            onOpenRencana: onOpenRencana,
+          ),
         ),
-        child: Icon(Icons.more_horiz_rounded, color: context.q.text),
       ),
-      onSelected: (value) {
-        if (value == 'accounts') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) =>
-                  AccountManageScreen(repository: repository),
-            ),
-          );
-        } else if (value == 'budget') {
-          onOpenRencana();
-        } else if (value == 'backup') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => BackupScreen(repository: repository),
-            ),
-          );
-        } else if (value == 'rules') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => RulesScreen(
-                repository: repository,
-                engine: pipeline.engine,
-                progress: progress,
-              ),
-            ),
-          );
-        }
-      },
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: 'accounts',
-          child: Row(
-            children: [
-              Icon(
-                Icons.account_balance_wallet_rounded,
-                color: context.q.text,
-              ),
-              const SizedBox(width: Spacing.s),
-              const Text('Kelola akun'),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'budget',
-          child: Row(
-            children: [
-              Icon(Icons.savings_rounded, color: context.q.text),
-              const SizedBox(width: Spacing.s),
-              const Text('Rencana · Batas'),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'backup',
-          child: Row(
-            children: [
-              Icon(Icons.backup_outlined, color: context.q.text),
-              const SizedBox(width: Spacing.s),
-              const Text('Backup & pulihkan'),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'rules',
-          child: Row(
-            children: [
-              Icon(Icons.rule_rounded, color: context.q.text),
-              const SizedBox(width: Spacing.s),
-              const Text('Aturan capture'),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }
