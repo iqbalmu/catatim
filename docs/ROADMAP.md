@@ -1,6 +1,6 @@
 # Roadmap Bukuduit
 
-Status: v1.0.0+1, belum dirilis. Diperbarui 2026-10-14.
+Status: v1.0.0+1, belum dirilis. Diperbarui 2026-10-16.
 
 **Arah yang disepakati**: kedalaman produk dulu, rilis menyusul. User
 primer = pemilik proyek (pemakaian harian sendiri); publik menjadi
@@ -45,18 +45,25 @@ dari layar Anggaran).
 > menjadi shell 4 tab — **Beranda · Rekap · Rencana · Bon** — dengan FAB
 > kontekstual per tab. Tab Riwayat/Laporan digantikan **Rekap** (4 segmen:
 > Transaksi, Donat, Tren, Kalender) dan tab Anggaran digantikan **Rencana**
-> (segmen Batas + Target/Sisihkan); statistik memakai keluar murni
-> (transfer dikecualikan). Layar lama (Riwayat/Laporan/Anggaran) dipensiunkan.
-> Status M1–M5 di atas tidak berubah.
+> (segmen Batas; ~~+ Target/Sisihkan~~ — dipensiunkan, ADR-009);
+> statistik memakai keluar murni (transfer dikecualikan). Layar lama
+> (Riwayat/Laporan/Anggaran) dipensiunkan.
+> Status M1–M5 mengikuti revisi terbaru (lihat catatan 2026-10-16).
+>
+> **Perubahan rencana** (2026-10-16): M2 (misi harian) dibatalkan —
+> kebiasaan mencatat sudah dirayakan oleh streak + mood (ADR-007),
+> misi terpisah berarti reward ganda untuk perilaku yang sama.
+> Pengingat jatuh tempo bon diputuskan **tidak dibangun** — bon cukup
+> daftar + status lunas, tanpa scheduler notifikasi. Target/Sisihkan
+> dipensiunkan (ADR-009): Rencana kini murni Batas.
 
-### M2 — Misi harian
+### M2 — Misi harian (dibatalkan 2026-10-16)
 
-Quest engine kecil: 2–3 misi per hari ("catat ≥1 transaksi", "jaga
-garis harian tetap ok", …), dievaluasi otomatis dari data lewat hook
-`onTransactionRecorded`, tampil di beranda.
-
-**Selesai bila**: misi tercentang otomatis dari data (tidak bisa
-dicentang manual), reward menyatu dengan milestone/mood yang ada.
+Dibatalkan: kebiasaan mencatat sudah dirayakan oleh streak disiplin +
+mood maskot (ADR-007). Menambah quest engine terpisah memberi dua
+reward untuk satu perilaku dan menambah permukaan yang harus
+dipelihara. Bila motivasi mencatat terbukti kurang di pemakaian
+harian, pertimbangkan ulang dari data — bukan dari asumsi.
 
 ### M3 — Validasi capture lapangan
 
@@ -81,8 +88,6 @@ Rollout bertahap setelah closed testing lulus tanpa blocker.
 
 ## Keputusan terbuka
 
-- Pengingat jatuh tempo bon via notifikasi lokal (butuh scheduler;
-  belum diputuskan, tidak termasuk non-goal).
 - Widget test UI: tetap 0 sampai ada bug UI nyata yang membuktikan
   kebutuhannya.
 
