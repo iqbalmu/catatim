@@ -73,8 +73,17 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Kunci layar Rencana untuk memicu aksi tombol + tengah navbar.
   final _rencanaKey = GlobalKey<RencanaScreenState>();
 
+  /// Kunci layar Rekap untuk deep-link bersegmen dari Beranda.
+  final _rekapKey = GlobalKey<RekapScreenState>();
+
   /// Deep-link Beranda (BatasCard/strip) → Rencana·Batas.
   void _openRencanaBatas() => setState(() => _tab = 2);
+
+  /// Deep-link Beranda → Rekap pada segmen tertentu, sesuai janji label.
+  void _openRekap(RekapSegment segment) {
+    setState(() => _tab = 1);
+    _rekapKey.currentState?.openSegment(segment);
+  }
 
   /// Aksi tombol + tengah navbar — dinamis per tab.
   void _primaryAction() {
@@ -131,13 +140,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     repository: widget.repository,
                     pipeline: widget.pipeline,
                     progress: widget.progress,
-                    onOpenRekap: () => setState(() => _tab = 1),
+                    onOpenRekap: () =>
+                        _openRekap(RekapSegment.transaksi),
                     onOpenRencanaBatas: _openRencanaBatas,
                   ),
                 ),
                 TickerMode(
                   enabled: _tab == 1,
                   child: RekapScreen(
+                    key: _rekapKey,
                     repository: widget.repository,
                     progress: widget.progress,
                   ),
@@ -196,7 +207,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 _HomeMenu(
                   repository: widget.repository,
                   pipeline: widget.pipeline,
-                  progress: widget.progress,
                 ),
               ],
             ),
@@ -444,12 +454,10 @@ class _HomeMenu extends StatelessWidget {
   const _HomeMenu({
     required this.repository,
     required this.pipeline,
-    required this.progress,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
-  final ProgressService progress;
 
   @override
   Widget build(BuildContext context) {
@@ -462,7 +470,6 @@ class _HomeMenu extends StatelessWidget {
           builder: (_) => MenuScreen(
             repository: repository,
             engine: pipeline.engine,
-            progress: progress,
           ),
         ),
       ),

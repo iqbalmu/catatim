@@ -30,15 +30,22 @@ class RekapScreen extends StatefulWidget {
   final ProgressService? progress;
 
   @override
-  State<RekapScreen> createState() => _RekapScreenState();
+  State<RekapScreen> createState() => RekapScreenState();
 }
 
-enum _RekapSegment { transaksi, donat, tren, kalender }
+enum RekapSegment { transaksi, donat, tren, kalender }
 
 enum _RekapPeriod { month, custom }
 
-class _RekapScreenState extends State<RekapScreen> {
-  _RekapSegment _segment = _RekapSegment.transaksi;
+class RekapScreenState extends State<RekapScreen> {
+  RekapSegment _segment = RekapSegment.transaksi;
+
+  /// Deep-link dari shell (mis. "Lihat semua" Beranda): pastikan segmen
+  /// yang dijanjikan labelnya benar-benar terbuka.
+  void openSegment(RekapSegment segment) {
+    if (_segment != segment) setState(() => _segment = segment);
+  }
+
   late RekapFilter _filter;
 
   @override
@@ -149,7 +156,7 @@ class _RekapScreenState extends State<RekapScreen> {
                   ),
                 ),
                 const SizedBox(height: Spacing.m),
-                QuestSegmented<_RekapSegment>(
+                QuestSegmented<RekapSegment>(
                   selected: _segment,
                   onChanged: (s) => setState(() {
                     _segment = s;
@@ -159,14 +166,14 @@ class _RekapScreenState extends State<RekapScreen> {
                   }),
                   options: const [
                     (
-                      value: _RekapSegment.transaksi,
+                      value: RekapSegment.transaksi,
                       label: 'Transaksi',
                       icon: null,
                     ),
-                    (value: _RekapSegment.donat, label: 'Donat', icon: null),
-                    (value: _RekapSegment.tren, label: 'Tren', icon: null),
+                    (value: RekapSegment.donat, label: 'Donat', icon: null),
+                    (value: RekapSegment.tren, label: 'Tren', icon: null),
                     (
-                      value: _RekapSegment.kalender,
+                      value: RekapSegment.kalender,
                       label: 'Kalender',
                       icon: null,
                     ),
@@ -178,33 +185,33 @@ class _RekapScreenState extends State<RekapScreen> {
           const SizedBox(height: Spacing.m),
           Expanded(
             child: switch (_segment) {
-              _RekapSegment.transaksi => RekapTransaksi(
+              RekapSegment.transaksi => RekapTransaksi(
                 repository: widget.repository,
                 filter: _filter,
                 onFilterChanged: (f) => setState(() => _filter = f),
               ),
-              _RekapSegment.donat => RekapDonat(
+              RekapSegment.donat => RekapDonat(
                 repository: widget.repository,
                 filter: _filter,
                 // Deep-link kategori (alur B): filter hasil applyDonatTap
                 // + pindah segmen ke Transaksi.
                 onCategoryTap: (f) => setState(() {
                   _filter = f;
-                  _segment = _RekapSegment.transaksi;
+                  _segment = RekapSegment.transaksi;
                 }),
               ),
-              _RekapSegment.tren => RekapTren(
+              RekapSegment.tren => RekapTren(
                 repository: widget.repository,
                 filter: _filter,
               ),
               // Deep-link kalender: filter satu tanggal (applyKalenderTap
               // di shell, field lain dipertahankan) + pindah segmen.
-              _RekapSegment.kalender => RekapKalender(
+              RekapSegment.kalender => RekapKalender(
                 repository: widget.repository,
                 month: _filter.month ?? _filter.rangeStart ?? DateTime.now(),
                 onDayTap: (day) => setState(() {
                   _filter = _filter.applyKalenderTap(day);
-                  _segment = _RekapSegment.transaksi;
+                  _segment = RekapSegment.transaksi;
                 }),
               ),
             },

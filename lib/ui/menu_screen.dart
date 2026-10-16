@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../game/progress.dart';
 import '../rules/engine.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
@@ -17,12 +16,10 @@ class MenuScreen extends StatelessWidget {
     super.key,
     required this.repository,
     required this.engine,
-    required this.progress,
   });
 
   final LedgerRepository repository;
   final RuleEngine engine;
-  final ProgressService progress;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +38,7 @@ class MenuScreen extends StatelessWidget {
           Spacing.m,
         ),
         children: [
+          const QuestSectionHeader(title: 'Data'),
           QuestCard(
             padding: EdgeInsets.zero,
             child: Column(
@@ -69,7 +67,14 @@ class MenuScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                _divider(context),
+              ],
+            ),
+          ),
+          const QuestSectionHeader(title: 'Otomatisasi'),
+          QuestCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
                 _MenuRow(
                   icon: Icons.rule_rounded,
                   title: 'Aturan capture',
@@ -80,7 +85,6 @@ class MenuScreen extends StatelessWidget {
                       builder: (_) => RulesScreen(
                         repository: repository,
                         engine: engine,
-                        progress: progress,
                       ),
                     ),
                   ),

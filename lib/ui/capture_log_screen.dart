@@ -10,6 +10,7 @@ import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'quest.dart';
+import 'rules_screen.dart';
 
 /// Teks prominent disclosure — syarat kebijakan User Data Google Play
 /// sebelum mengarahkan user ke pengaturan akses notifikasi.
@@ -105,6 +106,21 @@ class _CaptureLogScreenState extends State<CaptureLogScreen> {
     );
   }
 
+  /// Jembatan siklus capture: entri gagal → layar Aturan dengan teks
+  /// notifikasi terisi di kartu uji coba.
+  void _fixRule(CaptureLog log) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RulesScreen(
+          repository: widget.repository,
+          engine: widget.engine,
+          initialTestText: '${log.title}\n${log.body}',
+        ),
+      ),
+    );
+  }
+
   Future<void> _showFullText(CaptureLog log) {
     return showQuestDialog<void>(
       context,
@@ -117,6 +133,15 @@ class _CaptureLogScreenState extends State<CaptureLogScreen> {
         style: context.qBody(13),
       ),
       actions: [
+        if (!log.parsed)
+          QuestButton(
+            label: 'Perbaiki aturan',
+            icon: Icons.tune_rounded,
+            onPressed: () {
+              Navigator.pop(context);
+              _fixRule(log);
+            },
+          ),
         QuestButton(label: 'Tutup', onPressed: () => Navigator.pop(context)),
       ],
     );
@@ -358,10 +383,20 @@ class _CaptureLogScreenState extends State<CaptureLogScreen> {
                                 ),
                               )
                             else
-                              QuestIconButton(
-                                icon: Icons.refresh_rounded,
-                                tooltip: 'Parse ulang',
-                                onPressed: () => _reparse(log),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  QuestIconButton(
+                                    icon: Icons.tune_rounded,
+                                    tooltip: 'Perbaiki aturan',
+                                    onPressed: () => _fixRule(log),
+                                  ),
+                                  QuestIconButton(
+                                    icon: Icons.refresh_rounded,
+                                    tooltip: 'Parse ulang',
+                                    onPressed: () => _reparse(log),
+                                  ),
+                                ],
                               ),
                           ],
                         ),

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' show Value;
 
 import '../core/money.dart';
-import '../game/progress.dart';
 import '../models.dart';
 import '../rules/engine.dart';
 import '../storage/database.dart';
@@ -18,12 +17,15 @@ class RulesScreen extends StatefulWidget {
     super.key,
     required this.repository,
     required this.engine,
-    required this.progress,
+    this.initialTestText,
   });
 
   final LedgerRepository repository;
   final RuleEngine engine;
-  final ProgressService progress;
+
+  /// Teks notifikasi untuk mengisi awal kartu uji coba — dipakai jembatan
+  /// "Perbaiki aturan" dari Capture log.
+  final String? initialTestText;
 
   @override
   State<RulesScreen> createState() => _RulesScreenState();
@@ -123,7 +125,11 @@ class _RulesScreenState extends State<RulesScreen> {
             },
           ),
           const QuestSectionHeader(title: 'Uji coba'),
-          _RuleTestCard(engine: widget.engine, repository: widget.repository),
+          _RuleTestCard(
+            engine: widget.engine,
+            repository: widget.repository,
+            initialText: widget.initialTestText,
+          ),
         ],
       ),
     );
@@ -191,18 +197,26 @@ class _RuleTile extends StatelessWidget {
 }
 
 class _RuleTestCard extends StatefulWidget {
-  const _RuleTestCard({required this.engine, required this.repository});
+  const _RuleTestCard({
+    required this.engine,
+    required this.repository,
+    this.initialText,
+  });
 
   final RuleEngine engine;
   final LedgerRepository repository;
+
+  /// Teks awal kartu uji (dari jembatan Capture log); null → contoh bawaan.
+  final String? initialText;
 
   @override
   State<_RuleTestCard> createState() => _RuleTestCardState();
 }
 
 class _RuleTestCardState extends State<_RuleTestCard> {
-  final _bodyCtrl = TextEditingController(
-    text: 'Penambahan dana ke bluSaving sisa Rp 2.000 berhasil',
+  late final _bodyCtrl = TextEditingController(
+    text: widget.initialText ??
+        'Penambahan dana ke bluSaving sisa Rp 2.000 berhasil',
   );
 
   @override
