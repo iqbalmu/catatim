@@ -367,7 +367,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
     required Future<void> Function(int?) save,
   }) async {
     final value = await _askAmount(context, title: title, current: current);
-    if (value == null && current == null) return;
+    if (value == current) return;
     if (!mounted) return;
     await save(value);
     if (!mounted) return;
@@ -511,7 +511,8 @@ class _AllocationResult {
   final int? account;
 }
 
-/// Dialog input nominal rupiah. Kosong → null (hapus).
+/// Dialog input nominal rupiah. Simpan kosong → null (hapus);
+/// Batal/sentuh luar → current (batal, tak ada perubahan).
 Future<int?> _askAmount(
   BuildContext context, {
   required String title,
@@ -519,6 +520,7 @@ Future<int?> _askAmount(
 }) {
   final ctrl = TextEditingController(text: current == null ? '' : '$current');
   const cancelled = -1;
+  const deleted = -2;
   return showQuestDialog<int>(
     context,
     title: title,
@@ -543,11 +545,16 @@ Future<int?> _askAmount(
         icon: Icons.check_rounded,
         onPressed: () => Navigator.pop(
           context,
-          ctrl.text.trim().isEmpty ? null : Money.parseGroup(ctrl.text),
+          ctrl.text.trim().isEmpty ? deleted : Money.parseGroup(ctrl.text),
         ),
       ),
     ],
-  ).then((value) => value == cancelled ? current : value);
+  ).then((value) {
+    // Sentuh luar dialog → null: anggap batal, bukan hapus.
+    if (value == null || value == cancelled) return current;
+    if (value == deleted) return null;
+    return value;
+  });
 }
 
 /// Dialog alokasi: nominal + scope akun (semua atau satu akun).
