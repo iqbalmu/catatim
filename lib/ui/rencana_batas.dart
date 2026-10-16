@@ -137,6 +137,9 @@ class _RencanaBatasState extends State<RencanaBatas> {
         StreamBuilder<({int day, int week, int month})>(
           stream: _limitsUsage(),
           builder: (context, usageSnap) {
+            if (usageSnap.connectionState == ConnectionState.waiting) {
+              return const QuestSkeleton(rows: 1, height: 80);
+            }
             final usage = usageSnap.data;
             return Row(
               children: [

@@ -38,7 +38,7 @@ class BonTab extends StatelessWidget {
         stream: repository.watchBons(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SizedBox.shrink();
+            return const QuestSkeleton(rows: 3);
           }
           final bons = snapshot.data ?? const <Bon>[];
           var piutang = 0;

@@ -41,6 +41,9 @@ class RekapTren extends StatelessWidget {
             accountId: filter.accountId,
           ),
           builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const QuestSkeleton(rows: 1, height: 220);
+            }
             final rows = snapshot.data ?? const <TxWithCategory>[];
             final points = <AmountPoint>[
               for (final r in rows)
