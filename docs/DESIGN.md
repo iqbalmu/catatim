@@ -90,6 +90,11 @@ Angka selalu `FontFeature.tabularFigures()`. Jangan campur font lain.
 - Transisi halaman: slide penuh dari kanan (`Offset(1, 0)` → nol,
   curve `QuestMotion.easeOut`) di semua platform via
   `QuestPageTransitionsBuilder`; saat back meluncur kembali ke kanan.
+- Pindah tab navbar: slide berarah mengikuti urutan menu (target di
+  kanan masuk dari kanan, di kiri dari kiri), 220ms
+  (`QuestMotion.medium`) easeOut; tab lama diam di bawah (TickerMode),
+  tab baru meluncur di atasnya. State bertahan via reparenting
+  GlobalKey — tanpa bekuan citra (`_DirectionalTabView`).
 - Milestone/berubah level: perayaan singkat (stempel/konfeti) + haptic.
 - Hormati `MediaQuery.disableAnimations` (reduced motion).
 

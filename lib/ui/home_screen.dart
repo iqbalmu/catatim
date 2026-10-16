@@ -109,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // Konten mengalir di belakang navbar floating; tiap tab memberi
         // clearance lewat MediaQuery.padding.bottom yang disuntik Scaffold.
         extendBody: true,
-        body: IndexedStack(
+        body: _DirectionalTabView(
           index: _tab,
           children: [
             TickerMode(
@@ -174,6 +174,141 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
+/// Isi tab dengan slide berarah mengikuti urutan menu di navbar: pindah
+/// ke tab di kanan (indeks lebih besar) meluncur masuk dari kanan, ke
+/// tab di kiri masuk dari kiri. Berlaku untuk semua tab, termasuk
+/// deep-link dan tombol back — karena semua lewat indeks tab yang sama.
+///
+/// Semua anak tetap hidup seperti IndexedStack (scroll dan state tidak
+/// hilang): tab lama diam di bawah, tab baru yang hidup meluncur masuk
+/// di atasnya. Tanpa bekuan citra — halaman dipindah hidup-hidup lewat
+/// GlobalKey sehingga tidak tergantung baca piksel GPU.
+class _DirectionalTabView extends StatefulWidget {
+  const _DirectionalTabView({required this.index, required this.children});
+
+  /// Indeks tab yang harus tampil.
+  final int index;
+
+  /// Keempat tab.
+  final List<Widget> children;
+
+  @override
+  State<_DirectionalTabView> createState() => _DirectionalTabViewState();
+}
+
+class _DirectionalTabViewState extends State<_DirectionalTabView>
+    with SingleTickerProviderStateMixin {
+  static const _rest = AlwaysStoppedAnimation<Offset>(Offset.zero);
+
+  /// Kunci stabil per posisi: state tiap tab bertahan saat anak dipindah
+  /// antara IndexedStack (diam) dan Stack (terbang).
+  late List<GlobalKey> _pageKeys;
+
+  late final _slideController = AnimationController(
+    vsync: this,
+    duration: QuestMotion.medium,
+  );
+
+  /// Indeks yang tampil saat diam.
+  var _shown = 0;
+
+  /// Penerbangan berjalan (dari → ke); null saat diam.
+  ({int from, int to})? _flight;
+
+  Animation<Offset> _slide = _rest;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageKeys = List<GlobalKey>.generate(
+      widget.children.length,
+      (_) => GlobalKey(),
+    );
+    _shown = widget.index;
+    _slideController.addStatusListener(_onSlideStatus);
+  }
+
+  @override
+  void dispose() {
+    _slideController.dispose();
+    super.dispose();
+  }
+
+  void _onSlideStatus(AnimationStatus status) {
+    // Mendarat: kembali ke IndexedStack semua-anak-tetap-hidup.
+    if (status == AnimationStatus.completed && mounted) {
+      setState(() {
+        final flight = _flight;
+        if (flight != null) _shown = flight.to;
+        _flight = null;
+        _slide = _rest;
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _DirectionalTabView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.index != oldWidget.index) {
+      // Tunda ke luar fase build agar setState animasi aman.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final target = widget.index;
+        if (target != (_flight?.to ?? _shown)) _goTo(target);
+      });
+    }
+  }
+
+  void _goTo(int to) {
+    // Dari tab yang sedang menuju/ditampilkan — mengikuti posisi nyata.
+    final from = _flight?.to ?? _shown;
+    if (to == from || to < 0 || to >= widget.children.length) return;
+    // Masih terbang: mendaratkan seketika dulu, lalu mulai yang baru.
+    // (Hanya terasa sebagai sentakan kecil pada tap beruntun.)
+    if (_flight != null && _slideController.isAnimating) {
+      _slideController.value = 1;
+    }
+    if (MediaQuery.disableAnimationsOf(context)) {
+      setState(() => _shown = to);
+      return;
+    }
+    final curved = CurvedAnimation(
+      parent: _slideController,
+      curve: QuestMotion.easeOut,
+    );
+    setState(() {
+      _flight = (from: from, to: to);
+      _slide = Tween<Offset>(
+        // Target di kanan navbar masuk dari kanan, di kiri dari kiri.
+        begin: Offset(to > from ? 1 : -1, 0),
+        end: Offset.zero,
+      ).animate(curved);
+    });
+    _slideController.forward(from: 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pages = [
+      for (var i = 0; i < widget.children.length; i++)
+        KeyedSubtree(key: _pageKeys[i], child: widget.children[i]),
+    ];
+    final flight = _flight;
+    if (flight == null) {
+      return IndexedStack(index: _shown, children: pages);
+    }
+    // Tab lama diam di bawah (TickerMode dari parent sudah mematikannya),
+    // tab baru yang hidup meluncur masuk di atasnya — tanpa bekuan citra.
+    return Stack(
+      children: [
+        pages[flight.from],
+        SlideTransition(position: _slide, child: pages[flight.to]),
+      ],
+    );
+  }
+}
+
 
 /// Mark logo Bukuduit: squircle madu dua rona.
 class _BukuduitMark extends StatelessWidget {
