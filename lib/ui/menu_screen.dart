@@ -10,23 +10,19 @@ import 'backup_screen.dart';
 import 'quest.dart';
 import 'rules_screen.dart';
 
-/// Layar Menu: pengganti popup ⋯ — kelola akun, rencana·batas, backup, dan
-/// aturan capture sebagai halaman penuh.
+/// Layar Menu: pengganti popup ⋯ — kelola akun, backup, dan aturan
+/// capture sebagai halaman penuh.
 class MenuScreen extends StatelessWidget {
   const MenuScreen({
     super.key,
     required this.repository,
     required this.engine,
     required this.progress,
-    required this.onOpenRencana,
   });
 
   final LedgerRepository repository;
   final RuleEngine engine;
   final ProgressService progress;
-
-  /// Alih tab ke Rencana (dipanggil setelah layar ini ditutup).
-  final VoidCallback onOpenRencana;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +30,7 @@ class MenuScreen extends StatelessWidget {
       backgroundColor: context.q.bg,
       appBar: const QuestHeader(
         title: 'Menu',
-        subtitle: 'Akun, batas, backup, aturan',
+        subtitle: 'Akun, backup, aturan',
         showBack: true,
       ),
       body: ListView(
@@ -60,16 +56,6 @@ class MenuScreen extends StatelessWidget {
                           AccountManageScreen(repository: repository),
                     ),
                   ),
-                ),
-                _divider(context),
-                _MenuRow(
-                  icon: Icons.savings_rounded,
-                  title: 'Rencana · Batas',
-                  subtitle: 'Batas harian, mingguan, bulanan',
-                  onTap: () {
-                    Navigator.pop(context);
-                    onOpenRencana();
-                  },
                 ),
                 _divider(context),
                 _MenuRow(

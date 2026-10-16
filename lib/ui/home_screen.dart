@@ -112,7 +112,6 @@ class _HomeScreenState extends State<HomeScreen> {
       repository: widget.repository,
       pipeline: widget.pipeline,
       progress: widget.progress,
-      onOpenRencana: _openRencanaBatas,
     ),
   ];
 
@@ -427,20 +426,17 @@ class _CaptureBellState extends State<_CaptureBell> {
   }
 }
 
-/// Tombol ⋯: buka layar Menu (Kelola akun, Rencana·Batas, Backup, Aturan
-/// capture).
+/// Tombol ⋯: buka layar Menu (Kelola akun, Backup, Aturan capture).
 class _HomeMenu extends StatelessWidget {
   const _HomeMenu({
     required this.repository,
     required this.pipeline,
     required this.progress,
-    required this.onOpenRencana,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
   final ProgressService progress;
-  final VoidCallback onOpenRencana;
 
   @override
   Widget build(BuildContext context) {
@@ -454,7 +450,6 @@ class _HomeMenu extends StatelessWidget {
             repository: repository,
             engine: pipeline.engine,
             progress: progress,
-            onOpenRencana: onOpenRencana,
           ),
         ),
       ),
@@ -468,13 +463,11 @@ class _GlobalActions extends StatelessWidget {
     required this.repository,
     required this.pipeline,
     required this.progress,
-    required this.onOpenRencana,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
   final ProgressService progress;
-  final VoidCallback onOpenRencana;
 
   @override
   Widget build(BuildContext context) {
@@ -487,7 +480,6 @@ class _GlobalActions extends StatelessWidget {
           repository: repository,
           pipeline: pipeline,
           progress: progress,
-          onOpenRencana: onOpenRencana,
         ),
       ],
     );
@@ -574,7 +566,6 @@ class _BerandaTabState extends State<_BerandaTab> {
             repository: widget.repository,
             pipeline: widget.pipeline,
             progress: widget.progress,
-            onOpenRencana: widget.onOpenRencanaBatas,
           ),
         ],
       ),
