@@ -40,6 +40,9 @@ class _QuestPressState extends State<QuestPress> {
         container: true,
         button: widget.onTap != null,
         child: GestureDetector(
+          // Opaque: seluruh area parent termasuk padding kosong ikut
+          // bisa ditap — bukan hanya piksel teks/ikon yang tergambar.
+          behavior: HitTestBehavior.opaque,
           onTap: widget.onTap,
           onLongPress: widget.onLongPress,
           child: AnimatedScale(
