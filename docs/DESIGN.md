@@ -41,7 +41,8 @@ diindeks `Categories.colorIndex`) — dipakai untuk dot transaksi, donut,
 chip kategori, dan garis chart. Warna kategori **tidak** dipakai di luar
 konteks kategorinya.
 
-## Tipografi — Nunito (bundel offline via `google_fonts`)
+## Tipografi — Nunito (file TTF dibundel offline via `fonts:` di
+`pubspec.yaml`; package `google_fonts` tidak dipakai)
 
 | Peran | Ukuran/berat | Pakai |
 |---|---|---|
@@ -55,7 +56,9 @@ Angka selalu `FontFeature.tabularFigures()`. Jangan campur font lain.
 
 ## Bentuk & elevasi
 
-- Radius: kartu **20–24**, sheet **28**, tombol **16**, chip/pill **999**.
+- Radius: kartu **20**, tile **18**, bingkai kontrol **22**, sheet
+  **24**, sel kecil **12**, tombol & chip/pill **999** (`AppRadius`;
+  tombol utama memakai pill).
 - Elevation (satu-satunya mekanisme pemisah):
   - kartu: `0 6px 18px rgba(80,60,20,.07)`
   - elemen melayang (nav): `0 10px 26px rgba(80,60,20,.14)`
@@ -82,8 +85,11 @@ Angka selalu `FontFeature.tabularFigures()`. Jangan campur font lain.
 
 ## Motion
 
-- Press scale 0,97 (existing `QuestPress`), durasi 150–200ms, curve
+- Press scale 0,96 (`QuestMotion.pressScale`), durasi 150–200ms, curve
   easeOut.
+- Transisi halaman: slide penuh dari kanan (`Offset(1, 0)` → nol,
+  curve `QuestMotion.easeOut`) di semua platform via
+  `QuestPageTransitionsBuilder`; saat back meluncur kembali ke kanan.
 - Milestone/berubah level: perayaan singkat (stempel/konfeti) + haptic.
 - Hormati `MediaQuery.disableAnimations` (reduced motion).
 
@@ -94,16 +100,17 @@ Kalimat aktif, sebut aksi nyata, kosakata konsisten antar layar
 benar; empty state mengundang aksi ("Belum ada catatan — catat
 transaksi pertamamu").
 
-## Checklist migrasi (dari tema lama → Playful Rapi)
+## Checklist migrasi (dari tema lama → Playful Rapi) — selesai
 
-1. `pubspec.yaml`: tambah `google_fonts`; set `TextTheme` Nunito di
-   `QuestSchemes`.
+1. `pubspec.yaml`: ~~tambah `google_fonts`~~ — tidak jadi dipakai;
+   file TTF Nunito dibundel langsung via `fonts:`. Set `TextTheme`
+   Nunito di `QuestSchemes`.
 2. `theme/tokens.dart`: tambah `honeyDeep`, `honeyInk`, `line`, gradient
    hero; nilai `bg` → `#FFF8EE`.
 3. `ui/quest.dart`: `QuestCard` hapus border+hard shadow → radius 20 +
    shadow lembut; `QuestButton` utama → gradient; chip → 999 + tint;
    nav → putih melayang; eyebrow/tipografi → skala Nunito.
-4. Layar beranda dulu (zona hero madu, kartu baru), lalu Riwayat →
-   Laporan → Bon → layar push (Anggaran, Akun, Aturan, Capture log,
-   Backup).
+4. ~~Layar beranda dulu … layar push~~ — direvisi di tengah jalan:
+   layar lama (Riwayat/Laporan/Anggaran) dipensiunkan, diganti shell
+   4 tab (Beranda · Rekap · Rencana · Bon) + layar Menu.
 5. Dark mode disesuaikan di setiap langkah, bukan di akhir.

@@ -10,16 +10,16 @@ Rancangan lengkap: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ·
 
 ## Fitur
 
-Navigasi utama 4 tab: **Beranda · Rekap · Rencana · Bon**, dengan FAB
-kontekstual per tab dan header global (lonceng capture + menu) di semua
-tab.
+Navigasi utama 4 tab: **Beranda · Rekap · Rencana · Bon**, dengan tombol +
+kontekstual per tab (tengah navbar; tanpa FAB melayang di tab Rencana) dan
+header global (lonceng capture + menu) di semua tab.
 - **Catat manual**: tombol Catat / FAB kontekstual — nominal, arah
   masuk/keluar, kategori (+ tambah kategori), jenis, tanggal, akun,
   dan pihak/keterangan. Tap transaksi untuk ubah/hapus.
 - **Capture otomatis**: notifikasi bank/e-wallet → parser rules per bank →
   kategori + akun otomatis (blu → blu by BCA, nagari → Bank Nagari).
 - **Akun**: blu by BCA, Bank Nagari, Tunai (bawaan) + tambah sendiri
-  (menu Beranda → *Kelola akun*). Tiap akun punya saldo awal + saldo
+  (layar Menu ⋯ → *Kelola akun*). Tiap akun punya saldo awal + saldo
   berjalan (`awal + masuk − keluar`).
 - **Bon**: tab utang-piutang — tambah/edit, tandai lunas, total piutang
   vs utang belum lunas.
@@ -75,8 +75,8 @@ sama dalam ±120 detik hanya jadi satu transaksi.
 |---|---|
 | `lib/rules/` | Rules engine + seed rules (`assets/rules/seed_rules.json`) |
 | `lib/capture/` | Channel native + pipeline capture→parse→simpan |
-| `lib/storage/` | Drift schema v6 + repository (dedup 120 detik) |
-| `lib/ui/` | Shell 4 tab (Beranda, Rekap, Rencana, Bon) + sheet transaksi, akun, aturan, capture log, backup |
+| `lib/storage/` | Drift schema v8 + repository (dedup 120 detik) |
+| `lib/ui/` | Shell 4 tab (Beranda, Rekap, Rencana, Bon) + sheet transaksi, akun, aturan, capture log, backup, menu |
 | `lib/game/` | Maskot, hero card, streak & mood |
 | `lib/theme/` + `lib/ui/quest.dart` | Sistem desain Quest (bukan default Material) |
 | `android/.../MainActivity.kt` | MethodChannel/EventChannel + `NotificationCatcher` |

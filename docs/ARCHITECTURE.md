@@ -25,7 +25,7 @@ alasan tiap keputusan ada di [`decisions/`](decisions/).
 | Capture | `lib/capture/` | Drain antrian, filter paket sendiri, mode pelajaran, fallback capture log, hook progress. |
 | Rules | `lib/rules/`, `assets/rules/seed_rules.json` | Parse teks notifikasi → draft transaksi. Murni Dart. |
 | Core | `lib/core/` | Money (int rupiah), buckets tren, budget (`LimitLine`/`BudgetSnapshot`), format tanggal ID. Murni Dart, tanpa drift/Flutter. |
-| Storage | `lib/storage/` | Drift schema v6, SQLCipher, `LedgerRepository` satu-satunya akses data. |
+| Storage | `lib/storage/` | Drift schema v8, SQLCipher, `LedgerRepository` satu-satunya akses data. |
 | Game | `lib/game/` | `ProgressService`: streak, mood maskot, alert/pemulihan/milestone. |
 | UI | `lib/ui/`, `lib/theme/` | Shell 4-tab + design system Quest. Konsumsi stream + ChangeNotifier, tanpa library state management. |
 
@@ -60,7 +60,7 @@ flowchart LR
 3. **Template generik** (`unknown`) — pola in/out umum untuk app tak
    dikenal.
 
-## Model data (drift schema v6)
+## Model data (drift schema v8)
 
 | Tabel | Isi |
 |---|---|
@@ -73,9 +73,10 @@ flowchart LR
 | `capture_logs` | Notifikasi mentah + status parse; bahan tuning rules |
 | `user_rules` | Rules capture milik user (hasil materialisasi seed + buatan sendiri) |
 
-Migrasi v1→v6 self-heal: tabel/kolom yang hilang dibuat ulang, broken
+Migrasi v1→v8 self-heal: tabel/kolom yang hilang dibuat ulang, broken
 v2 diperbaiki, kategori/akun ter-seed, backfill dijalankan di
-`beforeOpen`.
+`beforeOpen`. v8 memensiunkan Target/Sisihkan: tabel `targets` dan
+`target_deposits` di-drop (ADR-009).
 
 ## Konvensi
 
@@ -103,10 +104,12 @@ v2 diperbaiki, kategori/akun ter-seed, backfill dijalankan di
 | [006](decisions/006-restore-dua-fase.md) | Restore via staging + marker + restart |
 | [007](decisions/007-gamifikasi-berbasis-kondisi.md) | Gamifikasi = cermin kondisi nyata; XP/level dihapus |
 | [008](decisions/008-quest-design-system.md) | Design system Quest sendiri, tanpa state library |
+| [009](decisions/009-pensiun-target-sisihkan.md) | Target/Sisihkan dipensiunkan; Rencana = Batas, belanja murni tunggal |
 
 ## Pengujian
 
-74 test, 9 file: rule engine (seed + user + fallback), budget, progress/
-streak/mood, repository (dedup, saldo, migrasi), money, buckets, CSV.
+115 test, 10 file: rule engine (seed + user + fallback), budget, progress/
+streak/mood, repository (dedup, saldo, migrasi, alokasi), money, buckets,
+rekap filter, CSV, history.
 UI sengaja belum punya widget test — logika dipagari di engine murni
 sesuai prinsip 3.
