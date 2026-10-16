@@ -69,7 +69,7 @@ class BonTab extends StatelessWidget {
             ),
             children: [
               _NetCard(net: piutang - utang),
-              const SizedBox(height: Spacing.s),
+              const SizedBox(height: Spacing.m),
               Row(
                 children: [
                   Expanded(
