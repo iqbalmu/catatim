@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -17,7 +18,7 @@ import 'quest.dart';
 /// biasa tidak masuk headline maupun donat. Tap kategori →
 /// [onCategoryTap] dengan filter hasil [RekapFilter.applyDonatTap]
 /// (shell yang memindah segmen ke Transaksi).
-class RekapDonat extends StatelessWidget {
+class RekapDonat extends StatefulWidget {
   const RekapDonat({
     super.key,
     required this.repository,
@@ -30,8 +31,51 @@ class RekapDonat extends StatelessWidget {
   final void Function(RekapFilter filter) onCategoryTap;
 
   @override
+  State<RekapDonat> createState() => _RekapDonatState();
+}
+
+class _RekapDonatState extends State<RekapDonat> {
+  // Disematkan sekali agar rebuild tak subscribe ulang (anti-kedip).
+  late Stream<List<TxWithCategory>> _rows;
+
+  @override
+  void initState() {
+    super.initState();
+    _rows = _buildRows();
+  }
+
+  @override
+  void didUpdateWidget(covariant RekapDonat oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // TANPA setState — build sudah terjadwal; StreamBuilder di bawah melihat stream baru dan subscribe dengan benar.
+    // RekapFilter tak punya == — bandingkan jendela + akun per field.
+    if (widget.repository != oldWidget.repository ||
+        _windowKey(widget.filter) != _windowKey(oldWidget.filter) ||
+        widget.filter.accountId != oldWidget.filter.accountId) {
+      _rows = _buildRows();
+    }
+  }
+
+  Stream<List<TxWithCategory>> _buildRows() {
+    final win = widget.filter.window;
+    final now = DateTime.now();
+    final start = win?.start ?? DateTime(now.year, now.month);
+    final end = win?.end ?? DateTime(now.year, now.month + 1);
+    return widget.repository.watchBetweenWithCategory(
+      start,
+      end,
+      accountId: widget.filter.accountId,
+    );
+  }
+
+  static String _windowKey(RekapFilter f) {
+    final win = f.window;
+    return '${win?.start}|${win?.end}';
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final win = filter.window;
+    final win = widget.filter.window;
     final now = DateTime.now();
     final start = win?.start ?? DateTime(now.year, now.month);
     final end = win?.end ?? DateTime(now.year, now.month + 1);
@@ -44,22 +88,22 @@ class RekapDonat extends StatelessWidget {
         Spacing.m + MediaQuery.paddingOf(context).bottom,
       ),
       children: [
-        _PeriodHeadlines(repository: repository, winStart: start, winEnd: end),
+        _PeriodHeadlines(
+          repository: widget.repository,
+          winStart: start,
+          winEnd: end,
+        ),
         const SizedBox(height: Spacing.m),
         StreamBuilder<List<TxWithCategory>>(
-          stream: repository.watchBetweenWithCategory(
-            start,
-            end,
-            accountId: filter.accountId,
-          ),
+          stream: _rows,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const QuestSkeleton(rows: 2, height: 120);
             }
             return _CategoryDonutCard(
               rows: snapshot.data ?? const <TxWithCategory>[],
-              onTap: (categoryId) => onCategoryTap(
-                filter.applyDonatTap(
+              onTap: (categoryId) => widget.onCategoryTap(
+                widget.filter.applyDonatTap(
                   categoryId: categoryId,
                   monthStart: start,
                   monthEnd: end,
@@ -194,7 +238,7 @@ class _PeriodHeadlines extends StatelessWidget {
   }
 }
 
-class _HeadlineFuture extends StatelessWidget {
+class _HeadlineFuture extends StatefulWidget {
   const _HeadlineFuture({
     required this.repository,
     required this.label,
@@ -215,24 +259,60 @@ class _HeadlineFuture extends StatelessWidget {
   final bool spend;
   final bool upIsBad;
 
-  Future<int> _sum(DateTime s, DateTime e) => spend
-      ? repository.sumSpendBetween(s, e)
-      : repository.sumBetween(s, e, Direction.incoming);
+  @override
+  State<_HeadlineFuture> createState() => _HeadlineFutureState();
+}
+
+class _HeadlineFutureState extends State<_HeadlineFuture> {
+  // Disematkan sekali agar rebuild tak memicu future ulang (anti-kedip).
+  late Future<int> _cur;
+  late Future<int> _prev;
+
+  @override
+  void initState() {
+    super.initState();
+    _cur = _sum(widget.start, widget.end);
+    _prev = _sum(widget.prevStart, widget.prevEnd);
+  }
+
+  @override
+  void didUpdateWidget(covariant _HeadlineFuture oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // TANPA setState — build sudah terjadwal; FutureBuilder di bawah melihat future baru dan subscribe dengan benar.
+    // DateTime tanpa == — bandingkan instan via milidetik.
+    if (widget.repository != oldWidget.repository ||
+        widget.spend != oldWidget.spend ||
+        widget.start.millisecondsSinceEpoch !=
+            oldWidget.start.millisecondsSinceEpoch ||
+        widget.end.millisecondsSinceEpoch !=
+            oldWidget.end.millisecondsSinceEpoch ||
+        widget.prevStart.millisecondsSinceEpoch !=
+            oldWidget.prevStart.millisecondsSinceEpoch ||
+        widget.prevEnd.millisecondsSinceEpoch !=
+            oldWidget.prevEnd.millisecondsSinceEpoch) {
+      _cur = _sum(widget.start, widget.end);
+      _prev = _sum(widget.prevStart, widget.prevEnd);
+    }
+  }
+
+  Future<int> _sum(DateTime s, DateTime e) => widget.spend
+      ? widget.repository.sumSpendBetween(s, e)
+      : widget.repository.sumBetween(s, e, Direction.incoming);
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<int>(
-      future: _sum(start, end),
+      future: _cur,
       builder: (context, cur) {
         return FutureBuilder<int>(
-          future: _sum(prevStart, prevEnd),
+          future: _prev,
           builder: (context, prev) {
             final amount = cur.data ?? 0;
             return _HeadlineCard(
-              label: label,
+              label: widget.label,
               amount: amount,
               delta: deltaLabel(amount, prev.data ?? 0),
-              upIsBad: upIsBad,
+              upIsBad: widget.upIsBad,
             );
           },
         );
@@ -240,14 +320,13 @@ class _HeadlineFuture extends StatelessWidget {
     );
   }
 }
-
 class _Bucket {
+  const _Bucket(this.label, this.categoryId, this.amount, this.color);
+
   final String label;
   final int? categoryId;
   final int amount;
   final Color color;
-
-  const _Bucket(this.label, this.categoryId, this.amount, this.color);
 }
 
 /// Donut kategori pengeluaran: keluar MURNI (kind transfer tidak

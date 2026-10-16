@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../core/money.dart';
@@ -12,7 +14,7 @@ import 'progress.dart';
 /// Ekspresi maskot tetap mengikuti kondisi anggaran nyata (via [service]).
 /// Layout ala mock pastel (label + eye, angka besar, baris akun);
 /// warna tetap palet Quest saat ini (gradient madu).
-class GameHeroCard extends StatelessWidget {
+class GameHeroCard extends StatefulWidget {
   const GameHeroCard({
     super.key,
     required this.service,
@@ -25,16 +27,33 @@ class GameHeroCard extends StatelessWidget {
   final VoidCallback? onTapAccounts;
 
   @override
+  State<GameHeroCard> createState() => _GameHeroCardState();
+}
+
+class _GameHeroCardState extends State<GameHeroCard> {
+  /// Disematkan sekali agar rebuild tak subscribe ulang (anti-kedip).
+  late final Stream<List<Account>> _accounts;
+  /// Disematkan sekali agar rebuild tak subscribe ulang (anti-kedip).
+  late final Stream<Map<int, int>> _balances;
+
+  @override
+  void initState() {
+    super.initState();
+    _accounts = widget.repository.watchAccounts();
+    _balances = widget.repository.watchAccountBalances();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: service,
+      listenable: widget.service,
       builder: (context, _) {
-        final mood = service.latest?.mood ?? MascotMood.idle;
+        final mood = widget.service.latest?.mood ?? MascotMood.idle;
         return StreamBuilder<List<Account>>(
-          stream: repository.watchAccounts(),
+          stream: _accounts,
           builder: (context, accSnap) {
             return StreamBuilder<Map<int, int>>(
-              stream: repository.watchAccountBalances(),
+              stream: _balances,
               builder: (context, balSnap) {
                 final accounts = accSnap.data ?? const <Account>[];
                 final balances = balSnap.data ?? const <int, int>{};
@@ -43,7 +62,7 @@ class GameHeroCard extends StatelessWidget {
                   total: total,
                   accountCount: accounts.length,
                   mood: mood,
-                  onTap: onTapAccounts,
+                  onTap: widget.onTapAccounts,
                 );
               },
             );

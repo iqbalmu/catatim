@@ -34,6 +34,14 @@ class RekapKalender extends StatefulWidget {
 class _RekapKalenderState extends State<RekapKalender> {
   late DateTime _month = DateTime(widget.month.year, widget.month.month);
   DateTime? _selected;
+  // Disematkan sekali agar rebuild tak subscribe ulang (anti-kedip).
+  late Stream<Map<DateTime, int>> _sums;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshSums();
+  }
 
   @override
   void didUpdateWidget(RekapKalender old) {
@@ -43,22 +51,28 @@ class _RekapKalenderState extends State<RekapKalender> {
         widget.month.month != old.month.month) {
       _month = DateTime(widget.month.year, widget.month.month);
       _selected = null;
+      _refreshSums();
+    } else if (widget.repository != old.repository) {
+      _refreshSums();
     }
+  }
+
+  void _refreshSums() {
+    _sums = _effectiveOutByDay(DateTime(_month.year, _month.month));
   }
 
   void _shiftMonth(int delta) {
     setState(() {
       _month = DateTime(_month.year, _month.month + delta);
       _selected = null;
+      _refreshSums();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final monthStart = DateTime(_month.year, _month.month);
-
     return StreamBuilder<Map<DateTime, int>>(
-      stream: _effectiveOutByDay(monthStart),
+      stream: _sums,
       builder: (context, snapshot) {
         final sums = snapshot.data ?? const <DateTime, int>{};
         return ListView(
@@ -289,7 +303,7 @@ class _KalenderCell extends StatelessWidget {
 
 /// Panel rincian satu hari: total keluar + daftar transaksi hari itu,
 /// plus tombol "Lihat di Transaksi".
-class _DayDetail extends StatelessWidget {
+class _DayDetail extends StatefulWidget {
   const _DayDetail({
     required this.repository,
     required this.day,
@@ -305,13 +319,48 @@ class _DayDetail extends StatelessWidget {
   final VoidCallback onSeeInTransactions;
 
   @override
+  State<_DayDetail> createState() => _DayDetailState();
+}
+
+class _DayDetailState extends State<_DayDetail> {
+  // Disematkan sekali agar rebuild tak subscribe ulang (anti-kedip).
+  late Stream<List<TxWithCategory>> _rows;
+
+  @override
+  void initState() {
+    super.initState();
+    _rows = _buildRows();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DayDetail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // TANPA setState — build sudah terjadwal; StreamBuilder di bawah melihat stream baru dan subscribe dengan benar.
+    // DateTime tanpa == — bandingkan y/m/d.
+    if (widget.repository != oldWidget.repository ||
+        widget.day.year != oldWidget.day.year ||
+        widget.day.month != oldWidget.day.month ||
+        widget.day.day != oldWidget.day.day) {
+      _rows = _buildRows();
+    }
+  }
+
+  Stream<List<TxWithCategory>> _buildRows() {
+    final day = widget.day;
+    return widget.repository.watchBetweenWithCategory(
+      day,
+      DateTime(day.year, day.month, day.day + 1),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final q = context.q;
+    final day = widget.day;
+    final effectiveOut = widget.effectiveOut;
+    final repository = widget.repository;
     return StreamBuilder<List<TxWithCategory>>(
-      stream: repository.watchBetweenWithCategory(
-        day,
-        DateTime(day.year, day.month, day.day + 1),
-      ),
+      stream: _rows,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const QuestSkeleton(rows: 2, height: 56);
@@ -341,7 +390,7 @@ class _DayDetail extends StatelessWidget {
                   QuestIconButton(
                     icon: Icons.close_rounded,
                     tooltip: 'Tutup rincian',
-                    onPressed: onClear,
+                    onPressed: widget.onClear,
                   ),
                 ],
               ),
@@ -353,7 +402,7 @@ class _DayDetail extends StatelessWidget {
               const SizedBox(height: Spacing.m),
               QuestButton(
                 label: 'Lihat di Transaksi',
-                onPressed: onSeeInTransactions,
+                onPressed: widget.onSeeInTransactions,
               ),
             ],
           ),

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -13,15 +14,58 @@ import 'quest.dart';
 /// Segmen Tren pada layar Rekap: batang masuk/keluar per minggu/bulan
 /// sesuai periode [filter]. Batang keluar MURNI (keputusan A): transfer
 /// biasa tidak dihitung.
-class RekapTren extends StatelessWidget {
+class RekapTren extends StatefulWidget {
   const RekapTren({super.key, required this.repository, required this.filter});
 
   final LedgerRepository repository;
   final RekapFilter filter;
 
   @override
+  State<RekapTren> createState() => _RekapTrenState();
+}
+
+class _RekapTrenState extends State<RekapTren> {
+  // Disematkan sekali agar rebuild tak subscribe ulang (anti-kedip).
+  late Stream<List<TxWithCategory>> _rows;
+
+  @override
+  void initState() {
+    super.initState();
+    _rows = _buildRows();
+  }
+
+  @override
+  void didUpdateWidget(covariant RekapTren oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // TANPA setState — build sudah terjadwal; StreamBuilder di bawah melihat stream baru dan subscribe dengan benar.
+    if (widget.repository != oldWidget.repository ||
+        _windowKey(widget.filter) != _windowKey(oldWidget.filter) ||
+        widget.filter.accountId != oldWidget.filter.accountId) {
+      _rows = _buildRows();
+    }
+  }
+
+  Stream<List<TxWithCategory>> _buildRows() {
+    final win = widget.filter.window;
+    final now = DateTime.now();
+    final start = win?.start ?? DateTime(now.year, now.month);
+    final end = win?.end ?? DateTime(now.year, now.month + 1);
+    return widget.repository.watchBetweenWithCategory(
+      start,
+      end,
+      accountId: widget.filter.accountId,
+    );
+  }
+
+  // RekapFilter tak punya == — bandingkan jendela periode per field.
+  static String _windowKey(RekapFilter f) {
+    final win = f.window;
+    return '${win?.start}|${win?.end}';
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final win = filter.window;
+    final win = widget.filter.window;
     final now = DateTime.now();
     final start = win?.start ?? DateTime(now.year, now.month);
     final end = win?.end ?? DateTime(now.year, now.month + 1);
@@ -35,11 +79,7 @@ class RekapTren extends StatelessWidget {
       ),
       children: [
         StreamBuilder<List<TxWithCategory>>(
-          stream: repository.watchBetweenWithCategory(
-            start,
-            end,
-            accountId: filter.accountId,
-          ),
+          stream: _rows,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const QuestSkeleton(rows: 1, height: 220);

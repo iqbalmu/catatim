@@ -94,6 +94,16 @@ class _RencanaBatasState extends State<RencanaBatas> {
   int? _weeklyLimit;
   int? _monthlyTotal;
 
+  /// Stream disematkan per bulan (bukan dibuat di build) agar rebuild
+  /// biasa tak subscribe ulang (anti-kedip). Dibuat ulang hanya saat
+  /// bulan berganti lewat [_ensureStreams].
+  DateTime _usageMonth = DateTime(0);
+  late Stream<({int day, int week, int month})> _usage;
+  late Stream<List<Category>> _categories;
+  late Stream<List<Budget>> _budgets;
+  late Stream<List<Account>> _accounts;
+  late Stream<Map<({int? category, int? account}), int>> _outPairs;
+
   @override
   void initState() {
     super.initState();
@@ -123,7 +133,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
     final now = DateTime.now();
     final monthStart = DateTime(now.year, now.month);
     final monthEnd = DateTime(now.year, now.month + 1);
-
+    _ensureStreams(monthStart, monthEnd);
     return ListView(
       // Ekor list diberi clearance navbar floating (extendBody menyuntik
       // tinggi navbar sebagai padding.bottom).
@@ -135,7 +145,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
       ),
       children: [
         StreamBuilder<({int day, int week, int month})>(
-          stream: _limitsUsage(),
+          stream: _usage,
           builder: (context, usageSnap) {
             if (usageSnap.connectionState == ConnectionState.waiting) {
               return const QuestSkeleton(rows: 1, height: 80);
@@ -218,13 +228,13 @@ class _RencanaBatasState extends State<RencanaBatas> {
         ),
         const SizedBox(height: Spacing.s),
         StreamBuilder<List<Category>>(
-          stream: widget.repository.watchCategories(),
+          stream: _categories,
           builder: (context, catSnap) {
             return StreamBuilder<List<Budget>>(
-              stream: widget.repository.watchBudgets(),
+              stream: _budgets,
               builder: (context, budgetSnap) {
-                return StreamBuilder<List<Account>>(
-                  stream: widget.repository.watchAccounts(),
+              return StreamBuilder<List<Account>>(
+                stream: _accounts,
                   builder: (context, accSnap) {
                     return StreamBuilder<
                       Map<({int? category, int? account}), int>
@@ -232,14 +242,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
                       // Pemicu reaktif: watch semua keluar; datanya
                       // belanja-murni supaya transfer tidak menggerogoti
                       // alokasi Jenis.
-                      stream: widget.repository
-                          .watchOutPairsBetween(monthStart, monthEnd)
-                          .asyncMap(
-                            (_) => widget.repository.outSpendPairsBetween(
-                              monthStart,
-                              monthEnd,
-                            ),
-                          ),
+                      stream: _outPairs,
                       builder: (context, usedSnap) {
                         final categories = catSnap.data ?? const <Category>[];
                         final budgets = budgetSnap.data ?? const <Budget>[];
@@ -320,10 +323,28 @@ class _RencanaBatasState extends State<RencanaBatas> {
       .where((e) => e.key.category == categoryId)
       .fold(0, (total, e) => total + e.value);
 
+  /// Isi ulang stream turunan bulan; idempoten — hanya bekerja saat
+  /// bulan berganti, sehingga rebuild biasa memakai objek stream yang
+  /// sama (tanpa subscribe ulang, tanpa kedip).
+  void _ensureStreams(DateTime monthStart, DateTime monthEnd) {
+    if (monthStart == _usageMonth) return;
+    _usageMonth = monthStart;
+    _usage = _limitsUsage();
+    _categories = widget.repository.watchCategories();
+    _budgets = widget.repository.watchBudgets();
+    _accounts = widget.repository.watchAccounts();
+    _outPairs = widget.repository
+        .watchOutPairsBetween(monthStart, monthEnd)
+        .asyncMap(
+          (_) => widget.repository.outSpendPairsBetween(monthStart, monthEnd),
+        );
+  }
+
   /// Pemakaian belanja murni hari/minggu/bulan berjalan untuk kartu mini
   /// batas. Trigger reaktif: watchOutSumByDaySince (emit tiap transaksi
   /// keluar berubah); rentang dihitung ulang tiap emit — pola asyncMap
   /// yang sama dengan baris alokasi.
+
   Stream<({int day, int week, int month})> _limitsUsage() {
     final now = DateTime.now();
     return widget.repository

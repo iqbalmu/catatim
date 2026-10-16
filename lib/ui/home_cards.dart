@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../core/budget.dart';
@@ -471,7 +473,7 @@ class DisiplinCard extends StatelessWidget {
 
 /// Transaksi terbaru (3 teratas) di Beranda. Tap baris = ubah,
 /// "Lihat semua" → Rekap (via [onSeeAll]).
-class TransaksiTerbaruCard extends StatelessWidget {
+class TransaksiTerbaruCard extends StatefulWidget {
   const TransaksiTerbaruCard({
     super.key,
     required this.repository,
@@ -484,6 +486,20 @@ class TransaksiTerbaruCard extends StatelessWidget {
   final VoidCallback onSeeAll;
 
   @override
+  State<TransaksiTerbaruCard> createState() => _TransaksiTerbaruCardState();
+}
+
+class _TransaksiTerbaruCardState extends State<TransaksiTerbaruCard> {
+  /// Disematkan sekali agar rebuild tak subscribe ulang (anti-kedip).
+  late final Stream<List<TxWithCategory>> _recent;
+
+  @override
+  void initState() {
+    super.initState();
+    _recent = widget.repository.watchRecentWithCategory(limit: 3);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final q = context.q;
     return QuestCard(
@@ -493,7 +509,7 @@ class TransaksiTerbaruCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           QuestPress(
-            onTap: onSeeAll,
+            onTap: widget.onSeeAll,
             child: Row(
               children: [
                 Expanded(
@@ -514,7 +530,7 @@ class TransaksiTerbaruCard extends StatelessWidget {
           ),
           const SizedBox(height: Spacing.s),
           StreamBuilder<List<TxWithCategory>>(
-            stream: repository.watchRecentWithCategory(limit: 3),
+            stream: _recent,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const QuestSkeleton(rows: 3, height: 60);
@@ -536,8 +552,8 @@ class TransaksiTerbaruCard extends StatelessWidget {
                     if (i > 0) Divider(height: 1, thickness: 1, color: q.line),
                     _RecentRow(
                       item: items[i],
-                      repository: repository,
-                      progress: progress,
+                      repository: widget.repository,
+                      progress: widget.progress,
                     ),
                   ],
                 ],

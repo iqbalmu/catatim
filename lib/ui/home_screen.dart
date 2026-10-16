@@ -55,6 +55,19 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  /// Jeda refresh setelah pindah tab: sedikit lebih lama dari durasi
+  /// slide agar rebuild data terjadi setelah animasi mendarat.
+  static const _refreshSettle = Duration(milliseconds: 300);
+
+  /// Badge bon disematkan sekali agar rebuild tak subscribe ulang (anti-kedip).
+  late final Stream<List<Bon>> _bonsWatch;
+
+  @override
+  void initState() {
+    super.initState();
+    _bonsWatch = widget.repository.watchBons();
+  }
+
   int _tab = 0;
 
   /// Kunci layar Rencana untuk memicu aksi tombol + tengah navbar.
@@ -82,8 +95,15 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onTabChanged(int i) {
     setState(() => _tab = i);
     // Kembali ke Beranda setelah ubah batas di Rencana: hero pace/streak
-    // dihitung dari limit terbaru.
-    if (i == 0) unawaited(widget.progress.refresh());
+    // dihitung dari limit terbaru. Ditunda hingga slide mendarat agar
+    // konten tidak berubah tepat di tengah animasi (kedip).
+    if (i == 0) {
+      unawaited(
+        Future.delayed(_refreshSettle).then((_) {
+          if (mounted) return widget.progress.refresh();
+        }),
+      );
+    }
   }
 
   /// Aksi header global (lonceng + ⋯) — satu instance dipakai keempat tab.
@@ -149,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         // Tombol + di tengah navbar, dinamis per tab.
         bottomNavigationBar: StreamBuilder<List<Bon>>(
-          stream: widget.repository.watchBons(),
+          stream: _bonsWatch,
           builder: (context, snapshot) {
             final hasOld = (snapshot.data ?? const <Bon>[]).any(
               (b) => b.settledAt == null && bonNeedsBadge(b.occurredAt),
@@ -302,8 +322,12 @@ class _DirectionalTabViewState extends State<_DirectionalTabView>
     // tab baru yang hidup meluncur masuk di atasnya — tanpa bekuan citra.
     return Stack(
       children: [
-        pages[flight.from],
-        SlideTransition(position: _slide, child: pages[flight.to]),
+        // Tiap lapisan di-cache raster sendiri: geser = komposit murah,
+        // bukan repaint ulang seluruh halaman tiap frame.
+        RepaintBoundary(child: pages[flight.from]),
+        RepaintBoundary(
+          child: SlideTransition(position: _slide, child: pages[flight.to]),
+        ),
       ],
     );
   }

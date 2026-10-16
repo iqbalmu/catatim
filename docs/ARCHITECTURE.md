@@ -91,6 +91,11 @@ v2 diperbaiki, kategori/akun ter-seed, backfill dijalankan di
   idle/waspada, ok + catat hari ini → senang, tanpa data → idle,
   streak 0 → mengantuk
   ([ADR-007](decisions/007-gamifikasi-berbasis-kondisi.md)).
+- **Stream disematkan**: `StreamBuilder`/`FutureBuilder` memakai objek
+  stream/future yang disematkan sekali per umur `State` (`initState` +
+  buat ulang di `didUpdateWidget` bila param berubah) — jangan dibuat
+  inline di `build`. Objek baru tiap rebuild memicu subscribe ulang →
+  skeleton berkedip setiap pindah tab.
 
 ## Keputusan kunci
 

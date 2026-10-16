@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 
@@ -11,7 +13,7 @@ import 'quest.dart';
 import '../core/dates_id.dart';
 
 /// Tab Bon: utang-piutang pribadi.
-class BonTab extends StatelessWidget {
+class BonTab extends StatefulWidget {
   const BonTab({
     super.key,
     required this.repository,
@@ -24,18 +26,32 @@ class BonTab extends StatelessWidget {
   final List<Widget> headerActions;
 
   @override
+  State<BonTab> createState() => _BonTabState();
+}
+
+class _BonTabState extends State<BonTab> {
+  /// Disematkan sekali agar rebuild tak subscribe ulang (anti-kedip).
+  late final Stream<List<Bon>> _bons;
+
+  @override
+  void initState() {
+    super.initState();
+    _bons = widget.repository.watchBons();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.q.bg,
       appBar: QuestHeader(
         title: 'Bon',
         subtitle: 'Utang & piutang pribadi',
-        actions: headerActions,
+        actions: widget.headerActions,
       ),
       // Tombol + tinggal di tengah navbar (dinamis per tab) — tanpa FAB
       // melayang di tab ini.
       body: StreamBuilder<List<Bon>>(
-        stream: repository.watchBons(),
+        stream: _bons,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const QuestSkeleton(rows: 3);
@@ -100,12 +116,12 @@ class BonTab extends StatelessWidget {
                 if (open.isNotEmpty) ...[
                   const QuestSectionHeader(title: 'Belum lunas'),
                   for (final b in open)
-                    _BonTile(bon: b, repository: repository),
+                    _BonTile(bon: b, repository: widget.repository),
                 ],
                 if (done.isNotEmpty) ...[
                   const QuestSectionHeader(title: 'Lunas'),
                   for (final b in done)
-                    _BonTile(bon: b, repository: repository),
+                    _BonTile(bon: b, repository: widget.repository),
                 ],
               ],
             ],

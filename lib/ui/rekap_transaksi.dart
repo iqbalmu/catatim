@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../core/rekap_filter.dart';
@@ -49,11 +51,14 @@ class RekapTransaksi extends StatefulWidget {
 
 class _RekapTransaksiState extends State<RekapTransaksi> {
   final _searchCtrl = TextEditingController();
+  // Disematkan sekali agar rebuild tak subscribe ulang (anti-kedip).
+  late Stream<List<TxWithCategory>> _rows;
 
   @override
   void initState() {
     super.initState();
     _searchCtrl.text = widget.filter.query ?? '';
+    _refreshRows();
   }
 
   @override
@@ -61,6 +66,47 @@ class _RekapTransaksiState extends State<RekapTransaksi> {
     super.didUpdateWidget(old);
     final q = widget.filter.query ?? '';
     if (_searchCtrl.text != q) _searchCtrl.text = q;
+    // TANPA setState — build sudah terjadwal; StreamBuilder di bawah melihat stream baru dan subscribe dengan benar.
+    // RekapFilter tak punya == — bandingkan field perakit stream satu per satu.
+    // query/categoryId disaring lokal di builder, bukan di stream — tak ikut kunci.
+    if (widget.repository != old.repository ||
+        widget.filter.day != old.filter.day ||
+        widget.filter.accountId != old.filter.accountId ||
+        _windowKey(widget.filter) != _windowKey(old.filter)) {
+      _refreshRows();
+    }
+  }
+
+  void _refreshRows() {
+    _rows = _buildRows(widget.filter);
+  }
+
+  Stream<List<TxWithCategory>> _buildRows(RekapFilter filter) {
+    final win = filter.window;
+    final day = filter.day;
+    if (day != null) {
+      // Deep-link kalender: sempitkan jendela ke satu hari itu.
+      return widget.repository.watchBetweenWithCategory(
+        DateTime(day.year, day.month, day.day),
+        DateTime(day.year, day.month, day.day + 1),
+        accountId: filter.accountId,
+      );
+    }
+    if (win == null) {
+      return widget.repository.watchRecentWithCategory(
+        accountId: filter.accountId,
+      );
+    }
+    return widget.repository.watchBetweenWithCategory(
+      win.start,
+      win.end,
+      accountId: filter.accountId,
+    );
+  }
+
+  static String _windowKey(RekapFilter f) {
+    final win = f.window;
+    return '${win?.start}|${win?.end}';
   }
 
   @override
@@ -98,23 +144,6 @@ class _RekapTransaksiState extends State<RekapTransaksi> {
   Widget build(BuildContext context) {
     final filter = widget.filter;
     final query = filter.query ?? '';
-
-    final win = filter.window;
-    final day = filter.day;
-    final stream = day != null
-        // Deep-link kalender: sempitkan jendela ke satu hari itu.
-        ? widget.repository.watchBetweenWithCategory(
-            DateTime(day.year, day.month, day.day),
-            DateTime(day.year, day.month, day.day + 1),
-            accountId: filter.accountId,
-          )
-        : win == null
-        ? widget.repository.watchRecentWithCategory(accountId: filter.accountId)
-        : widget.repository.watchBetweenWithCategory(
-            win.start,
-            win.end,
-            accountId: filter.accountId,
-          );
 
     return ListView(
       padding: EdgeInsets.fromLTRB(
@@ -190,7 +219,7 @@ class _RekapTransaksiState extends State<RekapTransaksi> {
         ],
         const SizedBox(height: Spacing.s),
         StreamBuilder<List<TxWithCategory>>(
-          stream: stream,
+          stream: _rows,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const QuestSkeleton();
