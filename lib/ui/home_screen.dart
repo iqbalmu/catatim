@@ -13,22 +13,13 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'account_manage_screen.dart';
 import 'bon_screen.dart';
-import 'capture_log_screen.dart';
 import 'home_cards.dart';
 import 'menu_screen.dart';
+import 'notif_screen.dart';
 import 'quest.dart';
 import 'rekap_screen.dart';
 import 'rencana_screen.dart';
 import 'transaction_sheet.dart';
-
-/// Bon tua: belum lunas dan umur kalender (today − occurredAt) > 30 hari.
-/// "Hari ini" dihitung dari tanggal kalender lokal, bukan selisih jam.
-bool bonNeedsBadge(DateTime occurredAt, {DateTime? now}) {
-  final n = now ?? DateTime.now();
-  final today = DateTime(n.year, n.month, n.day);
-  final day = DateTime(occurredAt.year, occurredAt.month, occurredAt.day);
-  return today.difference(day).inDays > 30;
-}
 
 /// Shell utama: Beranda | Rekap | Rencana | Bon.
 class HomeScreen extends StatefulWidget {
@@ -199,9 +190,12 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _CaptureBell(
+                _NotifBell(
                   repository: widget.repository,
                   pipeline: widget.pipeline,
+                  progress: widget.progress,
+                  onOpenRencana: _openRencanaBatas,
+                  onOpenBon: () => setState(() => _tab = 3),
                 ),
                 const SizedBox(width: Spacing.s),
                 _HomeMenu(
@@ -407,42 +401,77 @@ class _BukuduitMark extends StatelessWidget {
   }
 }
 
-/// Lonceng capture log. Future izin listener di-hoist ke [initState]
-/// agar tidak dibuat ulang tiap build (bebas loop rebuild).
-class _CaptureBell extends StatefulWidget {
-  const _CaptureBell({required this.repository, required this.pipeline});
+/// Lonceng notifikasi. Badge = ada item perhatian: izin belum aktif,
+/// entri gagal diparse, atau bon tua belum lunas. Dihitung dari data
+/// yang sama dengan layar Notifikasi.
+class _NotifBell extends StatefulWidget {
+  const _NotifBell({
+    required this.repository,
+    required this.pipeline,
+    required this.progress,
+    required this.onOpenRencana,
+    required this.onOpenBon,
+  });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
+  final ProgressService progress;
+  final VoidCallback onOpenRencana;
+  final VoidCallback onOpenBon;
 
   @override
-  State<_CaptureBell> createState() => _CaptureBellState();
+  State<_NotifBell> createState() => _NotifBellState();
 }
 
-class _CaptureBellState extends State<_CaptureBell> {
-  late final Future<bool> _listenerEnabled = widget.pipeline.channel
-      .isListenerEnabled();
+class _NotifBellState extends State<_NotifBell> {
+  /// Izin listener di-hoist agar tidak dibuat ulang tiap build.
+  late final Future<bool> _listenerEnabled =
+      widget.pipeline.channel.isListenerEnabled();
+
+  late final Stream<List<Bon>> _bons = widget.repository.watchBons();
+  late final Stream<List<CaptureLog>> _logs =
+      widget.repository.watchCaptureLog();
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<bool>(
       future: _listenerEnabled,
-      builder: (context, snapshot) {
-        final enabled = snapshot.data ?? false;
-        return QuestIconButton(
-          icon: Icons.notifications_active_outlined,
-          tooltip: 'Capture log',
-          badge: !enabled,
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => CaptureLogScreen(
-                repository: widget.repository,
-                channel: widget.pipeline.channel,
-                engine: widget.pipeline.engine,
-              ),
-            ),
-          ),
+      builder: (context, listenerSnap) {
+        final enabled = listenerSnap.data ?? false;
+        return StreamBuilder<List<CaptureLog>>(
+          stream: _logs,
+          builder: (context, logSnap) {
+            final failed = (logSnap.data ?? const <CaptureLog>[])
+                .where((l) => !l.parsed)
+                .length;
+            return StreamBuilder<List<Bon>>(
+              stream: _bons,
+              builder: (context, bonSnap) {
+                final aging = (bonSnap.data ?? const <Bon>[])
+                    .where((b) =>
+                        b.settledAt == null && bonNeedsBadge(b.occurredAt))
+                    .length;
+                final hasAttention = !enabled || failed > 0 || aging > 0;
+                return QuestIconButton(
+                  icon: Icons.notifications_active_outlined,
+                  tooltip: 'Notifikasi',
+                  badge: hasAttention,
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => NotificationScreen(
+                        repository: widget.repository,
+                        pipeline: widget.pipeline,
+                        progress: widget.progress,
+                        onOpenRencana: widget.onOpenRencana,
+                        onOpenBon: widget.onOpenBon,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            );
+          },
         );
       },
     );
@@ -469,6 +498,7 @@ class _HomeMenu extends StatelessWidget {
         MaterialPageRoute(
           builder: (_) => MenuScreen(
             repository: repository,
+            pipeline: pipeline,
             engine: pipeline.engine,
           ),
         ),

@@ -12,6 +12,15 @@ import '../theme/tokens.dart';
 import 'quest.dart';
 import '../core/dates_id.dart';
 
+/// Bon tua: belum lunas dan umur kalender (today − occurredAt) > 30 hari.
+/// "Hari ini" dihitung dari tanggal kalender lokal, bukan selisih jam.
+bool bonNeedsBadge(DateTime occurredAt, {DateTime? now}) {
+  final n = now ?? DateTime.now();
+  final today = DateTime(n.year, n.month, n.day);
+  final day = DateTime(occurredAt.year, occurredAt.month, occurredAt.day);
+  return today.difference(day).inDays > 30;
+}
+
 /// Tab Bon: utang-piutang pribadi.
 class BonTab extends StatefulWidget {
   const BonTab({super.key, required this.repository});

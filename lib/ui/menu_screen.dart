@@ -1,24 +1,28 @@
 import 'package:flutter/material.dart';
 
+import '../capture/pipeline.dart';
 import '../rules/engine.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'account_manage_screen.dart';
 import 'backup_screen.dart';
+import 'capture_log_screen.dart';
 import 'quest.dart';
 import 'rules_screen.dart';
 
-/// Layar Menu: pengganti popup ⋯ — kelola akun, backup, dan aturan
-/// capture sebagai halaman penuh.
+/// Layar Menu: pengganti popup ⋯ — kelola akun, backup, log capture, dan
+/// aturan capture sebagai halaman penuh.
 class MenuScreen extends StatelessWidget {
   const MenuScreen({
     super.key,
     required this.repository,
+    required this.pipeline,
     required this.engine,
   });
 
   final LedgerRepository repository;
+  final CapturePipeline pipeline;
   final RuleEngine engine;
 
   @override
@@ -85,6 +89,22 @@ class MenuScreen extends StatelessWidget {
                       builder: (_) => RulesScreen(
                         repository: repository,
                         engine: engine,
+                      ),
+                    ),
+                  ),
+                ),
+                _divider(context),
+                _MenuRow(
+                  icon: Icons.notifications_active_outlined,
+                  title: 'Log capture',
+                  subtitle: 'Notifikasi tertangkap & izin akses',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CaptureLogScreen(
+                        repository: repository,
+                        channel: pipeline.channel,
+                        engine: pipeline.engine,
                       ),
                     ),
                   ),
