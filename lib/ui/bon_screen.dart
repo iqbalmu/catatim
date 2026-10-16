@@ -14,16 +14,9 @@ import '../core/dates_id.dart';
 
 /// Tab Bon: utang-piutang pribadi.
 class BonTab extends StatefulWidget {
-  const BonTab({
-    super.key,
-    required this.repository,
-    this.headerActions = const [],
-  });
+  const BonTab({super.key, required this.repository});
 
   final LedgerRepository repository;
-
-  /// Aksi header global dari shell (lonceng + ⋯) — sama di semua tab.
-  final List<Widget> headerActions;
 
   @override
   State<BonTab> createState() => _BonTabState();
@@ -46,7 +39,6 @@ class _BonTabState extends State<BonTab> {
       appBar: QuestHeader(
         title: 'Bon',
         subtitle: 'Utang & piutang pribadi',
-        actions: widget.headerActions,
       ),
       // Tombol + tinggal di tengah navbar (dinamis per tab) — tanpa FAB
       // melayang di tab ini.

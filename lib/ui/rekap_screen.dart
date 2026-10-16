@@ -22,16 +22,12 @@ class RekapScreen extends StatefulWidget {
     super.key,
     required this.repository,
     this.progress,
-    this.headerActions = const [],
   });
 
   final LedgerRepository repository;
 
   /// Agar hero Beranda ikut segar setelah catat dari tab ini.
   final ProgressService? progress;
-
-  /// Aksi header global dari shell (lonceng + ⋯) — sama di semua tab.
-  final List<Widget> headerActions;
 
   @override
   State<RekapScreen> createState() => _RekapScreenState();
@@ -105,7 +101,6 @@ class _RekapScreenState extends State<RekapScreen> {
       appBar: QuestHeader(
         title: 'Rekap',
         subtitle: _periodLabel,
-        actions: widget.headerActions,
       ),
       // Tombol + tinggal di tengah navbar (dinamis per tab) — tanpa FAB
       // melayang di tab ini.

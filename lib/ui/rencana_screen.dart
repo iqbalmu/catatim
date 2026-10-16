@@ -8,16 +8,9 @@ import 'rencana_batas.dart';
 /// Layar Rencana: akar tab (tanpa tombol kembali) berisi Batas
 /// (eks Anggaran).
 class RencanaScreen extends StatefulWidget {
-  const RencanaScreen({
-    super.key,
-    required this.repository,
-    this.headerActions = const [],
-  });
+  const RencanaScreen({super.key, required this.repository});
 
   final LedgerRepository repository;
-
-  /// Aksi header global dari shell (lonceng + ⋯) — sama di semua tab.
-  final List<Widget> headerActions;
 
   @override
   State<RencanaScreen> createState() => RencanaScreenState();
@@ -36,7 +29,6 @@ class RencanaScreenState extends State<RencanaScreen> {
       appBar: QuestHeader(
         title: 'Rencana',
         subtitle: 'Batas keuangan',
-        actions: widget.headerActions,
       ),
       // Tombol + tinggal di tengah navbar — tanpa FAB melayang di tab ini.
       body: RencanaBatas(repository: widget.repository),

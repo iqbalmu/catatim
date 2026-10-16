@@ -106,15 +106,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Aksi header global (lonceng + ⋯) — satu instance dipakai keempat tab.
-  late final List<Widget> _globalActions = [
-    _GlobalActions(
-      repository: widget.repository,
-      pipeline: widget.pipeline,
-      progress: widget.progress,
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -123,72 +114,94 @@ class _HomeScreenState extends State<HomeScreen> {
         // Back di tab non-Beranda kembali ke Beranda; di Beranda keluar.
         if (!didPop && _tab != 0) setState(() => _tab = 0);
       },
-      child: Scaffold(
-        backgroundColor: context.q.bg,
-        // Konten mengalir di belakang navbar floating; tiap tab memberi
-        // clearance lewat MediaQuery.padding.bottom yang disuntik Scaffold.
-        extendBody: true,
-        body: _DirectionalTabView(
-          index: _tab,
-          children: [
-            TickerMode(
-              enabled: _tab == 0,
-              child: _BerandaTab(
-                repository: widget.repository,
-                pipeline: widget.pipeline,
-                progress: widget.progress,
-                onOpenRekap: () => setState(() => _tab = 1),
-                onOpenRencanaBatas: _openRencanaBatas,
-              ),
-            ),
-            TickerMode(
-              enabled: _tab == 1,
-              child: RekapScreen(
-                repository: widget.repository,
-                progress: widget.progress,
-                headerActions: _globalActions,
-              ),
-            ),
-            TickerMode(
-              enabled: _tab == 2,
-              child: RencanaScreen(
-                key: _rencanaKey,
-                repository: widget.repository,
-                headerActions: _globalActions,
-              ),
-            ),
-            TickerMode(
-              enabled: _tab == 3,
-              child: BonTab(
-                repository: widget.repository,
-                headerActions: _globalActions,
-              ),
-            ),
-          ],
-        ),
-        // Tombol + di tengah navbar, dinamis per tab.
-        bottomNavigationBar: StreamBuilder<List<Bon>>(
-          stream: _bonsWatch,
-          builder: (context, snapshot) {
-            final hasOld = (snapshot.data ?? const <Bon>[]).any(
-              (b) => b.settledAt == null && bonNeedsBadge(b.occurredAt),
-            );
-            return QuestBottomNav(
+      child: Stack(
+        children: [
+          Scaffold(
+            backgroundColor: context.q.bg,
+            // Konten mengalir di belakang navbar floating; tiap tab memberi
+            // clearance lewat MediaQuery.padding.bottom yang disuntik
+            // Scaffold.
+            extendBody: true,
+            body: _DirectionalTabView(
               index: _tab,
-              onChanged: _onTabChanged,
-              destinations: HomeScreen._destinations,
-              badges: hasOld ? const {3} : const <int>{},
-              centerAction: (
-                tooltip: _tab == 2
-                    ? 'Jenis'
-                    : _tab == 3
-                        ? 'Catat bon'
-                        : 'Catat transaksi',
-                onTap: _primaryAction,
-              ),
-            );
-          },
-        ),
+              children: [
+                TickerMode(
+                  enabled: _tab == 0,
+                  child: _BerandaTab(
+                    repository: widget.repository,
+                    pipeline: widget.pipeline,
+                    progress: widget.progress,
+                    onOpenRekap: () => setState(() => _tab = 1),
+                    onOpenRencanaBatas: _openRencanaBatas,
+                  ),
+                ),
+                TickerMode(
+                  enabled: _tab == 1,
+                  child: RekapScreen(
+                    repository: widget.repository,
+                    progress: widget.progress,
+                  ),
+                ),
+                TickerMode(
+                  enabled: _tab == 2,
+                  child: RencanaScreen(
+                    key: _rencanaKey,
+                    repository: widget.repository,
+                  ),
+                ),
+                TickerMode(
+                  enabled: _tab == 3,
+                  child: BonTab(repository: widget.repository),
+                ),
+              ],
+            ),
+            // Tombol + di tengah navbar, dinamis per tab.
+            bottomNavigationBar: StreamBuilder<List<Bon>>(
+              stream: _bonsWatch,
+              builder: (context, snapshot) {
+                final hasOld = (snapshot.data ?? const <Bon>[]).any(
+                  (b) => b.settledAt == null && bonNeedsBadge(b.occurredAt),
+                );
+                return QuestBottomNav(
+                  index: _tab,
+                  onChanged: _onTabChanged,
+                  destinations: HomeScreen._destinations,
+                  badges: hasOld ? const {3} : const <int>{},
+                  centerAction: (
+                    tooltip: _tab == 2
+                        ? 'Jenis'
+                        : _tab == 3
+                            ? 'Catat bon'
+                            : 'Catat transaksi',
+                    onTap: _primaryAction,
+                  ),
+                );
+              },
+            ),
+          ),
+          // Lonceng + ⋯ fix seperti navbar: hidup di shell (di atas
+          // Scaffold), tidak ikut slide pindah tab. Posisi meniru tata
+          // letak QuestHeader (SafeArea + padding s/m).
+          Positioned(
+            top: MediaQuery.paddingOf(context).top + Spacing.s,
+            right: Spacing.m,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _CaptureBell(
+                  repository: widget.repository,
+                  pipeline: widget.pipeline,
+                ),
+                const SizedBox(width: Spacing.s),
+                _HomeMenu(
+                  repository: widget.repository,
+                  pipeline: widget.pipeline,
+                  progress: widget.progress,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -457,35 +470,6 @@ class _HomeMenu extends StatelessWidget {
   }
 }
 
-/// Lonceng + ⋯ dipakai ulang di tab selain Beranda.
-class _GlobalActions extends StatelessWidget {
-  const _GlobalActions({
-    required this.repository,
-    required this.pipeline,
-    required this.progress,
-  });
-
-  final LedgerRepository repository;
-  final CapturePipeline pipeline;
-  final ProgressService progress;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _CaptureBell(repository: repository, pipeline: pipeline),
-        const SizedBox(width: Spacing.s),
-        _HomeMenu(
-          repository: repository,
-          pipeline: pipeline,
-          progress: progress,
-        ),
-      ],
-    );
-  }
-}
-
 String _todaySubtitle(DateTime now) => idFullDate(now);
 
 /// Beranda ala mock pastel: hero saldo + kartu batas 3 kolom + dua kartu
@@ -556,18 +540,6 @@ class _BerandaTabState extends State<_BerandaTab> {
         title: 'Bukuduit',
         subtitle: _todaySubtitle(DateTime.now()),
         leading: const _BukuduitMark(),
-        actions: [
-          _CaptureBell(
-            repository: widget.repository,
-            pipeline: widget.pipeline,
-          ),
-          const SizedBox(width: Spacing.s),
-          _HomeMenu(
-            repository: widget.repository,
-            pipeline: widget.pipeline,
-            progress: widget.progress,
-          ),
-        ],
       ),
       // Tombol + tinggal di tengah navbar (dinamis per tab) — tanpa FAB
       // melayang di tab ini.
