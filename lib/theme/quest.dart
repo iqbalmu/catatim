@@ -135,7 +135,8 @@ class QuestMotion {
   static const double pressScale = 0.96;
 }
 
-/// Transisi pindah screen khas Quest: geser tipis + fade, cepat di awal.
+/// Transisi pindah screen khas Quest: slide penuh dari kanan — feel
+/// navigasi maju; saat pop kembali ke kanan.
 class QuestPageTransitionsBuilder extends PageTransitionsBuilder {
   const QuestPageTransitionsBuilder();
 
@@ -154,13 +155,10 @@ class QuestPageTransitionsBuilder extends PageTransitionsBuilder {
     );
     return SlideTransition(
       position: Tween(
-        begin: const Offset(0.08, 0.03),
+        begin: const Offset(1, 0),
         end: Offset.zero,
       ).animate(curved),
-      child: FadeTransition(
-        opacity: Tween(begin: 0.0, end: 1.0).animate(curved),
-        child: child,
-      ),
+      child: child,
     );
   }
 }
