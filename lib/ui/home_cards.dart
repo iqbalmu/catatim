@@ -516,6 +516,9 @@ class TransaksiTerbaruCard extends StatelessWidget {
           StreamBuilder<List<TxWithCategory>>(
             stream: repository.watchRecentWithCategory(limit: 3),
             builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const QuestSkeleton(rows: 3, height: 60);
+              }
               final items = snapshot.data ?? const <TxWithCategory>[];
               if (items.isEmpty) {
                 return Padding(

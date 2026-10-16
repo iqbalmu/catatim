@@ -904,28 +904,80 @@ void questSnack(BuildContext context, String message, {IconData? icon}) {
   );
 }
 
-/// Skeleton loading berbentuk tile berbingkai — dipakai semua stream
-/// pertama agar layar tidak berkedip kosong.
-class QuestSkeleton extends StatelessWidget {
+/// Skeleton loading berbentuk tile berbingkai dengan kilau shimmer
+/// menyapu — dipakai semua stream pertama agar layar tidak berkedip
+/// kosong. Hanya untuk data yang belum ada; hormati reduced motion.
+class QuestSkeleton extends StatefulWidget {
   const QuestSkeleton({super.key, this.rows = 3, this.height = 70});
 
   final int rows;
   final double height;
 
   @override
+  State<QuestSkeleton> createState() => _QuestSkeletonState();
+}
+
+class _QuestSkeletonState extends State<QuestSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final _sweep = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _sweep.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        for (var i = 0; i < rows; i++)
-          Container(
-            height: height,
-            margin: const EdgeInsets.only(bottom: Spacing.s),
-            decoration: BoxDecoration(
-              color: context.q.surface2,
-              borderRadius: BorderRadius.circular(AppRadius.tile),
+    final q = context.q;
+    Widget box(Widget? sweep) => Container(
+      height: widget.height,
+      margin: const EdgeInsets.only(bottom: Spacing.s),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: q.surface2,
+        borderRadius: BorderRadius.circular(AppRadius.tile),
+      ),
+      child: sweep,
+    );
+    // Reduced motion: kotak diam seperti sebelumnya.
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return Column(
+        children: [for (var i = 0; i < widget.rows; i++) box(null)],
+      );
+    }
+    return AnimatedBuilder(
+      animation: _sweep,
+      builder: (context, _) => Column(
+        children: [
+          for (var i = 0; i < widget.rows; i++)
+            box(
+              FractionalTranslation(
+                // Baris menyusul berurutan, bukan serentak.
+                translation: Offset(
+                  2 * ((_sweep.value - i * 0.12) % 1.0) - 1,
+                  0,
+                ),
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        q.surface2.withValues(alpha: 0),
+                        q.surface.withValues(alpha: 0.85),
+                        q.surface2.withValues(alpha: 0),
+                      ],
+                      stops: const [0.35, 0.5, 0.65],
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
