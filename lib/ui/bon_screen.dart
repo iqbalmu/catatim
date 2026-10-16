@@ -127,7 +127,10 @@ class _NetCard extends StatelessWidget {
     final q = context.q;
     final positive = net >= 0;
     return Container(
-      padding: const EdgeInsets.all(Spacing.m),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Spacing.m,
+        vertical: Spacing.l,
+      ),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [SeedColors.honeyBright, SeedColors.honey],
