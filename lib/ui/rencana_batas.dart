@@ -17,7 +17,7 @@ Future<void> showAddJenisFlow(
 ) async {
   final result = await showQuestDialog<_NewCategory>(
     context,
-    title: 'Jenis anggaran baru',
+    title: 'Tambah jenis anggaran',
     content: _NewCategoryForm(),
     actions: [
       QuestButton(
@@ -60,14 +60,14 @@ Future<void> showAddJenisFlow(
     if (!context.mounted) return;
     questSnack(
       context,
-      'Jenis anggaran "${category.name}" ditambahkan.',
+      'Jenis "${category.name}" berhasil ditambahkan.',
       icon: Icons.check_rounded,
     );
   } catch (_) {
     if (!context.mounted) return;
     questSnack(
       context,
-      'Nama "${result.name}" sudah dipakai.',
+      'Nama "${result.name}" sudah dipakai — coba nama lain, ya.',
       icon: Icons.info_outline_rounded,
     );
   }
@@ -397,7 +397,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
     if (!mounted) return;
     questSnack(
       context,
-      value == null ? '$title dihapus.' : '$title disimpan.',
+      value == null ? '$title dihapus, ya.' : '$title tersimpan.',
       icon: Icons.check_rounded,
     );
   }
@@ -432,8 +432,8 @@ class _RencanaBatasState extends State<RencanaBatas> {
     questSnack(
       context,
       result.remove
-          ? 'Alokasi ${category.name} dihapus.'
-          : 'Alokasi ${category.name} disimpan.',
+          ? 'Alokasi ${category.name} dihapus, ya.'
+          : 'Alokasi ${category.name} tersimpan.',
       icon: Icons.check_rounded,
     );
   }
@@ -485,7 +485,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
         if (lainnya.isEmpty) {
           questSnack(
             context,
-            'Butuh kategori "Lainnya" sebagai penampung.',
+            'Kategori "Lainnya" belum ada — transaksinya butuh tempat pindah.',
             icon: Icons.info_outline_rounded,
           );
           return;
@@ -507,7 +507,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
         if (!mounted) return;
         questSnack(
           context,
-          'Nama diubah menjadi "${result.newName}".',
+          'Nama berubah jadi "${result.newName}".',
           icon: Icons.check_rounded,
         );
       }
@@ -515,7 +515,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
       if (!mounted) return;
       questSnack(
         context,
-        'Nama "${result.newName}" sudah dipakai.',
+        'Nama "${result.newName}" sudah dipakai — coba nama lain, ya.',
         icon: Icons.info_outline_rounded,
       );
     }
@@ -555,7 +555,7 @@ Future<int?> _askAmount(
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       decoration: const InputDecoration(
         labelText: 'Nominal (rupiah)',
-        hintText: 'Kosongkan untuk hapus',
+        hintText: 'Kosongkan kalau mau menghapus batas ini',
       ),
     ),
     actions: [
@@ -816,7 +816,7 @@ class _LimitMiniCard extends StatelessWidget {
             ),
             const SizedBox(height: Spacing.xxs),
             Text(
-              line == null ? 'Tidak diatur' : _ringkasRp(used),
+              line == null ? 'Belum diatur' : _ringkasRp(used),
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,

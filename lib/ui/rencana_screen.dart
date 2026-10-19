@@ -28,7 +28,7 @@ class RencanaScreenState extends State<RencanaScreen> {
       backgroundColor: context.q.bg,
       appBar: QuestHeader(
         title: 'Rencana',
-        subtitle: 'Batas keuangan',
+        subtitle: 'Atur batas belanjamu',
       ),
       // Tombol + tinggal di tengah navbar — tanpa FAB melayang di tab ini.
       body: RencanaBatas(repository: widget.repository),

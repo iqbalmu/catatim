@@ -7,11 +7,12 @@ import '../capture/pipeline.dart';
 import '../core/dates_id.dart';
 import '../game/hero_card.dart';
 import '../game/progress.dart';
+import '../rules/rule_set.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
-import 'account_manage_screen.dart';
+import 'bank_accounts_screen.dart';
 import 'bon_screen.dart';
 import 'home_cards.dart';
 import 'menu_screen.dart';
@@ -28,11 +29,13 @@ class HomeScreen extends StatefulWidget {
     required this.repository,
     required this.pipeline,
     required this.progress,
+    required this.ruleSet,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
   final ProgressService progress;
+  final RuleSet ruleSet;
 
   static const _destinations = [
     QuestDestination(icon: Icons.home_rounded, label: 'Beranda'),
@@ -131,6 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     repository: widget.repository,
                     pipeline: widget.pipeline,
                     progress: widget.progress,
+                    ruleSet: widget.ruleSet,
                     onOpenRekap: () =>
                         _openRekap(RekapSegment.transaksi),
                     onOpenRencanaBatas: _openRencanaBatas,
@@ -194,6 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   repository: widget.repository,
                   pipeline: widget.pipeline,
                   progress: widget.progress,
+                  ruleSet: widget.ruleSet,
                   onOpenRencana: _openRencanaBatas,
                   onOpenBon: () => setState(() => _tab = 3),
                 ),
@@ -201,6 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _HomeMenu(
                   repository: widget.repository,
                   pipeline: widget.pipeline,
+                  ruleSet: widget.ruleSet,
                 ),
               ],
             ),
@@ -401,14 +407,15 @@ class _BukuduitMark extends StatelessWidget {
   }
 }
 
-/// Lonceng notifikasi. Badge = ada item perhatian: izin belum aktif,
-/// entri gagal diparse, atau bon tua belum lunas. Dihitung dari data
-/// yang sama dengan layar Notifikasi.
+/// Lonceng notifikasi. Badge = ada item perhatian: draf menunggu
+/// keputusan, izin belum aktif, entri tak terbaca, atau bon tua belum
+/// lunas. Dihitung dari data yang sama dengan layar Notifikasi.
 class _NotifBell extends StatefulWidget {
   const _NotifBell({
     required this.repository,
     required this.pipeline,
     required this.progress,
+    required this.ruleSet,
     required this.onOpenRencana,
     required this.onOpenBon,
   });
@@ -416,6 +423,7 @@ class _NotifBell extends StatefulWidget {
   final LedgerRepository repository;
   final CapturePipeline pipeline;
   final ProgressService progress;
+  final RuleSet ruleSet;
   final VoidCallback onOpenRencana;
   final VoidCallback onOpenBon;
 
@@ -431,6 +439,7 @@ class _NotifBellState extends State<_NotifBell> {
   late final Stream<List<Bon>> _bons = widget.repository.watchBons();
   late final Stream<List<CaptureLog>> _logs =
       widget.repository.watchCaptureLog();
+  late final Stream<List<Draft>> _drafts = widget.repository.watchDrafts();
 
   @override
   Widget build(BuildContext context) {
@@ -438,36 +447,45 @@ class _NotifBellState extends State<_NotifBell> {
       future: _listenerEnabled,
       builder: (context, listenerSnap) {
         final enabled = listenerSnap.data ?? false;
-        return StreamBuilder<List<CaptureLog>>(
-          stream: _logs,
-          builder: (context, logSnap) {
-            final failed = (logSnap.data ?? const <CaptureLog>[])
-                .where((l) => !l.parsed)
-                .length;
-            return StreamBuilder<List<Bon>>(
-              stream: _bons,
-              builder: (context, bonSnap) {
-                final aging = (bonSnap.data ?? const <Bon>[])
-                    .where((b) =>
-                        b.settledAt == null && bonNeedsBadge(b.occurredAt))
+        return StreamBuilder<List<Draft>>(
+          stream: _drafts,
+          builder: (context, draftSnap) {
+            final draftCount = draftSnap.data?.length ?? 0;
+            return StreamBuilder<List<CaptureLog>>(
+              stream: _logs,
+              builder: (context, logSnap) {
+                final failed = (logSnap.data ?? const <CaptureLog>[])
+                    .where((l) => !l.parsed)
                     .length;
-                final hasAttention = !enabled || failed > 0 || aging > 0;
-                return QuestIconButton(
-                  icon: Icons.notifications_active_outlined,
-                  tooltip: 'Notifikasi',
-                  badge: hasAttention,
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => NotificationScreen(
-                        repository: widget.repository,
-                        pipeline: widget.pipeline,
-                        progress: widget.progress,
-                        onOpenRencana: widget.onOpenRencana,
-                        onOpenBon: widget.onOpenBon,
+                return StreamBuilder<List<Bon>>(
+                  stream: _bons,
+                  builder: (context, bonSnap) {
+                    final aging = (bonSnap.data ?? const <Bon>[])
+                        .where((b) =>
+                            b.settledAt == null &&
+                            bonNeedsBadge(b.occurredAt))
+                        .length;
+                    final hasAttention =
+                        draftCount > 0 || !enabled || failed > 0 || aging > 0;
+                    return QuestIconButton(
+                      icon: Icons.notifications_active_outlined,
+                      tooltip: 'Notifikasi',
+                      badge: hasAttention,
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => NotificationScreen(
+                            repository: widget.repository,
+                            pipeline: widget.pipeline,
+                            progress: widget.progress,
+                            ruleSet: widget.ruleSet,
+                            onOpenRencana: widget.onOpenRencana,
+                            onOpenBon: widget.onOpenBon,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 );
               },
             );
@@ -478,15 +496,17 @@ class _NotifBellState extends State<_NotifBell> {
   }
 }
 
-/// Tombol ⋯: buka layar Menu (Kelola akun, Backup, Aturan capture).
+/// Tombol ⋯: buka layar Menu (Catat otomatis, Bank & akun, Backup).
 class _HomeMenu extends StatelessWidget {
   const _HomeMenu({
     required this.repository,
     required this.pipeline,
+    required this.ruleSet,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
+  final RuleSet ruleSet;
 
   @override
   Widget build(BuildContext context) {
@@ -499,7 +519,7 @@ class _HomeMenu extends StatelessWidget {
           builder: (_) => MenuScreen(
             repository: repository,
             pipeline: pipeline,
-            engine: pipeline.engine,
+            ruleSet: ruleSet,
           ),
         ),
       ),
@@ -517,6 +537,7 @@ class _BerandaTab extends StatefulWidget {
     required this.repository,
     required this.pipeline,
     required this.progress,
+    required this.ruleSet,
     required this.onOpenRekap,
     required this.onOpenRencanaBatas,
   });
@@ -524,6 +545,7 @@ class _BerandaTab extends StatefulWidget {
   final LedgerRepository repository;
   final CapturePipeline pipeline;
   final ProgressService progress;
+  final RuleSet ruleSet;
   final VoidCallback onOpenRekap;
   final VoidCallback onOpenRencanaBatas;
 
@@ -594,8 +616,11 @@ class _BerandaTabState extends State<_BerandaTab> {
             onTapAccounts: () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) =>
-                    AccountManageScreen(repository: widget.repository),
+                builder: (_) => BankAccountsScreen(
+                  repository: widget.repository,
+                  pipeline: widget.pipeline,
+                  ruleSet: widget.ruleSet,
+                ),
               ),
             ),
           ),

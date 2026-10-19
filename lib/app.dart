@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'capture/pipeline.dart';
 import 'game/progress.dart';
+import 'rules/rule_set.dart';
 import 'storage/repository.dart';
 import 'theme/quest.dart';
 import 'ui/home_screen.dart';
@@ -13,11 +14,13 @@ class BukuduitApp extends StatelessWidget {
     required this.repository,
     required this.pipeline,
     required this.progress,
+    required this.ruleSet,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
   final ProgressService progress;
+  final RuleSet ruleSet;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +39,7 @@ class BukuduitApp extends StatelessWidget {
         repository: repository,
         pipeline: pipeline,
         progress: progress,
+        ruleSet: ruleSet,
       ),
     );
   }

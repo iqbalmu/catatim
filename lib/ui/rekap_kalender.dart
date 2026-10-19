@@ -380,7 +380,7 @@ class _DayDetailState extends State<_DayDetail> {
                     const SizedBox(height: Spacing.xxs),
                         Text(
                           rows.isEmpty
-                              ? 'Tidak ada transaksi'
+                              ? 'Sepi — tidak ada transaksi'
                               : 'Keluar ${Money.format(effectiveOut)}',
                           style: context.qSmall(11).copyWith(color: q.muted),
                         ),

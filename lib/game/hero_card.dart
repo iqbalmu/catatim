@@ -154,7 +154,7 @@ class _HeroSaldoState extends State<_HeroSaldo> {
                     children: [
                       Text(
                         widget.accountCount == 0
-                            ? 'Belum ada akun'
+                            ? 'Belum ada akun — yuk tambah'
                             : '${widget.accountCount} akun',
                         style: context.qSmall(13).copyWith(
                           color: q.honeyInk,

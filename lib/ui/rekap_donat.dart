@@ -367,7 +367,7 @@ class _CategoryDonutCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Pengeluaran per kategori', style: context.qTitle()),
+          Text('Uangmu keluar ke mana saja?', style: context.qTitle()),
           const SizedBox(height: Spacing.m),
           if (total == 0)
             QuestEmpty(

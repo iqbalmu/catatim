@@ -131,22 +131,25 @@ class RuleEngine {
     return null;
   }
 
-  BankRules? _detectBank(String packageName, String lower) {
+  BankRules? _detectBank(String packageName, String lower) =>
+      bankFor(packageName: packageName, lowerText: lower);
+
+  /// Bank katalog yang cocok dengan paket/teks ini, dibatasi ke [onlyIds]
+  /// bila diberikan — dipakai pipeline model hubungkan bank.
+  BankRules? bankFor({
+    required String packageName,
+    required String lowerText,
+    Set<String>? onlyIds,
+  }) {
     for (final b in _ruleSet.banks) {
+      if (onlyIds != null && !onlyIds.contains(b.id)) continue;
       if (b.packageNames.contains(packageName)) return b;
     }
     for (final b in _ruleSet.banks) {
-      if (b.keywords.any(lower.contains)) return b;
+      if (onlyIds != null && !onlyIds.contains(b.id)) continue;
+      if (b.keywords.any(lowerText.contains)) return b;
     }
     return null;
-  }
-
-  /// Benar bila notifikasi berasal dari app bank yang dikenal (packageName
-  /// terdaftar) atau kontennya mengandung kata kunci bank — dipakai filter
-  /// capture di luar mode pelajaran.
-  bool isKnownSource(String packageName, String title, String body) {
-    final lower = '$title $body'.toLowerCase();
-    return _detectBank(packageName, lower) != null;
   }
 
   int? _extractAmount(String? customPattern, String text) {

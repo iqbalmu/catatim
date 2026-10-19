@@ -46,7 +46,7 @@ class _AccountFilterState extends State<AccountFilter> {
           child: Row(
             children: [
               QuestChip(
-                label: 'Semua',
+                label: 'Semua akun',
                 selected: widget.selectedId == null,
                 onTap: () => widget.onChanged(null),
               ),

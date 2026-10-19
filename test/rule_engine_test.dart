@@ -133,23 +133,37 @@ void main() {
     });
   });
 
-  test('isKnownSource: paket blu dikenal, chat tidak', () {
+  test('bankFor: paket blu dikenal, chat tidak', () {
     expect(
-      engine.isKnownSource('com.bcadigital.blu', 'apa saja', 'apa saja'),
-      isTrue,
+      engine.bankFor(
+        packageName: 'com.bcadigital.blu',
+        lowerText: 'apa saja',
+      ),
+      isNotNull,
     );
     expect(
-      engine.isKnownSource('com.whatsapp', 'Pesan masuk', 'halo bro'),
-      isFalse,
+      engine.bankFor(
+        packageName: 'com.whatsapp',
+        lowerText: 'pesan masuk halo bro',
+      ),
+      isNull,
     );
     // kata kunci konten tetap dikenali meski paket tidak terdaftar
     expect(
-      engine.isKnownSource(
-        'com.vendor.smsrelay',
-        '',
-        'BANKNAGARI: Kredit Rp750.000',
+      engine.bankFor(
+        packageName: 'com.vendor.smsrelay',
+        lowerText: 'banknagari: kredit rp750.000',
+      )?.id,
+      'nagari',
+    );
+    // filter koneksi membatasi hasil
+    expect(
+      engine.bankFor(
+        packageName: 'com.bcadigital.blu',
+        lowerText: 'apa saja',
+        onlyIds: {'nagari'},
       ),
-      isTrue,
+      isNull,
     );
   });
 

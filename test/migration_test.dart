@@ -407,6 +407,80 @@ void main() {
 
     await db.close();
   });
+
+  test('migrasi v8→v9: tabel draf + bank_id akun, data lama utuh', () async {
+    // Skema v8 = skema v7 tanpa tabel target, versi 8.
+    final raw = sqlite3.open(dbFile.path);
+    raw.execute(
+      'ALTER TABLE transactions ADD COLUMN category_id INTEGER NULL '
+      'REFERENCES categories (id)',
+    );
+    raw.execute(
+      'ALTER TABLE transactions ADD COLUMN account_id INTEGER NULL '
+      'REFERENCES accounts (id)',
+    );
+    raw.execute('''
+      CREATE TABLE categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        color_index INTEGER NOT NULL
+      )
+    ''');
+    raw.execute('''
+      CREATE TABLE app_settings (
+        key TEXT NOT NULL PRIMARY KEY,
+        value_text TEXT NOT NULL
+      )
+    ''');
+    raw.execute('''
+      CREATE TABLE accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        kind TEXT NOT NULL,
+        color_index INTEGER NOT NULL,
+        opening_balance INTEGER NOT NULL DEFAULT (0),
+        created_at INTEGER NOT NULL
+      )
+    ''');
+    raw.execute("PRAGMA user_version = 8");
+    raw.execute(
+      "INSERT INTO accounts (name, kind, color_index, created_at) "
+      "VALUES ('blu by BCA', 'bank', 0, 1790000000)",
+    );
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(dbFile));
+
+    // Data lama tetap terbaca.
+    final txs = await db.select(db.transactions).get();
+    expect(txs, hasLength(1));
+    expect(txs.first.uuid, 'legacy-1');
+
+    // Tabel draf ada & bisa dipakai.
+    final id = await repo(db).addDraftFromCapture(
+      raw: RawCapture(
+        packageName: 'com.bcadigital.blu',
+        title: 'blu',
+        body: 'Transfer masuk Rp1.000',
+        postedAt: DateTime(2026, 10, 12, 9),
+      ),
+      draft: ParsedDraft(
+        bankId: 'blu',
+        bankName: 'blu by BCA',
+        ruleName: 'transfer masuk',
+        kind: TxKind.transfer,
+        direction: Direction.incoming,
+        amount: 1000,
+      ),
+    );
+    expect(id, isNotNull);
+
+    // Akun lama tertaut ke bank katalog via nama.
+    final accs = await db.select(db.accounts).get();
+    expect(accs.singleWhere((a) => a.name == 'blu by BCA').bankId, 'blu');
+
+    await db.close();
+  });
 }
 
 LedgerRepository repo(AppDatabase db) => LedgerRepository(db);

@@ -38,39 +38,9 @@ void main() {
     counterparty: 'BUDI',
   );
 
-  test(
-    'notifikasi sama dalam jendela dedup hanya menghasilkan 1 transaksi',
-    () async {
-      final raw = capture();
-      await repo.recordFromCapture(raw: raw, draft: draft());
-      await repo.recordFromCapture(
-        raw: capture(postedAt: raw.postedAt.add(const Duration(seconds: 30))),
-        draft: draft(),
-      );
-
-      final txs = await db.select(db.transactions).get();
-      expect(txs, hasLength(1));
-
-      final logs = await db.select(db.captureLogs).get();
-      expect(logs, hasLength(2));
-      expect(logs.every((l) => l.parsed), isTrue);
-      expect(logs.every((l) => l.transactionId == txs.first.id), isTrue);
-    },
-  );
-
-  test('notifikasi nominal berbeda menghasilkan transaksi terpisah', () async {
-    await repo.recordFromCapture(raw: capture(), draft: draft());
-    await repo.recordFromCapture(
-      raw: capture(postedAt: DateTime(2026, 10, 10, 10)),
-      draft: draft(amount: 99000),
-    );
-    final txs = await db.select(db.transactions).get();
-    expect(txs, hasLength(2));
-  });
-
-  test('arah berbeda dengan nominal sama tidak ter-dedup', () async {
-    await repo.recordFromCapture(raw: capture(), draft: draft());
-    await repo.recordFromCapture(
+  test('arah berlawanan dengan nominal sama membuat draf terpisah', () async {
+    await repo.addDraftFromCapture(raw: capture(), draft: draft());
+    await repo.addDraftFromCapture(
       raw: capture(postedAt: DateTime(2026, 10, 10, 10)),
       draft: ParsedDraft(
         bankId: 'blu',
@@ -81,7 +51,7 @@ void main() {
         amount: 2000000,
       ),
     );
-    expect(await db.select(db.transactions).get(), hasLength(2));
+    expect(await db.select(db.drafts).get(), hasLength(2));
   });
 
   test(
@@ -94,6 +64,49 @@ void main() {
       expect(logs.first.transactionId, isNull);
     },
   );
+
+  test('log tak terparse yang identik tidak dicatat dua kali', () async {
+    final raw = capture();
+    await repo.recordUnparsedCapture(raw);
+    await repo.recordUnparsedCapture(
+      capture(postedAt: raw.postedAt.add(const Duration(seconds: 5))),
+    );
+    expect(await db.select(db.captureLogs).get(), hasLength(1));
+  });
+
+  group('baca ulang notifikasi tak terbaca', () {
+    ParsedDraft bluDraft() => ParsedDraft(
+      bankId: 'blu',
+      bankName: 'blu by BCA',
+      ruleName: 'transfer masuk',
+      kind: TxKind.transfer,
+      direction: Direction.incoming,
+      amount: 2000000,
+    );
+
+    test('berhasil menjadi draf + log ditandai terbaca', () async {
+      await repo.recordUnparsedCapture(capture());
+      final count = await repo.reparseWith(
+        (raw) => bluDraft(),
+        connectedBankIds: {'blu'},
+      );
+      expect(count, 1);
+      expect(await db.select(db.drafts).get(), hasLength(1));
+      expect(await db.select(db.transactions).get(), isEmpty);
+      expect(await repo.unparsedCaptures(), isEmpty);
+    });
+
+    test('bank yang tak terhubung tidak dibaca ulang', () async {
+      await repo.recordUnparsedCapture(capture());
+      final count = await repo.reparseWith(
+        (raw) => bluDraft(),
+        connectedBankIds: const {},
+      );
+      expect(count, 0);
+      expect(await db.select(db.drafts).get(), isEmpty);
+      expect(await repo.unparsedCaptures(), hasLength(1));
+    });
+  });
 
   test('input manual tersimpan dengan source manual', () async {
     await repo.addManual(
@@ -109,10 +122,12 @@ void main() {
     expect(txs.first.counterparty, 'Kopi Kenangan');
   });
 
-  test('capture otomatis mendapat kategori bawaan sesuai jenis', () async {
-    await repo.recordFromCapture(raw: capture(), draft: draft()); // transfer
-    final rows = await repo.watchRecentWithCategory().first;
-    expect(rows.single.category?.name, 'Transfer');
+  test('draf otomatis mendapat kategori bawaan sesuai jenis', () async {
+    await repo.addDraftFromCapture(raw: capture(), draft: draft()); // transfer
+    final drafts = await repo.watchDrafts().first;
+    final cats = await repo.getCategories();
+    final transfer = cats.firstWhere((c) => c.name == 'Transfer');
+    expect(drafts.single.categoryId, transfer.id);
   });
 
   test('settings simpan & ambil', () async {
@@ -161,30 +176,37 @@ void main() {
   });
 
   test('watchRecentWithCategory mengurutkan terbaru dulu', () async {
-    await repo.recordFromCapture(
-      raw: capture(postedAt: DateTime(2026, 10, 9, 8)),
-      draft: draft(amount: 1000),
+    await repo.addManual(
+      amount: 1000,
+      direction: Direction.incoming,
+      kind: TxKind.transfer,
+      occurredAt: DateTime(2026, 10, 9, 8),
     );
-    await repo.recordFromCapture(
-      raw: capture(postedAt: DateTime(2026, 10, 10, 8)),
-      draft: draft(amount: 2000),
+    await repo.addManual(
+      amount: 2000,
+      direction: Direction.incoming,
+      kind: TxKind.transfer,
+      occurredAt: DateTime(2026, 10, 10, 8),
     );
     final txs = await repo.watchRecentWithCategory().first;
     expect(txs.first.tx.amount, 2000);
   });
 
-  test('capture blu otomatis terpasang ke akun blu by BCA', () async {
-    await repo.recordFromCapture(raw: capture(), draft: draft());
-    final rows = await repo.watchRecentWithCategory().first;
-    final accounts = await repo.getAccounts();
-    final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
-    expect(rows.single.tx.accountId, blu.id);
-  });
-
   test('filter akun hanya menampilkan transaksi akun itu', () async {
-    final accounts = await repo.getAccounts();
-    final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
-    await repo.recordFromCapture(raw: capture(), draft: draft());
+    final blu = await repo.ensureBankAccount(
+      bankId: 'blu',
+      name: 'blu by BCA',
+      kind: AccountKind.bank,
+    );
+    await repo.addDraftFromCapture(raw: capture(), draft: draft());
+    final d = (await repo.watchDrafts().first).single;
+    expect(d.accountId, blu.id);
+    await repo.confirmDraft(
+      d,
+      amount: d.amount,
+      direction: d.direction,
+      kind: d.kind,
+    );
     await repo.addManual(
       amount: 5000,
       direction: Direction.outgoing,
@@ -246,9 +268,19 @@ void main() {
   });
 
   test('hapus akun membuat transaksinya tanpa akun', () async {
-    final accounts = await repo.getAccounts();
-    final blu = accounts.firstWhere((a) => a.name == 'blu by BCA');
-    await repo.recordFromCapture(raw: capture(), draft: draft());
+    final blu = await repo.ensureBankAccount(
+      bankId: 'blu',
+      name: 'blu by BCA',
+      kind: AccountKind.bank,
+    );
+    await repo.addDraftFromCapture(raw: capture(), draft: draft());
+    final d = (await repo.watchDrafts().first).single;
+    await repo.confirmDraft(
+      d,
+      amount: d.amount,
+      direction: d.direction,
+      kind: d.kind,
+    );
     var rows = await repo.watchRecentWithCategory(accountId: blu.id).first;
     expect(rows, hasLength(1));
 
@@ -395,16 +427,11 @@ void main() {
 
   group('belanja murni', () {
     test('transfer biasa bukan belanja', () async {
-      await repo.recordFromCapture(
-        raw: capture(postedAt: DateTime(2026, 10, 10, 9)),
-        draft: ParsedDraft(
-          bankId: 'blu',
-          bankName: 'blu by BCA',
-          ruleName: 'transfer keluar',
-          kind: TxKind.transfer,
-          direction: Direction.outgoing,
-          amount: 5000000,
-        ),
+      await repo.addManual(
+        amount: 5000000,
+        direction: Direction.outgoing,
+        kind: TxKind.transfer,
+        occurredAt: DateTime(2026, 10, 10, 9),
       );
       final day = DateTime(2026, 10, 10);
       final next = day.add(const Duration(days: 1));
@@ -473,6 +500,157 @@ void main() {
       expect(map[today], 5000);
       expect(map[yesterday], 7000);
       expect(map, hasLength(2));
+    });
+  });
+
+  group('model hubungkan bank: draf capture', () {
+    test('notifikasi bank terhubung menjadi draf, bukan transaksi', () async {
+      final id = await repo.addDraftFromCapture(raw: capture(), draft: draft());
+      expect(id, isNotNull);
+
+      expect(await db.select(db.transactions).get(), isEmpty);
+      final drafts = await db.select(db.drafts).get();
+      expect(drafts, hasLength(1));
+      expect(drafts.first.bankId, 'blu');
+      expect(drafts.first.amount, 2000000);
+      expect(drafts.first.occurredAt, capture().postedAt);
+      expect(drafts.first.rawBody, isNotNull);
+    });
+
+    test('notifikasi sama dalam jendela dedup tidak membuat draf kedua', () async {
+      final raw = capture();
+      expect(await repo.addDraftFromCapture(raw: raw, draft: draft()), isNotNull);
+      expect(
+        await repo.addDraftFromCapture(
+          raw: capture(postedAt: raw.postedAt.add(const Duration(seconds: 30))),
+          draft: draft(),
+        ),
+        isNull,
+      );
+      expect(await db.select(db.drafts).get(), hasLength(1));
+    });
+
+    test('draf juga ter-dedup terhadap transaksi yang sudah dikonfirmasi', () async {
+      final raw = capture();
+      await repo.addDraftFromCapture(raw: raw, draft: draft());
+      final d = (await db.select(db.drafts).get()).single;
+      await repo.confirmDraft(
+        d,
+        amount: d.amount,
+        direction: d.direction,
+        kind: d.kind,
+      );
+      expect(
+        await repo.addDraftFromCapture(
+          raw: capture(postedAt: raw.postedAt.add(const Duration(minutes: 1))),
+          draft: draft(),
+        ),
+        isNull,
+      );
+      expect(await db.select(db.drafts).get(), isEmpty);
+    });
+
+    test('konfirmasi draf: transaksi source notifikasi + draf terhapus', () async {
+      await repo.addDraftFromCapture(raw: capture(), draft: draft());
+      final d = (await db.select(db.drafts).get()).single;
+
+      final txId = await repo.confirmDraft(
+        d,
+        amount: 1500000, // user mengoreksi nominal
+        direction: d.direction,
+        kind: d.kind,
+        counterparty: 'Budi S.',
+      );
+
+      final txs = await db.select(db.transactions).get();
+      expect(txs, hasLength(1));
+      expect(txs.first.id, txId);
+      expect(txs.first.source, TxSource.notification);
+      expect(txs.first.bankId, 'blu');
+      expect(txs.first.amount, 1500000);
+      expect(txs.first.counterparty, 'Budi S.');
+      expect(txs.first.rawBody, d.rawBody);
+      expect(txs.first.occurredAt, d.occurredAt);
+      expect(await db.select(db.drafts).get(), isEmpty);
+    });
+
+    test('buang draf menghapusnya tanpa membuat transaksi', () async {
+      await repo.addDraftFromCapture(raw: capture(), draft: draft());
+      final d = (await db.select(db.drafts).get()).single;
+      await repo.discardDraft(d.id);
+      expect(await db.select(db.drafts).get(), isEmpty);
+      expect(await db.select(db.transactions).get(), isEmpty);
+    });
+
+    test('watchDrafts berurutan terbaru dulu', () async {
+      await repo.addDraftFromCapture(raw: capture(), draft: draft());
+      await repo.addDraftFromCapture(
+        raw: capture(postedAt: DateTime(2026, 10, 10, 10)),
+        draft: draft(amount: 99000),
+      );
+      final drafts = await repo.watchDrafts().first;
+      expect(drafts.first.amount, 99000);
+    });
+  });
+
+  group('model hubungkan bank: koneksi', () {
+    test('set & watch koneksi bank', () async {
+      expect(await repo.connectedBankIds(), isEmpty);
+      await repo.setBankConnected('blu', true);
+      expect(await repo.connectedBankIds(), {'blu'});
+      expect(await repo.watchConnectedBanks().first, {'blu'});
+
+      await repo.setBankConnected('nagari', true);
+      await repo.setBankConnected('blu', false);
+      expect(await repo.connectedBankIds(), {'nagari'});
+    });
+
+    test('ensureBankAccount membuat akun sekali per bankId', () async {
+      final a = await repo.ensureBankAccount(
+        bankId: 'blu',
+        name: 'blu by BCA',
+        kind: AccountKind.bank,
+      );
+      final b = await repo.ensureBankAccount(
+        bankId: 'blu',
+        name: 'blu by BCA',
+        kind: AccountKind.bank,
+      );
+      expect(a.id, b.id);
+      expect(b.bankId, 'blu');
+      expect(b.name, 'blu by BCA');
+    });
+
+    test('ensureBankAccount mengadopsi akun manual senama tanpa duplikat', () async {
+      // Akun manual 'Dompet Lama' belum tertaut ke bank mana pun.
+      final manual = await repo.addAccount('Dompet Lama', AccountKind.bank);
+      expect(manual.bankId, isNull);
+      // Menghubungkan bank dengan nama sama memakai akun itu, bukan duplikat.
+      final adopted = await repo.ensureBankAccount(
+        bankId: 'gopay',
+        name: 'Dompet Lama',
+        kind: AccountKind.bank,
+      );
+      expect(adopted.id, manual.id);
+      expect(adopted.bankId, 'gopay');
+      final again = await repo.ensureBankAccount(
+        bankId: 'gopay',
+        name: 'Dompet Lama',
+        kind: AccountKind.bank,
+      );
+      expect(again.id, manual.id);
+    });
+
+    test('draf bank terhubung otomatis terikat akun yang tertaut', () async {
+      // DB lama: akun 'blu by BCA' ada tanpa bank_id; migrasi menautkannya.
+      final linked = await repo.ensureBankAccount(
+        bankId: 'blu',
+        name: 'blu by BCA',
+        kind: AccountKind.bank,
+      );
+      await repo.addDraftFromCapture(raw: capture(), draft: draft());
+      final d = (await db.select(db.drafts).get()).single;
+      expect(d.accountId, linked.id);
     });
   });
 }

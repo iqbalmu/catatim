@@ -9,7 +9,6 @@ import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'account_filter.dart';
-import 'account_manage_screen.dart';
 import 'quest.dart';
 import 'transaction_tile.dart';
 
@@ -238,7 +237,9 @@ class _RekapTransaksiState extends State<RekapTransaksi> {
                   filter.categoryId != null ||
                   filter.day != null;
               return QuestEmpty(
-                title: filtering ? 'Tidak ada yang cocok' : 'Belum ada catatan',
+                title: filtering
+                    ? 'Tidak ada yang cocok'
+                    : 'Belum ada yang tercatat',
                 hint: filtering
                     ? 'Coba kata kunci, akun, atau periode lain.'
                     : 'Catat transaksimu yang pertama.',
@@ -386,29 +387,12 @@ class _AccountSheetState extends State<_AccountSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Filter akun', style: context.qTitle(20)),
+            Text('Pilih akun', style: context.qTitle(20)),
             const SizedBox(height: Spacing.m),
             Row(
               children: [
                 Text('Akun', style: context.qEyebrow()),
                 const Spacer(),
-                QuestPress(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          AccountManageScreen(repository: widget.repository),
-                    ),
-                  ),
-                  child: Text(
-                    'Kelola',
-                    style: TextStyle(
-                      color: context.q.honey,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
               ],
             ),
             const SizedBox(height: Spacing.s),
@@ -419,7 +403,7 @@ class _AccountSheetState extends State<_AccountSheet> {
             ),
             const SizedBox(height: Spacing.l),
             QuestButton(
-              label: 'Terapkan',
+              label: 'Pakai filter ini',
               icon: Icons.check_rounded,
               onPressed: () {
                 widget.onApply(_accountId);

@@ -18,8 +18,10 @@ header global (lonceng capture + menu) di semua tab.
   dan pihak/keterangan. Tap transaksi untuk ubah/hapus.
 - **Capture otomatis**: notifikasi bank/e-wallet → parser rules per bank →
   kategori + akun otomatis (blu → blu by BCA, nagari → Bank Nagari).
+  Satu layar pengaturan utuh di **Menu ⋯ → Catat otomatis**: status izin,
+  hubungkan/matikan bank, baca ulang notifikasi mentah, pengaturan baterai.
 - **Akun**: blu by BCA, Bank Nagari, Tunai (bawaan) + tambah sendiri
-  (layar Menu ⋯ → *Kelola akun*). Tiap akun punya saldo awal + saldo
+  (layar Menu ⋯ → *Bank & akun*). Tiap akun punya saldo awal + saldo
   berjalan (`awal + masuk − keluar`).
 - **Bon**: tab utang-piutang — tambah/edit, tandai lunas, total piutang
   vs utang belum lunas.
@@ -46,8 +48,9 @@ dart run build_runner build --delete-conflicting-outputs   # generate drift
 flutter run                                  # atau: flutter build apk
 ```
 
-Alur pertama kali: buka ikon notifikasi di AppBar → baca disclosure →
-"Saya mengerti" → beri centang Bukuduit di *Notification access* Android.
+Alur pertama kali: Menu ⋯ → **Catat otomatis** → tombol *Mulai* → baca
+disclosure → "Saya mengerti" → beri centang Bukuduit di *Notification
+access* Android — sambungan bank lanjut otomatis begitu kembali.
 
 ## Capture & tuning rules
 
@@ -57,11 +60,11 @@ roadmap M3). Cara tuning:
 
 1. Lakukan satu transaksi kecil (mis. transfer Rp1.000 antar-rekening
    sendiri).
-2. Buka **Capture log** — entri ber-badge `Tercatat` (sukses parse) atau
-   ikon ⟳ (gagal); tap baris untuk teks mentah lengkap.
+2. Buka **Menu ⋯ → Catat otomatis** — bagian *Perawatan* menunjukkan
+   jumlah notifikasi yang belum terbaca; tombolnya membaca ulang semuanya.
 3. Sesuaikan `matchAll`/`matchAny`/`counterparty`/`amount` di rules →
-   hot restart (`R` di sesi `flutter run`) → tap ikon **⟳ Parse ulang**
-   pada entri lama, tanpa transaksi ulang.
+   hot restart (`R` di sesi `flutter run`) → tap **baca ulang** di bagian
+   *Perawatan*, tanpa transaksi ulang.
 4. `packageName` blu (`com.bcadigital.blu`) sudah tervalidasi dari
    capture nyata; lengkapi `packageNames` Bank Nagari saat notifikasinya
    tertangkap.
@@ -76,7 +79,7 @@ sama dalam ±120 detik hanya jadi satu transaksi.
 | `lib/rules/` | Rules engine + seed rules (`assets/rules/seed_rules.json`) |
 | `lib/capture/` | Channel native + pipeline capture→parse→simpan |
 | `lib/storage/` | Drift schema v8 + repository (dedup 120 detik) |
-| `lib/ui/` | Shell 4 tab (Beranda, Rekap, Rencana, Bon) + sheet transaksi, akun, aturan, capture log, backup, menu |
+| `lib/ui/` | Shell 4 tab (Beranda, Rekap, Rencana, Bon) + sheet transaksi, catat otomatis (pengaturan capture), bank & akun, backup, menu |
 | `lib/game/` | Maskot, hero card, streak & mood |
 | `lib/theme/` + `lib/ui/quest.dart` | Sistem desain Quest (bukan default Material) |
 | `android/.../MainActivity.kt` | MethodChannel/EventChannel + `NotificationCatcher` |

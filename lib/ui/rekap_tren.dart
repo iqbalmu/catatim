@@ -99,8 +99,8 @@ class _RekapTrenState extends State<RekapTren> {
             final endInclusive = end.subtract(const Duration(days: 1));
             final buckets = trendBuckets(points, start, endInclusive);
             final title = end.difference(start).inDays > 62
-                ? 'Tren bulanan'
-                : 'Tren mingguan';
+                ? 'Tren tiap bulan'
+                : 'Tren tiap minggu';
             return _MonthlyBarCard(buckets: buckets, title: title);
           },
         ),
@@ -206,7 +206,11 @@ class _BarsPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (maxAmount == 0) {
-      _drawCenteredText(canvas, size, 'Belum ada data.');
+      _drawCenteredText(
+        canvas,
+        size,
+        'Belum ada yang bisa direkap — mulai catat dulu, ya',
+      );
       return;
     }
     final groupWidth = size.width / months.length;

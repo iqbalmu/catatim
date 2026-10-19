@@ -390,7 +390,7 @@ class ProgressService extends ChangeNotifier {
       final praise = snap.outTrend == TrendDirection.better
           ? 'Duit bangga — dalam anggaran dan keluaran turun! '
           : 'Duit senang — masih dalam batas anggaran! ';
-      return '$praise🔥$streak hari disiplin';
+      return '$praise$streak hari disiplin';
     }
     return 'Duit tenang — dalam batas; jaga jatah harianmu hari ini';
   }

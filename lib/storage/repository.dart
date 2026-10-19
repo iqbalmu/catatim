@@ -2,7 +2,6 @@ import 'package:drift/drift.dart';
 
 import '../models.dart';
 import '../rules/engine.dart' show RuleEngine, UserRuleDef;
-import '../rules/rule_set.dart' show BankRules;
 import 'database.dart';
 
 /// Transaksi + kategori ter-join (kategori null bila belum disetel).
@@ -34,70 +33,29 @@ class LedgerRepository {
 
   // --- capture ------------------------------------------------------------
 
-  /// Simpan transaksi hasil capture; kembalikan id baris (baru atau lama
-  /// bila terdeteksi duplikat). [existingLogId] mengisi ulang baris capture
-  /// log yang sudah ada (alur "parse ulang") alih-alih menambah baris baru.
-  Future<int> recordFromCapture({
-    required RawCapture raw,
-    required ParsedDraft draft,
-    int? existingLogId,
-  }) async {
-    final categoryId = await _defaultCategoryId(draft.kind);
-    final accountId =
-        draft.accountId ?? await _accountIdForBank(draft.bankId);
+
+  /// Catat notifikasi yang tidak berhasil diparse (untuk layar Capture Log).
+  ///
+  /// Log mentah yang identik (paket+judul+isi dalam jendela dedup) hanya
+  /// dicatat sekali — melindungi dari pemrosesan ganda drain+stream.
+  Future<void> recordUnparsedCapture(RawCapture raw) async {
     final from = raw.postedAt.subtract(dedupWindow);
     final to = raw.postedAt.add(dedupWindow);
-    final existing =
-        await (_db.select(_db.transactions)
+    final dup =
+        await (_db.select(_db.captureLogs)
               ..where(
-                (t) =>
-                    t.bankId.equals(draft.bankId) &
-                    t.amount.equals(draft.amount) &
-                    t.direction.equalsValue(draft.direction) &
-                    t.occurredAt.isBetweenValues(from, to),
+                (c) =>
+                    c.parsed.equals(false) &
+                    c.packageName.equals(raw.packageName) &
+                    c.title.equals(raw.title) &
+                    c.body.equals(raw.body) &
+                    c.postedAt.isBetweenValues(from, to),
               )
               ..limit(1))
             .getSingleOrNull();
-
-    if (existing != null) {
-      await _logCapture(
-        raw,
-        parsed: true,
-        transactionId: existing.id,
-        updateLogId: existingLogId,
-      );
-      return existing.id;
-    }
-
-    final id = await _db
-        .into(_db.transactions)
-        .insert(
-          TransactionsCompanion.insert(
-            uuid: newUuid(),
-            bankId: draft.bankId,
-            kind: draft.kind,
-            direction: draft.direction,
-            amount: draft.amount,
-            counterparty: Value(draft.counterparty),
-            occurredAt: raw.postedAt,
-            source: TxSource.notification,
-            rawBody: Value(raw.body),
-            categoryId: Value(categoryId),
-            accountId: Value(accountId),
-          ),
-        );
-    await _logCapture(
-      raw,
-      parsed: true,
-      transactionId: id,
-      updateLogId: existingLogId,
-    );
-    return id;
+    if (dup != null) return;
+    await _logCapture(raw, parsed: false);
   }
-
-  /// Catat notifikasi yang tidak berhasil diparse (untuk layar Capture Log).
-  Future<void> recordUnparsedCapture(RawCapture raw) =>
-      _logCapture(raw, parsed: false);
 
   /// Notifikasi mentah yang belum berhasil diparse.
   Future<List<CaptureLog>> unparsedCaptures() async {
@@ -107,11 +65,30 @@ class LedgerRepository {
         .get();
   }
 
-  /// Parse ulang semua capture gagal dengan rules terkini.
-  /// Mengembalikan jumlah yang berhasil dicatat.
-  Future<int> reparseUnparsed(RuleEngine engine) async {
+  /// Parse ulang semua capture gagal dengan rules terkini, berbatas bank
+  /// [connectedBankIds]. Yang berhasil menjadi DRAF (bukan transaksi).
+  /// Mengembalikan jumlah draf yang dibuat.
+  Future<int> reparseUnparsed(
+    RuleEngine engine, {
+    required Set<String> connectedBankIds,
+  }) {
+    return reparseWith(
+      (raw) => engine.parse(
+        packageName: raw.packageName,
+        title: raw.title,
+        body: raw.body,
+      ),
+      connectedBankIds: connectedBankIds,
+    );
+  }
+
+  /// Inti [reparseUnparsed] yang dapat diuji tanpa engine sungguhan.
+  Future<int> reparseWith(
+    ParsedDraft? Function(RawCapture raw) parse, {
+    required Set<String> connectedBankIds,
+  }) async {
     final logs = await unparsedCaptures();
-    var saved = 0;
+    var created = 0;
     for (final log in logs) {
       final raw = RawCapture(
         packageName: log.packageName,
@@ -119,16 +96,18 @@ class LedgerRepository {
         body: log.body,
         postedAt: log.postedAt,
       );
-      final draft = engine.parse(
-        packageName: raw.packageName,
-        title: raw.title,
-        body: raw.body,
+      final draft = parse(raw);
+      if (draft == null || !connectedBankIds.contains(draft.bankId)) continue;
+      final id = await addDraftFromCapture(raw: raw, draft: draft);
+      if (id == null) continue; // duplikat: tak perlu dibaca ulang lagi
+      await (_db.update(
+        _db.captureLogs,
+      )..where((c) => c.id.equals(log.id))).write(
+        const CaptureLogsCompanion(parsed: Value(true)),
       );
-      if (draft == null) continue;
-      await recordFromCapture(raw: raw, draft: draft, existingLogId: log.id);
-      saved++;
+      created++;
     }
-    return saved;
+    return created;
   }
 
   // --- transaksi manual & edit ---------------------------------------------
@@ -202,6 +181,195 @@ class LedgerRepository {
       _db.categories,
     )..where((c) => c.name.equals(name))).getSingleOrNull();
     return row?.id;
+  }
+
+  // --- draf (model hubungkan bank) ------------------------------------------------
+
+  /// Simpan hasil capture sebagai DRAF menunggu keputusan user.
+  /// Mengembalikan id draf baru, atau null bila dianggap duplikat
+  /// (sudah ada draf / transaksi se-bank+nominal+arah dalam jendela).
+  Future<int?> addDraftFromCapture({
+    required RawCapture raw,
+    required ParsedDraft draft,
+  }) async {
+    final from = raw.postedAt.subtract(dedupWindow);
+    final to = raw.postedAt.add(dedupWindow);
+    final dupTx =
+        await (_db.select(_db.transactions)
+              ..where(
+                (t) =>
+                    t.bankId.equals(draft.bankId) &
+                    t.amount.equals(draft.amount) &
+                    t.direction.equalsValue(draft.direction) &
+                    t.occurredAt.isBetweenValues(from, to),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    if (dupTx != null) return null;
+    final dupDraft =
+        await (_db.select(_db.drafts)
+              ..where(
+                (d) =>
+                    d.bankId.equals(draft.bankId) &
+                    d.amount.equals(draft.amount) &
+                    d.direction.equalsValue(draft.direction) &
+                    d.occurredAt.isBetweenValues(from, to),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    if (dupDraft != null) return null;
+
+    return _db
+        .into(_db.drafts)
+        .insert(
+          DraftsCompanion.insert(
+            bankId: draft.bankId,
+            kind: draft.kind,
+            direction: draft.direction,
+            amount: draft.amount,
+            counterparty: Value(draft.counterparty),
+            occurredAt: raw.postedAt,
+            rawTitle: Value(raw.title),
+            rawBody: Value(raw.body),
+            categoryId: Value(await _defaultCategoryId(draft.kind)),
+            accountId: Value(
+              draft.accountId ?? await _accountIdForBank(draft.bankId),
+            ),
+          ),
+        );
+  }
+
+  /// Draf menunggu keputusan, terbaru dulu — hidup (watch).
+  Stream<List<Draft>> watchDrafts() {
+    return (_db.select(
+      _db.drafts,
+    )..orderBy([(d) => OrderingTerm.desc(d.occurredAt)])).watch();
+  }
+
+  /// Konfirmasi draf → transaksi source notifikasi; draf terhapus.
+  /// Field boleh dikoreksi user dulu; yang tak disebut mengikuti draf.
+  Future<int> confirmDraft(
+    Draft draft, {
+    required int amount,
+    required Direction direction,
+    required TxKind kind,
+    String? counterparty,
+    int? categoryId,
+    int? accountId,
+    DateTime? occurredAt,
+  }) {
+    return _db.transaction(() async {
+      final clean = (counterparty == null || counterparty.trim().isEmpty)
+          ? null
+          : counterparty.trim();
+      final id = await _db
+          .into(_db.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              uuid: newUuid(),
+              bankId: draft.bankId,
+              kind: kind,
+              direction: direction,
+              amount: amount,
+              counterparty: Value(clean ?? draft.counterparty),
+              occurredAt: occurredAt ?? draft.occurredAt,
+              source: TxSource.notification,
+              rawTitle: Value(draft.rawTitle),
+              rawBody: Value(draft.rawBody),
+              categoryId: Value(
+                categoryId ?? draft.categoryId ?? await _defaultCategoryId(kind),
+              ),
+              accountId: Value(accountId ?? draft.accountId),
+            ),
+          );
+      await (_db.delete(
+        _db.drafts,
+      )..where((d) => d.id.equals(draft.id))).go();
+      return id;
+    });
+  }
+
+  /// Buang draf tanpa mencatat apa pun.
+  Future<void> discardDraft(int id) {
+    return (_db.delete(_db.drafts)..where((d) => d.id.equals(id))).go();
+  }
+
+  // --- koneksi bank (model hubungkan bank) ----------------------------------------
+
+  /// Kunci settings penyimpan daftar bankId terhubung (CSV).
+  static const connectedBanksKey = 'connected_banks';
+
+  /// ID bank/e-wallet katalog (seed_rules) yang sedang terhubung.
+  Future<Set<String>> connectedBankIds() async {
+    final raw = await getSetting(connectedBanksKey);
+    if (raw == null || raw.trim().isEmpty) return {};
+    return raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toSet();
+  }
+
+  /// Versi hidup dari [connectedBankIds].
+  Stream<Set<String>> watchConnectedBanks() {
+    return (_db.select(
+      _db.appSettings,
+    )..where((s) => s.key.equals(connectedBanksKey))).watchSingleOrNull().map((
+      row,
+    ) {
+      final raw = row?.valueText;
+      if (raw == null || raw.trim().isEmpty) return {};
+      return raw
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toSet();
+    });
+  }
+
+  /// Hubungkan / putuskan satu bank. Urutan koneksi dipertahankan.
+  Future<void> setBankConnected(String bankId, bool connected) async {
+    final current = (await connectedBankIds()).toList();
+    if (connected && !current.contains(bankId)) {
+      current.add(bankId);
+    } else if (!connected) {
+      current.remove(bankId);
+    }
+    await setSetting(connectedBanksKey, current.join(','));
+  }
+
+  /// Akun milik bank [bankId]: cari yang tertaut, adopsi dari nama bila ada
+  /// (DB lama), atau buat baru. Tak pernah duplikat per bankId.
+  Future<Account> ensureBankAccount({
+    required String bankId,
+    required String name,
+    required AccountKind kind,
+  }) async {
+    final linked = await (_db.select(
+      _db.accounts,
+    )..where((a) => a.bankId.equals(bankId))).getSingleOrNull();
+    if (linked != null) return linked;
+    final sameName = await (_db.select(
+      _db.accounts,
+    )..where((a) => a.name.equals(name))).getSingleOrNull();
+    if (sameName != null) {
+      await (_db.update(
+        _db.accounts,
+      )..where((a) => a.id.equals(sameName.id))).write(
+        AccountsCompanion(bankId: Value(bankId)),
+      );
+      return sameName.copyWith(bankId: Value(bankId));
+    }
+    final all = await getAccounts();
+    final id = await _db
+        .into(_db.accounts)
+        .insert(
+          AccountsCompanion.insert(
+            name: name.trim(),
+            kind: kind,
+            colorIndex: all.length,
+            bankId: Value(bankId),
+          ),
+        );
+    return (await (_db.select(
+      _db.accounts,
+    )..where((a) => a.id.equals(id))).getSingle());
   }
 
   // --- query transaksi --------------------------------------------------------
@@ -645,56 +813,6 @@ class LedgerRepository {
     ];
   }
 
-  /// Seed aturan pengguna dari seed rules bawaan — sekali, saat tabel
-  /// masih kosong.
-  Future<void> seedUserRulesFromBanks(List<BankRules> banks) async {
-    final existing = await _db.select(_db.userRules).get();
-    if (existing.isNotEmpty) return;
-
-    final accounts = await getAccounts();
-    int? accountByName(String name) {
-      for (final a in accounts) {
-        if (a.name == name) return a.id;
-      }
-      return null;
-    }
-
-    final rows = <UserRulesCompanion>[];
-    for (final bank in banks) {
-      final package = bank.packageNames.isNotEmpty
-          ? bank.packageNames.first
-          : null;
-      for (final t in bank.templates) {
-        rows.add(
-          UserRulesCompanion.insert(
-            name: '${bank.displayName} · ${t.name}',
-            packageName: Value(package),
-            matchText: Value(
-              t.matchAll.isNotEmpty
-                  ? t.matchAll.first
-                  : (t.matchAny.isNotEmpty ? t.matchAny.first : null),
-            ),
-            amountPattern: Value(t.amountPattern),
-            direction: t.direction == Direction.incoming
-                ? UserRuleDirection.in_
-                : UserRuleDirection.out_,
-            kind: t.kind,
-            accountId: Value(
-              bank.id == 'blu'
-                  ? accountByName('blu by BCA')
-                  : (bank.id == 'nagari'
-                      ? accountByName('Bank Nagari')
-                      : null),
-            ),
-          ),
-        );
-      }
-    }
-    if (rows.isNotEmpty) {
-      await _db.batch((b) => b.insertAll(_db.userRules, rows));
-    }
-  }
-
   // --- backup -----------------------------------------------------------------
 
   /// Flush WAL ke file utama sebelum file DB dicopy untuk backup.
@@ -752,14 +870,12 @@ class LedgerRepository {
     )..where((a) => a.id.equals(id))).getSingle());
   }
 
-  /// Petakan bankId hasil parser ke akun bawaan (blu/nagari).
+  /// Petakan bankId hasil parser ke akun yang tertaut (lahir dari
+  /// koneksi / di-backfill migrasi). Null bila bank belum terhubung.
   Future<int?> _accountIdForBank(String bankId) async {
-    const names = {'blu': 'blu by BCA', 'nagari': 'Bank Nagari'};
-    final name = names[bankId];
-    if (name == null) return null;
     final row = await (_db.select(
       _db.accounts,
-    )..where((a) => a.name.equals(name))).getSingleOrNull();
+    )..where((a) => a.bankId.equals(bankId))).getSingleOrNull();
     return row?.id;
   }
 

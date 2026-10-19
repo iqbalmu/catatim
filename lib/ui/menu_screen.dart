@@ -1,29 +1,28 @@
 import 'package:flutter/material.dart';
 
 import '../capture/pipeline.dart';
-import '../rules/engine.dart';
+import '../rules/rule_set.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
-import 'account_manage_screen.dart';
 import 'backup_screen.dart';
-import 'capture_log_screen.dart';
+import 'bank_accounts_screen.dart';
+import 'capture_settings_screen.dart';
 import 'quest.dart';
-import 'rules_screen.dart';
 
-/// Layar Menu: pengganti popup ⋯ — kelola akun, backup, log capture, dan
-/// aturan capture sebagai halaman penuh.
+/// Layar Menu: catat otomatis (pengaturan baca notifikasi bank), bank &
+/// akun, plus backup.
 class MenuScreen extends StatelessWidget {
   const MenuScreen({
     super.key,
     required this.repository,
     required this.pipeline,
-    required this.engine,
+    required this.ruleSet,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
-  final RuleEngine engine;
+  final RuleSet ruleSet;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +30,7 @@ class MenuScreen extends StatelessWidget {
       backgroundColor: context.q.bg,
       appBar: const QuestHeader(
         title: 'Menu',
-        subtitle: 'Akun, backup, aturan',
+        subtitle: 'Akun & data',
         showBack: true,
       ),
       body: ListView(
@@ -42,28 +41,54 @@ class MenuScreen extends StatelessWidget {
           Spacing.m,
         ),
         children: [
-          const QuestSectionHeader(title: 'Data'),
           QuestCard(
             padding: EdgeInsets.zero,
             child: Column(
               children: [
                 _MenuRow(
-                  icon: Icons.account_balance_wallet_rounded,
-                  title: 'Kelola akun',
-                  subtitle: 'Bank, e-wallet, dan tunai',
+                  icon: Icons.notifications_active_rounded,
+                  title: 'Catat otomatis',
+                  subtitle: 'Notifikasi bank jadi catatan otomatis',
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          AccountManageScreen(repository: repository),
+                      builder: (_) => CaptureSettingsScreen(
+                        repository: repository,
+                        pipeline: pipeline,
+                        ruleSet: ruleSet,
+                      ),
                     ),
                   ),
                 ),
-                _divider(context),
+                Divider(
+                  height: 1,
+                  thickness: 2,
+                  color: context.q.line.withValues(alpha: 0.35),
+                ),
+                _MenuRow(
+                  icon: Icons.account_balance_wallet_rounded,
+                  title: 'Bank & akun',
+                  subtitle: 'Tambah akun & atur saldo',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BankAccountsScreen(
+                        repository: repository,
+                        pipeline: pipeline,
+                        ruleSet: ruleSet,
+                      ),
+                    ),
+                  ),
+                ),
+                Divider(
+                  height: 1,
+                  thickness: 2,
+                  color: context.q.line.withValues(alpha: 0.35),
+                ),
                 _MenuRow(
                   icon: Icons.backup_outlined,
                   title: 'Backup & pulihkan',
-                  subtitle: 'Ekspor CSV dan backup terenkripsi',
+                  subtitle: 'Simpan salinan datamu — aman di HP ini',
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -74,58 +99,13 @@ class MenuScreen extends StatelessWidget {
               ],
             ),
           ),
-          const QuestSectionHeader(title: 'Otomatisasi'),
-          QuestCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                _MenuRow(
-                  icon: Icons.rule_rounded,
-                  title: 'Aturan capture',
-                  subtitle: 'Aturanmu dipakai sebelum aturan bawaan',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => RulesScreen(
-                        repository: repository,
-                        engine: engine,
-                      ),
-                    ),
-                  ),
-                ),
-                _divider(context),
-                _MenuRow(
-                  icon: Icons.notifications_active_outlined,
-                  title: 'Log capture',
-                  subtitle: 'Notifikasi tertangkap & izin akses',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CaptureLogScreen(
-                        repository: repository,
-                        channel: pipeline.channel,
-                        engine: pipeline.engine,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
   }
-
-  Widget _divider(BuildContext context) => Divider(
-    height: 1,
-    thickness: 2,
-    color: context.q.line.withValues(alpha: 0.35),
-  );
 }
 
-/// Baris menu: ikon bulat + judul + subjudul + panah, meniru _ActionRow
-/// di backup_screen.
+/// Baris menu: ikon bulat + judul + subjudul + panah.
 class _MenuRow extends StatelessWidget {
   const _MenuRow({
     required this.icon,

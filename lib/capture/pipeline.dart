@@ -5,15 +5,17 @@ import 'package:flutter/foundation.dart';
 import '../game/progress.dart';
 import '../models.dart';
 import '../rules/engine.dart';
+import '../rules/rule_set.dart' show BankRules;
 import '../storage/repository.dart';
 import 'capture_channel.dart';
 
 const String _ownPackage = 'id.xmuu.bukuduit';
 
-/// '1' = catat semua notifikasi ke capture log (tuning); '0' = hanya bank.
-const String lessonModeKey = 'lesson_mode';
-
-/// Menghubungkan aliran notifikasi mentah → parser → database.
+/// Menghubungkan aliran notifikasi mentah → parser → draf.
+///
+/// Model "hubungkan bank": hanya notifikasi dari bank/e-wallet yang sedang
+/// terhubung yang diproses; hasilnya disimpan sebagai DRAF menunggu
+/// keputusan user — tidak pernah auto-catat. Sisanya diabaikan diam-diam.
 class CapturePipeline extends ChangeNotifier {
   CapturePipeline({
     required this.channel,
@@ -53,23 +55,23 @@ class CapturePipeline extends ChangeNotifier {
   Future<void> _handle(RawCapture raw) async {
     if (raw.packageName == _ownPackage) return;
     try {
+      // Hanya bank terhubung yang dibaca — selebihnya diabaikan diam-diam.
+      final connected = await repository.connectedBankIds();
+      if (connected.isEmpty) return;
+      final bank = _detectConnected(raw, connected);
+      if (bank == null) return;
+
       final draft = engine.parse(
         packageName: raw.packageName,
         title: raw.title,
         body: raw.body,
       );
       if (draft == null) {
-        // Di luar mode pelajaran, hanya notifikasi dari sumber bank yang
-        // dikenal yang dicatat — notifikasi lain (chat, dsb.) diabaikan.
-        final lessonMode = await repository.getSetting(lessonModeKey) ?? '1';
-        if (lessonMode != '1' &&
-            !engine.isKnownSource(raw.packageName, raw.title, raw.body)) {
-          return;
-        }
+        // Bank terhubung tapi isinya bukan transaksi yang dikenali —
+        // catat mentah agar layar Notifikasi bisa menawarkan "baca ulang".
         await repository.recordUnparsedCapture(raw);
-      } else {
-        await repository.recordFromCapture(raw: raw, draft: draft);
-        unawaited(progress?.onTransactionRecorded());
+      } else if (connected.contains(draft.bankId)) {
+        await repository.addDraftFromCapture(raw: raw, draft: draft);
       }
       handledCount++;
       notifyListeners();
@@ -80,6 +82,17 @@ class CapturePipeline extends ChangeNotifier {
         // DB tidak siap; biarkan capture berikutnya menangkap.
       }
     }
+  }
+
+  /// Bank yang terhubung dan cocok dengan notifikasi ini (via package atau
+  /// kata kunci), atau null bila tak relevan.
+  BankRules? _detectConnected(RawCapture raw, Set<String> connected) {
+    final lower = '${raw.title} ${raw.body}'.toLowerCase();
+    return engine.bankFor(
+      packageName: raw.packageName,
+      lowerText: lower,
+      onlyIds: connected,
+    );
   }
 
   @override

@@ -18,11 +18,11 @@ Future<void> main() async {
   final db = AppDatabase(await openAppDatabase());
   final repository = LedgerRepository(db);
   await seedDummyIfEmpty(db, repository); // data contoh (debug, DB kosong)
-  final engine = RuleEngine(await loadSeedRuleSet());
-  await repository.seedUserRulesFromBanks(
-    (await loadSeedRuleSet()).banks,
-  );
-  engine.setUserRules(await repository.userRuleDefs());
+  // Katalog bank dimuat sekali — dipakai engine (parser) + UI (hubungkan).
+  // Aturan pengguna tak lagi di-seed/di-load ke pipeline: model hubungkan
+  // bank memakai seed rules murni agar bankId selalu ID katalog asli.
+  final ruleSet = await loadSeedRuleSet();
+  final engine = RuleEngine(ruleSet);
   final progress = ProgressService(repository: repository);
   final pipeline = CapturePipeline(
     channel: const CaptureChannel(),
@@ -34,6 +34,11 @@ Future<void> main() async {
   unawaited(progress.refresh());
 
   runApp(
-    BukuduitApp(repository: repository, pipeline: pipeline, progress: progress),
+    BukuduitApp(
+      repository: repository,
+      pipeline: pipeline,
+      progress: progress,
+      ruleSet: ruleSet,
+    ),
   );
 }

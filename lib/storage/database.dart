@@ -34,6 +34,9 @@ class Accounts extends Table {
   IntColumn get colorIndex => integer()();
   /// Saldo awal saat akun didaftarkan — dasar perhitungan saldo berjalan.
   IntColumn get openingBalance => integer().withDefault(const Constant(0))();
+  /// ID bank/e-wallet di katalog (seed_rules) bila akun lahir dari koneksi;
+  /// null = akun manual (mis. Tunai).
+  TextColumn get bankId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -56,6 +59,24 @@ class Transactions extends Table {
   IntColumn get categoryId =>
       integer().nullable().references(Categories, #id)();
   IntColumn get accountId => integer().nullable().references(Accounts, #id)();
+}
+
+/// Draf transaksi hasil notifikasi bank terhubung — menunggu keputusan
+/// user: dicatat (jadi transaksi) atau dibuang. Tak pernah masuk
+/// saldo/laporan sebelum dikonfirmasi.
+class Drafts extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get bankId => text()();
+  TextColumn get kind => textEnum<TxKind>()();
+  TextColumn get direction => textEnum<Direction>()();
+  IntColumn get amount => integer()(); // rupiah, selalu positif
+  TextColumn get counterparty => text().nullable()();
+  DateTimeColumn get occurredAt => dateTime()();
+  TextColumn get rawTitle => text().nullable()();
+  TextColumn get rawBody => text().nullable()();
+  IntColumn get categoryId => integer().nullable()();
+  IntColumn get accountId => integer().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 /// Alokasi dana bulanan per kategori (rupiah). Opsional di-scope ke satu
@@ -122,6 +143,7 @@ class UserRules extends Table {
 @DriftDatabase(
   tables: [
     Transactions,
+    Drafts,
     CaptureLogs,
     Categories,
     AppSettings,
@@ -135,7 +157,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -183,6 +205,26 @@ class AppDatabase extends _$AppDatabase {
             await customStatement('DROP TABLE IF EXISTS target_deposits');
             await customStatement('DROP TABLE IF EXISTS targets');
           }
+
+          if (from < 9) {
+            // Model "hubungkan bank": antrean draf menunggu keputusan user
+            // + tautan akun↔bank katalog.
+            await m.createTable(drafts);
+            if (!await _hasColumn(m, 'accounts', 'bank_id')) {
+              await m.addColumn(accounts, accounts.bankId);
+            }
+            // Tautkan akun lama ke bank katalog via nama — idempoten.
+            for (final entry in <String, String>{
+              'blu': 'blu by BCA',
+              'nagari': 'Bank Nagari',
+            }.entries) {
+              await customStatement(
+                'UPDATE accounts SET bank_id = ? '
+                'WHERE bank_id IS NULL AND name = ?',
+                [entry.key, entry.value],
+              );
+            }
+          }
         },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -195,6 +237,8 @@ class AppDatabase extends _$AppDatabase {
       await m.createTable(bons);
       await m.createTable(userRules);
       await m.createTable(budgets);
+
+      await m.createTable(drafts);
       // Seed kategori bawaan sekali — berlaku untuk DB baru maupun hasil
       // upgrade.
       final existing = await select(categories).get();

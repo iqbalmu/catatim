@@ -17,17 +17,23 @@ class TransactionSheet extends StatefulWidget {
     super.key,
     required this.repository,
     this.existing,
+    this.draft,
     this.progress,
   });
 
   final LedgerRepository repository;
   final TxWithCategory? existing;
+
+  /// Draf hasil notifikasi bank terhubung — dikoreksi lalu dicatat
+  /// (atau dibuang). Tak pernah dipakai bersamaan dengan [existing].
+  final Draft? draft;
   final ProgressService? progress;
 
   static Future<void> show(
     BuildContext context,
     LedgerRepository repository, {
     TxWithCategory? existing,
+    Draft? draft,
     ProgressService? progress,
   }) {
     return showQuestSheet<void>(
@@ -42,6 +48,7 @@ class TransactionSheet extends StatefulWidget {
         child: TransactionSheet(
           repository: repository,
           existing: existing,
+          draft: draft,
           progress: progress,
         ),
       ),
@@ -66,19 +73,24 @@ class _TransactionSheetState extends State<TransactionSheet> {
   List<Account> _accounts = const [];
 
   bool get _isEdit => widget.existing != null;
+  bool get _isDraft => widget.draft != null;
 
   @override
   void initState() {
     super.initState();
     final tx = widget.existing?.tx;
-    _direction = tx?.direction ?? Direction.outgoing;
-    _kind = tx?.kind ?? TxKind.payment;
-    _occurredAt = tx?.occurredAt ?? DateTime.now();
-    _categoryId = tx?.categoryId;
-    _accountId = tx?.accountId;
+    final draft = widget.draft;
+    _direction = tx?.direction ?? draft?.direction ?? Direction.outgoing;
+    _kind = tx?.kind ?? draft?.kind ?? TxKind.payment;
+    _occurredAt = tx?.occurredAt ?? draft?.occurredAt ?? DateTime.now();
+    _categoryId = tx?.categoryId ?? draft?.categoryId;
+    _accountId = tx?.accountId ?? draft?.accountId;
     if (tx != null) {
       _amountCtrl.text = tx.amount.toString();
       _counterpartyCtrl.text = tx.counterparty ?? '';
+    } else if (draft != null) {
+      _amountCtrl.text = draft.amount.toString();
+      _counterpartyCtrl.text = draft.counterparty ?? '';
     }
     _loadCategories();
     _loadAccounts();
@@ -176,7 +188,19 @@ class _TransactionSheetState extends State<TransactionSheet> {
     final counterparty = _counterpartyCtrl.text.trim();
     await HapticFeedback.lightImpact();
 
-    if (_isEdit) {
+    if (_isDraft) {
+      await widget.repository.confirmDraft(
+        widget.draft!,
+        amount: amount,
+        direction: _direction,
+        kind: _kind,
+        counterparty: counterparty.isEmpty ? null : counterparty,
+        categoryId: _categoryId,
+        accountId: _accountId,
+        occurredAt: _occurredAt,
+      );
+      await widget.progress?.onTransactionRecorded();
+    } else if (_isEdit) {
       await widget.repository.updateTransaction(
         widget.existing!.tx.id,
         TransactionsCompanion(
@@ -209,11 +233,15 @@ class _TransactionSheetState extends State<TransactionSheet> {
   }
 
   Future<void> _delete() async {
+    final isDraft = _isDraft;
     final confirmed = await showQuestDialog<bool>(
       context,
-      title: 'Hapus transaksi?',
+      title: isDraft ? 'Buang draf ini?' : 'Hapus transaksi?',
       content: Text(
-        'Tindakan ini tidak bisa dibatalkan.',
+        isDraft
+            ? 'Drafnya tidak jadi dicatat. Kalau berubah pikiran, '
+                'kamu bisa catat manual.'
+            : 'Setelah dihapus, transaksinya tidak bisa dikembalikan lagi.',
         style: context.qBody(),
       ),
       actions: [
@@ -223,7 +251,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
           onPressed: () => Navigator.pop(context, false),
         ),
         QuestButton(
-          label: 'Hapus',
+          label: isDraft ? 'Buang' : 'Hapus',
           icon: Icons.delete_outline_rounded,
           tone: QuestTone.danger,
           onPressed: () => Navigator.pop(context, true),
@@ -231,7 +259,11 @@ class _TransactionSheetState extends State<TransactionSheet> {
       ],
     );
     if (confirmed ?? false) {
-      await widget.repository.deleteTransaction(widget.existing!.tx.id);
+      if (isDraft) {
+        await widget.repository.discardDraft(widget.draft!.id);
+      } else {
+        await widget.repository.deleteTransaction(widget.existing!.tx.id);
+      }
       if (mounted) Navigator.pop(context);
     }
   }
@@ -250,14 +282,16 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 children: [
                   Expanded(
                     child: Text(
-                      _isEdit ? 'Ubah transaksi' : 'Catat transaksi',
+                      _isDraft
+                          ? 'Periksa & catat'
+                          : (_isEdit ? 'Ubah transaksi' : 'Catat transaksi'),
                       style: context.qTitle(20),
                     ),
                   ),
-                  if (_isEdit)
+                  if (_isEdit || _isDraft)
                     QuestIconButton(
                       icon: Icons.delete_outline_rounded,
-                      tooltip: 'Hapus',
+                      tooltip: _isDraft ? 'Buang' : 'Hapus',
                       onPressed: _delete,
                     ),
                 ],
@@ -270,7 +304,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 style: context.qDisplay(30),
                 decoration: InputDecoration(
                   labelText: 'Nominal (Rp)',
-                  hintText: 'Contoh: 150000',
+                  hintText: 'Isi angkanya saja, misalnya 150000',
                   helperText: _preview,
                 ),
                 validator: (v) =>
@@ -280,7 +314,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
                             0) >
                         0
                     ? null
-                    : 'Nominal wajib diisi',
+                    : 'Isi dulu nominalnya, ya',
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: Spacing.m),
@@ -380,12 +414,14 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 controller: _counterpartyCtrl,
                 textCapitalization: TextCapitalization.words,
                 decoration: const InputDecoration(
-                  labelText: 'Pihak / keterangan (opsional)',
+                  labelText: 'Siapa / keterangan (opsional)',
                 ),
               ),
               const SizedBox(height: Spacing.l),
               QuestButton(
-                label: _isEdit ? 'Simpan perubahan' : 'Simpan',
+                label: _isDraft
+                    ? 'Catat'
+                    : (_isEdit ? 'Simpan perubahan' : 'Simpan'),
                 icon: Icons.check_rounded,
                 onPressed: _save,
               ),
@@ -401,7 +437,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
     final amount = int.tryParse(
       _amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''),
     );
-    if (amount == null || amount <= 0) return 'Masukkan nominal';
+    if (amount == null || amount <= 0) return 'Isi nominalnya dulu, ya';
     return '≈ ${Money.format(amount)}';
   }
 

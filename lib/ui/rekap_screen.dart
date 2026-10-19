@@ -279,7 +279,7 @@ class _PeriodSheetState extends State<_PeriodSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(child: Text('Periode', style: context.qTitle(20))),
+            Center(child: Text('Pilih periode', style: context.qTitle(20))),
             const SizedBox(height: Spacing.m),
             QuestSegmented<_RekapPeriod>(
               selected: _period,
@@ -311,7 +311,7 @@ class _PeriodSheetState extends State<_PeriodSheet> {
             ],
             const SizedBox(height: Spacing.l),
             QuestButton(
-              label: 'Terapkan',
+              label: 'Pakai periode ini',
               icon: Icons.check_rounded,
               onPressed: _apply,
             ),

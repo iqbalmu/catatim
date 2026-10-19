@@ -57,6 +57,24 @@ class BankRules {
   ];
 }
 
+/// Jenis akun bank/e-wallet ini menurut kata kunci katalognya — dipakai
+/// untuk ikon, pengelompokan, dan pembuatan akun saat terhubung.
+extension BankRulesAccountKind on BankRules {
+  AccountKind get accountKind => keywords.any(
+        (k) =>
+            k.contains('pay') ||
+            k.contains('ovo') ||
+            k.contains('dana') ||
+            k.contains('gopay') ||
+            k.contains('emoney') ||
+            k.contains('e-money') ||
+            k.contains('wallet') ||
+            k.contains('dompet'),
+      )
+      ? AccountKind.ewallet
+      : AccountKind.bank;
+}
+
 /// Satu template: kapan berlaku, arah/jenisnya, dan pola ekstraksi.
 class TemplateRule {
   const TemplateRule({

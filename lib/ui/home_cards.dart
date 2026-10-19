@@ -378,7 +378,7 @@ class DisiplinCard extends StatelessWidget {
             radius: AppRadius.sheet,
             padding: const EdgeInsets.all(Spacing.m),
             child: Text(
-              'Atur batas untuk melihat disiplin harian',
+              'Atur dulu batasnya, ya — biar disiplin harianmu kelihatan.',
               style: context.qSmall(12),
             ),
           );
@@ -540,7 +540,7 @@ class _TransaksiTerbaruCardState extends State<TransaksiTerbaruCard> {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: Spacing.s),
                   child: Text(
-                    'Belum ada transaksi — catat transaksi pertamamu.',
+                    'Hari ini masih sepi — catat yang pertama, ya',
                     style: context.qSmall(12),
                   ),
                 );

@@ -47,7 +47,7 @@ class _BonTabState extends State<BonTab> {
       backgroundColor: context.q.bg,
       appBar: QuestHeader(
         title: 'Bon',
-        subtitle: 'Utang & piutang pribadi',
+        subtitle: 'Catat utang & piutangmu',
       ),
       // Tombol + tinggal di tengah navbar (dinamis per tab) — tanpa FAB
       // melayang di tab ini.
@@ -111,7 +111,7 @@ class _BonTabState extends State<BonTab> {
               if (bons.isEmpty)
                 const QuestEmpty(
                   title: 'Belum ada bon',
-                  hint: 'Catat bon lewat tombol + di navbar bawah.',
+                  hint: 'Ada utang atau piutang? Catat lewat tombol + di navbar bawah.',
                 )
               else ...[
                 if (open.isNotEmpty) ...[
@@ -302,7 +302,7 @@ class _BonTile extends StatelessWidget {
                   const SizedBox(height: Spacing.xxs),
                   if (settled)
                     Text(
-                      'Lunas ✓',
+                      'Sudah lunas',
                       style: context
                           .qSmall(11)
                           .copyWith(color: context.q.muted),
@@ -462,7 +462,7 @@ class _BonSheetState extends State<BonSheet> {
       context,
       title: 'Hapus bon?',
       content: Text(
-        'Tindakan ini tidak bisa dibatalkan.',
+        'Bon ini akan hilang permanen — tidak bisa dikembalikan, ya.',
         style: context.qBody(),
       ),
       actions: [
@@ -521,7 +521,7 @@ class _BonSheetState extends State<BonSheet> {
                   hintText: 'Contoh: Budi',
                 ),
                 validator: (v) =>
-                    (v ?? '').trim().isEmpty ? 'Nama wajib diisi' : null,
+                    (v ?? '').trim().isEmpty ? 'Isi dulu nama orangnya, ya' : null,
               ),
               const SizedBox(height: Spacing.m),
               TextFormField(
@@ -539,7 +539,7 @@ class _BonSheetState extends State<BonSheet> {
                             0) >
                         0
                     ? null
-                    : 'Nominal wajib diisi',
+                    : 'Isi dulu nominalnya, ya',
               ),
               const SizedBox(height: Spacing.m),
               QuestSegmented<BonDirection>(
@@ -548,12 +548,12 @@ class _BonSheetState extends State<BonSheet> {
                 options: const [
                   (
                     value: BonDirection.lent,
-                    label: 'Saya meminjamkan',
+                    label: 'Kamu meminjamkan',
                     icon: Icons.arrow_upward_rounded,
                   ),
                   (
                     value: BonDirection.borrowed,
-                    label: 'Saya meminjam',
+                    label: 'Kamu meminjam',
                     icon: Icons.arrow_downward_rounded,
                   ),
                 ],
@@ -576,7 +576,7 @@ class _BonSheetState extends State<BonSheet> {
               const SizedBox(height: Spacing.l),
               if (_isEdit) ...[
                 QuestButton(
-                  label: _isSettled ? 'Batalkan lunas' : 'Tandai lunas ✓',
+                  label: _isSettled ? 'Batalkan lunas' : 'Tandai lunas',
                   icon: _isSettled
                       ? Icons.undo_rounded
                       : Icons.check_circle_outline_rounded,

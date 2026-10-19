@@ -314,6 +314,15 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _bankIdMeta = const VerificationMeta('bankId');
+  @override
+  late final GeneratedColumn<String> bankId = GeneratedColumn<String>(
+    'bank_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -333,6 +342,7 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
     kind,
     colorIndex,
     openingBalance,
+    bankId,
     createdAt,
   ];
   @override
@@ -375,6 +385,12 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
         ),
       );
     }
+    if (data.containsKey('bank_id')) {
+      context.handle(
+        _bankIdMeta,
+        bankId.isAcceptableOrUnknown(data['bank_id']!, _bankIdMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -412,6 +428,10 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
         DriftSqlType.int,
         data['${effectivePrefix}opening_balance'],
       )!,
+      bankId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bank_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -436,6 +456,10 @@ class Account extends DataClass implements Insertable<Account> {
 
   /// Saldo awal saat akun didaftarkan — dasar perhitungan saldo berjalan.
   final int openingBalance;
+
+  /// ID bank/e-wallet di katalog (seed_rules) bila akun lahir dari koneksi;
+  /// null = akun manual (mis. Tunai).
+  final String? bankId;
   final DateTime createdAt;
   const Account({
     required this.id,
@@ -443,6 +467,7 @@ class Account extends DataClass implements Insertable<Account> {
     required this.kind,
     required this.colorIndex,
     required this.openingBalance,
+    this.bankId,
     required this.createdAt,
   });
   @override
@@ -455,6 +480,9 @@ class Account extends DataClass implements Insertable<Account> {
     }
     map['color_index'] = Variable<int>(colorIndex);
     map['opening_balance'] = Variable<int>(openingBalance);
+    if (!nullToAbsent || bankId != null) {
+      map['bank_id'] = Variable<String>(bankId);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -466,6 +494,9 @@ class Account extends DataClass implements Insertable<Account> {
       kind: Value(kind),
       colorIndex: Value(colorIndex),
       openingBalance: Value(openingBalance),
+      bankId: bankId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bankId),
       createdAt: Value(createdAt),
     );
   }
@@ -483,6 +514,7 @@ class Account extends DataClass implements Insertable<Account> {
       ),
       colorIndex: serializer.fromJson<int>(json['colorIndex']),
       openingBalance: serializer.fromJson<int>(json['openingBalance']),
+      bankId: serializer.fromJson<String?>(json['bankId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -497,6 +529,7 @@ class Account extends DataClass implements Insertable<Account> {
       ),
       'colorIndex': serializer.toJson<int>(colorIndex),
       'openingBalance': serializer.toJson<int>(openingBalance),
+      'bankId': serializer.toJson<String?>(bankId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -507,6 +540,7 @@ class Account extends DataClass implements Insertable<Account> {
     AccountKind? kind,
     int? colorIndex,
     int? openingBalance,
+    Value<String?> bankId = const Value.absent(),
     DateTime? createdAt,
   }) => Account(
     id: id ?? this.id,
@@ -514,6 +548,7 @@ class Account extends DataClass implements Insertable<Account> {
     kind: kind ?? this.kind,
     colorIndex: colorIndex ?? this.colorIndex,
     openingBalance: openingBalance ?? this.openingBalance,
+    bankId: bankId.present ? bankId.value : this.bankId,
     createdAt: createdAt ?? this.createdAt,
   );
   Account copyWithCompanion(AccountsCompanion data) {
@@ -527,6 +562,7 @@ class Account extends DataClass implements Insertable<Account> {
       openingBalance: data.openingBalance.present
           ? data.openingBalance.value
           : this.openingBalance,
+      bankId: data.bankId.present ? data.bankId.value : this.bankId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -539,14 +575,22 @@ class Account extends DataClass implements Insertable<Account> {
           ..write('kind: $kind, ')
           ..write('colorIndex: $colorIndex, ')
           ..write('openingBalance: $openingBalance, ')
+          ..write('bankId: $bankId, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, kind, colorIndex, openingBalance, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    kind,
+    colorIndex,
+    openingBalance,
+    bankId,
+    createdAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -556,6 +600,7 @@ class Account extends DataClass implements Insertable<Account> {
           other.kind == this.kind &&
           other.colorIndex == this.colorIndex &&
           other.openingBalance == this.openingBalance &&
+          other.bankId == this.bankId &&
           other.createdAt == this.createdAt);
 }
 
@@ -565,6 +610,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   final Value<AccountKind> kind;
   final Value<int> colorIndex;
   final Value<int> openingBalance;
+  final Value<String?> bankId;
   final Value<DateTime> createdAt;
   const AccountsCompanion({
     this.id = const Value.absent(),
@@ -572,6 +618,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     this.kind = const Value.absent(),
     this.colorIndex = const Value.absent(),
     this.openingBalance = const Value.absent(),
+    this.bankId = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   AccountsCompanion.insert({
@@ -580,6 +627,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     required AccountKind kind,
     required int colorIndex,
     this.openingBalance = const Value.absent(),
+    this.bankId = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : name = Value(name),
        kind = Value(kind),
@@ -590,6 +638,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Expression<String>? kind,
     Expression<int>? colorIndex,
     Expression<int>? openingBalance,
+    Expression<String>? bankId,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -598,6 +647,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       if (kind != null) 'kind': kind,
       if (colorIndex != null) 'color_index': colorIndex,
       if (openingBalance != null) 'opening_balance': openingBalance,
+      if (bankId != null) 'bank_id': bankId,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -608,6 +658,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     Value<AccountKind>? kind,
     Value<int>? colorIndex,
     Value<int>? openingBalance,
+    Value<String?>? bankId,
     Value<DateTime>? createdAt,
   }) {
     return AccountsCompanion(
@@ -616,6 +667,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
       kind: kind ?? this.kind,
       colorIndex: colorIndex ?? this.colorIndex,
       openingBalance: openingBalance ?? this.openingBalance,
+      bankId: bankId ?? this.bankId,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -640,6 +692,9 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     if (openingBalance.present) {
       map['opening_balance'] = Variable<int>(openingBalance.value);
     }
+    if (bankId.present) {
+      map['bank_id'] = Variable<String>(bankId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -654,6 +709,7 @@ class AccountsCompanion extends UpdateCompanion<Account> {
           ..write('kind: $kind, ')
           ..write('colorIndex: $colorIndex, ')
           ..write('openingBalance: $openingBalance, ')
+          ..write('bankId: $bankId, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -1471,6 +1527,714 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('createdAt: $createdAt, ')
           ..write('categoryId: $categoryId, ')
           ..write('accountId: $accountId')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DraftsTable extends Drafts with TableInfo<$DraftsTable, Draft> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DraftsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _bankIdMeta = const VerificationMeta('bankId');
+  @override
+  late final GeneratedColumn<String> bankId = GeneratedColumn<String>(
+    'bank_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<TxKind, String> kind =
+      GeneratedColumn<String>(
+        'kind',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<TxKind>($DraftsTable.$converterkind);
+  @override
+  late final GeneratedColumnWithTypeConverter<Direction, String> direction =
+      GeneratedColumn<String>(
+        'direction',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<Direction>($DraftsTable.$converterdirection);
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumn<int> amount = GeneratedColumn<int>(
+    'amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _counterpartyMeta = const VerificationMeta(
+    'counterparty',
+  );
+  @override
+  late final GeneratedColumn<String> counterparty = GeneratedColumn<String>(
+    'counterparty',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _occurredAtMeta = const VerificationMeta(
+    'occurredAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> occurredAt = GeneratedColumn<DateTime>(
+    'occurred_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rawTitleMeta = const VerificationMeta(
+    'rawTitle',
+  );
+  @override
+  late final GeneratedColumn<String> rawTitle = GeneratedColumn<String>(
+    'raw_title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rawBodyMeta = const VerificationMeta(
+    'rawBody',
+  );
+  @override
+  late final GeneratedColumn<String> rawBody = GeneratedColumn<String>(
+    'raw_body',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _categoryIdMeta = const VerificationMeta(
+    'categoryId',
+  );
+  @override
+  late final GeneratedColumn<int> categoryId = GeneratedColumn<int>(
+    'category_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _accountIdMeta = const VerificationMeta(
+    'accountId',
+  );
+  @override
+  late final GeneratedColumn<int> accountId = GeneratedColumn<int>(
+    'account_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    bankId,
+    kind,
+    direction,
+    amount,
+    counterparty,
+    occurredAt,
+    rawTitle,
+    rawBody,
+    categoryId,
+    accountId,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'drafts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Draft> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('bank_id')) {
+      context.handle(
+        _bankIdMeta,
+        bankId.isAcceptableOrUnknown(data['bank_id']!, _bankIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bankIdMeta);
+    }
+    if (data.containsKey('amount')) {
+      context.handle(
+        _amountMeta,
+        amount.isAcceptableOrUnknown(data['amount']!, _amountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMeta);
+    }
+    if (data.containsKey('counterparty')) {
+      context.handle(
+        _counterpartyMeta,
+        counterparty.isAcceptableOrUnknown(
+          data['counterparty']!,
+          _counterpartyMeta,
+        ),
+      );
+    }
+    if (data.containsKey('occurred_at')) {
+      context.handle(
+        _occurredAtMeta,
+        occurredAt.isAcceptableOrUnknown(data['occurred_at']!, _occurredAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_occurredAtMeta);
+    }
+    if (data.containsKey('raw_title')) {
+      context.handle(
+        _rawTitleMeta,
+        rawTitle.isAcceptableOrUnknown(data['raw_title']!, _rawTitleMeta),
+      );
+    }
+    if (data.containsKey('raw_body')) {
+      context.handle(
+        _rawBodyMeta,
+        rawBody.isAcceptableOrUnknown(data['raw_body']!, _rawBodyMeta),
+      );
+    }
+    if (data.containsKey('category_id')) {
+      context.handle(
+        _categoryIdMeta,
+        categoryId.isAcceptableOrUnknown(data['category_id']!, _categoryIdMeta),
+      );
+    }
+    if (data.containsKey('account_id')) {
+      context.handle(
+        _accountIdMeta,
+        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Draft map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Draft(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      bankId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bank_id'],
+      )!,
+      kind: $DraftsTable.$converterkind.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}kind'],
+        )!,
+      ),
+      direction: $DraftsTable.$converterdirection.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}direction'],
+        )!,
+      ),
+      amount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount'],
+      )!,
+      counterparty: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}counterparty'],
+      ),
+      occurredAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}occurred_at'],
+      )!,
+      rawTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}raw_title'],
+      ),
+      rawBody: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}raw_body'],
+      ),
+      categoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}category_id'],
+      ),
+      accountId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}account_id'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DraftsTable createAlias(String alias) {
+    return $DraftsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<TxKind, String, String> $converterkind =
+      const EnumNameConverter<TxKind>(TxKind.values);
+  static JsonTypeConverter2<Direction, String, String> $converterdirection =
+      const EnumNameConverter<Direction>(Direction.values);
+}
+
+class Draft extends DataClass implements Insertable<Draft> {
+  final int id;
+  final String bankId;
+  final TxKind kind;
+  final Direction direction;
+  final int amount;
+  final String? counterparty;
+  final DateTime occurredAt;
+  final String? rawTitle;
+  final String? rawBody;
+  final int? categoryId;
+  final int? accountId;
+  final DateTime createdAt;
+  const Draft({
+    required this.id,
+    required this.bankId,
+    required this.kind,
+    required this.direction,
+    required this.amount,
+    this.counterparty,
+    required this.occurredAt,
+    this.rawTitle,
+    this.rawBody,
+    this.categoryId,
+    this.accountId,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['bank_id'] = Variable<String>(bankId);
+    {
+      map['kind'] = Variable<String>($DraftsTable.$converterkind.toSql(kind));
+    }
+    {
+      map['direction'] = Variable<String>(
+        $DraftsTable.$converterdirection.toSql(direction),
+      );
+    }
+    map['amount'] = Variable<int>(amount);
+    if (!nullToAbsent || counterparty != null) {
+      map['counterparty'] = Variable<String>(counterparty);
+    }
+    map['occurred_at'] = Variable<DateTime>(occurredAt);
+    if (!nullToAbsent || rawTitle != null) {
+      map['raw_title'] = Variable<String>(rawTitle);
+    }
+    if (!nullToAbsent || rawBody != null) {
+      map['raw_body'] = Variable<String>(rawBody);
+    }
+    if (!nullToAbsent || categoryId != null) {
+      map['category_id'] = Variable<int>(categoryId);
+    }
+    if (!nullToAbsent || accountId != null) {
+      map['account_id'] = Variable<int>(accountId);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  DraftsCompanion toCompanion(bool nullToAbsent) {
+    return DraftsCompanion(
+      id: Value(id),
+      bankId: Value(bankId),
+      kind: Value(kind),
+      direction: Value(direction),
+      amount: Value(amount),
+      counterparty: counterparty == null && nullToAbsent
+          ? const Value.absent()
+          : Value(counterparty),
+      occurredAt: Value(occurredAt),
+      rawTitle: rawTitle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rawTitle),
+      rawBody: rawBody == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rawBody),
+      categoryId: categoryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(categoryId),
+      accountId: accountId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accountId),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory Draft.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Draft(
+      id: serializer.fromJson<int>(json['id']),
+      bankId: serializer.fromJson<String>(json['bankId']),
+      kind: $DraftsTable.$converterkind.fromJson(
+        serializer.fromJson<String>(json['kind']),
+      ),
+      direction: $DraftsTable.$converterdirection.fromJson(
+        serializer.fromJson<String>(json['direction']),
+      ),
+      amount: serializer.fromJson<int>(json['amount']),
+      counterparty: serializer.fromJson<String?>(json['counterparty']),
+      occurredAt: serializer.fromJson<DateTime>(json['occurredAt']),
+      rawTitle: serializer.fromJson<String?>(json['rawTitle']),
+      rawBody: serializer.fromJson<String?>(json['rawBody']),
+      categoryId: serializer.fromJson<int?>(json['categoryId']),
+      accountId: serializer.fromJson<int?>(json['accountId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'bankId': serializer.toJson<String>(bankId),
+      'kind': serializer.toJson<String>(
+        $DraftsTable.$converterkind.toJson(kind),
+      ),
+      'direction': serializer.toJson<String>(
+        $DraftsTable.$converterdirection.toJson(direction),
+      ),
+      'amount': serializer.toJson<int>(amount),
+      'counterparty': serializer.toJson<String?>(counterparty),
+      'occurredAt': serializer.toJson<DateTime>(occurredAt),
+      'rawTitle': serializer.toJson<String?>(rawTitle),
+      'rawBody': serializer.toJson<String?>(rawBody),
+      'categoryId': serializer.toJson<int?>(categoryId),
+      'accountId': serializer.toJson<int?>(accountId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  Draft copyWith({
+    int? id,
+    String? bankId,
+    TxKind? kind,
+    Direction? direction,
+    int? amount,
+    Value<String?> counterparty = const Value.absent(),
+    DateTime? occurredAt,
+    Value<String?> rawTitle = const Value.absent(),
+    Value<String?> rawBody = const Value.absent(),
+    Value<int?> categoryId = const Value.absent(),
+    Value<int?> accountId = const Value.absent(),
+    DateTime? createdAt,
+  }) => Draft(
+    id: id ?? this.id,
+    bankId: bankId ?? this.bankId,
+    kind: kind ?? this.kind,
+    direction: direction ?? this.direction,
+    amount: amount ?? this.amount,
+    counterparty: counterparty.present ? counterparty.value : this.counterparty,
+    occurredAt: occurredAt ?? this.occurredAt,
+    rawTitle: rawTitle.present ? rawTitle.value : this.rawTitle,
+    rawBody: rawBody.present ? rawBody.value : this.rawBody,
+    categoryId: categoryId.present ? categoryId.value : this.categoryId,
+    accountId: accountId.present ? accountId.value : this.accountId,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  Draft copyWithCompanion(DraftsCompanion data) {
+    return Draft(
+      id: data.id.present ? data.id.value : this.id,
+      bankId: data.bankId.present ? data.bankId.value : this.bankId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      direction: data.direction.present ? data.direction.value : this.direction,
+      amount: data.amount.present ? data.amount.value : this.amount,
+      counterparty: data.counterparty.present
+          ? data.counterparty.value
+          : this.counterparty,
+      occurredAt: data.occurredAt.present
+          ? data.occurredAt.value
+          : this.occurredAt,
+      rawTitle: data.rawTitle.present ? data.rawTitle.value : this.rawTitle,
+      rawBody: data.rawBody.present ? data.rawBody.value : this.rawBody,
+      categoryId: data.categoryId.present
+          ? data.categoryId.value
+          : this.categoryId,
+      accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Draft(')
+          ..write('id: $id, ')
+          ..write('bankId: $bankId, ')
+          ..write('kind: $kind, ')
+          ..write('direction: $direction, ')
+          ..write('amount: $amount, ')
+          ..write('counterparty: $counterparty, ')
+          ..write('occurredAt: $occurredAt, ')
+          ..write('rawTitle: $rawTitle, ')
+          ..write('rawBody: $rawBody, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('accountId: $accountId, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    bankId,
+    kind,
+    direction,
+    amount,
+    counterparty,
+    occurredAt,
+    rawTitle,
+    rawBody,
+    categoryId,
+    accountId,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Draft &&
+          other.id == this.id &&
+          other.bankId == this.bankId &&
+          other.kind == this.kind &&
+          other.direction == this.direction &&
+          other.amount == this.amount &&
+          other.counterparty == this.counterparty &&
+          other.occurredAt == this.occurredAt &&
+          other.rawTitle == this.rawTitle &&
+          other.rawBody == this.rawBody &&
+          other.categoryId == this.categoryId &&
+          other.accountId == this.accountId &&
+          other.createdAt == this.createdAt);
+}
+
+class DraftsCompanion extends UpdateCompanion<Draft> {
+  final Value<int> id;
+  final Value<String> bankId;
+  final Value<TxKind> kind;
+  final Value<Direction> direction;
+  final Value<int> amount;
+  final Value<String?> counterparty;
+  final Value<DateTime> occurredAt;
+  final Value<String?> rawTitle;
+  final Value<String?> rawBody;
+  final Value<int?> categoryId;
+  final Value<int?> accountId;
+  final Value<DateTime> createdAt;
+  const DraftsCompanion({
+    this.id = const Value.absent(),
+    this.bankId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.direction = const Value.absent(),
+    this.amount = const Value.absent(),
+    this.counterparty = const Value.absent(),
+    this.occurredAt = const Value.absent(),
+    this.rawTitle = const Value.absent(),
+    this.rawBody = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  DraftsCompanion.insert({
+    this.id = const Value.absent(),
+    required String bankId,
+    required TxKind kind,
+    required Direction direction,
+    required int amount,
+    this.counterparty = const Value.absent(),
+    required DateTime occurredAt,
+    this.rawTitle = const Value.absent(),
+    this.rawBody = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.accountId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : bankId = Value(bankId),
+       kind = Value(kind),
+       direction = Value(direction),
+       amount = Value(amount),
+       occurredAt = Value(occurredAt);
+  static Insertable<Draft> custom({
+    Expression<int>? id,
+    Expression<String>? bankId,
+    Expression<String>? kind,
+    Expression<String>? direction,
+    Expression<int>? amount,
+    Expression<String>? counterparty,
+    Expression<DateTime>? occurredAt,
+    Expression<String>? rawTitle,
+    Expression<String>? rawBody,
+    Expression<int>? categoryId,
+    Expression<int>? accountId,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (bankId != null) 'bank_id': bankId,
+      if (kind != null) 'kind': kind,
+      if (direction != null) 'direction': direction,
+      if (amount != null) 'amount': amount,
+      if (counterparty != null) 'counterparty': counterparty,
+      if (occurredAt != null) 'occurred_at': occurredAt,
+      if (rawTitle != null) 'raw_title': rawTitle,
+      if (rawBody != null) 'raw_body': rawBody,
+      if (categoryId != null) 'category_id': categoryId,
+      if (accountId != null) 'account_id': accountId,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  DraftsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? bankId,
+    Value<TxKind>? kind,
+    Value<Direction>? direction,
+    Value<int>? amount,
+    Value<String?>? counterparty,
+    Value<DateTime>? occurredAt,
+    Value<String?>? rawTitle,
+    Value<String?>? rawBody,
+    Value<int?>? categoryId,
+    Value<int?>? accountId,
+    Value<DateTime>? createdAt,
+  }) {
+    return DraftsCompanion(
+      id: id ?? this.id,
+      bankId: bankId ?? this.bankId,
+      kind: kind ?? this.kind,
+      direction: direction ?? this.direction,
+      amount: amount ?? this.amount,
+      counterparty: counterparty ?? this.counterparty,
+      occurredAt: occurredAt ?? this.occurredAt,
+      rawTitle: rawTitle ?? this.rawTitle,
+      rawBody: rawBody ?? this.rawBody,
+      categoryId: categoryId ?? this.categoryId,
+      accountId: accountId ?? this.accountId,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (bankId.present) {
+      map['bank_id'] = Variable<String>(bankId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(
+        $DraftsTable.$converterkind.toSql(kind.value),
+      );
+    }
+    if (direction.present) {
+      map['direction'] = Variable<String>(
+        $DraftsTable.$converterdirection.toSql(direction.value),
+      );
+    }
+    if (amount.present) {
+      map['amount'] = Variable<int>(amount.value);
+    }
+    if (counterparty.present) {
+      map['counterparty'] = Variable<String>(counterparty.value);
+    }
+    if (occurredAt.present) {
+      map['occurred_at'] = Variable<DateTime>(occurredAt.value);
+    }
+    if (rawTitle.present) {
+      map['raw_title'] = Variable<String>(rawTitle.value);
+    }
+    if (rawBody.present) {
+      map['raw_body'] = Variable<String>(rawBody.value);
+    }
+    if (categoryId.present) {
+      map['category_id'] = Variable<int>(categoryId.value);
+    }
+    if (accountId.present) {
+      map['account_id'] = Variable<int>(accountId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DraftsCompanion(')
+          ..write('id: $id, ')
+          ..write('bankId: $bankId, ')
+          ..write('kind: $kind, ')
+          ..write('direction: $direction, ')
+          ..write('amount: $amount, ')
+          ..write('counterparty: $counterparty, ')
+          ..write('occurredAt: $occurredAt, ')
+          ..write('rawTitle: $rawTitle, ')
+          ..write('rawBody: $rawBody, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('accountId: $accountId, ')
+          ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
@@ -3702,6 +4466,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CategoriesTable categories = $CategoriesTable(this);
   late final $AccountsTable accounts = $AccountsTable(this);
   late final $TransactionsTable transactions = $TransactionsTable(this);
+  late final $DraftsTable drafts = $DraftsTable(this);
   late final $CaptureLogsTable captureLogs = $CaptureLogsTable(this);
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   late final $BudgetsTable budgets = $BudgetsTable(this);
@@ -3715,6 +4480,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     categories,
     accounts,
     transactions,
+    drafts,
     captureLogs,
     appSettings,
     budgets,
@@ -4085,6 +4851,7 @@ typedef $$AccountsTableCreateCompanionBuilder =
       required AccountKind kind,
       required int colorIndex,
       Value<int> openingBalance,
+      Value<String?> bankId,
       Value<DateTime> createdAt,
     });
 typedef $$AccountsTableUpdateCompanionBuilder =
@@ -4094,6 +4861,7 @@ typedef $$AccountsTableUpdateCompanionBuilder =
       Value<AccountKind> kind,
       Value<int> colorIndex,
       Value<int> openingBalance,
+      Value<String?> bankId,
       Value<DateTime> createdAt,
     });
 
@@ -4189,6 +4957,11 @@ class $$AccountsTableFilterComposer
 
   ColumnFilters<int> get openingBalance => $composableBuilder(
     column: $table.openingBalance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bankId => $composableBuilder(
+    column: $table.bankId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4307,6 +5080,11 @@ class $$AccountsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get bankId => $composableBuilder(
+    column: $table.bankId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -4340,6 +5118,9 @@ class $$AccountsTableAnnotationComposer
     column: $table.openingBalance,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get bankId =>
+      $composableBuilder(column: $table.bankId, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -4457,6 +5238,7 @@ class $$AccountsTableTableManager
                 Value<AccountKind> kind = const Value.absent(),
                 Value<int> colorIndex = const Value.absent(),
                 Value<int> openingBalance = const Value.absent(),
+                Value<String?> bankId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => AccountsCompanion(
                 id: id,
@@ -4464,6 +5246,7 @@ class $$AccountsTableTableManager
                 kind: kind,
                 colorIndex: colorIndex,
                 openingBalance: openingBalance,
+                bankId: bankId,
                 createdAt: createdAt,
               ),
           createCompanionCallback:
@@ -4473,6 +5256,7 @@ class $$AccountsTableTableManager
                 required AccountKind kind,
                 required int colorIndex,
                 Value<int> openingBalance = const Value.absent(),
+                Value<String?> bankId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => AccountsCompanion.insert(
                 id: id,
@@ -4480,6 +5264,7 @@ class $$AccountsTableTableManager
                 kind: kind,
                 colorIndex: colorIndex,
                 openingBalance: openingBalance,
+                bankId: bankId,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0
@@ -5169,6 +5954,344 @@ typedef $$TransactionsTableProcessedTableManager =
       (Transaction, $$TransactionsTableReferences),
       Transaction,
       PrefetchHooks Function({bool categoryId, bool accountId})
+    >;
+typedef $$DraftsTableCreateCompanionBuilder =
+    DraftsCompanion Function({
+      Value<int> id,
+      required String bankId,
+      required TxKind kind,
+      required Direction direction,
+      required int amount,
+      Value<String?> counterparty,
+      required DateTime occurredAt,
+      Value<String?> rawTitle,
+      Value<String?> rawBody,
+      Value<int?> categoryId,
+      Value<int?> accountId,
+      Value<DateTime> createdAt,
+    });
+typedef $$DraftsTableUpdateCompanionBuilder =
+    DraftsCompanion Function({
+      Value<int> id,
+      Value<String> bankId,
+      Value<TxKind> kind,
+      Value<Direction> direction,
+      Value<int> amount,
+      Value<String?> counterparty,
+      Value<DateTime> occurredAt,
+      Value<String?> rawTitle,
+      Value<String?> rawBody,
+      Value<int?> categoryId,
+      Value<int?> accountId,
+      Value<DateTime> createdAt,
+    });
+
+class $$DraftsTableFilterComposer
+    extends Composer<_$AppDatabase, $DraftsTable> {
+  $$DraftsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bankId => $composableBuilder(
+    column: $table.bankId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<TxKind, TxKind, String> get kind =>
+      $composableBuilder(
+        column: $table.kind,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnWithTypeConverterFilters<Direction, Direction, String> get direction =>
+      $composableBuilder(
+        column: $table.direction,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<int> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get counterparty => $composableBuilder(
+    column: $table.counterparty,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rawTitle => $composableBuilder(
+    column: $table.rawTitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rawBody => $composableBuilder(
+    column: $table.rawBody,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get categoryId => $composableBuilder(
+    column: $table.categoryId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get accountId => $composableBuilder(
+    column: $table.accountId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DraftsTableOrderingComposer
+    extends Composer<_$AppDatabase, $DraftsTable> {
+  $$DraftsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bankId => $composableBuilder(
+    column: $table.bankId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get direction => $composableBuilder(
+    column: $table.direction,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get counterparty => $composableBuilder(
+    column: $table.counterparty,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rawTitle => $composableBuilder(
+    column: $table.rawTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rawBody => $composableBuilder(
+    column: $table.rawBody,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get categoryId => $composableBuilder(
+    column: $table.categoryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get accountId => $composableBuilder(
+    column: $table.accountId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DraftsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DraftsTable> {
+  $$DraftsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get bankId =>
+      $composableBuilder(column: $table.bankId, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<TxKind, String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<Direction, String> get direction =>
+      $composableBuilder(column: $table.direction, builder: (column) => column);
+
+  GeneratedColumn<int> get amount =>
+      $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumn<String> get counterparty => $composableBuilder(
+    column: $table.counterparty,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get rawTitle =>
+      $composableBuilder(column: $table.rawTitle, builder: (column) => column);
+
+  GeneratedColumn<String> get rawBody =>
+      $composableBuilder(column: $table.rawBody, builder: (column) => column);
+
+  GeneratedColumn<int> get categoryId => $composableBuilder(
+    column: $table.categoryId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get accountId =>
+      $composableBuilder(column: $table.accountId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$DraftsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DraftsTable,
+          Draft,
+          $$DraftsTableFilterComposer,
+          $$DraftsTableOrderingComposer,
+          $$DraftsTableAnnotationComposer,
+          $$DraftsTableCreateCompanionBuilder,
+          $$DraftsTableUpdateCompanionBuilder,
+          (Draft, BaseReferences<_$AppDatabase, $DraftsTable, Draft>),
+          Draft,
+          PrefetchHooks Function()
+        > {
+  $$DraftsTableTableManager(_$AppDatabase db, $DraftsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DraftsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DraftsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DraftsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> bankId = const Value.absent(),
+                Value<TxKind> kind = const Value.absent(),
+                Value<Direction> direction = const Value.absent(),
+                Value<int> amount = const Value.absent(),
+                Value<String?> counterparty = const Value.absent(),
+                Value<DateTime> occurredAt = const Value.absent(),
+                Value<String?> rawTitle = const Value.absent(),
+                Value<String?> rawBody = const Value.absent(),
+                Value<int?> categoryId = const Value.absent(),
+                Value<int?> accountId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => DraftsCompanion(
+                id: id,
+                bankId: bankId,
+                kind: kind,
+                direction: direction,
+                amount: amount,
+                counterparty: counterparty,
+                occurredAt: occurredAt,
+                rawTitle: rawTitle,
+                rawBody: rawBody,
+                categoryId: categoryId,
+                accountId: accountId,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String bankId,
+                required TxKind kind,
+                required Direction direction,
+                required int amount,
+                Value<String?> counterparty = const Value.absent(),
+                required DateTime occurredAt,
+                Value<String?> rawTitle = const Value.absent(),
+                Value<String?> rawBody = const Value.absent(),
+                Value<int?> categoryId = const Value.absent(),
+                Value<int?> accountId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => DraftsCompanion.insert(
+                id: id,
+                bankId: bankId,
+                kind: kind,
+                direction: direction,
+                amount: amount,
+                counterparty: counterparty,
+                occurredAt: occurredAt,
+                rawTitle: rawTitle,
+                rawBody: rawBody,
+                categoryId: categoryId,
+                accountId: accountId,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$DraftsTable, Draft>(table),
+                  BaseReferences<_$AppDatabase, $DraftsTable, Draft>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DraftsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DraftsTable,
+      Draft,
+      $$DraftsTableFilterComposer,
+      $$DraftsTableOrderingComposer,
+      $$DraftsTableAnnotationComposer,
+      $$DraftsTableCreateCompanionBuilder,
+      $$DraftsTableUpdateCompanionBuilder,
+      (Draft, BaseReferences<_$AppDatabase, $DraftsTable, Draft>),
+      Draft,
+      PrefetchHooks Function()
     >;
 typedef $$CaptureLogsTableCreateCompanionBuilder =
     CaptureLogsCompanion Function({
@@ -6658,6 +7781,8 @@ class $AppDatabaseManager {
       $$AccountsTableTableManager(_db, _db.accounts);
   $$TransactionsTableTableManager get transactions =>
       $$TransactionsTableTableManager(_db, _db.transactions);
+  $$DraftsTableTableManager get drafts =>
+      $$DraftsTableTableManager(_db, _db.drafts);
   $$CaptureLogsTableTableManager get captureLogs =>
       $$CaptureLogsTableTableManager(_db, _db.captureLogs);
   $$AppSettingsTableTableManager get appSettings =>
