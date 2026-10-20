@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../capture/pipeline.dart';
 import '../core/money.dart';
@@ -9,14 +8,15 @@ import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
+import 'account_detail_screen.dart';
 import 'add_account_sheet.dart';
 import 'quest.dart';
 
-/// Layar Bank & Akun: satu pintu untuk semua akunmu — tambah akun bank,
-/// e-wallet, atau tunai lewat [AddAccountSheet], ubah nama & saldo awal,
-/// dan hapus. Status serta saklar baca notifikasi ada di layar Catat
-/// otomatis; tanda "Terhubung" di tile hanya pemberi tahu.
-class BankAccountsScreen extends StatefulWidget {
+/// Layar Bank & Akun: daftar semua akunmu. Tap satu akun untuk membuka
+/// halaman detailnya — saldo, baca notifikasi otomatis (khusus bank/
+/// e-wallet), ubah nama & saldo awal, dan hapus. Akun baru ditambahkan
+/// lewat tombol Tambah akun; bantuan (baca ulang, baterai) ada di bawah.
+class BankAccountsScreen extends StatelessWidget {
   const BankAccountsScreen({
     super.key,
     required this.repository,
@@ -28,96 +28,44 @@ class BankAccountsScreen extends StatefulWidget {
   final CapturePipeline pipeline;
   final RuleSet ruleSet;
 
-  @override
-  State<BankAccountsScreen> createState() => _BankAccountsScreenState();
-}
-
-class _BankAccountsScreenState extends State<BankAccountsScreen> {
-  Future<void> _openAddSheet() {
-    return AddAccountSheet.show(
+  void _openAddSheet(BuildContext context) {
+    AddAccountSheet.show(
       context,
-      repository: widget.repository,
-      pipeline: widget.pipeline,
-      ruleSet: widget.ruleSet,
+      repository: repository,
+      pipeline: pipeline,
+      ruleSet: ruleSet,
     );
   }
 
-  Future<void> _manageAccount(BuildContext context, Account account) async {
-    final nameCtrl = TextEditingController(text: account.name);
-    final openingCtrl = TextEditingController(
-      text: '${account.openingBalance}',
-    );
-    final action = await showQuestDialog<String>(
+  void _openDetail(BuildContext context, Account account) {
+    Navigator.push(
       context,
-      title: account.name,
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TextField(
-            controller: nameCtrl,
-            textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(labelText: 'Nama tampilan'),
-          ),
-          const SizedBox(height: Spacing.m),
-          TextField(
-            controller: openingCtrl,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(
-              labelText: 'Saldo awal',
-              helperText: 'Dari angka ini saldomu dihitung otomatis',
-            ),
-          ),
-        ],
+      MaterialPageRoute(
+        builder: (_) => AccountDetailScreen(
+          repository: repository,
+          pipeline: pipeline,
+          ruleSet: ruleSet,
+          accountId: account.id,
+        ),
       ),
-      actions: [
-        QuestButton(
-          label: 'Hapus akun',
-          icon: Icons.delete_outline_rounded,
-          tone: QuestTone.danger,
-          onPressed: () => Navigator.pop(context, 'delete'),
-        ),
-        QuestButton(
-          label: 'Simpan',
-          icon: Icons.check_rounded,
-          onPressed: () {
-            final opening = int.tryParse(
-              openingCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''),
-            );
-            Navigator.pop(context, 'save:${nameCtrl.text}::$opening');
-          },
-        ),
-      ],
     );
-    if (action == null || !context.mounted) return;
-    try {
-      if (action == 'delete') {
-        // Menghapus akun bank sekaligus memutus baca notifikasinya.
-        if (account.bankId != null) {
-          await widget.repository.setBankConnected(account.bankId!, false);
-        }
-        await widget.repository.deleteAccount(account.id);
-      } else if (action.startsWith('save:')) {
-        final parts = action.substring(5).split('::');
-        final newName = parts[0].trim();
-        final opening = int.tryParse(parts.length > 1 ? parts[1] : '');
-        if (newName.isNotEmpty && newName != account.name) {
-          await widget.repository.updateAccount(account.id, newName);
-        }
-        if (opening != null && opening != account.openingBalance) {
-          await widget.repository.setOpeningBalance(account.id, opening);
-        }
-      }
-    } catch (_) {
-      if (context.mounted) {
-        questSnack(
-          context,
-          'Nama itu sudah dipakai akun lain.',
-          icon: Icons.info_outline_rounded,
-        );
-      }
-    }
+  }
+
+  Future<void> _reparse(BuildContext context, Set<String> connected) async {
+    final created = await repository.reparseUnparsed(
+      pipeline.engine,
+      connectedBankIds: connected,
+    );
+    if (!context.mounted) return;
+    questSnack(
+      context,
+      created > 0
+          ? '$created draf baru menunggumu di Notifikasi.'
+          : 'Belum ada notifikasi yang bisa dibaca ulang.',
+      icon: created > 0
+          ? Icons.mark_as_unread_rounded
+          : Icons.info_outline_rounded,
+    );
   }
 
   @override
@@ -126,66 +74,156 @@ class _BankAccountsScreenState extends State<BankAccountsScreen> {
       backgroundColor: context.q.bg,
       appBar: const QuestHeader(
         title: 'Bank & Akun',
-        subtitle: 'Tambah akun & atur saldo',
+        subtitle: 'Akunmu & catat otomatis',
         showBack: true,
       ),
       body: StreamBuilder<Set<String>>(
-        stream: widget.repository.watchConnectedBanks(),
+        stream: repository.watchConnectedBanks(),
         builder: (context, connSnap) {
           final connected = connSnap.data ?? const <String>{};
           return StreamBuilder<List<Account>>(
-            stream: widget.repository.watchAccounts(),
+            stream: repository.watchAccounts(),
             builder: (context, accSnap) {
               if (accSnap.connectionState == ConnectionState.waiting) {
                 return const QuestSkeleton(rows: 3);
               }
               final accounts = accSnap.data ?? const <Account>[];
               return StreamBuilder<Map<int, int>>(
-                stream: widget.repository.watchAccountBalances(),
+                stream: repository.watchAccountBalances(),
                 builder: (context, balanceSnap) {
                   final balances = balanceSnap.data ?? const <int, int>{};
-                  return ListView(
-                    padding: const EdgeInsets.fromLTRB(
-                      Spacing.m,
-                      Spacing.s,
-                      Spacing.m,
-                      Spacing.m,
-                    ),
-                    children: [
-                      const QuestSectionHeader(title: 'Akunmu'),
-                      if (accounts.isEmpty)
-                        QuestEmpty(
-                          title: 'Belum ada akun',
-                          hint: 'Yuk mulai — tambahkan dompet tunai, atau '
-                              'hubungkan bank dan e-walletmu.',
-                          actionLabel: 'Tambah akun',
-                          onAction: _openAddSheet,
-                        )
-                      else
-                        for (final a in accounts) ...[
-                          _AccountTile(
-                            account: a,
-                            balance: balances[a.id] ?? a.openingBalance,
-                            connected:
-                                a.bankId != null &&
-                                connected.contains(a.bankId),
-                            onTap: () => _manageAccount(context, a),
+                  return StreamBuilder<List<CaptureLog>>(
+                    stream: repository.watchCaptureLog(),
+                    builder: (context, logSnap) {
+                      final unread = (logSnap.data ?? const <CaptureLog>[])
+                          .where((l) => !l.parsed)
+                          .length;
+                      return ListView(
+                        padding: const EdgeInsets.fromLTRB(
+                          Spacing.m,
+                          Spacing.s,
+                          Spacing.m,
+                          Spacing.m,
+                        ),
+                        children: [
+                          const QuestSectionHeader(title: 'Akunmu'),
+                          if (accounts.isEmpty)
+                            QuestEmpty(
+                              title: 'Belum ada akun',
+                              hint: 'Yuk mulai — tambahkan dompet tunai, '
+                                  'atau hubungkan bank dan e-walletmu.',
+                              actionLabel: 'Tambah akun',
+                              onAction: () => _openAddSheet(context),
+                            )
+                          else
+                            for (final a in accounts) ...[
+                              _AccountTile(
+                                account: a,
+                                balance: balances[a.id] ?? a.openingBalance,
+                                connected: a.bankId != null &&
+                                    connected.contains(a.bankId),
+                                onTap: () => _openDetail(context, a),
+                              ),
+                              const SizedBox(height: Spacing.s),
+                            ],
+                          const SizedBox(height: Spacing.l),
+                          QuestButton(
+                            label: 'Tambah akun',
+                            icon: Icons.add_rounded,
+                            onPressed: () => _openAddSheet(context),
                           ),
-                          const SizedBox(height: Spacing.s),
+                          const SizedBox(height: Spacing.l),
+                          const QuestSectionHeader(title: 'Kalau ada kendala'),
+                          QuestCard(
+                            padding: EdgeInsets.zero,
+                            child: Column(
+                              children: [
+                                if (unread > 0)
+                                  _CareRow(
+                                    icon: Icons.mark_as_unread_rounded,
+                                    color: SeedColors.honeyDeep,
+                                    title: '$unread notifikasi belum terbaca',
+                                    subtitle:
+                                        'Isinya belum dikenali — coba baca '
+                                        'ulang, ya',
+                                    onTap: () => _reparse(context, connected),
+                                  ),
+                                _CareRow(
+                                  icon: Icons.battery_saver_rounded,
+                                  color: context.q.text,
+                                  title: 'Cek pengaturan baterai',
+                                  subtitle:
+                                      'Kalau HP-mu sering menutup aplikasi '
+                                      'di belakang',
+                                  onTap: pipeline.channel.openBatterySettings,
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
-                      const SizedBox(height: Spacing.l),
-                      QuestButton(
-                        label: 'Tambah akun',
-                        icon: Icons.add_rounded,
-                        onPressed: _openAddSheet,
-                      ),
-                    ],
+                      );
+                    },
                   );
                 },
               );
             },
           );
         },
+      ),
+    );
+  }
+}
+
+/// Baris bantuan: ikon bulat + judul + subjudul.
+class _CareRow extends StatelessWidget {
+  const _CareRow({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    return QuestPress(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(Spacing.m),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: q.surface2,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: Spacing.s),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: context.qTitle(14)),
+                  Text(
+                    subtitle,
+                    style: context.qSmall().copyWith(color: q.muted),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: q.muted),
+          ],
+        ),
       ),
     );
   }
@@ -235,8 +273,7 @@ class _AccountTile extends StatelessWidget {
                 connected
                     ? Icons.link_rounded
                     : switch (account.kind) {
-                        AccountKind.bank =>
-                          Icons.account_balance_rounded,
+                        AccountKind.bank => Icons.account_balance_rounded,
                         AccountKind.ewallet => Icons.wallet_rounded,
                         AccountKind.cash => Icons.payments_rounded,
                       },
@@ -266,6 +303,7 @@ class _AccountTile extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(width: Spacing.s),
             Text(
               Money.format(balance),
               style: TextStyle(
@@ -275,6 +313,8 @@ class _AccountTile extends StatelessWidget {
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
+            const SizedBox(width: Spacing.xs),
+            Icon(Icons.chevron_right_rounded, color: q.muted),
           ],
         ),
       ),

@@ -11,7 +11,7 @@ import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
-import 'capture_settings_screen.dart';
+import 'bank_accounts_screen.dart';
 import 'bon_screen.dart';
 import 'quest.dart';
 import 'transaction_sheet.dart';
@@ -71,11 +71,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
   String _bankName(String bankId) =>
       widget.ruleSet.bank(bankId)?.displayName ?? bankId;
 
-  void _openCaptureSettings() {
+  void _openBankAccounts() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => CaptureSettingsScreen(
+        builder: (_) => BankAccountsScreen(
           repository: _repo,
           pipeline: widget.pipeline,
           ruleSet: widget.ruleSet,
@@ -192,7 +192,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 title: 'Izin baca notifikasi belum nyala',
                                 subtitle:
                                     'Nyalakan agar draf transaksi masuk lagi',
-                                onTap: _openCaptureSettings,
+                                onTap: _openBankAccounts,
                               ),
                             if (unread > 0)
                               _NotifItem(

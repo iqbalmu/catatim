@@ -7,11 +7,9 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'backup_screen.dart';
 import 'bank_accounts_screen.dart';
-import 'capture_settings_screen.dart';
 import 'quest.dart';
 
-/// Layar Menu: catat otomatis (pengaturan baca notifikasi bank), bank &
-/// akun, plus backup.
+/// Layar Menu: bank & akun (akun + catat otomatis), plus backup.
 class MenuScreen extends StatelessWidget {
   const MenuScreen({
     super.key,
@@ -46,29 +44,9 @@ class MenuScreen extends StatelessWidget {
             child: Column(
               children: [
                 _MenuRow(
-                  icon: Icons.notifications_active_rounded,
-                  title: 'Catat otomatis',
-                  subtitle: 'Notifikasi bank jadi catatan otomatis',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CaptureSettingsScreen(
-                        repository: repository,
-                        pipeline: pipeline,
-                        ruleSet: ruleSet,
-                      ),
-                    ),
-                  ),
-                ),
-                Divider(
-                  height: 1,
-                  thickness: 2,
-                  color: context.q.line.withValues(alpha: 0.35),
-                ),
-                _MenuRow(
                   icon: Icons.account_balance_wallet_rounded,
                   title: 'Bank & akun',
-                  subtitle: 'Tambah akun & atur saldo',
+                  subtitle: 'Akun, saldo & catat otomatis',
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
