@@ -142,34 +142,73 @@ class _NetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final q = context.q;
-    final positive = net >= 0;
+    final positive = net > 0;
+    final zero = net == 0;
+    final IconData icon = zero
+        ? Icons.balance_rounded
+        : positive
+        ? Icons.arrow_upward_rounded
+        : Icons.arrow_downward_rounded;
+    /// Warna makna mengikuti konvensi dot tint design system: lingkaran
+    /// warna transparan + ikon warna penuh yang sama (lih. avatar tile
+    /// Bon, notif, kartu Beranda).
+    final Color tint = zero
+        ? q.honeyInk
+        : positive
+        ? q.good
+        : q.bad;
+    // Meniru struktur kartu Saldo Beranda: kolom kiri (label, angka,
+    // keterangan) + elemen visual di kanan, semuanya rata kiri.
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: Spacing.m,
-        vertical: Spacing.l,
-      ),
+      padding: const EdgeInsets.fromLTRB(Spacing.l, 24, Spacing.l, 24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [SeedColors.honeyBright, SeedColors.honey],
         ),
         borderRadius: BorderRadius.circular(AppRadius.sheet),
       ),
-      child: Column(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            'POSISI BERSIH',
-            style: context.qEyebrow().copyWith(color: q.honeyInk),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'POSISI BERSIH',
+                  style: context.qEyebrow().copyWith(color: q.honeyInk),
+                ),
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    Money.format(net.abs()),
+                    style: context.qDisplay(30).copyWith(color: q.text),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  zero
+                      ? 'tidak ada bon yang belum lunas'
+                      : positive
+                      ? 'piutangmu lebih besar dari utangmu — belum lunas'
+                      : 'utangmu lebih besar dari piutangmu — belum lunas',
+                  style: context.qSmall(13).copyWith(color: q.honeyInk),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: Spacing.xxs),
-          Text(
-            '${positive ? '+' : '-'}${Money.format(net.abs())}',
-            style: context.qDisplay(30).copyWith(color: q.text),
-          ),
-          Text(
-            positive
-                ? 'kamu dipinjami bersih segini'
-                : 'kamu berutang bersih segini',
-            style: context.qSmall(11).copyWith(color: q.honeyInk),
+          const SizedBox(width: Spacing.m),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: tint.withValues(alpha: 0.16),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: tint, size: 22),
           ),
         ],
       ),
