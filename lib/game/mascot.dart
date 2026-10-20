@@ -6,9 +6,20 @@ import '../theme/tokens.dart';
 
 enum MascotMood { idle, happy, sleepy, celebrate, worried }
 
-/// Maskot "Duit" — blob bulat dengan 5 mood.
+/// Peta mood → aset raster (render 3D "Pochy", dikompres WebP).
 ///
-/// Animasi hanya bob/breathing halus; hormat ke `disableAnimations`.
+/// Mood tanpa aset ([MascotMood.idle], [MascotMood.sleepy]) jatuh ke
+/// painter vektor lama supaya tidak ada mood yang hilang.
+const Map<MascotMood, String> _assetFor = {
+  MascotMood.happy: 'assets/mascot/mascot_happy.webp',
+  MascotMood.celebrate: 'assets/mascot/mascot_celebrate.webp',
+  MascotMood.worried: 'assets/mascot/mascot_worried.webp',
+};
+
+/// Maskot "Duit".
+///
+/// Mood yang punya aset 3D tampil sebagai gambar dengan bob halus
+/// (hormat ke `disableAnimations`); mood lain memakai painter vektor.
 class Mascot extends StatefulWidget {
   const Mascot({super.key, required this.mood, this.size = 72});
 
@@ -34,6 +45,28 @@ class _MascotState extends State<Mascot> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final noMotion = MediaQuery.disableAnimationsOf(context);
+    final asset = _assetFor[widget.mood];
+
+    if (asset != null) {
+      final image = Image.asset(
+        asset,
+        fit: BoxFit.contain,
+        gaplessPlayback: true,
+        width: widget.size,
+        height: widget.size,
+      );
+      if (noMotion) return image;
+      // Bob pelan (amplitudo 2% sisi) — meniru vektor.
+      return AnimatedBuilder(
+        animation: _ctrl,
+        builder: (context, _) {
+          final bob =
+              math.sin(_ctrl.value * 2 * math.pi) * widget.size * 0.02;
+          return Transform.translate(offset: Offset(0, bob), child: image);
+        },
+      );
+    }
+
     if (noMotion) {
       return CustomPaint(
         size: Size.square(widget.size),
@@ -165,7 +198,6 @@ class _MascotPainter extends CustomPainter {
     final eyeDx = bodyW * 0.18;
     final eyeR = s * 0.028;
     final dot = Paint()..color = ink;
-
     switch (mood) {
       case MascotMood.idle:
         canvas.drawCircle(Offset(cx - eyeDx, eyeY), eyeR, dot);
