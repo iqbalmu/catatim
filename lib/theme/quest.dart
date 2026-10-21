@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'tokens.dart';
 
-/// Palet identitas "Bukuduit Quest": kertas hangat di light, malam cozy di
-/// dark. Semua widget custom membaca warna dari sini, bukan dari default
-/// Material, supaya identitas tidak bocor ke mana-mana.
+/// Palet identitas "Mainan Hangat" v2.1 — hangat, empuk, dari piksel
+/// Pochy (ADR-010). Satu tema; tanpa dark mode. Semua widget custom
+/// membaca warna dari sini, bukan dari default Material, supaya
+/// identitas tidak bocor ke mana-mana.
 class QuestPalette {
   const QuestPalette({
     required this.bg,
@@ -33,41 +34,29 @@ class QuestPalette {
   final Color shadow;
 
   static const light = QuestPalette(
-    bg: Color(0xFFFFF8EE),
-    surface: Color(0xFFFFFFFF),
-    surface2: Color(0xFFFFF3DC),
-    line: Color(0xFFEFE6D4),
-    text: Color(0xFF33302B),
-    muted: Color(0xFFA39A88),
+    bg: SeedColors.bg,
+    surface: SeedColors.surface,
+    surface2: SeedColors.surface2,
+    line: SeedColors.line,
+    text: SeedColors.ink,
+    muted: SeedColors.muted,
     good: SeedColors.incoming,
     bad: SeedColors.outgoing,
     honey: SeedColors.honey,
-    honeyInk: Color(0xFF8A6420),
-    shadow: Color(0x124A3A14),
+    honeyInk: SeedColors.honeyText,
+    shadow: Color(0x174A3A14),
   );
 
-  static const dark = QuestPalette(
-    bg: Color(0xFF241F1C),
-    surface: Color(0xFF2E2823),
-    surface2: Color(0xFF3A322B),
-    line: Color(0xFFF1E7D3),
-    text: Color(0xFFF7EFE2),
-    muted: Color(0xFFB9A98F),
-    good: Color(0xFF3FD68F),
-    bad: Color(0xFFFF7A7A),
-    honey: SeedColors.honey,
-    honeyInk: SeedColors.ink,
-    shadow: Color(0x66000000),
-  );
+  /// Aksen mint (syal Pochy) — netral-aktif: segmented on, status tenang.
+  static const mint = SeedColors.mintDeep;
+  static const mintTint = SeedColors.mintTint;
+  static const mintInk = SeedColors.mintInk;
 }
 
 /// Akses cepat palet + tipografi khas Quest dari BuildContext.
 extension QuestTheme on BuildContext {
-  QuestPalette get q {
-    return Theme.of(this).brightness == Brightness.dark
-        ? QuestPalette.dark
-        : QuestPalette.light;
-  }
+  /// Palet tunggal (tanpa dark mode — ADR-010).
+  QuestPalette get q => QuestPalette.light;
 
   /// Angka display besar, tabular agar digit sejajar.
   TextStyle qDisplay([double size = 40]) {
@@ -133,6 +122,10 @@ class QuestMotion {
 
   /// Skala umpan-balik tekan, khas tombol game.
   static const double pressScale = 0.96;
+
+  /// Curve spring untuk press/FAB — kenyal, konsisten bob maskot
+  /// (bounce ~6%; ADR-010, DESIGN.md v2.1).
+  static const Cubic spring = Cubic(0.34, 1.56, 0.64, 1);
 }
 
 /// Transisi pindah screen khas Quest: slide penuh dari kanan — feel
@@ -168,13 +161,11 @@ class QuestPageTransitionsBuilder extends PageTransitionsBuilder {
 class QuestSchemes {
   QuestSchemes._();
 
-  static ThemeData light() => _base(QuestPalette.light, Brightness.light);
+  static ThemeData light() => _base(QuestPalette.light);
 
-  static ThemeData dark() => _base(QuestPalette.dark, Brightness.dark);
-
-  static ThemeData _base(QuestPalette p, Brightness brightness) {
+  static ThemeData _base(QuestPalette p) {
     final scheme = ColorScheme(
-      brightness: brightness,
+      brightness: Brightness.light,
       primary: p.honey,
       onPrimary: p.honeyInk,
       secondary: p.good,
@@ -277,7 +268,7 @@ class QuestSchemes {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: p.surface2,
-        selectedColor: p.honey,
+        selectedColor: QuestPalette.mint,
         labelStyle: TextStyle(fontWeight: FontWeight.w700, color: p.text),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -287,7 +278,10 @@ class QuestSchemes {
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStatePropertyAll(p.surface),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) return p.honey;
+          // Aksen netral-aktif = mint (ADR-010); emas hanya CTA.
+          if (states.contains(WidgetState.selected)) {
+            return QuestPalette.mint;
+          }
           return p.muted.withValues(alpha: 0.5);
         }),
         trackOutlineColor: WidgetStatePropertyAll(p.line),

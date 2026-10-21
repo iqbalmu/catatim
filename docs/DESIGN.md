@@ -1,9 +1,11 @@
-# Design System Bukuduit — "Playful Rapi"
+# Design System Bukuduit — "Mainan Hangat" v2.1
 
-Arah visual yang disepakati (2026-10-11): **hangat & playful yang rapi** —
-kelezatan datang dari warna, radius lembut, dan maskot; **bukan** dari border
-tebal dan hard shadow (gaya papan lama dihapus). Dokumen ini satu sumber
-kebenaran visual; widget-kit hidup di `lib/ui/quest.dart` + `lib/theme/`.
+Arah visual (diperbarui 2026-10-20, menggantikan "Playful Rapi" 2026-10-11):
+**hangat, empuk, dan mainan** — menerjemahkan render 3D maskot Pochy
+(lighting, material clay, syal teal, koin emas) ke bahasa UI. Keputusan
+lengkap: [ADR-010](decisions/010-palet-dari-piksel-maskot.md). Dokumen ini
+satu-satunya sumber kebenaran visual; widget-kit hidup di
+`lib/ui/quest.dart` + `lib/theme/`.
 
 ## Prinsip
 
@@ -12,89 +14,99 @@ kebenaran visual; widget-kit hidup di `lib/ui/quest.dart` + `lib/theme/`.
    informasi di seluruh app — bukan dekorasi.
 2. **Angka adalah raja.** Angka besar, tabular, kontras tinggi. Dekorasi
    tidak boleh menurunkan keterbacaan angka.
-3. **Lembut, bukan tebal.** Pemisahan via kontras warna + bayangan lembut.
-   Tanpa border tebal, tanpa hard shadow.
+3. **Empuk, bukan datar.** Pemisahan via cushion shadow (dua lapis:
+   bayangan hangat bawah + highlight tipis atas) — bukan border tebal,
+   bukan hard shadow.
 4. **Satu kartu = satu ide.** Maksimal satu zona hero per layar.
+5. **Semua warna dari piksel Pochy.** Tidak ada hex baru yang dikarang —
+   setiap token punya sumber di karakter (tubuh, koin, syal, mulut,
+   bintang pastel).
 
-## Palet (light)
+## Palet — "Pastel Pochy" (satu tema; TANPA dark mode — ADR-010)
 
-| Token | Nilai | Pakai |
+| Token | Nilai | Sumber piksel Pochy |
 |---|---|---|
-| `bg` | `#FFF8EE` | latar app |
-| `surface` | `#FFFFFF` | kartu, sheet |
-| `surface2` | `#FFF3DC` | tint zone hero, chip lembut |
-| `ink` | `#33302B` | teks utama |
-| `muted` | `#A39A88` | teks sekunder |
-| `honey` | `#FFB33E` | aksen brand |
-| `honeyDeep` | `#FFA726` | ujung gradient tombol utama |
-| `honeyInk` | `#8A6420` | teks di atas madu |
-| `good` | `#1B873B` | masuk, status aman |
-| `bad` | `#B3392E` | keluar, OVER |
-| `line` | `#EFE6D4` | garis sekunder halus (bukan border kartu) |
+| `bg` | `#FBF5EC` | burlap `#E1BC94` dicerahkan |
+| `surface` | `#FFFDF9` | putih hangat hue burlap |
+| `surface2` | `#F6E9DA` | burlap `#BF946F` + putih |
+| `line` | `#EDE0CE` | bayang tipis burlap |
+| `ink` | `#5B4433` | tali/mata `#3E2214` dicerahkan |
+| `muted` | `#AD9680` | lipatan bayang `#926A4A` |
+| emas | `#F9DCA8 → #E8B36B` | bintang kuning `#FDF6BF` → koin `#F1A23A` redup |
+| `goldInk` | `#C08A3D` | emas gelap — teks/tautan/CTA teks |
+| aksen mint | `#A4D1C9` / `#7FBDB1` | syal teal + bintang mint |
+| `accentInk` | `#3E7A6D` | mint diperdalam untuk teks |
+| `accentTint` | `#E6F2EF` | mint + putih |
+| `good` | `#4A8C7E` | mint diperdalam (menggantikan hijau lama) |
+| `bad` | `#B05530` | mulut menangis `#AA3E0C` disiram |
 
-Dark: `bg #241F1C` · `surface #2E2823` · `surface2 #3A322B` · `ink
-#F7EFE2` · `muted #B9A98F` · honey & palet kategori tetap · bayangan
-diganti kontras surface (elevation minimal).
+Maskot = satu-satunya elemen full-color pekat; emas tidak lagi warna
+"semua halaman" — CTA + zona maskot saja yang paling terang. Aksen
+mint mengambil peran "netral-aktif" (segmented, switch, status tenang).
 
-Bahasa kategori: palet 9 warna existing (`SeedColors.categoryPalette`,
-diindeks `Categories.colorIndex`) — dipakai untuk dot transaksi, donut,
-chip kategori, dan garis chart. Warna kategori **tidak** dipakai di luar
-konteks kategorinya.
+Bahasa kategori: palet 9 warna TIDAK berubah (ADR-010) — itu bahasa
+data (`Categories.colorIndex`), bukan chrome: dot transaksi, donut,
+chip kategori, garis chart. Tidak dipakai di luar konteks kategorinya.
 
 ## Tipografi — Nunito (file TTF dibundel offline via `fonts:` di
 `pubspec.yaml`; package `google_fonts` tidak dipakai)
 
 | Peran | Ukuran/berat | Pakai |
 |---|---|---|
-| Display angka | 30–40 / 800, `tabularFigures` | sisa aman, saldo, total |
+| Display angka | 26–40 / 800, `tabularFigures` | sisa aman, saldo, total |
 | Judul | 17–20 / 800 | judul kartu, layar |
 | Body | 14–15 / 400–600 | konten |
 | Kecil | 12–13 / 600 | meta, subjudul |
-| Eyebrow | 10,5 / 800, uppercase, letter-spacing 1,6 | label seksi |
+| Eyebrow | 10–10,5 / 800, uppercase, letter-spacing 1,5 | label seksi |
 
 Angka selalu `FontFeature.tabularFigures()`. Jangan campur font lain.
 
 ## Bentuk & elevasi
 
-- Radius: kartu **20**, tile **18**, bingkai kontrol **22**, sheet
+- Radius: kartu **22**, tile **18**, bingkai kontrol **22**, sheet
   **24**, sel kecil **12**, tombol & chip/pill **999** (`AppRadius`;
-  tombol utama memakai pill).
-- Elevation (satu-satunya mekanisme pemisah):
-  - kartu: `0 6px 18px rgba(80,60,20,.07)`
-  - elemen melayang (nav): `0 10px 26px rgba(80,60,20,.14)`
-  - FAB/utama: glow honey `0 8px 18px rgba(255,167,38,.45)`
+  tombol utama memakai pill, tinggi ≥46).
+- Elevation — **cushion shadow** (satu-satunya mekanisme pemisah):
+  - kartu: `0 8px 18px rgba(90,70,40,.09)` + `inset 0 2px 0
+    rgba(255,255,255,.9)` + `inset 0 -2px 0 rgba(120,95,60,.05)`
+  - elemen melayang (nav): `0 12px 28px rgba(90,65,30,.20)` + inset
+    highlight
+  - hero/emas: glow `0 12px 26px rgba(190,140,70,.30)` + inset highlight
 - **Dilarang**: border tebal 2–3px, hard shadow offset, outline ganda.
 - Spacing: grid `4 / 8 / 16 / 24 / 32` (existing `Spacing`).
 
 ## Komponen
 
-- **Kartu**: `surface`, radius 20, shadow kartu, padding 14–16.
-- **Zona hero**: gradient tint `#FFF3DC → #FFE7B8`, radius 24, maskot +
-  angka display. Satu per layar.
-- **Tombol utama**: gradient `#FFC94D → #FFA726`, teks putih 800,
-  radius 16. Sekunder: `surface2` teks ink. Teks tombol = aksi nyata
+- **Kartu**: `surface`, radius 22, cushion shadow, padding 14–16.
+- **Zona hero**: gradien emas `#FBE7BE → #E8B36B`, radius 24–26, maskot +
+  angka display, teks `ink`. Satu per layar.
+- **Tombol utama**: gradien emas, teks `#6B4A1E` 800, radius pill,
+  spring press. Sekunder: `surface2` teks ink. Teks tombol = aksi nyata
   ("Simpan", bukan "OK").
-- **Chip/pill**: `surface2`, radius 999, teks 600.
-- **Tile transaksi**: kartu putih, dot kategori 10px, nama 700, meta
+- **Chip/pill**: `surface2` radius 999; status memakai tint
+  (`goodTint`/`badTint`/`accentTint`) + teks `good`/`bad`/`accentInk`.
+- **Segmented**: sel aktif **mint** `#7FBDB1` teks putih — aksen
+  netral-aktif; emas tidak dipakai untuk state, hanya CTA.
+- **Tile transaksi**: dot kategori lingkaran penuh, nama 700, meta
   kecil muted, nominal tabular berwarna arah.
-- **Nav melayang**: putih radius 22, shadow nav, FAB gradient honey
-  menonjol ke atas.
-- **Maskot Duit**: ukuran 48 (chip/inline), 64 (hero), 96 (perayaan/
-  empty state). Ekspresi = fungsi kondisi nyata. Tidak menempel di
-  setiap kartu.
+- **Nav melayang**: `surface` radius 22–24, cushion shadow, FAB
+  gradien emas menonjol ke atas; item aktif `goldInk`.
+- **Maskot Duit**: ukuran 46–52 (inline/meter mini), 92–104 (hero),
+  120+ (empty state/perayaan). Ekspresi = fungsi kondisi nyata. Tidak
+  menempel di setiap kartu.
 
 ## Motion
 
-- Press scale 0,96 (`QuestMotion.pressScale`), durasi 150–200ms, curve
-  easeOut.
-- Transisi halaman: slide penuh dari kanan (`Offset(1, 0)` → nol,
-  curve `QuestMotion.easeOut`) di semua platform via
-  `QuestPageTransitionsBuilder`; saat back meluncur kembali ke kanan.
-- Pindah tab navbar: slide berarah mengikuti urutan menu (target di
-  kanan masuk dari kanan, di kiri dari kiri), 220ms
+- Press scale 0,96 dengan curve **spring** (`Cubic(0.34,1.56,0.64,1)`,
+  bounce ~6%), durasi 150–200ms.
+- Transisi halaman: slide penuh dari kanan (`Offset(1, 0)` → nol) di
+  semua platform via `QuestPageTransitionsBuilder`; saat back meluncur
+  kembali ke kanan.
+- Pindah tab navbar: slide berarah mengikuti urutan menu, 220ms
   (`QuestMotion.medium`) easeOut; tab lama diam di bawah (TickerMode),
   tab baru meluncur di atasnya. State bertahan via reparenting
   GlobalKey — tanpa bekuan citra (`_DirectionalTabView`).
+- Bob maskot: sine 2400ms amplitudo 2% (aset raster: translate murni).
 - Milestone/berubah level: perayaan singkat (stempel/konfeti) + haptic.
 - Hormati `MediaQuery.disableAnimations` (reduced motion).
 
@@ -105,17 +117,31 @@ Kalimat aktif, sebut aksi nyata, kosakata konsisten antar layar
 benar; empty state mengundang aksi ("Belum ada catatan — catat
 transaksi pertamamu").
 
-## Checklist migrasi (dari tema lama → Playful Rapi) — selesai
+## Alur halaman (disepakati 2026-10-20, mockup 4 halaman)
 
-1. `pubspec.yaml`: ~~tambah `google_fonts`~~ — tidak jadi dipakai;
-   file TTF Nunito dibundel langsung via `fonts:`. Set `TextTheme`
-   Nunito di `QuestSchemes`.
-2. `theme/tokens.dart`: tambah `honeyDeep`, `honeyInk`, `line`, gradient
-   hero; nilai `bg` → `#FFF8EE`.
-3. `ui/quest.dart`: `QuestCard` hapus border+hard shadow → radius 20 +
-   shadow lembut; `QuestButton` utama → gradient; chip → 999 + tint;
-   nav → putih melayang; eyebrow/tipografi → skala Nunito.
-4. ~~Layar beranda dulu … layar push~~ — direvisi di tengah jalan:
-   layar lama (Riwayat/Laporan/Anggaran) dipensiunkan, diganti shell
-   4 tab (Beranda · Rekap · Rencana · Bon) + layar Menu.
-5. Dark mode disesuaikan di setiap langkah, bukan di akhir.
+- **Beranda**: hero saldo + avatar mini akun (tap → Kelola Akun) +
+  maskot; kartu pace "sisa aman hari ini" + chip streak; 3 transaksi
+  terakhir (jembatan ke Rekap); insight sparkline + 3 kategori.
+- **Rekap**: segmen **Donat default**; toggle Keluar/Masuk di dalam
+  kartu donat; delta vs bulan lalu; kartu "keluar terbesar" per
+  merchant. Segmen lain: Transaksi, Tren, Kalender.
+- **Rencana**: segmen Harian/Mingguan/Bulanan; kartu batas + maskot
+  mini sebagai meter; alokasi per jenis = daftar progres (lewat batas
+  merah otomatis, belum diatur diberi label jujur); chip progres
+  mingguan. Tanpa FAB (Rencana bukan tempat mencatat).
+- **Bon**: ringkasan dua kolom piutang/utang; "Tandai lunas" per baris
+  (satu tap); item lunas terarsip redup + tercoret; kartu penutup
+  celebrate.
+
+## Checklist migrasi (Playful Rapi → Mainan Hangat v2.1)
+
+1. `tokens.dart`: `SeedColors` — nilai palet baru (bg, surface,
+   surface2, line, ink, muted, emas 3 stop, mint 3 stop, good, bad);
+   kelas `Palette` baru membungkus token peran.
+2. `theme/quest.dart`: `QuestPalette` satu konstanta (hapus `.dark`),
+   `QuestSchemes.dark()` dihapus; cushion shadow; segmented mint;
+   spring press.
+3. `app.dart`: hapus `darkTheme`/`themeMode`.
+4. Layar per tab: Beranda dulu (pilot) → Rekap → Rencana → Bon →
+   sekunder (Menu, Akun, Backup). Golden test minimal di widget kit.
+5. Dark mode TIDAK diadaptasi di langkah mana pun (tidak ada).

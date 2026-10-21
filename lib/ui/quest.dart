@@ -48,7 +48,8 @@ class _QuestPressState extends State<QuestPress> {
           child: AnimatedScale(
             scale: _down ? widget.scale : 1,
             duration: QuestMotion.fast,
-            curve: QuestMotion.easeOut,
+            // Spring kenyal (ADR-010) — konsisten bob maskot.
+            curve: QuestMotion.spring,
             child: widget.child,
           ),
         ),
@@ -57,7 +58,9 @@ class _QuestPressState extends State<QuestPress> {
   }
 }
 
-/// Kartu lembut: permukaan putih + bayangan halo, tanpa border.
+/// Kartu lembut: permukaan putih hangat + cushion shadow (dua lapis:
+/// bayangan hangat bawah + highlight tipis atas) — tanpa border.
+/// "Empuk, bukan datar" (DESIGN.md v2.1).
 class QuestCard extends StatelessWidget {
   const QuestCard({
     super.key,
@@ -82,8 +85,14 @@ class QuestCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: context.q.shadow,
-            offset: const Offset(0, 6),
+            offset: const Offset(0, 8),
             blurRadius: 18,
+          ),
+          // Highlight lembut ala clay/toy — bagian dari cushion.
+          BoxShadow(
+            color: const Color(0x174A3A14),
+            offset: const Offset(0, -1),
+            blurRadius: 2,
           ),
         ],
       ),
@@ -122,7 +131,8 @@ class QuestButton extends StatelessWidget {
     switch (tone) {
       case QuestTone.primary:
         fill = Colors.transparent; // gradient di decoration.
-        fg = Colors.white;
+        // Tinta gelap di atas emas pastel — kontras (ADR-010).
+        fg = SeedColors.honeyText;
       case QuestTone.secondary:
         fill = q.surface2;
         fg = q.text;
@@ -139,14 +149,14 @@ class QuestButton extends StatelessWidget {
         color: tone == QuestTone.primary ? null : fill,
         gradient: tone == QuestTone.primary
             ? const LinearGradient(
-                colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
+                colors: [SeedColors.honeyBright, SeedColors.honey],
               )
             : null,
         borderRadius: BorderRadius.circular(AppRadius.pill),
         boxShadow: tone == QuestTone.primary
             ? const [
                 BoxShadow(
-                  color: Color(0x73FFA726),
+                  color: Color(0x52DE9F55),
                   offset: Offset(0, 8),
                   blurRadius: 18,
                 ),
@@ -209,12 +219,13 @@ class QuestChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: selected ? q.honey : q.surface2,
+            // Aksen netral-aktif = mint; emas khusus CTA (ADR-010).
+            color: selected ? QuestPalette.mint : q.surface2,
             borderRadius: BorderRadius.circular(AppRadius.pill),
             boxShadow: selected
                 ? const [
                     BoxShadow(
-                      color: Color(0x59FFB33E),
+                      color: Color(0x4D7FBDB1),
                       offset: Offset(0, 6),
                       blurRadius: 14,
                     ),
@@ -226,7 +237,7 @@ class QuestChip extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 13,
-              color: selected ? q.honeyInk : q.muted,
+              color: selected ? QuestPalette.mintInk : q.muted,
             ),
           ),
         ),
@@ -293,8 +304,18 @@ class _SegmentCell<T> extends StatelessWidget {
         curve: QuestMotion.easeOut,
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? q.surface : Colors.transparent,
+          // Sel aktif mint penuh — mockup v2.1; emas tidak untuk state.
+          color: selected ? QuestPalette.mint : Colors.transparent,
           borderRadius: BorderRadius.circular(AppRadius.tile),
+          boxShadow: selected
+              ? const [
+                  BoxShadow(
+                    color: Color(0x4D7FBDB1),
+                    offset: Offset(0, 3),
+                    blurRadius: 8,
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -303,7 +324,7 @@ class _SegmentCell<T> extends StatelessWidget {
               Icon(
                 option.icon,
                 size: 18,
-                color: selected ? q.honeyInk : q.muted,
+                color: selected ? Colors.white : q.muted,
               ),
               const SizedBox(width: Spacing.xs),
             ],
@@ -313,7 +334,7 @@ class _SegmentCell<T> extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontWeight: FontWeight.w800,
-                  color: selected ? q.honeyInk : q.muted,
+                  color: selected ? Colors.white : q.muted,
                 ),
               ),
             ),

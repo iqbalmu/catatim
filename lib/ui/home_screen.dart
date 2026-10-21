@@ -153,6 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: RencanaScreen(
                     key: _rencanaKey,
                     repository: widget.repository,
+                    progress: widget.progress,
                   ),
                 ),
                 TickerMode(
@@ -628,7 +629,8 @@ class _BerandaTabState extends State<_BerandaTab> {
           ListenableBuilder(
             listenable: widget.progress,
             builder: (context, _) {
-              final lines = widget.progress.latest?.snapshot.lines;
+              final latest = widget.progress.latest;
+              final lines = latest?.snapshot.lines;
               final daily = lines != null && lines.isNotEmpty ? lines[0] : null;
               final weekly = lines != null && lines.length > 1
                   ? lines[1]
@@ -644,20 +646,26 @@ class _BerandaTabState extends State<_BerandaTab> {
                 weeklyUsed: weekly?.used ?? 0,
                 monthlyLimit: monthly?.limit,
                 monthlyUsed: monthly?.used ?? 0,
+                // Streak menyatu di kartu pace (mockup v2.1) — kartu
+                // Disiplin terpisah dipensiunkan dari Beranda.
+                streakDays: latest?.streakDays ?? 0,
                 onTap: widget.onOpenRencanaBatas,
               );
             },
           ),
-          const SizedBox(height: Spacing.m),
-          MiniInOut(service: widget.progress, onTap: widget.onOpenRekap),
-          const SizedBox(height: Spacing.m),
-          DisiplinCard(service: widget.progress),
           const SizedBox(height: Spacing.m),
           TransaksiTerbaruCard(
             repository: widget.repository,
             progress: widget.progress,
             onSeeAll: widget.onOpenRekap,
           ),
+          const SizedBox(height: Spacing.m),
+          InsightTujuhHariCard(
+            repository: widget.repository,
+            onTap: widget.onOpenRekap,
+          ),
+          const SizedBox(height: Spacing.m),
+          MiniInOut(service: widget.progress, onTap: widget.onOpenRekap),
           // Clearance navbar melayang di atas konten (extendBody).
           const SizedBox(height: 96),
         ],

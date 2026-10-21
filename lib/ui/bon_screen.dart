@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 
 import '../core/money.dart';
+import '../game/mascot.dart';
 import '../models.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
@@ -114,15 +115,14 @@ class _BonTabState extends State<BonTab> {
                   hint: 'Ada utang atau piutang? Catat lewat tombol + di navbar bawah.',
                 )
               else ...[
-                if (open.isNotEmpty) ...[
-                  const QuestSectionHeader(title: 'Belum lunas'),
-                  for (final b in open)
-                    _BonTile(bon: b, repository: widget.repository),
-                ],
-                if (done.isNotEmpty) ...[
-                  const QuestSectionHeader(title: 'Lunas'),
-                  for (final b in done)
-                    _BonTile(bon: b, repository: widget.repository),
+                // Satu daftar (mockup v2.1): belum lunas dulu, arsip
+                // lunas menyusul dalam kondisi redup + tercoret.
+                for (final b in [...open, ...done])
+                  _BonTile(bon: b, repository: widget.repository),
+                // Perayaan kecil saat semua beres (mockup v2.1).
+                if (open.isEmpty && done.isNotEmpty) ...[
+                  const SizedBox(height: Spacing.s),
+                  _BonAllSettledCard(count: done.length),
                 ],
               ],
             ],
@@ -231,17 +231,47 @@ class _TotalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return QuestCard(
+    // Ringkasan dua kolom ber-tint (mockup v2.1): piutang mint,
+    // utang merah bata.
+    final tint = incoming ? SeedColors.mintTint : SeedColors.outgoingTint;
+    final fg = incoming ? SeedColors.mintInk : SeedColors.outgoing;
+    return Container(
+      padding: const EdgeInsets.all(Spacing.m),
+      decoration: BoxDecoration(
+        color: tint,
+        borderRadius: BorderRadius.circular(AppRadius.tile),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: context.qTitle(15)),
-          Text(hint, style: context.qSmall(11)),
-          const SizedBox(height: Spacing.xs),
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.2,
+              color: fg,
+            ),
+          ),
+          const SizedBox(height: 2),
           FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
             child: Text(
               Money.format(amount),
-              style: context.qAmount(22, incoming: incoming),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: fg,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+          Text(
+            hint,
+            style: TextStyle(
+              fontSize: 10.5,
+              color: fg.withValues(alpha: 0.75),
             ),
           ),
         ],
@@ -320,7 +350,12 @@ class _BonTile extends StatelessWidget {
                     Text(
                       bon.person,
                       overflow: TextOverflow.ellipsis,
-                      style: context.qTitle(15),
+                      // Arsip lunas: tercorel (mockup v2.1).
+                      style: context.qTitle(15).copyWith(
+                        decoration: settled
+                            ? TextDecoration.lineThrough
+                            : null,
+                      ),
                     ),
                     const SizedBox(height: Spacing.xxs),
                     Text(
@@ -337,11 +372,11 @@ class _BonTile extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  QuestAmount(amount: bon.amount, incoming: !lent, size: 15),
+                  QuestAmount(amount: bon.amount, incoming: lent, size: 15),
                   const SizedBox(height: Spacing.xxs),
                   if (settled)
                     Text(
-                      'Sudah lunas',
+                      'Lunas ${_date(bon.settledAt!)}',
                       style: context
                           .qSmall(11)
                           .copyWith(color: context.q.muted),
@@ -357,17 +392,30 @@ class _BonTile extends StatelessWidget {
                 ],
               ),
               if (!settled) ...[
-                const SizedBox(width: Spacing.s),
-                IconButton(
-                  tooltip: 'Tandai lunas',
-                  icon: Icon(
-                    Icons.check_circle_outline_rounded,
-                    color: context.q.good,
-                    size: 24,
-                  ),
-                  onPressed: () => repository.updateBon(
+                const SizedBox(width: Spacing.xs),
+                // "Tandai lunas" satu tap langsung di baris (mockup v2.1).
+                QuestPress(
+                  onTap: () => repository.updateBon(
                     bon.id,
                     BonsCompanion(settledAt: Value(DateTime.now())),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: SeedColors.mintTint,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                    child: Text(
+                      'Lunas',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        color: SeedColors.mintInk,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -379,6 +427,40 @@ class _BonTile extends StatelessWidget {
   }
 
   String _date(DateTime dt) => idDayMonth(dt);
+}
+
+/// Kartu penutup: semua bon lunas — perayaan kecil konsisten bahasa
+/// maskot (mockup v2.1).
+class _BonAllSettledCard extends StatelessWidget {
+  const _BonAllSettledCard({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return QuestCard(
+      child: Row(
+        children: [
+          const RepaintBoundary(
+            child: Mascot(mood: MascotMood.celebrate, size: 46),
+          ),
+          const SizedBox(width: Spacing.m),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Semua bon beres', style: context.qTitle(14)),
+                Text(
+                  '$count bon lunas — bersih untuk bulan ini',
+                  style: context.qSmall(12),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Sheet tambah/ubah bon. Mode edit bila [existing] diberikan.

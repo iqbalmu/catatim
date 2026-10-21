@@ -38,7 +38,9 @@ enum RekapSegment { transaksi, donat, tren, kalender }
 enum _RekapPeriod { month, custom }
 
 class RekapScreenState extends State<RekapScreen> {
-  RekapSegment _segment = RekapSegment.transaksi;
+  /// Donat = segmen default (mockup v2.1): "uangku ke mana?" adalah
+  /// pertanyaan pertama saat membuka Rekap.
+  RekapSegment _segment = RekapSegment.donat;
 
   /// Deep-link dari shell (mis. "Lihat semua" Beranda): pastikan segmen
   /// yang dijanjikan labelnya benar-benar terbuka.

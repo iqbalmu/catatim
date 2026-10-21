@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 /// Token desain — satu sumber kebenaran untuk spacing, radius, dan warna.
+///
+/// Nilai warna = palet v2.1 "Pastel Pochy", 100% diturunkan dari piksel
+/// maskot (tubuh burlap, koin, syal teal, mulut, bintang pastel) —
+/// lihat docs/DESIGN.md + ADR-010. Satu tema; tanpa dark mode.
 class Spacing {
   Spacing._();
 
@@ -30,7 +34,7 @@ class AppRadius {
   AppRadius._();
 
   /// Kartu standar — QuestCard & Container kartu permukaan.
-  static const double card = 20;
+  static const double card = 22;
 
   /// Tile/baris di dalam halaman atau kartu, sel kontrol dalam bingkai.
   static const double tile = 18;
@@ -51,25 +55,77 @@ class AppRadius {
 class SeedColors {
   SeedColors._();
 
-  /// Teal gelap — netral finansial, kontras baik di light & dark.
-  static const Color seed = Color(0xFF006A60);
+  // ── Netral (dari burlap & tali Pochy) ──────────────────────────
+  /// Latar app — burlap terang dicerahkan.
+  static const Color bg = Color(0xFFFBF5EC);
 
-  static const Color incoming = Color(0xFF1B873B);
-  static const Color outgoing = Color(0xFFB3392E);
+  /// Kartu/sheet — putih hangat hue burlap.
+  static const Color surface = Color(0xFFFFFDF9);
 
-  /// Warna Bukuduit Quest.
-  static const Color honey = Color(0xFFFFB33E);
-  static const Color honey50 = Color(0xFFFFF3DC);
-  static const Color honey100 = Color(0xFFFFE7B8);
-  static const Color honeyBright = Color(0xFFFFD97A);
-  static const Color honeyDeep = Color(0xFFFFA726);
-  static const Color honeyInk = Color(0xFF8A6420);
-  static const Color ink = Color(0xFF3B3630);
+  /// Tint lembut: chip, track bar, zona sekunder.
+  static const Color surface2 = Color(0xFFF6E9DA);
 
   /// Garis sekunder halus — bukan border kartu.
-  static const Color line = Color(0xFFEFE6D4);
+  static const Color line = Color(0xFFEDE0CE);
 
-  /// Warna kategori — diindeks via Categories.colorIndex.
+  /// Teks utama — tali/mata #3E2214 dicerahkan.
+  static const Color ink = Color(0xFF5B4433);
+
+  /// Teks sekunder — lipatan bayang karung.
+  static const Color muted = Color(0xFFAD9680);
+
+  // ── Emas (dari koin #F1A23A + bintang kuning #FDF6BF) ──────────
+  /// Gradien koin: terang.
+  static const Color honeyBright = Color(0xFFF9DCA8);
+
+  /// Gradien koin: ujung gelap; aksen brand/CTA utama.
+  static const Color honey = Color(0xFFE8B36B);
+
+  /// Ujung lebih pekat untuk gradien & aksen tegas.
+  static const Color honeyDeep = Color(0xFFDE9F55);
+
+  /// Emas diperdalam — teks tautan/emphasize di area netral.
+  static const Color honeyInk = Color(0xFFC08A3D);
+
+  /// Tinta teks tombol utama di atas gradien emas.
+  static const Color honeyText = Color(0xFF6B4A1E);
+
+  /// Tint emas paling terang — hero gradien awal, zona lembut.
+  static const Color honey50 = Color(0xFFFBE7BE);
+
+  /// Emas sedang — hero gradien tengah.
+  static const Color honey100 = Color(0xFFF3CD8F);
+
+  // ── Mint aksen (dari syal teal + bintang mint) ─────────────────
+  /// Aksen netral-aktif: status tenang, piutang, tint segmen.
+  static const Color mint = Color(0xFFA4D1C9);
+
+  /// Mint diperdalam — sel segmented aktif, aksen berisi.
+  static const Color mintDeep = Color(0xFF7FBDB1);
+
+  /// Mint untuk teks di atas tint terang.
+  static const Color mintInk = Color(0xFF3E7A6D);
+
+  /// Tint mint: chip streak, status baik.
+  static const Color mintTint = Color(0xFFE6F2EF);
+
+  // ── Semantik arah ──────────────────────────────────────────────
+  /// Masuk / aman — mint diperdalam (menggantikan hijau lama; ADR-010).
+  static const Color incoming = Color(0xFF4A8C7E);
+
+  /// Keluar / OVER — merah mulut menangis disiram.
+  static const Color outgoing = Color(0xFFB05530);
+
+  /// Tint semantik (chip status).
+  static const Color incomingTint = Color(0xFFE3F0EC);
+  static const Color outgoingTint = Color(0xFFF7E4DA);
+
+  /// Netral finansial lama — kini merujuk mint (aksen tenang).
+  static const Color seed = mintDeep;
+
+  /// Warna kategori — BAHASA DATA (ADR-010): diindeks via
+  /// Categories.colorIndex, tidak berubah, tidak dipakai di luar
+  /// konteks kategorinya.
   static const List<Color> categoryPalette = [
     Color(0xFFE07A5F), // Makanan
     Color(0xFF3D8AA8), // Transportasi

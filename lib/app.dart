@@ -34,7 +34,8 @@ class BukuduitApp extends StatelessWidget {
       ],
       supportedLocales: const [Locale('id')],
       theme: QuestSchemes.light(),
-      darkTheme: QuestSchemes.dark(),
+      // Satu tema; tanpa dark mode (ADR-010).
+      themeMode: ThemeMode.light,
       home: HomeScreen(
         repository: repository,
         pipeline: pipeline,

@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/budget.dart';
+import '../core/dates_id.dart';
 import '../core/money.dart';
+import '../game/mascot.dart';
+import '../game/progress.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
@@ -81,9 +84,13 @@ Future<void> showAddJenisFlow(
 /// Pemakaian alokasi memakai pasangan belanja-murni (transfer
 /// dikecualikan) — transfer biasa tidak menggerogoti alokasi Jenis.
 class RencanaBatas extends StatefulWidget {
-  const RencanaBatas({super.key, required this.repository});
+  const RencanaBatas({super.key, required this.repository, this.progress});
 
   final LedgerRepository repository;
+
+  /// Opsional — sumber maskot meter, chip "vs bulan lalu", dan chip
+  /// progres 7 hari (mockup v2.1). Null → kartu disiplin disembunyikan.
+  final ProgressService? progress;
 
   @override
   State<RencanaBatas> createState() => _RencanaBatasState();
@@ -151,59 +158,67 @@ class _RencanaBatasState extends State<RencanaBatas> {
               return const QuestSkeleton(rows: 1, height: 80);
             }
             final usage = usageSnap.data;
-            return Row(
+            return Column(
               children: [
-                Expanded(
-                  child: _LimitMiniCard(
-                    label: 'Harian',
-                    used: usage?.day ?? 0,
-                    limit: _dailyLimit,
-                    onTap: () => _editLimit(
-                      title: 'Batas harian',
-                      current: _dailyLimit,
-                      save: (v) async {
-                        await _saveLimit(kKeyDailyLimit, v);
-                        setState(() => _dailyLimit = v);
-                      },
-                    ),
+                // Kartu batas utama — fokus harian + maskot meter
+                // (mockup v2.1). Mingguan/bulanan tetap tersedia di bawah.
+                _BatasUtamaCard(
+                  used: usage?.day ?? 0,
+                  limit: _dailyLimit,
+                  progress: widget.progress,
+                  onTap: () => _editLimit(
+                    title: 'Batas harian',
+                    current: _dailyLimit,
+                    save: (v) async {
+                      await _saveLimit(kKeyDailyLimit, v);
+                      setState(() => _dailyLimit = v);
+                    },
                   ),
                 ),
-                const SizedBox(width: Spacing.s),
-                Expanded(
-                  child: _LimitMiniCard(
-                    label: 'Mingguan',
-                    used: usage?.week ?? 0,
-                    limit: _weeklyLimit,
-                    onTap: () => _editLimit(
-                      title: 'Batas mingguan',
-                      current: _weeklyLimit,
-                      save: (v) async {
-                        await _saveLimit(kKeyWeeklyLimit, v);
-                        setState(() => _weeklyLimit = v);
-                      },
+                const SizedBox(height: Spacing.s),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _LimitMiniCard(
+                        label: 'Mingguan',
+                        used: usage?.week ?? 0,
+                        limit: _weeklyLimit,
+                        onTap: () => _editLimit(
+                          title: 'Batas mingguan',
+                          current: _weeklyLimit,
+                          save: (v) async {
+                            await _saveLimit(kKeyWeeklyLimit, v);
+                            setState(() => _weeklyLimit = v);
+                          },
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: Spacing.s),
-                Expanded(
-                  child: _LimitMiniCard(
-                    label: 'Bulanan',
-                    used: usage?.month ?? 0,
-                    limit: _monthlyTotal,
-                    onTap: () => _editLimit(
-                      title: 'Total bulanan',
-                      current: _monthlyTotal,
-                      save: (v) async {
-                        await _saveLimit(kKeyMonthlyTotal, v);
-                        setState(() => _monthlyTotal = v);
-                      },
+                    const SizedBox(width: Spacing.s),
+                    Expanded(
+                      child: _LimitMiniCard(
+                        label: 'Bulanan',
+                        used: usage?.month ?? 0,
+                        limit: _monthlyTotal,
+                        onTap: () => _editLimit(
+                          title: 'Total bulanan',
+                          current: _monthlyTotal,
+                          save: (v) async {
+                            await _saveLimit(kKeyMonthlyTotal, v);
+                            setState(() => _monthlyTotal = v);
+                          },
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ],
             );
           },
         ),
+        const SizedBox(height: Spacing.m),
+        // Chip progres 7 hari terakhir (mockup v2.1) — menggantikan
+        // kartu Disiplin di Beranda; ringkasan disiplin sekali lihat.
+        _WeeklyProgressCard(progress: widget.progress),
         const SizedBox(height: Spacing.m),
         Row(
           children: [
@@ -291,18 +306,15 @@ class _RencanaBatasState extends State<RencanaBatas> {
                               ),
                           ],
                         ];
-                        return GridView(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          padding: EdgeInsets.zero,
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                mainAxisSpacing: Spacing.s,
-                                crossAxisSpacing: Spacing.s,
-                                mainAxisExtent: 88,
-                              ),
-                          children: cards,
+                        // Daftar baris penuh (mockup v2.1): nama + bar
+                        // progres + "pakai/plafon" — bukan grid.
+                        return Column(
+                          children: [
+                            for (final card in cards) ...[
+                              card,
+                              const SizedBox(height: Spacing.s),
+                            ],
+                          ],
                         );
                       },
                     );
@@ -954,6 +966,221 @@ class _AllocationRow extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Kartu batas utama: fokus harian dengan maskot meter di kanan —
+/// "sisa aman hari ini" (mockup v2.1). Tap = edit batas harian.
+class _BatasUtamaCard extends StatelessWidget {
+  const _BatasUtamaCard({
+    required this.used,
+    required this.limit,
+    required this.onTap,
+    this.progress,
+  });
+
+  final int used;
+  final int? limit;
+  final VoidCallback onTap;
+  final ProgressService? progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    final hasLimit = limit != null && limit! > 0;
+    final sisa = (limit ?? 0) - used;
+    final over = hasLimit && sisa < 0;
+    final fraction = hasLimit ? (used / limit!).clamp(0.0, 1.0) : 0.0;
+    final mood = progress?.latest?.mood ?? MascotMood.idle;
+
+    // Chip "vs bulan lalu" — dari snapshot fair mid-month.
+    String? vsChip;
+    var vsGood = false;
+    final snap = progress?.latest;
+    if (snap != null && snap.snapshot.lastMonthOut > 0) {
+      final pct =
+          ((snap.monthOut - snap.snapshot.lastMonthOut) * 100 /
+                  snap.snapshot.lastMonthOut)
+              .round();
+      if (pct != 0) {
+        vsGood = pct < 0;
+        vsChip = '${pct.abs()}% ${vsGood ? 'lebih hemat' : 'lebih boros'}'
+            ' · vs bulan lalu';
+      }
+    }
+
+    return QuestCard(
+      onTap: onTap,
+      radius: AppRadius.sheet,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text('Sisa aman hari ini', style: context.qEyebrow(10)),
+                    if (hasLimit) ...[
+                      const Spacer(),
+                      Container(
+                        padding: Insets.chip,
+                        decoration: BoxDecoration(
+                          color: over
+                              ? SeedColors.outgoingTint
+                              : SeedColors.incomingTint,
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                        ),
+                        child: Text(
+                          over ? 'OVER' : 'Aman',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: over
+                                ? SeedColors.outgoing
+                                : SeedColors.incoming,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: Spacing.xs),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    !hasLimit
+                        ? 'Tanpa batas'
+                        : over
+                            ? '−${Money.format(-sisa)}'
+                            : Money.format(sisa),
+                    style: context.qDisplay(27).copyWith(
+                          color: over ? q.bad : null,
+                        ),
+                  ),
+                ),
+                const SizedBox(height: Spacing.s),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  child: Stack(
+                    children: [
+                      Container(height: 10, color: q.line.withValues(alpha: .7)),
+                      FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: fraction,
+                        child: Container(
+                          height: 10,
+                          color: over
+                              ? q.bad
+                              : const Color(0xFFE8B36B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: Spacing.xs),
+                Text(
+                  !hasLimit
+                      ? 'Tap untuk mengatur batas harian'
+                      : 'Pakai ${Money.format(used)} dari ${Money.format(limit!)}',
+                  style: context.qSmall(11),
+                ),
+                if (vsChip != null) ...[
+                  const SizedBox(height: Spacing.xxs),
+                  Container(
+                    padding: Insets.chip,
+                    decoration: BoxDecoration(
+                      color: vsGood
+                          ? SeedColors.incomingTint
+                          : SeedColors.outgoingTint,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                    child: Text(
+                      vsChip,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: vsGood
+                            ? SeedColors.incoming
+                            : SeedColors.outgoing,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: Spacing.m),
+          // Maskot = meter (ADR-007): ekspresi mengikuti kondisi nyata.
+          RepaintBoundary(
+            child: Mascot(mood: over ? MascotMood.worried : mood, size: 56),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Chip progres 7 hari terakhir dari data disiplin bulan berjalan —
+/// ringkasan disiplin sekali lihat (mockup v2.1). Tanpa [progress] atau
+/// tanpa batas: kartu disembunyikan (jangan mengganggu).
+class _WeeklyProgressCard extends StatelessWidget {
+  const _WeeklyProgressCard({this.progress});
+
+  final ProgressService? progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final snap = progress?.latest;
+    final rows = snap?.disciplineMonth ?? const <DailyDiscipline>[];
+    if (rows.isEmpty) return const SizedBox.shrink();
+
+    final last7 = rows.where((d) => !d.future).toList();
+    if (last7.isEmpty) return const SizedBox.shrink();
+    if (last7.length > 7) last7.removeRange(0, last7.length - 7);
+
+    return QuestCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Progres 7 hari terakhir', style: context.qTitle(14)),
+          const SizedBox(height: Spacing.s),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final d in last7)
+                  Padding(
+                    padding: const EdgeInsets.only(right: Spacing.xs),
+                    child: Container(
+                      padding: Insets.chip,
+                      decoration: BoxDecoration(
+                        color: d.within
+                            ? SeedColors.incomingTint
+                            : SeedColors.outgoingTint,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                      child: Text(
+                        '${idDaysShort[d.day.weekday - 1]} '
+                        '${d.within ? 'aman' : 'OVER'}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: d.within
+                              ? SeedColors.incoming
+                              : SeedColors.outgoing,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

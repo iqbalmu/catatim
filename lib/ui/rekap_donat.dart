@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../core/budget.dart' show deltaLabel;
+import '../core/dates_id.dart';
 import '../core/money.dart';
 import '../core/rekap_filter.dart';
 import '../models.dart';
@@ -13,10 +14,11 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'quest.dart';
 
-/// Segmen Donat pada layar Rekap: headline keluar/masuk + donut kategori
-/// sesuai periode [filter]. Statistik keluar MURNI (keputusan A): transfer
-/// biasa tidak masuk headline maupun donat. Tap kategori →
-/// [onCategoryTap] dengan filter hasil [RekapFilter.applyDonatTap]
+/// Segmen Donat pada layar Rekap (segmen DEFAULT — mockup v2.1: pertanyaan
+/// pertama pengguna "uangku ke mana?"). Toggle Keluar/Masuk hidup DI DALAM
+/// kartu donat; delta vs periode pembanding tampil sebagai chip. Statistik
+/// keluar MURNI (keputusan A): transfer keluar tidak masuk donat. Tap
+/// kategori → [onCategoryTap] dengan filter hasil [RekapFilter.applyDonatTap]
 /// (shell yang memindah segmen ke Transaksi).
 class RekapDonat extends StatefulWidget {
   const RekapDonat({
@@ -37,6 +39,9 @@ class RekapDonat extends StatefulWidget {
 class _RekapDonatState extends State<RekapDonat> {
   // Disematkan sekali agar rebuild tak subscribe ulang (anti-kedip).
   late Stream<List<TxWithCategory>> _rows;
+
+  /// Mode donat: false = keluar (default), true = masuk.
+  bool _incoming = false;
 
   @override
   void initState() {
@@ -88,270 +93,78 @@ class _RekapDonatState extends State<RekapDonat> {
         Spacing.m + MediaQuery.paddingOf(context).bottom,
       ),
       children: [
-        _PeriodHeadlines(
-          repository: widget.repository,
-          winStart: start,
-          winEnd: end,
-        ),
-        const SizedBox(height: Spacing.m),
         StreamBuilder<List<TxWithCategory>>(
           stream: _rows,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const QuestSkeleton(rows: 2, height: 120);
             }
-            return _CategoryDonutCard(
-              rows: snapshot.data ?? const <TxWithCategory>[],
-              onTap: (categoryId) => widget.onCategoryTap(
-                widget.filter.applyDonatTap(
-                  categoryId: categoryId,
-                  monthStart: start,
-                  monthEnd: end,
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-}
-
-/// Kartu headline: nominal besar + delta vs periode pembanding.
-class _HeadlineCard extends StatelessWidget {
-  const _HeadlineCard({
-    required this.label,
-    required this.amount,
-    required this.delta,
-    required this.upIsBad,
-  });
-
-  final String label;
-  final int amount;
-  final String? delta;
-  final bool upIsBad;
-
-  @override
-  Widget build(BuildContext context) {
-    final q = context.q;
-    final arrow = delta?.startsWith('▲') ?? false;
-    final flat = delta?.startsWith('±') ?? false;
-    final deltaColor = delta == null || flat
-        ? q.muted
-        : (arrow == upIsBad ? q.bad : q.good);
-    return Container(
-      padding: const EdgeInsets.all(Spacing.m),
-      decoration: BoxDecoration(
-        color: q.surface,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        boxShadow: [
-          BoxShadow(
-            color: q.shadow,
-            offset: const Offset(0, 6),
-            blurRadius: 18,
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            final rows = snapshot.data ?? const <TxWithCategory>[];
+            return Column(
               children: [
-                Text(label, style: context.qEyebrow()),
-                const SizedBox(height: Spacing.xxs),
-                FittedBox(
-                  child: Text(
-                    Money.format(amount),
-                    style: context.qDisplay(30),
+                _DonatCard(
+                  rows: rows,
+                  incoming: _incoming,
+                  onToggle: (v) => setState(() => _incoming = v),
+                  repository: widget.repository,
+                  start: start,
+                  end: end,
+                  onTap: (categoryId) => widget.onCategoryTap(
+                    widget.filter.applyDonatTap(
+                      categoryId: categoryId,
+                      monthStart: start,
+                      monthEnd: end,
+                    ),
                   ),
                 ),
+                // Kartu "keluar terbesar" hanya bermakna di mode keluar.
+                if (!_incoming) _TopSpendCard(rows: rows),
               ],
-            ),
-          ),
-          if (delta != null)
-            Container(
-              padding: Insets.chip,
-              decoration: BoxDecoration(
-                color: deltaColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-              ),
-              child: Text(
-                delta!,
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12,
-                  color: deltaColor,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Dua headline (keluar & masuk) + delta vs periode pembanding.
-class _PeriodHeadlines extends StatelessWidget {
-  const _PeriodHeadlines({
-    required this.repository,
-    required this.winStart,
-    required this.winEnd,
-  });
-
-  final LedgerRepository repository;
-  final DateTime winStart;
-  final DateTime winEnd;
-
-  @override
-  Widget build(BuildContext context) {
-    final span = winEnd.difference(winStart);
-    final prevStart = winStart.subtract(span);
-    final prevEnd = winStart;
-    return Column(
-      children: [
-        // KELUAR MURNI: sumSpendBetween (transfer biasa
-        // dikecualikan) — keputusan A, bukan sumBetween.
-        _HeadlineFuture(
-          repository: repository,
-          label: 'KELUAR · periode ini',
-          start: winStart,
-          end: winEnd,
-          prevStart: prevStart,
-          prevEnd: prevEnd,
-          spend: true,
-          upIsBad: true,
-        ),
-        const SizedBox(height: Spacing.s),
-        _HeadlineFuture(
-          repository: repository,
-          label: 'MASUK · periode ini',
-          start: winStart,
-          end: winEnd,
-          prevStart: prevStart,
-          prevEnd: prevEnd,
-          spend: false,
-          upIsBad: false,
+            );
+          },
         ),
       ],
     );
   }
 }
 
-class _HeadlineFuture extends StatefulWidget {
-  const _HeadlineFuture({
+/// Kartu donat: toggle arah + donut + legenda + chip delta vs periode
+/// pembanding — semuanya dalam satu kartu (mockup v2.1).
+class _DonatCard extends StatelessWidget {
+  const _DonatCard({
+    required this.rows,
+    required this.incoming,
+    required this.onToggle,
     required this.repository,
-    required this.label,
     required this.start,
     required this.end,
-    required this.prevStart,
-    required this.prevEnd,
-    required this.spend,
-    required this.upIsBad,
+    required this.onTap,
   });
 
+  final List<TxWithCategory> rows;
+  final bool incoming;
+  final ValueChanged<bool> onToggle;
   final LedgerRepository repository;
-  final String label;
   final DateTime start;
   final DateTime end;
-  final DateTime prevStart;
-  final DateTime prevEnd;
-  final bool spend;
-  final bool upIsBad;
-
-  @override
-  State<_HeadlineFuture> createState() => _HeadlineFutureState();
-}
-
-class _HeadlineFutureState extends State<_HeadlineFuture> {
-  // Disematkan sekali agar rebuild tak memicu future ulang (anti-kedip).
-  late Future<int> _cur;
-  late Future<int> _prev;
-
-  @override
-  void initState() {
-    super.initState();
-    _cur = _sum(widget.start, widget.end);
-    _prev = _sum(widget.prevStart, widget.prevEnd);
-  }
-
-  @override
-  void didUpdateWidget(covariant _HeadlineFuture oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // TANPA setState — build sudah terjadwal; FutureBuilder di bawah melihat future baru dan subscribe dengan benar.
-    // DateTime tanpa == — bandingkan instan via milidetik.
-    if (widget.repository != oldWidget.repository ||
-        widget.spend != oldWidget.spend ||
-        widget.start.millisecondsSinceEpoch !=
-            oldWidget.start.millisecondsSinceEpoch ||
-        widget.end.millisecondsSinceEpoch !=
-            oldWidget.end.millisecondsSinceEpoch ||
-        widget.prevStart.millisecondsSinceEpoch !=
-            oldWidget.prevStart.millisecondsSinceEpoch ||
-        widget.prevEnd.millisecondsSinceEpoch !=
-            oldWidget.prevEnd.millisecondsSinceEpoch) {
-      _cur = _sum(widget.start, widget.end);
-      _prev = _sum(widget.prevStart, widget.prevEnd);
-    }
-  }
-
-  Future<int> _sum(DateTime s, DateTime e) => widget.spend
-      ? widget.repository.sumSpendBetween(s, e)
-      : widget.repository.sumBetween(s, e, Direction.incoming);
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<int>(
-      future: _cur,
-      builder: (context, cur) {
-        return FutureBuilder<int>(
-          future: _prev,
-          builder: (context, prev) {
-            final amount = cur.data ?? 0;
-            return _HeadlineCard(
-              label: widget.label,
-              amount: amount,
-              delta: deltaLabel(amount, prev.data ?? 0),
-              upIsBad: widget.upIsBad,
-            );
-          },
-        );
-      },
-    );
-  }
-}
-class _Bucket {
-  const _Bucket(this.label, this.categoryId, this.amount, this.color);
-
-  final String label;
-  final int? categoryId;
-  final int amount;
-  final Color color;
-}
-
-/// Donut kategori pengeluaran: keluar MURNI (kind transfer tidak
-/// dihitung). Tap baris legend/slice →
-/// [onTap] dengan id kategori (Tanpa kategori tidak bisa deep-link).
-class _CategoryDonutCard extends StatelessWidget {
-  const _CategoryDonutCard({required this.rows, required this.onTap});
-
-  final List<TxWithCategory> rows;
   final void Function(int categoryId) onTap;
 
-  @override
-  Widget build(BuildContext context) {
+  List<_Bucket> _buckets(BuildContext context) {
     final byCategory = <Category?, int>{};
     for (final r in rows) {
-      if (r.tx.direction != Direction.outgoing) continue;
-      if (r.tx.kind == TxKind.transfer) continue; // belanja murni
+      if (incoming) {
+        if (r.tx.direction != Direction.incoming) continue;
+      } else {
+        if (r.tx.direction != Direction.outgoing) continue;
+        if (r.tx.kind == TxKind.transfer) continue; // belanja murni
+      }
       byCategory.update(
         r.category,
         (v) => v + r.tx.amount,
         ifAbsent: () => r.tx.amount,
       );
     }
-    final total = byCategory.values.fold(0, (a, b) => a + b);
-    final buckets = [
+    return [
       for (final e in byCategory.entries)
         _Bucket(
           e.key?.name ?? 'Tanpa kategori',
@@ -362,16 +175,36 @@ class _CategoryDonutCard extends StatelessWidget {
               : SeedColors.categoryColor(e.key!.colorIndex),
         ),
     ]..sort((a, b) => b.amount.compareTo(a.amount));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final buckets = _buckets(context);
+    final total = buckets.fold(0, (a, b) => a + b.amount);
 
     return QuestCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Uangmu keluar ke mana saja?', style: context.qTitle()),
+          Row(
+            children: [
+              SizedBox(
+                width: 176,
+                child: QuestSegmented<bool>(
+                  selected: incoming,
+                  onChanged: onToggle,
+                  options: const [
+                    (value: false, label: 'Keluar', icon: null),
+                    (value: true, label: 'Masuk', icon: null),
+                  ],
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: Spacing.m),
           if (total == 0)
             QuestEmpty(
-              title: 'Belum ada pengeluaran',
+              title: incoming ? 'Belum ada pemasukan' : 'Belum ada pengeluaran',
               hint: 'Catat transaksimu — Duit menunggu!',
             )
           else ...[
@@ -392,7 +225,10 @@ class _CategoryDonutCard extends StatelessWidget {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('Total keluar', style: context.qSmall()),
+                            Text(
+                              incoming ? 'Total masuk' : 'Total keluar',
+                              style: context.qSmall(),
+                            ),
                             Text(
                               Money.format(total),
                               style: context.qTitle(19),
@@ -407,6 +243,18 @@ class _CategoryDonutCard extends StatelessWidget {
             ),
             const SizedBox(height: Spacing.m),
             for (final b in buckets) _legendRow(context, b, total),
+            const SizedBox(height: Spacing.s),
+            // Delta vs periode pembanding — angka tanpa konteks tidak
+            // membantu keputusan (mockup v2.1).
+            Align(
+              alignment: Alignment.centerLeft,
+              child: _DeltaChip(
+                repository: repository,
+                start: start,
+                end: end,
+                spend: !incoming,
+              ),
+            ),
           ],
         ],
       ),
@@ -456,6 +304,220 @@ class _CategoryDonutCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Chip delta arah terpilih vs periode sama sebelumnya (fair mid-month).
+/// Favorable = mint, unfavorable = merah; pembanding nol → teks netral
+/// "bulan pertama".
+class _DeltaChip extends StatefulWidget {
+  const _DeltaChip({
+    required this.repository,
+    required this.start,
+    required this.end,
+    required this.spend,
+  });
+
+  final LedgerRepository repository;
+  final DateTime start;
+  final DateTime end;
+  final bool spend;
+
+  @override
+  State<_DeltaChip> createState() => _DeltaChipState();
+}
+
+class _DeltaChipState extends State<_DeltaChip> {
+  late Future<int> _cur;
+  late Future<int> _prev;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetch();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DeltaChip oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.spend != oldWidget.spend ||
+        widget.start.millisecondsSinceEpoch !=
+            oldWidget.start.millisecondsSinceEpoch ||
+        widget.end.millisecondsSinceEpoch !=
+            oldWidget.end.millisecondsSinceEpoch) {
+      _fetch();
+    }
+  }
+
+  void _fetch() {
+    final span = widget.end.difference(widget.start);
+    final prevStart = widget.start.subtract(span);
+    _cur = widget.spend
+        ? widget.repository.sumSpendBetween(widget.start, widget.end)
+        : widget.repository.sumBetween(
+            widget.start,
+            widget.end,
+            Direction.incoming,
+          );
+    _prev = widget.spend
+        ? widget.repository.sumSpendBetween(prevStart, widget.start)
+        : widget.repository.sumBetween(
+            prevStart,
+            widget.start,
+            Direction.incoming,
+          );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<int>(
+      future: _cur,
+      builder: (context, cur) {
+        return FutureBuilder<int>(
+          future: _prev,
+          builder: (context, prev) {
+            final delta = deltaLabel(cur.data ?? 0, prev.data ?? 0);
+            if (delta == null) {
+              return Text(
+                'bulan pertama — pembanding menyusul',
+                style: context.qSmall(11),
+              );
+            }
+            final up = delta.startsWith('▲');
+            // Keluar: turun itu baik. Masuk: naik itu baik.
+            final good = widget.spend ? !up : up;
+            final tint = good
+                ? SeedColors.incomingTint
+                : SeedColors.outgoingTint;
+            final fg = good ? SeedColors.incoming : SeedColors.outgoing;
+            final month = idMonthsShort[(widget.start.month + 10) % 12];
+            return Container(
+              padding: Insets.chip,
+              decoration: BoxDecoration(
+                color: tint,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+              child: Text(
+                '$delta vs $month',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                  color: fg,
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+/// Kartu "Keluar terbesar": agregat keluar murni per lawan transaksi —
+/// jembatan dari persentase donat ke transaksi nyata (mockup v2.1).
+class _TopSpendCard extends StatelessWidget {
+  const _TopSpendCard({required this.rows});
+
+  final List<TxWithCategory> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    final byParty = <String, ({int total, int count, Category? cat})>{};
+    for (final r in rows) {
+      if (r.tx.direction != Direction.outgoing) continue;
+      if (r.tx.kind == TxKind.transfer) continue;
+      final name =
+          (r.tx.counterparty != null && r.tx.counterparty!.trim().isNotEmpty)
+              ? r.tx.counterparty!.trim()
+              : (r.tx.rawTitle?.trim().isNotEmpty == true
+                    ? r.tx.rawTitle!.trim()
+                    : '(tanpa nama)');
+      final prev = byParty[name];
+      byParty[name] = (
+        total: (prev?.total ?? 0) + r.tx.amount,
+        count: (prev?.count ?? 0) + 1,
+        cat: r.category ?? prev?.cat,
+      );
+    }
+    final top = byParty.entries.toList()
+      ..sort((a, b) => b.value.total.compareTo(a.value.total));
+    if (top.length < 2) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: Spacing.m),
+      child: QuestCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Keluar terbesar', style: context.qTitle()),
+            const SizedBox(height: Spacing.s),
+            for (final e in top.take(3))
+              Padding(
+                padding: const EdgeInsets.only(bottom: Spacing.xs),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: (e.value.cat == null
+                                ? context.q.muted
+                                : SeedColors.categoryColor(
+                                    e.value.cat!.colorIndex,
+                                  ))
+                            .withValues(alpha: 0.18),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        e.key[0].toUpperCase(),
+                        style: context.qSmall(13).copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                      ),
+                    ),
+                    const SizedBox(width: Spacing.s),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            e.key,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.qTitle(13),
+                          ),
+                          Text(
+                            '${e.value.count} kali'
+                            '${e.value.cat != null ? ' · ${e.value.cat!.name}' : ''}',
+                            style: context.qSmall(11),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: Spacing.s),
+                    Text(
+                      '−${Money.format(e.value.total)}',
+                      style: context.qTitle(13).copyWith(
+                            color: context.q.bad,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Bucket {
+  const _Bucket(this.label, this.categoryId, this.amount, this.color);
+
+  final String label;
+  final int? categoryId;
+  final int amount;
+  final Color color;
 }
 
 class _DonutPainter extends CustomPainter {

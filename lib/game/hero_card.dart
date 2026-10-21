@@ -60,7 +60,7 @@ class _GameHeroCardState extends State<GameHeroCard> {
                 final total = balances.values.fold(0, (a, b) => a + b);
                 return _HeroSaldo(
                   total: total,
-                  accountCount: accounts.length,
+                  accounts: accounts,
                   mood: mood,
                   onTap: widget.onTapAccounts,
                 );
@@ -78,13 +78,16 @@ class _GameHeroCardState extends State<GameHeroCard> {
 class _HeroSaldo extends StatefulWidget {
   const _HeroSaldo({
     required this.total,
-    required this.accountCount,
+    required this.accounts,
     required this.mood,
     this.onTap,
   });
 
   final int total;
-  final int accountCount;
+
+  /// Daftar akun — dipakai untuk avatar mini di hero (mockup v2.1:
+  /// tap langsung ke Kelola Akun, bukan teks "N akun").
+  final List<Account> accounts;
   final MascotMood mood;
   final VoidCallback? onTap;
 
@@ -103,6 +106,8 @@ class _HeroSaldoState extends State<_HeroSaldo> {
       onTap: widget.onTap,
       child: Container(
         padding: const EdgeInsets.fromLTRB(Spacing.l, 24, Spacing.l, 24),
+        // Catatan: avatar akun memakai warna kategori dari colorIndex
+        // akun — bahasa data, tidak diubah palet (ADR-010).
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [SeedColors.honeyBright, SeedColors.honey],
@@ -152,21 +157,37 @@ class _HeroSaldoState extends State<_HeroSaldo> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        widget.accountCount == 0
-                            ? 'Belum ada akun — yuk tambah'
-                            : '${widget.accountCount} akun',
-                        style: context.qSmall(13).copyWith(
+                      if (widget.accounts.isEmpty)
+                        Text(
+                          'Belum ada akun — yuk tambah',
+                          style: context.qSmall(13).copyWith(
+                            color: q.honeyInk,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        )
+                      else ...[
+                        // Avatar mini per akun — warna dari colorIndex
+                        // akun (bahasa data, ADR-010).
+                        for (final a in widget.accounts.take(3))
+                          Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: _AccountAvatar(account: a),
+                          ),
+                        if (widget.accounts.length > 3)
+                          Text(
+                            '+${widget.accounts.length - 3}',
+                            style: context.qSmall(12).copyWith(
+                              color: q.honeyInk,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        const SizedBox(width: 2),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 16,
                           color: q.honeyInk,
-                          fontWeight: FontWeight.w700,
                         ),
-                      ),
-                      const SizedBox(width: 2),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 16,
-                        color: q.honeyInk,
-                      ),
+                      ],
                     ],
                   ),
                 ],
@@ -175,6 +196,41 @@ class _HeroSaldoState extends State<_HeroSaldo> {
             const SizedBox(width: Spacing.m),
             RepaintBoundary(child: Mascot(mood: widget.mood, size: 64)),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Avatar mini akun di hero — lingkaran warna akun + inisial.
+class _AccountAvatar extends StatelessWidget {
+  const _AccountAvatar({required this.account});
+
+  final Account account;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = SeedColors.categoryColor(account.colorIndex);
+    return Tooltip(
+      message: account.name,
+      child: Container(
+        width: 22,
+        height: 22,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          boxShadow: const [
+            BoxShadow(color: Color(0x334A3A14), offset: Offset(0, 1), blurRadius: 3),
+          ],
+        ),
+        child: Text(
+          account.name.isEmpty ? '?' : account.name[0].toUpperCase(),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ),
     );
