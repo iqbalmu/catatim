@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../capture/pipeline.dart';
 import '../core/dates_id.dart';
 import '../game/hero_card.dart';
+import '../game/mascot.dart';
 import '../game/progress.dart';
 import '../rules/rule_set.dart';
 import '../storage/database.dart';
@@ -357,57 +358,6 @@ class _DirectionalTabViewState extends State<_DirectionalTabView>
 }
 
 
-/// Mark logo Bukuduit: squircle madu dua rona.
-class _BukuduitMark extends StatelessWidget {
-  const _BukuduitMark();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 42,
-      height: 42,
-      decoration: BoxDecoration(
-        color: SeedColors.honey100,
-        borderRadius: BorderRadius.circular(AppRadius.tile),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: 0,
-            top: 0,
-            child: Container(
-              width: 24,
-              height: 24,
-              decoration: const BoxDecoration(
-                color: SeedColors.honeyDeep,
-                borderRadius: BorderRadius.only(
-                  topRight: Radius.circular(AppRadius.tile),
-                  bottomLeft: Radius.circular(AppRadius.cell),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 8,
-            bottom: 8,
-            child: Container(
-              width: 14,
-              height: 14,
-              decoration: const BoxDecoration(
-                color: SeedColors.honeyDeep,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(AppRadius.cell),
-                  bottomRight: Radius.circular(AppRadius.cell),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// Lonceng notifikasi. Badge = ada item perhatian: draf menunggu
 /// keputusan, izin belum aktif, entri tak terbaca, atau bon tua belum
 /// lunas. Dihitung dari data yang sama dengan layar Notifikasi.
@@ -599,7 +549,15 @@ class _BerandaTabState extends State<_BerandaTab> {
       appBar: QuestHeader(
         title: 'Bukuduit',
         subtitle: _todaySubtitle(DateTime.now()),
-        leading: const _BukuduitMark(),
+        // Duit menyapa di header — karakter jadi wajah aplikasi, bukan
+        // mark logo abstrak.
+        leading: ListenableBuilder(
+          listenable: widget.progress,
+          builder: (context, _) => Mascot(
+            mood: widget.progress.latest?.mood ?? MascotMood.idle,
+            size: 52,
+          ),
+        ),
       ),
       // Tombol + tinggal di tengah navbar (dinamis per tab) — tanpa FAB
       // melayang di tab ini.

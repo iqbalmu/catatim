@@ -21,6 +21,9 @@ satu-satunya sumber kebenaran visual; widget-kit hidup di
 5. **Semua warna dari piksel Pochy.** Tidak ada hex baru yang dikarang —
    setiap token punya sumber di karakter (tubuh, koin, syal, mulut,
    bintang pastel).
+6. **Duit adalah wajah, bukan hiasan.** Karakter tampil besar di tempat
+   yang penting (panggung hero, meter batas), menyebut perasaannya, dan
+   menyapa dari header Beranda — bukan menempel kecil di sudut kartu.
 
 ## Palet — "Pastel Pochy" (satu tema; TANPA dark mode — ADR-010)
 
@@ -78,8 +81,8 @@ Angka selalu `FontFeature.tabularFigures()`. Jangan campur font lain.
 ## Komponen
 
 - **Kartu**: `surface`, radius 22, cushion shadow, padding 14–16.
-- **Zona hero**: gradien emas `#FBE7BE → #E8B36B`, radius 24–26, maskot +
-  angka display, teks `ink`. Satu per layar.
+- **Zona hero**: gradien emas `#FBE7BE → #E8B36B`, radius 24–26, cushion
+  shadow, angka display + Duit di panggung, teks `ink`. Satu per layar.
 - **Tombol utama**: gradien emas, teks `#6B4A1E` 800, radius pill,
   spring press. Sekunder: `surface2` teks ink. Teks tombol = aksi nyata
   ("Simpan", bukan "OK").
@@ -91,9 +94,17 @@ Angka selalu `FontFeature.tabularFigures()`. Jangan campur font lain.
   kecil muted, nominal tabular berwarna arah.
 - **Nav melayang**: `surface` radius 22–24, cushion shadow, FAB
   gradien emas menonjol ke atas; item aktif `goldInk`.
-- **Maskot Duit**: ukuran 46–52 (inline/meter mini), 92–104 (hero),
-  120+ (empty state/perayaan). Ekspresi = fungsi kondisi nyata. Tidak
-  menempel di setiap kartu.
+- **Maskot Duit**: karakter kunci aplikasi. Ukuran: **52** (leading
+  header Beranda), **64** (kartu penutup Bon), **76** (meter batas di
+  Rencana), **124** (panggung hero Beranda). Ekspresi = fungsi kondisi
+  nyata. Tidak menempel di setiap kartu.
+- **Panggung maskot** (`MascotStage`): glow radial lembut + bayangan
+  tanah, karakter berdiri di atasnya. Hero memakai glow putih di atas
+  gradien emas; meter Rencana memakai glow `honey50` di atas kartu putih.
+- **Kalimat Duit**: pil `surface` 82% di bawah panggung — satu kalimat
+  pendek perasaannya ("Duit khawatir", "Duit senang", "Duit merayakan!").
+  Mood tanpa render 3D (idle, sleepy) dilukis vektor sebagai Pochy yang
+  sama — warna burlap/tali/syal/koin dari palet ADR-010.
 
 ## Motion
 
@@ -119,9 +130,11 @@ transaksi pertamamu").
 
 ## Alur halaman (disepakati 2026-10-20, mockup 4 halaman)
 
-- **Beranda**: hero saldo + avatar mini akun (tap → Kelola Akun) +
-  maskot; kartu pace "sisa aman hari ini" + chip streak; 3 transaksi
-  terakhir (jembatan ke Rekap); insight sparkline + 3 kategori.
+- **Beranda**: header menyapa dengan Duit (leading 52); hero saldo —
+  Duit berdiri di panggung (124) dengan pil kalimat, saldo + avatar mini
+  akun (tap → Kelola Akun) di kiri; kartu pace "sisa aman hari ini" +
+  chip streak; 3 transaksi terakhir (jembatan ke Rekap); insight
+  sparkline + 3 kategori.
 - **Rekap**: segmen **Donat default**; toggle Keluar/Masuk di dalam
   kartu donat; delta vs bulan lalu; kartu "keluar terbesar" per
   merchant. Segmen lain: Transaksi, Tren, Kalender.

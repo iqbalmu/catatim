@@ -8,18 +8,29 @@ enum MascotMood { idle, happy, sleepy, celebrate, worried }
 
 /// Peta mood → aset raster (render 3D "Pochy", dikompres WebP).
 ///
-/// Mood tanpa aset ([MascotMood.idle], [MascotMood.sleepy]) jatuh ke
-/// painter vektor lama supaya tidak ada mood yang hilang.
+/// Mood tanpa aset ([MascotMood.idle], [MascotMood.sleepy]) dilukis
+/// vektor sebagai Pochy yang sama — supaya karakter ini tetap satu
+/// wajah di semua mood, bukan dua gaya berbeda.
 const Map<MascotMood, String> _assetFor = {
   MascotMood.happy: 'assets/mascot/mascot_happy.webp',
   MascotMood.celebrate: 'assets/mascot/mascot_celebrate.webp',
   MascotMood.worried: 'assets/mascot/mascot_worried.webp',
 };
 
-/// Maskot "Duit".
+/// Kalimat pendek si Duit — dipakai di bawah panggung maskot.
+String mascotCaption(MascotMood mood) => switch (mood) {
+  MascotMood.celebrate => 'Duit merayakan!',
+  MascotMood.happy => 'Duit senang',
+  MascotMood.sleepy => 'Duit mengantuk',
+  MascotMood.worried => 'Duit khawatir',
+  MascotMood.idle => 'Duit tenang',
+};
+
+/// Maskot "Duit" — Pochy, karung uang.
 ///
 /// Mood yang punya aset 3D tampil sebagai gambar dengan bob halus
-/// (hormat ke `disableAnimations`); mood lain memakai painter vektor.
+/// (hormat ke `disableAnimations`); mood lain dilukis vektor dengan
+/// bentuk & warna Pochy yang sama.
 class Mascot extends StatefulWidget {
   const Mascot({super.key, required this.mood, this.size = 72});
 
@@ -44,7 +55,6 @@ class _MascotState extends State<Mascot> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final noMotion = MediaQuery.disableAnimationsOf(context);
     final asset = _assetFor[widget.mood];
 
     if (asset != null) {
@@ -54,8 +64,10 @@ class _MascotState extends State<Mascot> with SingleTickerProviderStateMixin {
         gaplessPlayback: true,
         width: widget.size,
         height: widget.size,
+        // Aset hilang → tetap pakai lukisan vektor, bukan kotak kosong.
+        errorBuilder: (context, error, stack) => _vector(context),
       );
-      if (noMotion) return image;
+      if (MediaQuery.disableAnimationsOf(context)) return image;
       // Bob pelan (amplitudo 2% sisi) — meniru vektor.
       return AnimatedBuilder(
         animation: _ctrl,
@@ -67,66 +79,114 @@ class _MascotState extends State<Mascot> with SingleTickerProviderStateMixin {
       );
     }
 
-    if (noMotion) {
+    return _vector(context);
+  }
+
+  Widget _vector(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) {
       return CustomPaint(
         size: Size.square(widget.size),
-        painter: _MascotPainter(
-          mood: widget.mood,
-          t: 0.25,
-          animate: false,
-          ink: Theme.of(context).colorScheme.onSurface,
-        ),
+        painter: _PochyPainter(mood: widget.mood, t: 0.25, animate: false),
       );
     }
     return AnimatedBuilder(
       animation: _ctrl,
       builder: (context, _) => CustomPaint(
         size: Size.square(widget.size),
-        painter: _MascotPainter(
-          mood: widget.mood,
-          t: _ctrl.value,
-          animate: true,
-          ink: Theme.of(context).colorScheme.onSurface,
-        ),
+        painter: _PochyPainter(mood: widget.mood, t: _ctrl.value, animate: true),
       ),
     );
   }
 }
 
-class _MascotPainter extends CustomPainter {
-  /// Rentang tinta vertikal per mood (fraksi tinggi kanvas): tepi atas
-  /// (telinga / Zzz / keringat) dan tepi bawah (kaki). Dipakai menormalisasi
-  /// framing agar tiap mood mengisi kanvas sama besar.
-  static const _inkTop = {
-    MascotMood.idle: 0.30,
-    MascotMood.happy: 0.30,
-    MascotMood.sleepy: 0.06,
-    MascotMood.worried: 0.29,
-    MascotMood.celebrate: 0.30,
-  };
-  static const _inkBottom = 0.875;
+/// Panggung maskot: glow lembut + bayangan tanah, karakter berdiri di
+/// atasnya. Dipakai di hero & meter agar Duit terasa "berpanggung",
+/// bukan tempelan kecil di sudut kartu.
+class MascotStage extends StatelessWidget {
+  const MascotStage({
+    super.key,
+    required this.mood,
+    this.size = 124,
+    this.glow = SeedColors.surface,
+  });
 
-  /// Setengah lebar tinta maksimum (fraksi lebar kanvas) — agar ornamen
-  /// horizontal (konfeti, Zzz) tak terpotong kanvas.
-  static const _inkHalfW = {
-    MascotMood.idle: 0.243,
-    MascotMood.happy: 0.243,
-    MascotMood.sleepy: 0.463,
-    MascotMood.worried: 0.304,
-    MascotMood.celebrate: 0.36,
-  };
+  final MascotMood mood;
+  final double size;
 
-  _MascotPainter({
+  /// Warna glow panggung — pemanggil pilih kontras dengan kartu induknya.
+  final Color glow;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size * 1.08,
+      height: size + 16,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: [
+          // Glow panggung — spotlight lembut di belakang karakter.
+          Positioned(
+            bottom: 2,
+            child: Container(
+              width: size * 0.94,
+              height: size * 0.94,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [glow.withValues(alpha: 0.8), glow.withValues(alpha: 0)],
+                  stops: const [0.5, 1],
+                ),
+              ),
+            ),
+          ),
+          // Bayangan tanah — tumit karakter ke panggung.
+          Positioned(
+            bottom: 0,
+            child: Container(
+              width: size * 0.5,
+              height: size * 0.1,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0x3D3E2214),
+                    const Color(0x003E2214),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Mascot(mood: mood, size: size),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Pochy versi vektor: karung burlap, tali cokelat, syal teal, koin emas.
+/// Warna diambil dari palet ADR-010 supaya sama dengan render 3D.
+class _PochyPainter extends CustomPainter {
+  _PochyPainter({
     required this.mood,
     required this.t,
     required this.animate,
-    required this.ink,
   });
 
   final MascotMood mood;
   final double t;
   final bool animate;
-  final Color ink;
+
+  static const _burlap = Color(0xFFE1BC94);
+  static const _burlapDeep = Color(0xFFBF946F);
+  static const _rope = Color(0xFF3E2214);
+  static const _scarf = Color(0xFF7FBDB1);
+  static const _scarfWarm = Color(0xFFF2913D);
+  static const _coin = Color(0xFFF1A23A);
+  static const _coinDeep = Color(0xFFC46913);
+  static const _blush = Color(0xFFF2A69E);
 
   static const _confetti = [
     Color(0xFFE07A5F),
@@ -140,83 +200,222 @@ class _MascotPainter extends CustomPainter {
     final s = size.shortestSide;
     final cx = size.width / 2;
 
-    final amp = mood == MascotMood.sleepy ? s * 0.012 : s * 0.02;
+    final amp = mood == MascotMood.sleepy ? s * 0.010 : s * 0.018;
     final bob = animate ? math.sin(t * 2 * math.pi) * amp : 0.0;
-    final bodyCy = size.height * 0.58 + bob;
+    final breathe = animate ? 1 + 0.025 * math.sin(t * 2 * math.pi) : 1.0;
 
-    final breathe = animate ? 1 + 0.03 * math.sin(t * 2 * math.pi) : 1.0;
-    final bodyW = s * 0.54;
-    final bodyH = s * 0.44 * breathe;
-    final bodyRect = Rect.fromCenter(
-      center: Offset(cx, bodyCy),
-      width: bodyW,
-      height: bodyH,
-    );
+    // Kerangka karakter (fraksi sisi kanvas).
+    final knotTop = s * 0.11;
+    final neckY = s * 0.28;
+    final neckHalf = s * 0.085;
+    final bodyHalf = s * 0.26;
+    final midY = s * 0.56;
+    final bottomY = s * 0.84;
+
+    canvas.save();
+    canvas.translate(cx, size.height / 2);
+    canvas.scale(breathe);
+    canvas.translate(-cx, -size.height / 2);
+    canvas.translate(0, bob);
 
     final stroke = Paint()
-      ..color = ink
+      ..color = _rope
       ..style = PaintingStyle.stroke
-      ..strokeWidth = s * 0.035
+      ..strokeWidth = s * 0.026
+      ..strokeJoin = StrokeJoin.round
       ..strokeCap = StrokeCap.round;
 
-    // Normalisasi framing: petakan rentang tinta mood ini ke [0.03, 0.97].
-    // Skala seragam (tanpa distorsi); dibatasi agar muat horizontal.
-    final inkTop = _inkTop[mood]!;
-    final vFit = 0.94 / (_inkBottom - inkTop);
-    final hFit = 1.0 / (2 * _inkHalfW[mood]!);
-    final frameScale = vFit < hFit ? vFit : hFit;
-    final frameCy = (inkTop + _inkBottom) / 2;
-    canvas.save();
-    canvas.translate(cx, size.height * 0.5);
-    canvas.scale(frameScale);
-    canvas.translate(-cx, -size.height * frameCy);
-    // Telinga
-    for (final dx in [-0.16, 0.16]) {
-      final ear = Rect.fromCenter(
-        center: Offset(cx + dx * s, bodyRect.top),
-        width: s * 0.13,
-        height: s * 0.09,
-      );
-      canvas.drawOval(ear, Paint()..color = SeedColors.honey);
-      canvas.drawOval(ear, stroke);
-    }
-
-    // Badan
-    canvas.drawOval(bodyRect, Paint()..color = SeedColors.honey);
-    canvas.drawOval(bodyRect, stroke);
-
     // Kaki
-    for (final dx in [-0.13, 0.13]) {
-      canvas.drawCircle(
-        Offset(cx + dx * s, bodyRect.bottom + s * 0.01),
-        s * 0.065,
-        Paint()..color = SeedColors.honey,
+    for (final dx in [-bodyHalf * 0.36, bodyHalf * 0.36]) {
+      _blob(
+        canvas,
+        Offset(cx + dx, bottomY + s * 0.022),
+        s * 0.105,
+        s * 0.062,
+        _burlap,
+        stroke,
       );
     }
 
-    final eyeY = bodyCy - bodyH * 0.10;
-    final eyeDx = bodyW * 0.18;
-    final eyeR = s * 0.028;
-    final dot = Paint()..color = ink;
+    // Lengan kiri (besar, di belakang badan)
+    _blob(
+      canvas,
+      Offset(cx - bodyHalf * 0.94, midY - s * 0.02),
+      s * 0.085,
+      s * 0.13,
+      _burlap,
+      stroke,
+    );
+    // Lengan kanan (pegang koin)
+    _blob(
+      canvas,
+      Offset(cx + bodyHalf * 0.96, midY - s * 0.05),
+      s * 0.085,
+      s * 0.13,
+      _burlap,
+      stroke,
+    );
+
+    // Badan: karung — leher sempit, perut melebar, dasar bulat.
+    final bag = Path()
+      ..moveTo(cx - neckHalf, neckY)
+      ..lineTo(cx + neckHalf, neckY)
+      ..cubicTo(
+        cx + neckHalf * 2.0,
+        neckY + s * 0.06,
+        cx + bodyHalf,
+        midY - s * 0.12,
+        cx + bodyHalf,
+        midY,
+      )
+      ..cubicTo(
+        cx + bodyHalf,
+        midY + s * 0.16,
+        cx + bodyHalf * 0.74,
+        bottomY,
+        cx,
+        bottomY,
+      )
+      ..cubicTo(
+        cx - bodyHalf * 0.74,
+        bottomY,
+        cx - bodyHalf,
+        midY + s * 0.16,
+        cx - bodyHalf,
+        midY,
+      )
+      ..cubicTo(
+        cx - bodyHalf,
+        midY - s * 0.12,
+        cx - neckHalf * 2.0,
+        neckY + s * 0.06,
+        cx - neckHalf,
+        neckY,
+      )
+      ..close();
+    canvas.drawPath(
+      bag,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [_burlap, _burlapDeep],
+        ).createShader(
+          Rect.fromLTRB(cx - bodyHalf, knotTop, cx + bodyHalf, bottomY),
+        ),
+    );
+    canvas.drawPath(bag, stroke);
+
+    // Simpul ikat atas
+    final knot = Rect.fromCenter(
+      center: Offset(cx, (knotTop + neckY) / 2),
+      width: neckHalf * 1.7,
+      height: neckY - knotTop,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(knot, Radius.circular(s * 0.035)),
+      Paint()..color = _burlapDeep,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(knot, Radius.circular(s * 0.035)),
+      stroke,
+    );
+
+    // Tali cokelat mengikat leher
+    final ropeBand = Rect.fromCenter(
+      center: Offset(cx, neckY + s * 0.012),
+      width: neckHalf * 2.7,
+      height: s * 0.052,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(ropeBand, Radius.circular(s * 0.026)),
+      Paint()..color = _rope,
+    );
+
+    // Syal teal + garis hangat, dengan ujung menjuntai
+    final scarfY = neckY + s * 0.085;
+    final scarfRect = Rect.fromCenter(
+      center: Offset(cx, scarfY),
+      width: neckHalf * 3.7,
+      height: s * 0.078,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(scarfRect, Radius.circular(s * 0.032)),
+      Paint()..color = _scarf,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: Offset(cx, scarfY),
+          width: neckHalf * 3.7,
+          height: s * 0.022,
+        ),
+        Radius.circular(s * 0.011),
+      ),
+      Paint()..color = _scarfWarm,
+    );
+    final tail = Rect.fromCenter(
+      center: Offset(cx + neckHalf * 1.35, scarfY + s * 0.085),
+      width: s * 0.052,
+      height: s * 0.115,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(tail, Radius.circular(s * 0.026)),
+      Paint()..color = _scarf,
+    );
+
+    // Koin emas di tangan
+    final coinCenter = Offset(cx + bodyHalf * 0.98, midY - s * 0.14);
+    final coinR = s * 0.095;
+    canvas.drawCircle(coinCenter, coinR, Paint()..color = _coin);
+    canvas.drawCircle(
+      coinCenter,
+      coinR,
+      Paint()
+        ..color = _coinDeep
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = s * 0.018,
+    );
+    canvas.drawCircle(
+      coinCenter,
+      coinR * 0.42,
+      Paint()..color = _coinDeep.withValues(alpha: 0.55),
+    );
+
+    // Wajah
+    final eyeY = midY - s * 0.14;
+    final eyeDx = s * 0.088;
+    final eyeR = s * 0.031;
+    final dot = Paint()..color = _rope;
+
+    for (final dx in [-eyeDx, eyeDx]) {
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(cx + dx * 1.42, eyeY + s * 0.075),
+          width: s * 0.07,
+          height: s * 0.04,
+        ),
+        Paint()..color = _blush.withValues(alpha: 0.55),
+      );
+    }
+
     switch (mood) {
       case MascotMood.idle:
-        canvas.drawCircle(Offset(cx - eyeDx, eyeY), eyeR, dot);
-        canvas.drawCircle(Offset(cx + eyeDx, eyeY), eyeR, dot);
+        _eyesOpen(canvas, cx, eyeY, eyeDx, eyeR, dot);
         _arc(
           canvas,
-          Offset(cx, bodyCy + bodyH * 0.10),
-          bodyW * 0.14,
-          0.25,
+          Offset(cx, eyeY + s * 0.075),
+          s * 0.055,
+          0.55,
           stroke,
         );
       case MascotMood.happy:
-        canvas.drawCircle(Offset(cx - eyeDx, eyeY), eyeR, dot);
-        canvas.drawCircle(Offset(cx + eyeDx, eyeY), eyeR, dot);
+        _eyesOpen(canvas, cx, eyeY, eyeDx, eyeR, dot);
         _arc(
           canvas,
-          Offset(cx, bodyCy + bodyH * 0.08),
-          bodyW * 0.18,
-          0.7,
+          Offset(cx, eyeY + s * 0.07),
+          s * 0.07,
+          0.75,
           stroke,
         );
       case MascotMood.sleepy:
@@ -227,41 +426,44 @@ class _MascotPainter extends CustomPainter {
             stroke,
           );
         }
-        _arc(
-          canvas,
-          Offset(cx, bodyCy + bodyH * 0.16),
-          bodyW * 0.08,
-          -0.5,
-          stroke,
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: Offset(cx, eyeY + s * 0.085),
+            width: s * 0.045,
+            height: s * 0.055,
+          ),
+          dot,
         );
-        _drawZzz(canvas, cx + bodyW * 0.38, bodyRect.top - s * 0.06, s);
+        _drawZzz(canvas, cx + bodyHalf * 1.05, neckY - s * 0.02, s);
       case MascotMood.worried:
-        // Alis miring ke dalam + mata sayu + mulut cemberut + keringat.
+        _eyesOpen(canvas, cx, eyeY, eyeDx, eyeR, dot);
+        // Alis miring ke dalam
         for (final dx in [-eyeDx, eyeDx]) {
-          final inner = cx + dx - (dx.isNegative ? -1 : 1) * eyeR * 0.7;
+          final inner = cx + dx + (dx.isNegative ? eyeR * 0.7 : -eyeR * 0.7);
           canvas.drawLine(
-            Offset(cx + dx - eyeR * (dx.isNegative ? 1 : -1), eyeY - eyeR * 2),
+            Offset(cx + dx - (dx.isNegative ? -eyeR : eyeR), eyeY - eyeR * 2.1),
             Offset(inner, eyeY - eyeR * 0.9),
             stroke,
           );
-          canvas.drawCircle(Offset(cx + dx, eyeY + eyeR * 0.4), eyeR, dot);
         }
         _arc(
           canvas,
-          Offset(cx, bodyCy + bodyH * 0.26),
-          bodyW * 0.11,
-          -0.6,
+          Offset(cx, eyeY + s * 0.135),
+          s * 0.06,
+          -0.55,
           stroke,
         );
-        // Tetes keringat di pelipis.
-        final sweatY =
-            bodyRect.top - s * 0.02 + (animate ? math.sin(t * 4 * math.pi) * s * 0.012 : 0);
-        final sweat = Rect.fromCenter(
-          center: Offset(cx - bodyW * 0.52, sweatY),
-          width: s * 0.045,
-          height: s * 0.07,
+        // Tetes keringat di pelipis
+        final sweatY = eyeY - s * 0.02 +
+            (animate ? math.sin(t * 4 * math.pi) * s * 0.012 : 0);
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: Offset(cx - bodyHalf * 1.05, sweatY),
+            width: s * 0.045,
+            height: s * 0.07,
+          ),
+          Paint()..color = const Color(0x8C7FBDB1),
         );
-        canvas.drawOval(sweat, Paint()..color = ink.withValues(alpha: 0.55));
       case MascotMood.celebrate:
         for (final dx in [-eyeDx, eyeDx]) {
           _arc(
@@ -273,23 +475,62 @@ class _MascotPainter extends CustomPainter {
             flip: true,
           );
         }
-        canvas.drawCircle(Offset(cx, bodyCy + bodyH * 0.14), s * 0.035, dot);
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: Offset(cx, eyeY + s * 0.105),
+            width: s * 0.075,
+            height: s * 0.085,
+          ),
+          dot,
+        );
         // Konfeti mengorbit pelan
-        final colors = Paint();
+        final confettiPaint = Paint();
         for (var i = 0; i < 6; i++) {
           final angle = (animate ? t * 2 * math.pi : 0) + i * math.pi / 3;
-          colors.color = _confetti[i % _confetti.length];
+          confettiPaint.color = _confetti[i % _confetti.length];
           canvas.drawCircle(
             Offset(
-              cx + math.cos(angle) * bodyW * 0.62,
-              bodyCy + math.sin(angle) * bodyH * 0.85,
+              cx + math.cos(angle) * bodyHalf * 1.28,
+              midY + math.sin(angle) * s * 0.2,
             ),
-            s * 0.025,
-            colors,
+            s * 0.026,
+            confettiPaint,
           );
         }
     }
+
     canvas.restore();
+  }
+
+  void _eyesOpen(
+    Canvas canvas,
+    double cx,
+    double eyeY,
+    double eyeDx,
+    double eyeR,
+    Paint dot,
+  ) {
+    for (final dx in [-eyeDx, eyeDx]) {
+      canvas.drawCircle(Offset(cx + dx, eyeY), eyeR, dot);
+      canvas.drawCircle(
+        Offset(cx + dx - eyeR * 0.3, eyeY - eyeR * 0.35),
+        eyeR * 0.32,
+        Paint()..color = SeedColors.surface,
+      );
+    }
+  }
+
+  void _blob(
+    Canvas canvas,
+    Offset center,
+    double w,
+    double h,
+    Color fill,
+    Paint stroke,
+  ) {
+    final rect = Rect.fromCenter(center: center, width: w, height: h);
+    canvas.drawOval(rect, Paint()..color = fill);
+    canvas.drawOval(rect, stroke);
   }
 
   void _arc(
@@ -313,7 +554,7 @@ class _MascotPainter extends CustomPainter {
           text: 'z',
           style: TextStyle(
             fontSize: s * (0.07 + i * 0.03),
-            color: ink.withValues(alpha: 0.8 - i * 0.22),
+            color: _rope.withValues(alpha: 0.8 - i * 0.22),
           ),
         ),
         textDirection: TextDirection.ltr,
@@ -323,6 +564,6 @@ class _MascotPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _MascotPainter oldDelegate) =>
-      oldDelegate.mood != mood || oldDelegate.t != t || oldDelegate.ink != ink;
+  bool shouldRepaint(covariant _PochyPainter oldDelegate) =>
+      oldDelegate.mood != mood || oldDelegate.t != t;
 }

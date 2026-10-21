@@ -442,7 +442,7 @@ class _BonAllSettledCard extends StatelessWidget {
       child: Row(
         children: [
           const RepaintBoundary(
-            child: Mascot(mood: MascotMood.celebrate, size: 46),
+            child: Mascot(mood: MascotMood.celebrate, size: 64),
           ),
           const SizedBox(width: Spacing.m),
           Expanded(

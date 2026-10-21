@@ -105,7 +105,12 @@ class _HeroSaldoState extends State<_HeroSaldo> {
     return GestureDetector(
       onTap: widget.onTap,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(Spacing.l, 24, Spacing.l, 24),
+        padding: const EdgeInsets.fromLTRB(
+          Spacing.l,
+          Spacing.m,
+          Spacing.m,
+          Spacing.m,
+        ),
         // Catatan: avatar akun memakai warna kategori dari colorIndex
         // akun — bahasa data, tidak diubah palet (ADR-010).
         decoration: BoxDecoration(
@@ -113,6 +118,20 @@ class _HeroSaldoState extends State<_HeroSaldo> {
             colors: [SeedColors.honeyBright, SeedColors.honey],
           ),
           borderRadius: BorderRadius.circular(24),
+          // Cushion shadow yang sama dengan kartu Quest — hero melayang
+          // di atas latar, bukan tempelan datar.
+          boxShadow: [
+            BoxShadow(
+              color: q.shadow,
+              offset: const Offset(0, 10),
+              blurRadius: 26,
+            ),
+            BoxShadow(
+              color: const Color(0x174A3A14),
+              offset: const Offset(0, -1),
+              blurRadius: 2,
+            ),
+          ],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -193,8 +212,41 @@ class _HeroSaldoState extends State<_HeroSaldo> {
                 ],
               ),
             ),
-            const SizedBox(width: Spacing.m),
-            RepaintBoundary(child: Mascot(mood: widget.mood, size: 64)),
+            const SizedBox(width: Spacing.s),
+            // Duit berdiri di panggung — karakter jadi wajah kartu,
+            // bukan ikon kecil di sudut.
+            RepaintBoundary(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  MascotStage(
+                    mood: widget.mood,
+                    size: 124,
+                    // Glow putih di atas gradien madu.
+                    glow: SeedColors.surface,
+                  ),
+                  const SizedBox(height: Spacing.xs),
+                  // Kalimat Duit — pil bubble supaya suara karakter terbaca.
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: SeedColors.surface.withValues(alpha: 0.82),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                    child: Text(
+                      mascotCaption(widget.mood),
+                      style: context.qSmall(11).copyWith(
+                        color: q.honeyInk,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

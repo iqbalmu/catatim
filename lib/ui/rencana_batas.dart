@@ -1116,8 +1116,14 @@ class _BatasUtamaCard extends StatelessWidget {
           ),
           const SizedBox(width: Spacing.m),
           // Maskot = meter (ADR-007): ekspresi mengikuti kondisi nyata.
+          // Berdiri di panggung supaya jadi penanda utama kartu, bukan
+          // ikon kecil di pinggir.
           RepaintBoundary(
-            child: Mascot(mood: over ? MascotMood.worried : mood, size: 56),
+            child: MascotStage(
+              mood: over ? MascotMood.worried : mood,
+              size: 76,
+              glow: SeedColors.honey50,
+            ),
           ),
         ],
       ),
