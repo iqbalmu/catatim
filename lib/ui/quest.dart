@@ -354,6 +354,7 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
     this.showBack = false,
     this.leading,
     this.actions = const [],
+    this.compact = false,
   });
 
   final String title;
@@ -361,6 +362,10 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
   final bool showBack;
   final Widget? leading;
   final List<Widget> actions;
+
+  /// Judul kecil tanpa tanggal — dipakai di Beranda yang puncaknya
+  /// dipakai panggung Duit, jadi bagian atas harus lapang.
+  final bool compact;
 
   @override
   Size get preferredSize => const Size.fromHeight(76);
@@ -396,8 +401,16 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: context.qTitle(24)),
-                  if (subtitle != null)
+                  Text(
+                    title,
+                    style: compact
+                        ? context.qSmall(13).copyWith(
+                            color: context.q.muted,
+                            fontWeight: FontWeight.w800,
+                          )
+                        : context.qTitle(24),
+                  ),
+                  if (!compact && subtitle != null)
                     Text(subtitle!, style: context.qSmall()),
                 ],
               ),

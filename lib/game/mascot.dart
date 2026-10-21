@@ -108,6 +108,7 @@ class MascotStage extends StatelessWidget {
     required this.mood,
     this.size = 124,
     this.glow = SeedColors.surface,
+    this.glowStrength = 0.8,
   });
 
   final MascotMood mood;
@@ -115,6 +116,9 @@ class MascotStage extends StatelessWidget {
 
   /// Warna glow panggung — pemanggil pilih kontras dengan kartu induknya.
   final Color glow;
+
+  /// Kekuatan glow (0–1) — atur sendiri untuk latar yang sudah berwarna.
+  final double glowStrength;
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +137,10 @@ class MascotStage extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [glow.withValues(alpha: 0.8), glow.withValues(alpha: 0)],
+                  colors: [
+                    glow.withValues(alpha: glowStrength),
+                    glow.withValues(alpha: 0),
+                  ],
                   stops: const [0.5, 1],
                 ),
               ),

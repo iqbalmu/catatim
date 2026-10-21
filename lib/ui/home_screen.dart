@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../capture/pipeline.dart';
-import '../core/dates_id.dart';
-import '../game/hero_card.dart';
-import '../game/mascot.dart';
+import '../game/duit_stage.dart';
 import '../game/progress.dart';
 import '../rules/rule_set.dart';
 import '../storage/database.dart';
@@ -478,11 +476,9 @@ class _HomeMenu extends StatelessWidget {
   }
 }
 
-String _todaySubtitle(DateTime now) => idFullDate(now);
-
-/// Beranda ala mock pastel: hero saldo + kartu batas 3 kolom + dua kartu
-/// arus + disiplin bulan berjalan + transaksi terbaru. Warna tetap palet
-/// Quest; pencatatan via tombol + tengah navbar.
+/// Beranda ala mock pastel: panggung Duit di atas, lalu kartu uang, arus
+/// bulan, insight 7 hari, dan transaksi terbaru. Warna tetap palet Quest;
+/// pencatatan via tombol + tengah navbar.
 class _BerandaTab extends StatefulWidget {
   const _BerandaTab({
     required this.repository,
@@ -548,16 +544,9 @@ class _BerandaTabState extends State<_BerandaTab> {
       backgroundColor: context.q.bg,
       appBar: QuestHeader(
         title: 'Bukuduit',
-        subtitle: _todaySubtitle(DateTime.now()),
-        // Duit menyapa di header — karakter jadi wajah aplikasi, bukan
-        // mark logo abstrak.
-        leading: ListenableBuilder(
-          listenable: widget.progress,
-          builder: (context, _) => Mascot(
-            mood: widget.progress.latest?.mood ?? MascotMood.idle,
-            size: 52,
-          ),
-        ),
+        // Puncak layar dipakai panggung Duit — header tinggal judul kecil
+        // supaya bagian atas lapang (mockup L1).
+        compact: true,
       ),
       // Tombol + tinggal di tengah navbar (dinamis per tab) — tanpa FAB
       // melayang di tab ini.
@@ -569,9 +558,13 @@ class _BerandaTabState extends State<_BerandaTab> {
           Spacing.m + MediaQuery.paddingOf(context).bottom,
         ),
         children: [
-          GameHeroCard(
-            service: widget.progress,
+          // Panggung Duit: karakter di tengah, kalimatnya di bawah.
+          DuitStage(service: widget.progress),
+          const SizedBox(height: Spacing.m),
+          UangCard(
             repository: widget.repository,
+            progress: widget.progress,
+            onTap: widget.onOpenRencanaBatas,
             onTapAccounts: () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -584,32 +577,11 @@ class _BerandaTabState extends State<_BerandaTab> {
             ),
           ),
           const SizedBox(height: Spacing.m),
-          ListenableBuilder(
-            listenable: widget.progress,
-            builder: (context, _) {
-              final latest = widget.progress.latest;
-              final lines = latest?.snapshot.lines;
-              final daily = lines != null && lines.isNotEmpty ? lines[0] : null;
-              final weekly = lines != null && lines.length > 1
-                  ? lines[1]
-                  : null;
-              final monthly = lines != null && lines.length > 2
-                  ? lines[2]
-                  : null;
-
-              return BatasCard(
-                dailyLimit: daily?.limit,
-                dailyUsed: daily?.used ?? 0,
-                weeklyLimit: weekly?.limit,
-                weeklyUsed: weekly?.used ?? 0,
-                monthlyLimit: monthly?.limit,
-                monthlyUsed: monthly?.used ?? 0,
-                // Streak menyatu di kartu pace (mockup v2.1) — kartu
-                // Disiplin terpisah dipensiunkan dari Beranda.
-                streakDays: latest?.streakDays ?? 0,
-                onTap: widget.onOpenRencanaBatas,
-              );
-            },
+          ArusCard(service: widget.progress, onTap: widget.onOpenRekap),
+          const SizedBox(height: Spacing.m),
+          InsightTujuhHariCard(
+            repository: widget.repository,
+            onTap: widget.onOpenRekap,
           ),
           const SizedBox(height: Spacing.m),
           TransaksiTerbaruCard(
@@ -617,13 +589,6 @@ class _BerandaTabState extends State<_BerandaTab> {
             progress: widget.progress,
             onSeeAll: widget.onOpenRekap,
           ),
-          const SizedBox(height: Spacing.m),
-          InsightTujuhHariCard(
-            repository: widget.repository,
-            onTap: widget.onOpenRekap,
-          ),
-          const SizedBox(height: Spacing.m),
-          MiniInOut(service: widget.progress, onTap: widget.onOpenRekap),
           // Clearance navbar melayang di atas konten (extendBody).
           const SizedBox(height: 96),
         ],

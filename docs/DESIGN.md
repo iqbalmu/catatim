@@ -81,8 +81,9 @@ Angka selalu `FontFeature.tabularFigures()`. Jangan campur font lain.
 ## Komponen
 
 - **Kartu**: `surface`, radius 22, cushion shadow, padding 14–16.
-- **Zona hero**: gradien emas `#FBE7BE → #E8B36B`, radius 24–26, cushion
-  shadow, angka display + Duit di panggung, teks `ink`. Satu per layar.
+- **Panggung atas**: ruang hangat `honey50` yang memudar ke bawah, radius
+  24, tanpa kartu dan tanpa bayangan — karakter berdiri di dalamnya.
+  Satu per layar.
 - **Tombol utama**: gradien emas, teks `#6B4A1E` 800, radius pill,
   spring press. Sekunder: `surface2` teks ink. Teks tombol = aksi nyata
   ("Simpan", bukan "OK").
@@ -94,17 +95,28 @@ Angka selalu `FontFeature.tabularFigures()`. Jangan campur font lain.
   kecil muted, nominal tabular berwarna arah.
 - **Nav melayang**: `surface` radius 22–24, cushion shadow, FAB
   gradien emas menonjol ke atas; item aktif `goldInk`.
-- **Maskot Duit**: karakter kunci aplikasi. Ukuran: **52** (leading
-  header Beranda), **64** (kartu penutup Bon), **76** (meter batas di
-  Rencana), **124** (panggung hero Beranda). Ekspresi = fungsi kondisi
-  nyata. Tidak menempel di setiap kartu.
+- **Maskot Duit**: karakter kunci aplikasi. Ukuran: **64** (kartu penutup
+  Bon), **76** (meter batas di Rencana), **172** (panggung Beranda).
+  Ekspresi = fungsi kondisi nyata. Tidak menempel di setiap kartu.
+- **Panggung Duit** (`DuitStage`): ruang hangat di puncak Beranda —
+  gradien `honey50` yang memudar ke bawah, Duit **172** berdiri di tengah
+  dengan glow + bayangan tanah, kalimatnya di bawah karakter. Bukan
+  kartu: bagian atas harus lapang, kartu mulai dari bawah panggung.
 - **Panggung maskot** (`MascotStage`): glow radial lembut + bayangan
-  tanah, karakter berdiri di atasnya. Hero memakai glow putih di atas
-  gradien emas; meter Rencana memakai glow `honey50` di atas kartu putih.
-- **Kalimat Duit**: pil `surface` 82% di bawah panggung — satu kalimat
-  pendek perasaannya ("Duit khawatir", "Duit senang", "Duit merayakan!").
-  Mood tanpa render 3D (idle, sleepy) dilukis vektor sebagai Pochy yang
-  sama — warna burlap/tali/syal/koin dari palet ADR-010.
+  tanah, karakter berdiri di atasnya. Panggung Beranda memakai glow
+  `honey100` di atas ruang hangat; meter Rencana memakai glow `honey50`
+  di atas kartu putih.
+- **Kalimat Duit**: satu kalimat pendek di bawah panggung, warna
+  `goldInk` ("Duit khawatir — Harian terlampaui (120%)"). Mood tanpa
+  render 3D (idle, sleepy) dilukis vektor sebagai Pochy yang sama —
+  warna burlap/tali/syal/koin dari palet ADR-010.
+- **Kartu uang** (`UangCard`): satu grid, label kiri nilai kanan —
+  baris 1 saldo (+ avatar akun, tap → Kelola Akun), hairline, baris 2
+  "sisa aman hari ini" + chip streak + bar progres, baris 3 "terpakai" +
+  chip sisa batas mingguan/bulanan. Tap kartu → Rencana·Batas.
+- **Kartu arus** (`ArusCard`): "ARUS BULAN INI" dengan dua kolom
+  (Keluar | Masuk) + pembatas vertikal; delta vs bulan lalu jadi chip
+  kecil di samping label. Tap → Rekap.
 
 ## Motion
 
@@ -130,11 +142,13 @@ transaksi pertamamu").
 
 ## Alur halaman (disepakati 2026-10-20, mockup 4 halaman)
 
-- **Beranda**: header menyapa dengan Duit (leading 52); hero saldo —
-  Duit berdiri di panggung (124) dengan pil kalimat, saldo + avatar mini
-  akun (tap → Kelola Akun) di kiri; kartu pace "sisa aman hari ini" +
-  chip streak; 3 transaksi terakhir (jembatan ke Rekap); insight
-  sparkline + 3 kategori.
+- **Beranda**: header ringkas (judul kecil tanpa tanggal) → **panggung
+  Duit** (ruang hangat, Duit 172 di tengah, kalimatnya di bawah) →
+  **kartu uang** (saldo + avatar akun tap → Kelola Akun, hairline, sisa
+  aman hari ini + chip streak + bar, chip batas mingguan/bulanan) →
+  **kartu arus** (Keluar | Masuk) → **strip insight 7 hari** (7 batang +
+  3 kategori teratas) → **kartu transaksi terbaru** (3 baris). Jarak
+  antar blok selalu 16dp.
 - **Rekap**: segmen **Donat default**; toggle Keluar/Masuk di dalam
   kartu donat; delta vs bulan lalu; kartu "keluar terbesar" per
   merchant. Segmen lain: Transaksi, Tren, Kalender.

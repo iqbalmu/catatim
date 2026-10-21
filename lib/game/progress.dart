@@ -40,6 +40,7 @@ class ProgressSummary {
     required this.recordedToday,
     required this.mood,
     required this.moodLine,
+    required this.moodCaption,
     required this.snapshot,
     required this.monthIn,
     required this.monthOut,
@@ -57,6 +58,9 @@ class ProgressSummary {
   final bool recordedToday;
   final MascotMood mood;
   final String moodLine;
+
+  /// Kalimat pendek si Duit — dipakai di bawah panggung maskot.
+  final String moodCaption;
   final BudgetSnapshot snapshot;
   final int monthIn;
   final int monthOut;
@@ -256,6 +260,7 @@ class ProgressService extends ChangeNotifier {
       recordedToday: recordedToday,
       mood: _moodFor(snapshot, recordedToday, streak, wasCelebrating),
       moodLine: _moodLineFor(snapshot, recordedToday, streak, streakPaused),
+      moodCaption: _moodCaptionFor(snapshot, streakPaused),
       snapshot: snapshot,
       monthIn: monthIn,
       monthOut: monthOut,
@@ -359,6 +364,30 @@ class ProgressService extends ChangeNotifier {
       BudgetLevel.warning => MascotMood.idle,
       BudgetLevel.ok => recordedToday ? MascotMood.happy : MascotMood.idle,
     };
+  }
+
+  /// Kalimat pendek si Duit untuk panggung maskot: satu baris, menyebut
+  /// masalahnya kalau ada, tenang kalau tidak.
+  String _moodCaptionFor(BudgetSnapshot snap, bool streakPaused) {
+    final critical = snap.criticalLine;
+    if (critical != null && critical.level == BudgetLevel.over) {
+      return 'Duit khawatir — ${critical.label} terlampaui '
+          '(${critical.usedPercent}%)';
+    }
+    if (critical != null) {
+      return 'Duit waspada — ${critical.label} ${critical.usedPercent}% '
+          'terpakai';
+    }
+    if (streakPaused) {
+      return 'Duit menunggu — atur batas harian dulu';
+    }
+    if (!snap.hasData) {
+      return 'Duit mengantuk — belum ada catatan bulan ini';
+    }
+    if (snap.outTrend == TrendDirection.worse) {
+      return 'Duit memperhatikan — keluaran naik bulan ini';
+    }
+    return 'Duit tenang — masih dalam batas hari ini';
   }
 
   String _moodLineFor(
