@@ -5,305 +5,70 @@ import 'package:flutter/material.dart';
 import '../core/budget.dart';
 import '../core/dates_id.dart';
 import '../core/money.dart';
+import '../game/mascot.dart';
 import '../game/progress.dart';
 import '../models.dart';
-import '../storage/database.dart';
 import '../storage/repository.dart';
-import '../theme/quest.dart';
 import '../theme/tokens.dart';
-import 'quest.dart';
 import 'transaction_sheet.dart';
 
-/// Kartu-kartu Beranda ala mock pastel: batas 3 kolom, arus keluar/masuk,
-/// disiplin bulanan, dan transaksi terbaru. Semua mengalir via
-/// stream/service sehingga selalu segar.
+/// Seksi-seksi Beranda v5.2 "Dunia Pochy" — konsep game ala KobyBank:
+/// layar dibuka dunia (langit hangat → rumput mint) berisi maskot besar
+/// di tengah, langsung disusul spending card "Pengeluaran hari ini"
+/// dengan stats bar mingguan & bulanan. Semua warna dari piksel maskot
+/// (SeedColors, ADR-010); angka selalu tabular.
 
-/// Kartu uang: saldo + sisa aman hari ini dalam satu grid — label di
-/// kiri, nilai di kanan (mockup L1).
-///
-/// Tap kartu → Rencana·Batas; tap avatar akun → Kelola Akun.
-class UangCard extends StatefulWidget {
-  const UangCard({
-    super.key,
-    required this.repository,
-    required this.progress,
-    required this.onTap,
-    this.onTapAccounts,
-  });
+/// Bayangan kartu lembut — tinta maskot 8%, jatuh 8px.
+const _softShadow = BoxShadow(
+  color: Color(0x145B4433), // SeedColors.ink @ 8%
+  offset: Offset(0, 8),
+  blurRadius: 24,
+);
 
-  final LedgerRepository repository;
-  final ProgressService progress;
-  final VoidCallback onTap;
-  final VoidCallback? onTapAccounts;
-
-  @override
-  State<UangCard> createState() => _UangCardState();
-}
-
-class _UangCardState extends State<UangCard> {
-  /// Disematkan sekali agar rebuild tak subscribe ulang (anti-kedip).
-  late final Stream<List<Account>> _accounts;
-  late final Stream<Map<int, int>> _balances;
-
-  @override
-  void initState() {
-    super.initState();
-    _accounts = widget.repository.watchAccounts();
-    _balances = widget.repository.watchAccountBalances();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<List<Account>>(
-      stream: _accounts,
-      builder: (context, accSnap) => StreamBuilder<Map<int, int>>(
-        stream: _balances,
-        builder: (context, balSnap) {
-          final accounts = accSnap.data ?? const <Account>[];
-          final balances = balSnap.data ?? const <int, int>{};
-          final total = balances.values.fold(0, (a, b) => a + b);
-          return ListenableBuilder(
-            listenable: widget.progress,
-            builder: (context, _) {
-              final lines = widget.progress.latest?.snapshot.lines;
-              LimitLine? at(int i) =>
-                  lines != null && lines.length > i ? lines[i] : null;
-              return _UangCardBody(
-                total: total,
-                accounts: accounts,
-                daily: at(0),
-                weekly: at(1),
-                monthly: at(2),
-                streakDays: widget.progress.latest?.streakDays ?? 0,
-                onTap: widget.onTap,
-                onTapAccounts: widget.onTapAccounts,
-              );
-            },
-          );
-        },
-      ),
+/// Dekorasi kartu putih standar.
+BoxDecoration _cardDecoration() => BoxDecoration(
+      color: SeedColors.surface,
+      borderRadius: BorderRadius.circular(AppRadius.sheet),
+      boxShadow: const [_softShadow],
     );
-  }
-}
 
-class _UangCardBody extends StatelessWidget {
-  const _UangCardBody({
-    required this.total,
-    required this.accounts,
-    required this.daily,
-    required this.weekly,
-    required this.monthly,
-    required this.streakDays,
-    required this.onTap,
-    this.onTapAccounts,
-  });
+/// Wadah kartu dengan tap opsional.
+class _CardBox extends StatelessWidget {
+  const _CardBox({required this.child, this.onTap, this.padding});
 
-  final int total;
-  final List<Account> accounts;
-  final LimitLine? daily;
-  final LimitLine? weekly;
-  final LimitLine? monthly;
-  final int streakDays;
-  final VoidCallback onTap;
-  final VoidCallback? onTapAccounts;
+  final Widget child;
+  final VoidCallback? onTap;
+  final EdgeInsetsGeometry? padding;
 
   @override
   Widget build(BuildContext context) {
-    final q = context.q;
-    final limit = daily?.limit;
-    final used = daily?.used ?? 0;
-    final hasLimit = limit != null && limit > 0;
-    final sisa = (limit ?? 0) - used;
-    final over = hasLimit && sisa < 0;
-    final fraction = hasLimit ? (used / limit).clamp(0.0, 1.0) : 0.0;
-
-    return QuestCard(
+    return GestureDetector(
       onTap: onTap,
-      radius: AppRadius.sheet,
-      padding: const EdgeInsets.all(Spacing.m),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Baris 1 — saldo + akun (tap avatar → Kelola Akun).
-          Row(
-            children: [
-              Text(
-                'Saldo',
-                style: context.qSmall(11).copyWith(
-                  color: q.muted,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(width: Spacing.s),
-              if (accounts.isNotEmpty)
-                GestureDetector(
-                  onTap: onTapAccounts,
-                  behavior: HitTestBehavior.opaque,
-                  child: _AkunChips(accounts: accounts),
-                ),
-              const SizedBox(width: Spacing.s),
-              Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
-                  child: Text(Money.format(total), style: context.qDisplay(28)),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: Spacing.m),
-          Divider(height: 1, thickness: 1, color: q.line),
-          const SizedBox(height: Spacing.m),
-          // Baris 2 — sisa aman hari ini.
-          Row(
-            children: [
-              Text('SISA AMAN HARI INI', style: context.qEyebrow(10)),
-              const SizedBox(width: Spacing.s),
-              if (streakDays > 0)
-                _MiniChip(
-                  '$streakDays hari',
-                  QuestPalette.mintTint,
-                  QuestPalette.mintInk,
-                ),
-              const Spacer(),
-              Text(
-                !hasLimit
-                    ? 'Tanpa batas'
-                    : over
-                        ? '−${Money.format(-sisa)}'
-                        : Money.format(sisa),
-                style: context.qTitle(22).copyWith(color: over ? q.bad : null),
-              ),
-            ],
-          ),
-          const SizedBox(height: Spacing.s),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            child: Stack(
-              children: [
-                Container(height: 10, color: q.line.withValues(alpha: 0.7)),
-                FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: fraction,
-                  child: Container(height: 10, color: over ? q.bad : q.honey),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: Spacing.s),
-          // Baris 3 — terpakai + sisa batas mingguan/bulanan.
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  hasLimit
-                      ? 'Terpakai ${Money.format(used)}'
-                      : 'Belum ada batas harian',
-                  overflow: TextOverflow.ellipsis,
-                  style: context.qSmall(11),
-                ),
-              ),
-              if (weekly?.limit != null)
-                _MiniChip(
-                  'Mingguan ${_shortMoney(weekly!.limit! - weekly!.used)}',
-                  q.bg,
-                  q.muted,
-                ),
-              if (weekly?.limit != null && monthly?.limit != null)
-                const SizedBox(width: Spacing.xs),
-              if (monthly?.limit != null)
-                _MiniChip(
-                  'Bulanan ${_shortMoney(monthly!.limit! - monthly!.used)}',
-                  q.bg,
-                  q.muted,
-                ),
-            ],
-          ),
-        ],
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        decoration: _cardDecoration(),
+        padding: padding ?? const EdgeInsets.all(Spacing.m + 2),
+        child: child,
       ),
     );
   }
 }
 
-/// Chip kecil inline (streak, sisa batas mingguan/bulanan).
-class _MiniChip extends StatelessWidget {
-  const _MiniChip(this.label, this.background, this.foreground);
-
-  final String label;
-  final Color background;
-  final Color foreground;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-          color: foreground,
-        ),
-      ),
+/// Label mikro seksi: uppercase renggang, warna redup.
+TextStyle _label() => const TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 1.2,
+      color: SeedColors.muted,
     );
-  }
-}
 
-/// Avatar mini akun di baris saldo — warna dari colorIndex akun (bahasa
-/// data, ADR-010).
-class _AkunChips extends StatelessWidget {
-  const _AkunChips({required this.accounts});
+/// Teks meta/sekunder.
+TextStyle _meta([double size = 13]) =>
+    TextStyle(fontSize: size, height: 1.45, color: SeedColors.muted);
 
-  final List<Account> accounts;
+const _tabular = [FontFeature.tabularFigures()];
 
-  @override
-  Widget build(BuildContext context) {
-    final q = context.q;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final a in accounts.take(3))
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: Container(
-              width: 18,
-              height: 18,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: SeedColors.categoryColor(a.colorIndex),
-                shape: BoxShape.circle,
-              ),
-              child: Text(
-                a.name.trim().isEmpty ? '?' : a.name.trim()[0].toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  color: SeedColors.surface,
-                ),
-              ),
-            ),
-          ),
-        if (accounts.length > 3)
-          Text(
-            '+${accounts.length - 3}',
-            style: context.qSmall(11).copyWith(
-              color: q.muted,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        Icon(Icons.chevron_right_rounded, size: 15, color: q.muted),
-      ],
-    );
-  }
-}
-
-/// Rupiah ringkas untuk kolom sempit: -78000 → '-78rb',
-/// 1500000 → '1,5jt', 11002000 → '11jt'. Nominal penuh tetap tampil di
-/// baris kecil "dari …" agar tidak ada info yang hilang.
+/// Rupiah ringkas: 1500000 → '1,5jt', 78000 → '78rb'.
 String _shortMoney(int v) {
   final sign = v < 0 ? '-' : '';
   final a = v.abs();
@@ -318,57 +83,401 @@ String _shortMoney(int v) {
   return '$sign${Money.format(a)}';
 }
 
-/// Arus bulan berjalan: KELUAR | MASUK dalam satu kartu dua kolom.
-/// Tap → Rekap (via [onTap]).
-class ArusCard extends StatelessWidget {
-  const ArusCard({super.key, required this.service, this.onTap});
+/// Ikon kategori dari bahasa data colorIndex (ADR-010) — urutan sama
+/// dengan SeedColors.categoryPalette.
+const _categoryIcons = <IconData>[
+  Icons.restaurant_rounded, // 0 Makanan
+  Icons.directions_bus_rounded, // 1 Transportasi
+  Icons.receipt_long_rounded, // 2 Tagihan
+  Icons.shopping_bag_rounded, // 3 Belanja
+  Icons.sports_esports_rounded, // 4 Hiburan
+  Icons.favorite_rounded, // 5 Kesehatan
+  Icons.payments_rounded, // 6 Gaji
+  Icons.swap_horiz_rounded, // 7 Transfer
+  Icons.category_rounded, // 8 Lainnya
+];
 
-  final ProgressService service;
+IconData _categoryIcon(int colorIndex) =>
+    _categoryIcons[colorIndex % _categoryIcons.length];
+
+/// Panggung dunia Pochy: langit hangat → rumput mint, maskot besar
+/// di tengah dengan glow + bayangan tanah, nama + kalimatnya.
+class UangCard extends StatelessWidget {
+  const UangCard({super.key, required this.progress});
+
+  final ProgressService progress;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: progress,
+      builder: (context, _) {
+        final latest = progress.latest;
+        return _PochyWorld(
+          mood: latest?.mood ?? MascotMood.idle,
+          caption: latest?.moodCaption,
+        );
+      },
+    );
+  }
+}
+
+/// Isi dunia: scene + kalimat Duit. Tanpa kartu lain — murni dunia.
+class _PochyWorld extends StatelessWidget {
+  const _PochyWorld({required this.mood, required this.caption});
+
+  final MascotMood mood;
+  final String? caption;
+
+  @override
+  Widget build(BuildContext context) {
+    final topPadding = MediaQuery.paddingOf(context).top;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+        Spacing.l,
+        0,
+        Spacing.l,
+        Spacing.s + 4,
+      ),
+      decoration: const BoxDecoration(
+        // Horizon tegas: langit hangat di atas, rumput mint di bawah.
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            SeedColors.honey50,
+            SeedColors.honey50,
+            SeedColors.mint,
+            SeedColors.mint,
+          ],
+          stops: [0, 0.42, 0.42, 1],
+        ),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+      ),
+      child: Stack(
+        children: [
+          Column(
+            children: [
+              // Wordmark ikut berdiri di langit.
+              Padding(
+                padding: EdgeInsets.only(
+                  top: topPadding + Spacing.s,
+                  bottom: Spacing.s,
+                ),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'bukuduit',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                      color: SeedColors.ink,
+                    ),
+                  ),
+                ),
+              ),
+              // Sang pemain: Pochy besar di tengah panggung.
+              MascotStage(
+                mood: mood,
+                size: 172,
+                glow: SeedColors.honey100,
+                glowStrength: 0.55,
+              ),
+              const SizedBox(height: Spacing.xs),
+              // Nama pemain.
+              Text(
+                'Pochy',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: SeedColors.ink,
+                ),
+              ),
+              const SizedBox(height: Spacing.xxs),
+              // Kalimat Duit — suara karakter di dunianya.
+              if (caption != null)
+                Text(
+                  caption!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    height: 1.35,
+                    color: SeedColors.ink,
+                  ),
+                ),
+            ],
+          ),
+          // Koin emas berserakan di rumput — dunia terasa hidup.
+          Positioned(
+            left: 34,
+            bottom: 148,
+            child: _coin(16, SeedColors.honeyDeep),
+          ),
+          Positioned(
+            right: 44,
+            bottom: 170,
+            child: _coin(12, SeedColors.honey),
+          ),
+          Positioned(
+            right: 22,
+            bottom: 128,
+            child: _coin(9, SeedColors.honeyBright),
+          ),
+          Positioned(
+            left: 18,
+            bottom: 108,
+            child: _coin(10, SeedColors.honey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Koin emas kecil — lingkaran polos dari palet koin maskot.
+  Widget _coin(double size, Color color) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: SeedColors.surface.withValues(alpha: 0.6),
+            width: 2,
+          ),
+        ),
+      );
+}
+
+/// Strip record streak mingguan ala "This Week": 7 lingkaran Sen–Min.
+/// Hari dengan pengeluaran dalam batas = lingkaran api; hari lewat
+/// batas = angka merah; hari mendatang = angka redup.
+class StreakStrip extends StatelessWidget {
+  const StreakStrip({super.key, required this.progress});
+
+  final ProgressService progress;
+
+  static const _dayLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+
+  /// Tentukan tampilan satu hari: api bila disiplin terjaga, angka
+  /// merah bila lewat batas, angka redup bila belum terjadi.
+  _DayCell _cellFor({
+    required DateTime day,
+    required DateTime today,
+    required Map<DateTime, DailyDiscipline> byDay,
+  }) {
+    final disc = byDay[day];
+    final future = disc?.future ?? day.isAfter(today);
+    return _DayCell(
+      label: _dayLabels[day.weekday - 1],
+      number: day.day,
+      kept: !future && (disc?.within ?? false),
+      broke: !future && disc != null && !disc.within,
+      isToday: day == today,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: progress,
+      builder: (context, _) {
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final monday = today.subtract(Duration(days: now.weekday - 1));
+
+        // Disiplin per hari — sumber: hitung ulang transaksi bulan ini.
+        final byDay = <DateTime, DailyDiscipline>{
+          for (final d in progress.latest?.disciplineMonth ?? const <DailyDiscipline>[])
+            DateTime(d.day.year, d.day.month, d.day.day): d,
+        };
+
+        return _CardBox(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text('MINGGU INI', style: _label()),
+                  const Spacer(),
+                  Icon(
+                    Icons.local_fire_department_rounded,
+                    size: 14,
+                    color: SeedColors.honeyDeep,
+                  ),
+                  const SizedBox(width: Spacing.xxs),
+                  Text(
+                    '${progress.latest?.streakDays ?? 0} hari',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: SeedColors.honeyInk,
+                      fontFeatures: _tabular,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Spacing.s + 2),
+              Row(
+                children: [
+                  for (var i = 0; i < 7; i++) ...[
+                    if (i > 0) const SizedBox(width: Spacing.xs),
+                    Expanded(
+                      child: _cellFor(
+                        day: monday.add(Duration(days: i)),
+                        today: today,
+                        byDay: byDay,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Satu sel hari: lingkaran api / angka tanggal + nama hari.
+class _DayCell extends StatelessWidget {
+  const _DayCell({
+    required this.label,
+    required this.number,
+    required this.kept,
+    required this.broke,
+    required this.isToday,
+  });
+
+  final String label;
+  final int number;
+  final bool kept;
+  final bool broke;
+  final bool isToday;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: kept ? SeedColors.honey50 : SeedColors.surface2,
+            shape: BoxShape.circle,
+          ),
+          child: kept
+              ? Icon(
+                  Icons.local_fire_department_rounded,
+                  size: 18,
+                  color: SeedColors.honeyDeep,
+                )
+              : Center(
+                  child: Text(
+                    '$number',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: broke ? SeedColors.outgoing : SeedColors.muted,
+                      fontFeatures: _tabular,
+                    ),
+                  ),
+                ),
+        ),
+        const SizedBox(height: Spacing.xs),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10.5,
+            fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
+            color: isToday ? SeedColors.honeyInk : SeedColors.muted,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Spending card: "Pengeluaran hari ini" — angka besar terpakai harian
+/// ("/ limit harian"), lalu dua stats bar: pengeluaran minggu ini dan
+/// bulan ini (terpakai / limit). Tap kartu → Rencana.
+class SpendingCard extends StatelessWidget {
+  const SpendingCard({super.key, required this.progress, this.onTap});
+
+  final ProgressService progress;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: service,
+      listenable: progress,
       builder: (context, _) {
-        final snap = service.latest;
-        if (snap == null) {
-          return QuestCard(
-            radius: AppRadius.sheet,
-            padding: const EdgeInsets.all(Spacing.m),
-            child: const SizedBox(height: 64),
-          );
-        }
-        final q = context.q;
-        final shot = snap.snapshot;
-        return QuestCard(
+        final lines = progress.latest?.snapshot.lines;
+        LimitLine? at(int i) =>
+            lines != null && lines.length > i ? lines[i] : null;
+        final dLimit = at(0)?.limit;
+        final dUsed = at(0)?.used ?? 0;
+        final hasDaily = dLimit != null && dLimit > 0;
+
+        return _CardBox(
           onTap: onTap,
-          radius: AppRadius.sheet,
-          padding: const EdgeInsets.all(Spacing.m),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('ARUS BULAN INI', style: context.qEyebrow(10)),
-              const SizedBox(height: Spacing.m),
+              Text('PENGELUARAN HARI INI 💰', style: _label()),
+              const SizedBox(height: Spacing.s),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    Money.format(dUsed),
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      height: 1.05,
+                      letterSpacing: -0.5,
+                      color: SeedColors.ink,
+                      fontFeatures: _tabular,
+                    ),
+                  ),
+                  if (hasDaily) ...[
+                    const SizedBox(width: 6),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Text(
+                        '/ ${_shortMoney(dLimit)}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: SeedColors.muted,
+                          fontFeatures: _tabular,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: Spacing.s + 2),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: _ArusColumn(
-                      label: 'Keluar',
-                      amount: snap.monthOut,
-                      previous: shot.lastMonthOut,
-                      incoming: false,
+                    child: _StatBar(
+                      label: 'Minggu ini',
+                      line: at(1),
+                      fill: SeedColors.honeyDeep,
                     ),
                   ),
-                  Container(width: 1, height: 46, color: q.line),
+                  const SizedBox(width: Spacing.s + 4),
                   Expanded(
-                    child: _ArusColumn(
-                      label: 'Masuk',
-                      amount: snap.monthIn,
-                      previous: shot.lastMonthIn,
-                      incoming: true,
-                      alignEnd: true,
+                    child: _StatBar(
+                      label: 'Bulan ini',
+                      line: at(2),
+                      fill: SeedColors.mintDeep,
                     ),
                   ),
                 ],
@@ -381,82 +490,90 @@ class ArusCard extends StatelessWidget {
   }
 }
 
-/// Satu kolom arus: label + delta + nominal.
-class _ArusColumn extends StatelessWidget {
-  const _ArusColumn({
+/// Satu stats bar: label, mini bar terpakai/limit, nilai "x /limit".
+class _StatBar extends StatelessWidget {
+  const _StatBar({
     required this.label,
-    required this.amount,
-    required this.previous,
-    required this.incoming,
-    this.alignEnd = false,
+    required this.line,
+    required this.fill,
   });
 
   final String label;
-  final int amount;
-  final int previous;
-  final bool incoming;
-  final bool alignEnd;
+  final LimitLine? line;
+  final Color fill;
 
   @override
   Widget build(BuildContext context) {
-    final q = context.q;
-    final delta = deltaLabel(amount, previous);
+    final limit = line?.limit;
+    final used = line?.used ?? 0;
+    final hasLimit = limit != null && limit > 0;
+    final over = hasLimit && used > limit;
+    final fraction = hasLimit ? (used / limit).clamp(0.0, 1.0) : 0.0;
+
     return Column(
-      crossAxisAlignment:
-          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          mainAxisAlignment:
-              alignEnd ? MainAxisAlignment.end : MainAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: context.qSmall(11).copyWith(
-                color: q.muted,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            if (delta != null) ...[
-              const SizedBox(width: Spacing.xs),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: q.bg,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-                child: Text(
-                  delta,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: q.muted,
-                  ),
-                ),
-              ),
-            ],
-          ],
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: SeedColors.ink,
+          ),
         ),
         const SizedBox(height: Spacing.xs),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
-          child: Text(
-            Money.format(amount),
-            style: context.qTitle(22).copyWith(
-              color: incoming ? q.good : q.bad,
-              fontFeatures: const [FontFeature.tabularFigures()],
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          child: SizedBox(
+            height: 5,
+            child: Stack(
+              children: [
+                Container(color: SeedColors.line),
+                FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: fraction,
+                  child: Container(
+                    color: over ? SeedColors.outgoing : fill,
+                  ),
+                ),
+              ],
             ),
           ),
+        ),
+        const SizedBox(height: Spacing.xs),
+        Row(
+          children: [
+            Text(
+              _shortMoney(used),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: over ? SeedColors.outgoing : SeedColors.ink,
+                fontFeatures: _tabular,
+              ),
+            ),
+            if (hasLimit)
+              Text(
+                ' /${_shortMoney(limit)}',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: SeedColors.muted,
+                  fontFeatures: _tabular,
+                ),
+              ),
+          ],
         ),
       ],
     );
   }
 }
 
-/// Transaksi terbaru (3 teratas) di Beranda. Tap baris = ubah,
-/// "Lihat semua" → Rekap (via [onSeeAll]).
+/// Transaksi terbaru (3 teratas): chip ikon kategori + judul + meta +
+/// nominal berwarna arah. Tap baris = ubah; label → Rekap.
 class TransaksiTerbaruCard extends StatefulWidget {
   const TransaksiTerbaruCard({
     super.key,
@@ -485,61 +602,65 @@ class _TransaksiTerbaruCardState extends State<TransaksiTerbaruCard> {
 
   @override
   Widget build(BuildContext context) {
-    final q = context.q;
-    return QuestCard(
-      radius: AppRadius.sheet,
-      padding: const EdgeInsets.all(Spacing.m),
+    return _CardBox(
+      padding: const EdgeInsets.fromLTRB(
+        Spacing.m + 2,
+        Spacing.m + 2,
+        Spacing.m + 2,
+        Spacing.xs,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          QuestPress(
+          GestureDetector(
             onTap: widget.onSeeAll,
+            behavior: HitTestBehavior.opaque,
             child: Row(
               children: [
-                Expanded(
-                  child: Text(
-                    'Transaksi Terbaru',
-                    style: context.qTitle(15),
+                Text('TRANSAKSI TERBARU', style: _label()),
+                const Spacer(),
+                Text(
+                  'Lihat semua',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: SeedColors.honeyInk,
                   ),
                 ),
-                Text('Lihat semua', style: context.qSmall(13)),
-                const SizedBox(width: Spacing.xxs),
-                Icon(
+                const Icon(
                   Icons.chevron_right_rounded,
-                  size: 17,
-                  color: q.muted,
+                  size: 16,
+                  color: SeedColors.honeyInk,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: Spacing.s),
+          const SizedBox(height: Spacing.xs),
           StreamBuilder<List<TxWithCategory>>(
             stream: _recent,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const QuestSkeleton(rows: 3, height: 60);
+                return const SizedBox(height: 168);
               }
               final items = snapshot.data ?? const <TxWithCategory>[];
               if (items.isEmpty) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: Spacing.s),
                   child: Text(
-                    'Hari ini masih sepi — catat yang pertama, ya',
-                    style: context.qSmall(12),
+                    'Belum ada catatan — catat transaksi pertamamu.',
+                    style: _meta(),
                   ),
                 );
               }
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  for (var i = 0; i < items.length; i++) ...[
-                    if (i > 0) Divider(height: 1, thickness: 1, color: q.line),
+                  for (final item in items)
                     _RecentRow(
-                      item: items[i],
+                      item: item,
                       repository: widget.repository,
                       progress: widget.progress,
                     ),
-                  ],
                 ],
               );
             },
@@ -563,40 +684,50 @@ class _RecentRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final q = context.q;
     final tx = item.tx;
     final incoming = tx.direction == Direction.incoming;
     final title = (tx.counterparty != null && tx.counterparty!.isNotEmpty)
         ? tx.counterparty!
         : tx.kind.label;
-    final subtitle =
-        '${incoming ? 'Pemasukan' : 'Pengeluaran'} • ${idDayMonth(tx.occurredAt)} ${tx.occurredAt.year}';
-    final tint = (incoming ? q.good : q.bad).withValues(alpha: 0.14);
-    final tintIcon = incoming ? q.good : q.bad;
-    return QuestPress(
+
+    // Chip ikon: warna + ikon kategori; tanpa kategori → arah.
+    final Color chipColor;
+    final IconData chipIcon;
+    if (item.category != null) {
+      chipColor = SeedColors.categoryColor(item.category!.colorIndex);
+      chipIcon = _categoryIcon(item.category!.colorIndex);
+    } else if (tx.kind == TxKind.transfer) {
+      chipColor = SeedColors.muted;
+      chipIcon = Icons.swap_horiz_rounded;
+    } else {
+      chipColor = incoming ? SeedColors.incoming : SeedColors.outgoing;
+      chipIcon = incoming
+          ? Icons.arrow_downward_rounded
+          : Icons.arrow_upward_rounded;
+    }
+
+    return InkWell(
       onTap: () => TransactionSheet.show(
         context,
         repository,
         existing: item,
         progress: progress,
       ),
+      borderRadius: BorderRadius.circular(AppRadius.tile),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: Spacing.s),
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(color: tint, shape: BoxShape.circle),
-              child: Icon(
-                incoming
-                    ? Icons.arrow_upward_rounded
-                    : Icons.arrow_downward_rounded,
-                size: 22,
-                color: tintIcon,
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: chipColor.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(AppRadius.cell + 2),
               ),
+              child: Icon(chipIcon, size: 20, color: chipColor),
             ),
-            const SizedBox(width: Spacing.s),
+            const SizedBox(width: Spacing.s + 2),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -605,26 +736,30 @@ class _RecentRow extends StatelessWidget {
                   Text(
                     title,
                     overflow: TextOverflow.ellipsis,
-                    style: context.qTitle(14),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: SeedColors.ink,
+                    ),
                   ),
                   const SizedBox(height: Spacing.xxs),
                   Text(
-                    subtitle,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.qSmall(12),
+                    '${item.category?.name ?? (incoming ? 'Pemasukan' : 'Pengeluaran')}'
+                    ' • ${idDayMonth(tx.occurredAt)}',
+                    style: _meta(12),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: Spacing.s),
             Text(
-              '${incoming ? '+' : '-'}${Money.format(tx.amount)}',
+              '${incoming ? '+' : '−'}${Money.format(tx.amount)}',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.2,
-                color: incoming ? q.good : q.bad,
-                fontFeatures: const [FontFeature.tabularFigures()],
+                color: incoming ? SeedColors.incoming : SeedColors.outgoing,
+                fontFeatures: _tabular,
               ),
             ),
           ],
@@ -634,161 +769,4 @@ class _RecentRow extends StatelessWidget {
   }
 }
 
-/// Insight 7 hari terakhir (mockup v2.1): sparkline keluar harian +
-/// 3 kategori teratas — jembatan ke Rekap (tap via [onTap]).
-class InsightTujuhHariCard extends StatefulWidget {
-  const InsightTujuhHariCard({super.key, required this.repository, this.onTap});
 
-  final LedgerRepository repository;
-  final VoidCallback? onTap;
-
-  @override
-  State<InsightTujuhHariCard> createState() => _InsightTujuhHariCardState();
-}
-
-class _InsightTujuhHariCardState extends State<InsightTujuhHariCard> {
-  late Stream<List<TxWithCategory>> _rows;
-
-  @override
-  void initState() {
-    super.initState();
-    final now = DateTime.now();
-    final start = DateTime(now.year, now.month, now.day - 6);
-    final end = DateTime(now.year, now.month, now.day + 1);
-    _rows = widget.repository.watchBetweenWithCategory(start, end);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<List<TxWithCategory>>(
-      stream: _rows,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const QuestSkeleton(rows: 1, height: 90);
-        }
-        final rows = snapshot.data ?? const <TxWithCategory>[];
-        final now = DateTime.now();
-        final today = DateTime(now.year, now.month, now.day);
-
-        // Keluar murni per hari (7 ember) + per kategori.
-        final daily = List<int>.filled(7, 0);
-        final byCategory = <Category?, int>{};
-        for (final r in rows) {
-          if (r.tx.direction != Direction.outgoing) continue;
-          if (r.tx.kind == TxKind.transfer) continue;
-          final d = r.tx.occurredAt;
-          final day = DateTime(d.year, d.month, d.day);
-          final idx = today.difference(day).inDays;
-          if (idx >= 0 && idx < 7) daily[6 - idx] += r.tx.amount;
-          byCategory.update(
-            r.category,
-            (v) => v + r.tx.amount,
-            ifAbsent: () => r.tx.amount,
-          );
-        }
-        final topCats = byCategory.entries.toList()
-          ..sort((a, b) => b.value.compareTo(a.value));
-        final maxDaily = daily.fold(0, (a, b) => a > b ? a : b);
-
-        return QuestCard(
-          onTap: widget.onTap,
-          radius: AppRadius.sheet,
-          padding: const EdgeInsets.all(Spacing.m),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text('7 HARI TERAKHIR', style: context.qEyebrow(10)),
-                  const Spacer(),
-                  if (topCats.isNotEmpty)
-                    Flexible(
-                      child: Text(
-                        'keluar terbesar ${topCats.first.key?.name ?? '—'} '
-                        '${_shortMoney(topCats.first.value)}',
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.right,
-                        style: context.qSmall(11),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: Spacing.s),
-              if (maxDaily == 0)
-                Text(
-                  'Belum ada pengeluaran dalam 7 hari terakhir.',
-                  style: context.qSmall(12),
-                )
-              else
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    // Sparkline 7 batang — batang terakhir = hari ini.
-                    for (var i = 0; i < 7; i++)
-                      Container(
-                        width: 12,
-                        height: daily[i] == 0
-                            ? 4
-                            : 6 + (daily[i] / maxDaily * 36),
-                        margin: const EdgeInsets.only(right: Spacing.xs),
-                        decoration: BoxDecoration(
-                          color: i == 6
-                              ? SeedColors.honeyDeep
-                              : SeedColors.honey.withValues(alpha: 0.75),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ),
-                    const SizedBox(width: Spacing.s),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          for (final e in topCats.take(3))
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 2),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: BoxDecoration(
-                                      color: e.key == null
-                                          ? context.q.muted
-                                          : SeedColors.categoryColor(
-                                              e.key!.colorIndex,
-                                            ),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: Spacing.xs),
-                                  Expanded(
-                                    child: Text(
-                                      e.key?.name ?? 'Tanpa kategori',
-                                      overflow: TextOverflow.ellipsis,
-                                      style: context.qSmall(11).copyWith(
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                    ),
-                                  ),
-                                  Text(
-                                    _shortMoney(e.value),
-                                    style: context.qSmall(11).copyWith(
-                                          fontFeatures: const [
-                                            FontFeature.tabularFigures(),
-                                          ],
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}

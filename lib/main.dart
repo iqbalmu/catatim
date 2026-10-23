@@ -18,6 +18,7 @@ Future<void> main() async {
   final db = AppDatabase(await openAppDatabase());
   final repository = LedgerRepository(db);
   await seedDummyIfEmpty(db, repository); // data contoh (debug, DB kosong)
+  await refreshSeedDemoDates(db); // geser tanggal demo mengikuti hari ini
   // Katalog bank dimuat sekali — dipakai engine (parser) + UI (hubungkan).
   // Aturan pengguna tak lagi di-seed/di-load ke pipeline: model hubungkan
   // bank memakai seed rules murni agar bankId selalu ID katalog asli.

@@ -7,6 +7,16 @@ lengkap: [ADR-010](decisions/010-palet-dari-piksel-maskot.md). Dokumen ini
 satu-satunya sumber kebenaran visual; widget-kit hidup di
 `lib/ui/quest.dart` + `lib/theme/`.
 
+> **Pilot Beranda v5 "Dunia Pochy" (2026-10-23, menggantikan pilot v4
+> "Kartu Hangat"):** konsep game ala KobyBank — Beranda dibuka
+> **dunia full-bleed**: langit `honey50` bertemu rumput `mint` dengan
+> horizon tegas (stop 42%), **Pochy 172 di tengah** via `MascotStage`
+> (glow `honey100`), nama + chip streak + kalimat Duit di bawahnya,
+> koin emas kecil berserakan, lalu **pill HUD putih** berisi sisa aman
+> hari ini + bar 6px (tap → Rencana). Strip saldo + kartu Rencana/arus/
+> transaksi/insight bergaya v4 menyusul di bawahnya. Warna tetap 100%
+> `SeedColors` (ADR-010). Tab lain menyusul bila pilot disetujui.
+
 ## Prinsip
 
 1. **Duit adalah meter, kategori adalah bahasa.** Ekspresi maskot selalu
@@ -95,28 +105,39 @@ Angka selalu `FontFeature.tabularFigures()`. Jangan campur font lain.
   kecil muted, nominal tabular berwarna arah.
 - **Nav melayang**: `surface` radius 22–24, cushion shadow, FAB
   gradien emas menonjol ke atas; item aktif `goldInk`.
-- **Maskot Duit**: karakter kunci aplikasi. Ukuran: **64** (kartu penutup
-  Bon), **76** (meter batas di Rencana), **172** (panggung Beranda).
-  Ekspresi = fungsi kondisi nyata. Tidak menempel di setiap kartu.
-- **Panggung Duit** (`DuitStage`): ruang hangat di puncak Beranda —
-  gradien `honey50` yang memudar ke bawah, Duit **172** berdiri di tengah
-  dengan glow + bayangan tanah, kalimatnya di bawah karakter. Bukan
-  kartu: bagian atas harus lapang, kartu mulai dari bawah panggung.
+- **Maskot Duit**: karakter kunci aplikasi. Ukuran: **64** (Beranda
+  pilot v3, kartu penutup Bon), **76** (meter batas di Rencana), **172**
+  (`MascotStage`, kini hanya di Rencana). Ekspresi = fungsi kondisi
+  nyata. Tidak menempel di setiap kartu.
 - **Panggung maskot** (`MascotStage`): glow radial lembut + bayangan
-  tanah, karakter berdiri di atasnya. Panggung Beranda memakai glow
-  `honey100` di atas ruang hangat; meter Rencana memakai glow `honey50`
-  di atas kartu putih.
-- **Kalimat Duit**: satu kalimat pendek di bawah panggung, warna
-  `goldInk` ("Duit khawatir — Harian terlampaui (120%)"). Mood tanpa
-  render 3D (idle, sleepy) dilukis vektor sebagai Pochy yang sama —
-  warna burlap/tali/syal/koin dari palet ADR-010.
-- **Kartu uang** (`UangCard`): satu grid, label kiri nilai kanan —
-  baris 1 saldo (+ avatar akun, tap → Kelola Akun), hairline, baris 2
-  "sisa aman hari ini" + chip streak + bar progres, baris 3 "terpakai" +
-  chip sisa batas mingguan/bulanan. Tap kartu → Rencana·Batas.
-- **Kartu arus** (`ArusCard`): "ARUS BULAN INI" dengan dua kolom
-  (Keluar | Masuk) + pembatas vertikal; delta vs bulan lalu jadi chip
-  kecil di samping label. Tap → Rekap.
+  tanah, karakter berdiri di atasnya. Meter Rencana memakai glow
+  `honey50` di atas kartu putih. (`DuitStage` 172 di Beranda dihentikan
+  oleh pilot v3 — file dihapus.)
+- **Kalimat Duit**: satu kalimat pendek ("Duit khawatir — Harian
+  terlampaui (120%)") — di Beranda pilot v5 tampil di dalam dunia,
+  tepat di bawah nama Pochy. Semua mood tampil sebagai render 3D
+  (raster WebP); mood tanpa aset spesifik memakai raster terdekat —
+  vektor hanya fallback bila aset gagal dimuat. Warna
+  burlap/tali/syal/koin dari palet ADR-010.
+- **Dunia Pochy** (`UangCard`, Beranda): full-bleed scene — langit
+  `honey50` → rumput `mint` (horizon 42%), `MascotStage` 172 di tengah,
+  wordmark di langit, nama "Pochy" + kalimat Duit, koin emas
+  dekoratif. Info streak hidup di strip MINGGU INI.
+- **Spending card** (`SpendingCard`, Beranda — langsung di bawah
+  dunia): label "PENGELUARAN HARI INI 💰"; angka besar terpakai harian
+  "/ limit harian" (tanpa batas → angka saja); dua stats bar ala Koby —
+  **Minggu ini** (bar `honeyDeep`) dan **Bulan ini** (bar `mintDeep`),
+  isi bar = terpakai/limit, over `outgoing`, nilai "x /limit" tabular.
+  Tap kartu → Rencana.
+- **Strip streak** (`StreakStrip`): record mingguan ala "This Week" —
+  header "MINGGU INI" + counter "🔥 n hari" di kanan atas, lalu 7 sel
+  Sen–Min: hari disiplin = lingkaran `honey50` + api `honeyDeep`; hari
+  lewat batas = angka tanggal merah; hari belum terjadi = angka redup;
+  label hari ini disorot `honeyInk`. Sumber: `disciplineMonth` (hitung
+  ulang transaksi).
+- **Seksi transaksi terbaru** (`TransaksiTerbaruCard`): 3 baris chip
+  ikon kategori 40px (tint warna kategori 14% + ikon dari colorIndex),
+  judul + meta, nominal berwarna arah; "Lihat semua" → Rekap.
 
 ## Motion
 
@@ -142,13 +163,13 @@ transaksi pertamamu").
 
 ## Alur halaman (disepakati 2026-10-20, mockup 4 halaman)
 
-- **Beranda**: header ringkas (judul kecil tanpa tanggal) → **panggung
-  Duit** (ruang hangat, Duit 172 di tengah, kalimatnya di bawah) →
-  **kartu uang** (saldo + avatar akun tap → Kelola Akun, hairline, sisa
-  aman hari ini + chip streak + bar, chip batas mingguan/bulanan) →
-  **kartu arus** (Keluar | Masuk) → **strip insight 7 hari** (7 batang +
-  3 kategori teratas) → **kartu transaksi terbaru** (3 baris). Jarak
-  antar blok selalu 16dp.
+- **Beranda (pilot v5.2)**: dunia Pochy full-bleed (langit → rumput,
+  maskot 172 di tengah, kalimat + streak) →
+  **spending card** "Pengeluaran hari ini" (angka besar / limit harian,
+  ⊕, stats bar Minggu & Bulan) → strip streak harian → duo kartu
+  **arus** (Keluar | Masuk berikon) → **transaksi terbaru** (chip ikon
+  kategori) → **insight 7 hari** (7 batang + kategori). Jarak antar
+  kartu 16dp di atas krem `bg`.
 - **Rekap**: segmen **Donat default**; toggle Keluar/Masuk di dalam
   kartu donat; delta vs bulan lalu; kartu "keluar terbesar" per
   merchant. Segmen lain: Transaksi, Tren, Kalender.

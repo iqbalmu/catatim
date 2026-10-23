@@ -8,13 +8,16 @@ enum MascotMood { idle, happy, sleepy, celebrate, worried }
 
 /// Peta mood → aset raster (render 3D "Pochy", dikompres WebP).
 ///
-/// Mood tanpa aset ([MascotMood.idle], [MascotMood.sleepy]) dilukis
-/// vektor sebagai Pochy yang sama — supaya karakter ini tetap satu
-/// wajah di semua mood, bukan dua gaya berbeda.
+/// Semua mood kini tampil sebagai render 3D: mood tanpa aset spesifik
+/// memakai raster terdekat ([MascotMood.idle] dan [MascotMood.sleepy]
+/// memakai wajah happy). Lukisan vektor hanya fallback terakhir bila
+/// aset gagal dimuat — bukan gaya kedua.
 const Map<MascotMood, String> _assetFor = {
   MascotMood.happy: 'assets/mascot/mascot_happy.webp',
   MascotMood.celebrate: 'assets/mascot/mascot_celebrate.webp',
   MascotMood.worried: 'assets/mascot/mascot_worried.webp',
+  MascotMood.idle: 'assets/mascot/mascot_happy.webp',
+  MascotMood.sleepy: 'assets/mascot/mascot_happy.webp',
 };
 
 /// Kalimat pendek si Duit — dipakai di bawah panggung maskot.

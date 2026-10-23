@@ -4,14 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../capture/pipeline.dart';
-import '../game/duit_stage.dart';
 import '../game/progress.dart';
 import '../rules/rule_set.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
-import 'bank_accounts_screen.dart';
 import 'bon_screen.dart';
 import 'home_cards.dart';
 import 'menu_screen.dart';
@@ -416,7 +414,7 @@ class _NotifBellState extends State<_NotifBell> {
                         .length;
                     final hasAttention =
                         draftCount > 0 || !enabled || failed > 0 || aging > 0;
-                    return QuestIconButton(
+                    return _HeaderIcon(
                       icon: Icons.notifications_active_outlined,
                       tooltip: 'Notifikasi',
                       badge: hasAttention,
@@ -459,7 +457,7 @@ class _HomeMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return QuestIconButton(
+    return _HeaderIcon(
       icon: Icons.more_horiz_rounded,
       tooltip: 'Menu',
       onPressed: () => Navigator.push(
@@ -476,9 +474,61 @@ class _HomeMenu extends StatelessWidget {
   }
 }
 
-/// Beranda ala mock pastel: panggung Duit di atas, lalu kartu uang, arus
-/// bulan, insight 7 hari, dan transaksi terbaru. Warna tetap palet Quest;
-/// pencatatan via tombol + tengah navbar.
+/// Tombol ikon polos untuk header minimal: tinta di atas kertas, tanpa
+/// lingkaran surface. Titik merah kecil = ada yang perlu dilihat.
+class _HeaderIcon extends StatelessWidget {
+  const _HeaderIcon({
+    required this.icon,
+    required this.tooltip,
+    this.badge = false,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final bool badge;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+          child: SizedBox(
+            width: 40,
+            height: 40,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(icon, size: 22, color: SeedColors.ink),
+                if (badge)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: SeedColors.outgoing,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Beranda: panggung maskot & saldo hero, belanja hari ini, streak,
+/// dan transaksi terbaru. Pencatatan via tombol + tengah navbar.
 class _BerandaTab extends StatefulWidget {
   const _BerandaTab({
     required this.repository,
@@ -541,53 +591,37 @@ class _BerandaTabState extends State<_BerandaTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: context.q.bg,
-      appBar: QuestHeader(
-        title: 'Bukuduit',
-        // Puncak layar dipakai panggung Duit — header tinggal judul kecil
-        // supaya bagian atas lapang (mockup L1).
-        compact: true,
-      ),
-      // Tombol + tinggal di tengah navbar (dinamis per tab) — tanpa FAB
-      // melayang di tab ini.
+      // Krem hangat dari burlap maskot — kartu-kartu bersinar di atasnya.
+      backgroundColor: SeedColors.bg,
       body: ListView(
-        padding: EdgeInsets.fromLTRB(
-          Spacing.m,
-          Spacing.s,
-          Spacing.m,
-          Spacing.m + MediaQuery.paddingOf(context).bottom,
+        // Padding horizontal nol — dunia Pochy full-bleed; kartu lain
+        // membawa padding-nya sendiri.
+        padding: EdgeInsets.only(
+          bottom: Spacing.m + MediaQuery.paddingOf(context).bottom,
         ),
         children: [
-          // Panggung Duit: karakter di tengah, kalimatnya di bawah.
-          DuitStage(service: widget.progress),
+          UangCard(progress: widget.progress),
           const SizedBox(height: Spacing.m),
-          UangCard(
-            repository: widget.repository,
-            progress: widget.progress,
-            onTap: widget.onOpenRencanaBatas,
-            onTapAccounts: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => BankAccountsScreen(
-                  repository: widget.repository,
-                  pipeline: widget.pipeline,
-                  ruleSet: widget.ruleSet,
-                ),
-              ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.l),
+            child: SpendingCard(
+              progress: widget.progress,
+              onTap: widget.onOpenRencanaBatas,
             ),
           ),
           const SizedBox(height: Spacing.m),
-          ArusCard(service: widget.progress, onTap: widget.onOpenRekap),
-          const SizedBox(height: Spacing.m),
-          InsightTujuhHariCard(
-            repository: widget.repository,
-            onTap: widget.onOpenRekap,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.l),
+            child: StreakStrip(progress: widget.progress),
           ),
           const SizedBox(height: Spacing.m),
-          TransaksiTerbaruCard(
-            repository: widget.repository,
-            progress: widget.progress,
-            onSeeAll: widget.onOpenRekap,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.l),
+            child: TransaksiTerbaruCard(
+              repository: widget.repository,
+              progress: widget.progress,
+              onSeeAll: widget.onOpenRekap,
+            ),
           ),
           // Clearance navbar melayang di atas konten (extendBody).
           const SizedBox(height: 96),
