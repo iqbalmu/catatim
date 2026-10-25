@@ -291,7 +291,7 @@ class _SegmentCell<T> extends StatelessWidget {
         curve: QuestMotion.easeOut,
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFE9D8FD) : Colors.transparent,
+          color: selected ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -302,8 +302,8 @@ class _SegmentCell<T> extends StatelessWidget {
                 option.icon,
                 size: 18,
                 color: selected
-                    ? const Color(0xFF6B46C1)
-                    : const Color(0xFF7C8BA0),
+                    ? context.q.primary
+                    : context.q.muted,
               ),
               const SizedBox(width: Spacing.xs),
             ],
@@ -315,8 +315,8 @@ class _SegmentCell<T> extends StatelessWidget {
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                   fontSize: 12.5,
                   color: selected
-                      ? const Color(0xFF6B46C1)
-                      : const Color(0xFF7C8BA0),
+                      ? context.q.text
+                      : context.q.muted,
                 ),
               ),
             ),
@@ -541,7 +541,7 @@ class QuestBottomNav extends StatelessWidget {
             curve: QuestMotion.easeOut,
             padding: const EdgeInsets.symmetric(vertical: 6),
             decoration: BoxDecoration(
-              color: selected ? const Color(0xFFE9D8FD) : Colors.transparent,
+              color: selected ? SeedColors.primaryLight : Colors.transparent,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -555,8 +555,8 @@ class QuestBottomNav extends StatelessWidget {
                     dest.icon,
                     size: 21,
                     color: selected
-                        ? const Color(0xFF6B46C1)
-                        : const Color(0xFF7C8BA0),
+                        ? context.q.primary
+                        : context.q.muted,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -568,8 +568,8 @@ class QuestBottomNav extends StatelessWidget {
                     fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                     fontSize: 10.5,
                     color: selected
-                        ? const Color(0xFF6B46C1)
-                        : const Color(0xFF7C8BA0),
+                        ? context.q.primary
+                        : context.q.muted,
                   ),
                 ),
               ],
@@ -591,8 +591,8 @@ class QuestBottomNav extends StatelessWidget {
           width: 58,
           height: 58,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF8B5CF6), Color(0xFF6B46C1)],
+            gradient: LinearGradient(
+              colors: [context.q.primary, context.q.primaryDeep],
             ),
             borderRadius: BorderRadius.circular(AppRadius.pill),
             boxShadow: const [

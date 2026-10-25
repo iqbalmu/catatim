@@ -12,8 +12,8 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'bon_screen.dart';
 import 'home_cards.dart';
+import 'laporan_screen.dart';
 import 'quest.dart';
-import 'rekap_screen.dart';
 import 'rencana_screen.dart';
 import 'transaction_sheet.dart';
 import 'transaksi_screen.dart';
@@ -62,8 +62,6 @@ class _HomeScreenState extends State<HomeScreen> {
   /// Kunci layar Rencana untuk memicu aksi tombol + tengah navbar.
   final _rencanaKey = GlobalKey<RencanaScreenState>();
 
-  /// Kunci layar Rekap untuk deep-link bersegmen dari Beranda.
-  final _rekapKey = GlobalKey<RekapScreenState>();
 
   /// Deep-link Beranda (BatasCard/strip) → Rencana·Batas.
   void _openTransaksi() => setState(() => _tab = 1);
@@ -137,8 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             TickerMode(
               enabled: _tab == 3,
-              child: RekapScreen(
-                key: _rekapKey,
+              child: LaporanScreen(
                 repository: widget.repository,
                 progress: widget.progress,
               ),
