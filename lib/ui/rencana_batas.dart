@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/budget.dart';
-import '../core/dates_id.dart';
 import '../core/money.dart';
-import '../game/mascot.dart';
 import '../game/progress.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
@@ -151,13 +149,6 @@ class _RencanaBatasState extends State<RencanaBatas> {
         Spacing.l + MediaQuery.of(context).padding.bottom,
       ),
       children: [
-        if (widget.progress?.latest != null) ...[
-          _SaverGamificationCard(
-            stats: widget.progress!.latest!.saverStats,
-            streak: widget.progress!.latest!.streakDays,
-          ),
-          const SizedBox(height: Spacing.m),
-        ],
         StreamBuilder<({int day, int week, int month})>(
           stream: _usage,
           builder: (context, usageSnap) {
@@ -166,19 +157,18 @@ class _RencanaBatasState extends State<RencanaBatas> {
             }
             final usage = usageSnap.data;
             return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Kartu batas utama — fokus harian + maskot meter
-                // (mockup v2.1). Mingguan/bulanan tetap tersedia di bawah.
-                _BatasUtamaCard(
-                  used: usage?.day ?? 0,
-                  limit: _dailyLimit,
-                  progress: widget.progress,
+                // Kartu batas bulanan utama
+                _BatasBulananCard(
+                  used: usage?.month ?? 0,
+                  limit: _monthlyTotal,
                   onTap: () => _editLimit(
-                    title: 'Batas harian',
-                    current: _dailyLimit,
+                    title: 'Total bulanan',
+                    current: _monthlyTotal,
                     save: (v) async {
-                      await _saveLimit(kKeyDailyLimit, v);
-                      setState(() => _dailyLimit = v);
+                      await _saveLimit(kKeyMonthlyTotal, v);
+                      setState(() => _monthlyTotal = v);
                     },
                   ),
                 ),
@@ -203,15 +193,15 @@ class _RencanaBatasState extends State<RencanaBatas> {
                     const SizedBox(width: Spacing.s),
                     Expanded(
                       child: _LimitMiniCard(
-                        label: 'Bulanan',
-                        used: usage?.month ?? 0,
-                        limit: _monthlyTotal,
+                        label: 'Harian',
+                        used: usage?.day ?? 0,
+                        limit: _dailyLimit,
                         onTap: () => _editLimit(
-                          title: 'Total bulanan',
-                          current: _monthlyTotal,
+                          title: 'Batas harian',
+                          current: _dailyLimit,
                           save: (v) async {
-                            await _saveLimit(kKeyMonthlyTotal, v);
-                            setState(() => _monthlyTotal = v);
+                            await _saveLimit(kKeyDailyLimit, v);
+                            setState(() => _dailyLimit = v);
                           },
                         ),
                       ),
@@ -222,10 +212,6 @@ class _RencanaBatasState extends State<RencanaBatas> {
             );
           },
         ),
-        const SizedBox(height: Spacing.m),
-        // Chip progres 7 hari terakhir (mockup v2.1) — menggantikan
-        // kartu Disiplin di Beranda; ringkasan disiplin sekali lihat.
-        _WeeklyProgressCard(progress: widget.progress),
         const SizedBox(height: Spacing.m),
         Row(
           children: [
@@ -980,18 +966,16 @@ class _AllocationRow extends StatelessWidget {
 
 /// Kartu batas utama: fokus harian dengan maskot meter di kanan —
 /// "sisa aman hari ini" (mockup v2.1). Tap = edit batas harian.
-class _BatasUtamaCard extends StatelessWidget {
-  const _BatasUtamaCard({
+class _BatasBulananCard extends StatelessWidget {
+  const _BatasBulananCard({
     required this.used,
     required this.limit,
     required this.onTap,
-    this.progress,
   });
 
   final int used;
   final int? limit;
   final VoidCallback onTap;
-  final ProgressService? progress;
 
   @override
   Widget build(BuildContext context) {
@@ -1000,352 +984,122 @@ class _BatasUtamaCard extends StatelessWidget {
     final sisa = (limit ?? 0) - used;
     final over = hasLimit && sisa < 0;
     final fraction = hasLimit ? (used / limit!).clamp(0.0, 1.0) : 0.0;
-    final mood = progress?.latest?.mood ?? MascotMood.idle;
 
-    // Chip "vs bulan lalu" — dari snapshot fair mid-month.
-    String? vsChip;
-    var vsGood = false;
-    final snap = progress?.latest;
-    if (snap != null && snap.snapshot.lastMonthOut > 0) {
-      final pct =
-          ((snap.monthOut - snap.snapshot.lastMonthOut) * 100 /
-                  snap.snapshot.lastMonthOut)
-              .round();
-      if (pct != 0) {
-        vsGood = pct < 0;
-        vsChip = '${pct.abs()}% ${vsGood ? 'lebih hemat' : 'lebih boros'}'
-            ' · vs bulan lalu';
-      }
+    Color progressColor;
+    if (over) {
+      progressColor = q.bad;
+    } else if (fraction >= 0.8) {
+      progressColor = SeedColors.honey;
+    } else {
+      progressColor = q.good;
     }
 
-    return QuestCard(
-      onTap: onTap,
-      radius: AppRadius.sheet,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text('Sisa aman hari ini', style: context.qEyebrow(10)),
-                    if (hasLimit) ...[
-                      const Spacer(),
-                      Container(
-                        padding: Insets.chip,
-                        decoration: BoxDecoration(
-                          color: over
-                              ? SeedColors.outgoingTint
-                              : SeedColors.incomingTint,
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
-                        ),
-                        child: Text(
-                          over ? 'OVER' : 'Aman',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: over
-                                ? SeedColors.outgoing
-                                : SeedColors.incoming,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: Spacing.xs),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    !hasLimit
-                        ? 'Tanpa batas'
-                        : over
-                            ? '−${Money.format(-sisa)}'
-                            : Money.format(sisa),
-                    style: context.qDisplay(27).copyWith(
-                          color: over ? q.bad : null,
-                        ),
-                  ),
-                ),
-                const SizedBox(height: Spacing.s),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  child: Stack(
+    return Container(
+      decoration: BoxDecoration(
+        color: q.surface,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: q.line),
+        boxShadow: AppShadows.card,
+      ),
+      child: QuestPress(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(Spacing.m),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
                     children: [
-                      Container(height: 10, color: q.line.withValues(alpha: .7)),
-                      FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: fraction,
-                        child: Container(
-                          height: 10,
-                          color: over
-                              ? q.bad
-                              : const Color(0xFFE8B36B),
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: SeedColors.primaryLight,
+                          borderRadius: BorderRadius.circular(AppRadius.cell),
                         ),
+                        child: Icon(
+                          Icons.calendar_month_rounded,
+                          color: q.primary,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: Spacing.s),
+                      Text(
+                        'Batas Total Bulanan',
+                        style: context.qTitle(15),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: Spacing.xs),
-                Text(
-                  !hasLimit
-                      ? 'Tap untuk mengatur batas harian'
-                      : 'Pakai ${Money.format(used)} dari ${Money.format(limit!)}',
-                  style: context.qSmall(11),
-                ),
-                if (vsChip != null) ...[
-                  const SizedBox(height: Spacing.xxs),
                   Container(
-                    padding: Insets.chip,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: vsGood
-                          ? SeedColors.incomingTint
-                          : SeedColors.outgoingTint,
+                      color: hasLimit
+                          ? (over ? SeedColors.outgoingTint : SeedColors.incomingTint)
+                          : q.surface2,
                       borderRadius: BorderRadius.circular(AppRadius.pill),
                     ),
                     child: Text(
-                      vsChip,
+                      hasLimit
+                          ? (over ? 'Over ${Money.format(-sisa)}' : 'Sisa ${Money.format(sisa)}')
+                          : 'Belum diatur',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
-                        color: vsGood
-                            ? SeedColors.incoming
-                            : SeedColors.outgoing,
+                        color: hasLimit
+                            ? (over ? q.bad : q.good)
+                            : q.muted,
                       ),
                     ),
                   ),
                 ],
-              ],
-            ),
-          ),
-          const SizedBox(width: Spacing.m),
-          // Maskot = meter (ADR-007): ekspresi mengikuti kondisi nyata.
-          // Berdiri di panggung supaya jadi penanda utama kartu, bukan
-          // ikon kecil di pinggir.
-          RepaintBoundary(
-            child: MascotStage(
-              mood: over ? MascotMood.worried : mood,
-              size: 76,
-              glow: SeedColors.honey50,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Chip progres 7 hari terakhir dari data disiplin bulan berjalan —
-/// ringkasan disiplin sekali lihat (mockup v2.1). Tanpa [progress] atau
-/// tanpa batas: kartu disembunyikan (jangan mengganggu).
-class _WeeklyProgressCard extends StatelessWidget {
-  const _WeeklyProgressCard({this.progress});
-
-  final ProgressService? progress;
-
-  @override
-  Widget build(BuildContext context) {
-    final snap = progress?.latest;
-    final rows = snap?.disciplineMonth ?? const <DailyDiscipline>[];
-    if (rows.isEmpty) return const SizedBox.shrink();
-
-    final last7 = rows.where((d) => !d.future).toList();
-    if (last7.isEmpty) return const SizedBox.shrink();
-    if (last7.length > 7) last7.removeRange(0, last7.length - 7);
-
-    return QuestCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Progres 7 hari terakhir', style: context.qTitle(14)),
-          const SizedBox(height: Spacing.s),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (final d in last7)
-                  Padding(
-                    padding: const EdgeInsets.only(right: Spacing.xs),
-                    child: Container(
-                      padding: Insets.chip,
-                      decoration: BoxDecoration(
-                        color: d.within
-                            ? SeedColors.incomingTint
-                            : SeedColors.outgoingTint,
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                      ),
-                      child: Text(
-                        '${idDaysShort[d.day.weekday - 1]} '
-                        '${d.within ? 'aman' : 'OVER'}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: d.within
-                              ? SeedColors.incoming
-                              : SeedColors.outgoing,
-                        ),
-                      ),
+              ),
+              const SizedBox(height: Spacing.m),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    hasLimit
+                        ? '${Money.format(used)} / ${Money.format(limit!)}'
+                        : 'Tap untuk mengatur batas bulanan',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                      color: hasLimit ? q.text : q.muted,
+                      fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SaverGamificationCard extends StatelessWidget {
-  const _SaverGamificationCard({required this.stats, required this.streak});
-
-  final SaverStats stats;
-  final int streak;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0x0A000000)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A2B3A4A),
-            offset: Offset(0, 8),
-            blurRadius: 24,
-            spreadRadius: -2,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.military_tech_rounded,
-                  size: 24,
-                  color: Color(0xFFD97706),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Level ${stats.level}: ${stats.title}',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF161924),
-                        ),
-                      ),
-                    ),
+                  if (hasLimit)
                     Text(
-                      '${stats.currentXp} / ${stats.nextLevelXp} XP',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF7C8BA0),
+                      '${(used * 100 / limit!).round()}%',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        color: progressColor,
+                        fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
-                  ],
-                ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  '🔥 $streak Hari',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFFB45309),
-                  ),
+              const SizedBox(height: Spacing.s),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                child: LinearProgressIndicator(
+                  value: fraction,
+                  minHeight: 10,
+                  backgroundColor: q.surface2,
+                  valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: Container(
-              height: 8,
-              color: const Color(0xFFEEF2F6),
-              child: FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: stats.progress,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(999),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFF59E0B), Color(0xFF8B5CF6)],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Lencana Prestasi Disiplin Spending',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF9AA8BC),
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              for (final badge in stats.badges)
-                Expanded(
-                  child: Tooltip(
-                    message: '${badge.title}: ${badge.description}',
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: badge.unlocked
-                            ? const Color(0xFFE9D8FD)
-                            : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        badge.icon,
-                        size: 20,
-                        color: badge.unlocked
-                            ? const Color(0xFF6B46C1)
-                            : const Color(0xFF9AA8BC),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
 }
+

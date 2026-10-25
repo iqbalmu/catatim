@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../game/progress.dart';
 import '../storage/repository.dart';
 import 'rencana_batas.dart';
+import '../theme/quest.dart';
 
 /// Layar Rencana: akar tab (tanpa tombol kembali) berisi Batas
 /// (eks Anggaran). [progress] opsional — sumber maskot meter, chip
@@ -28,29 +29,27 @@ class RencanaScreenState extends State<RencanaScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FB),
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Target & Gamifikasi',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
-                color: Color(0xFF161924),
-              ),
+              'Anggaran',
+              style: context.qTitle(20),
             ),
-            SizedBox(height: 2),
+            const SizedBox(height: 2),
             Text(
-              'Target batas pengeluaran & level saver',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF7C8BA0),
-              ),
+              'Kontrol batas pengeluaran & alokasi kategori',
+              style: context.qSmall(),
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_rounded),
+            tooltip: 'Tambah Jenis Anggaran',
+            onPressed: () => showAddJenisFlow(context, widget.repository),
+          ),
+        ],
         backgroundColor: Colors.transparent,
         elevation: 0,
         surfaceTintColor: Colors.transparent,

@@ -13,11 +13,16 @@ class QuestPalette {
     required this.surface2,
     required this.line,
     required this.text,
+    required this.body,
     required this.muted,
     required this.good,
     required this.bad,
     required this.honey,
     required this.honeyInk,
+    required this.primary,
+    required this.primaryDeep,
+    required this.primaryLight,
+    required this.violet,
     required this.shadow,
   });
 
@@ -26,25 +31,35 @@ class QuestPalette {
   final Color surface2;
   final Color line;
   final Color text;
+  final Color body;
   final Color muted;
   final Color good;
   final Color bad;
   final Color honey;
   final Color honeyInk;
+  final Color primary;
+  final Color primaryDeep;
+  final Color primaryLight;
+  final Color violet;
   final Color shadow;
 
   static const light = QuestPalette(
-    bg: Color(0xFFF6F7FB),
-    surface: Colors.white,
-    surface2: Color(0xFFF1F5F9),
-    line: Color(0x0A000000),
-    text: Color(0xFF161924),
-    muted: Color(0xFF7C8BA0),
-    good: Color(0xFF10B981),
-    bad: Color(0xFFEF4444),
-    honey: Color(0xFFF59E0B),
-    honeyInk: Color(0xFF6B46C1),
-    shadow: Color(0x0A2B3A4A),
+    bg: SeedColors.bg,
+    surface: SeedColors.surface,
+    surface2: SeedColors.surface2,
+    line: SeedColors.line,
+    text: SeedColors.ink,
+    body: SeedColors.body,
+    muted: SeedColors.muted,
+    good: SeedColors.incoming,
+    bad: SeedColors.outgoing,
+    honey: SeedColors.primary,
+    honeyInk: SeedColors.primaryDeep,
+    primary: SeedColors.primary,
+    primaryDeep: SeedColors.primaryDeep,
+    primaryLight: SeedColors.primaryLight,
+    violet: SeedColors.violet,
+    shadow: Color(0x080F172A),
   );
 
   /// Aksen mint (syal Pochy) — netral-aktif: segmented on, status tenang.
@@ -52,7 +67,6 @@ class QuestPalette {
   static const mintTint = SeedColors.mintTint;
   static const mintInk = SeedColors.mintInk;
 }
-
 /// Akses cepat palet + tipografi khas Quest dari BuildContext.
 extension QuestTheme on BuildContext {
   /// Palet tunggal (tanpa dark mode — ADR-010).
@@ -63,7 +77,7 @@ extension QuestTheme on BuildContext {
     return TextStyle(
       fontSize: size,
       height: 1.05,
-      fontWeight: FontWeight.w800,
+      fontWeight: FontWeight.w900,
       letterSpacing: -0.5,
       color: q.text,
       fontFeatures: const [FontFeature.tabularFigures()],
@@ -73,26 +87,36 @@ extension QuestTheme on BuildContext {
   TextStyle qTitle([double size = 17]) {
     return TextStyle(
       fontSize: size,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -0.2,
+      fontWeight: FontWeight.w800,
+      letterSpacing: -0.3,
       color: q.text,
     );
   }
 
   TextStyle qBody([double size = 14]) {
-    return TextStyle(fontSize: size, color: q.text, height: 1.45);
+    return TextStyle(
+      fontSize: size,
+      color: q.body,
+      height: 1.45,
+      fontWeight: FontWeight.w500,
+    );
   }
 
   TextStyle qSmall([double size = 12]) {
-    return TextStyle(fontSize: size, color: q.muted, height: 1.4);
+    return TextStyle(
+      fontSize: size,
+      color: q.muted,
+      height: 1.4,
+      fontWeight: FontWeight.w500,
+    );
   }
 
   /// Label kecil caps dengan spasi lebar, untuk eyebrow/section.
   TextStyle qEyebrow([double size = 11]) {
     return TextStyle(
       fontSize: size,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 2,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 0.8,
       color: q.muted,
     );
   }

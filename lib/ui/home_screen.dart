@@ -12,13 +12,11 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'bon_screen.dart';
 import 'home_cards.dart';
-import 'menu_screen.dart';
-import 'notif_screen.dart';
 import 'quest.dart';
 import 'rekap_screen.dart';
 import 'rencana_screen.dart';
 import 'transaction_sheet.dart';
-
+import 'transaksi_screen.dart';
 /// Shell utama: Beranda | Rekap | Rencana | Bon.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -35,10 +33,10 @@ class HomeScreen extends StatefulWidget {
   final RuleSet ruleSet;
 
   static const _destinations = [
-    QuestDestination(icon: Icons.home_rounded, label: 'Beranda'),
-    QuestDestination(icon: Icons.bar_chart_rounded, label: 'Rekap'),
-    QuestDestination(icon: Icons.track_changes_rounded, label: 'Rencana'),
-    QuestDestination(icon: Icons.account_balance_wallet_rounded, label: 'Bon & Akun'),
+    QuestDestination(icon: Icons.dashboard_rounded, label: 'Beranda'),
+    QuestDestination(icon: Icons.receipt_long_rounded, label: 'Transaksi'),
+    QuestDestination(icon: Icons.pie_chart_outline_rounded, label: 'Anggaran'),
+    QuestDestination(icon: Icons.bar_chart_rounded, label: 'Laporan'),
   ];
 
   @override
@@ -68,94 +66,16 @@ class _HomeScreenState extends State<HomeScreen> {
   final _rekapKey = GlobalKey<RekapScreenState>();
 
   /// Deep-link Beranda (BatasCard/strip) → Rencana·Batas.
+  void _openTransaksi() => setState(() => _tab = 1);
   void _openRencanaBatas() => setState(() => _tab = 2);
 
-  /// Deep-link Beranda → Rekap pada segmen tertentu, sesuai janji label.
-  void _openRekap(RekapSegment segment) {
-    setState(() => _tab = 1);
-    _rekapKey.currentState?.openSegment(segment);
-  }
-
-  /// Aksi tombol + tengah navbar: Buka menu pilihan cepat (Transaksi / Bon).
+  /// Aksi tombol + tengah navbar: Langsung catat transaksi 1-tap.
   void _primaryAction() {
     HapticFeedback.lightImpact();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE2E8F0),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-            const SizedBox(height: 18),
-            const Text(
-              'Catat Baru',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF161924),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-              leading: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDEF7EC),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(Icons.receipt_long_rounded, color: Color(0xFF03543F)),
-              ),
-              title: const Text('Catat Transaksi', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
-              subtitle: const Text('Belanja, pemasukan, atau transfer akun', style: TextStyle(fontSize: 12)),
-              onTap: () {
-                Navigator.pop(ctx);
-                TransactionSheet.show(
-                  context,
-                  widget.repository,
-                  progress: widget.progress,
-                );
-              },
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-              leading: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE9D8FD),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(Icons.handshake_outlined, color: Color(0xFF6B46C1)),
-              ),
-              title: const Text('Catat Bon', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
-              subtitle: const Text('Pinjamkan uang (piutang) atau pinjam (utang)', style: TextStyle(fontSize: 12)),
-              onTap: () {
-                Navigator.pop(ctx);
-                BonSheet.show(context, widget.repository);
-              },
-            ),
-          ],
-        ),
-      ),
+    TransactionSheet.show(
+      context,
+      widget.repository,
+      progress: widget.progress,
     );
   }
 
@@ -181,103 +101,68 @@ class _HomeScreenState extends State<HomeScreen> {
         // Back di tab non-Beranda kembali ke Beranda; di Beranda keluar.
         if (!didPop && _tab != 0) setState(() => _tab = 0);
       },
-      child: Stack(
-        children: [
-          Scaffold(
-            backgroundColor: context.q.bg,
-            // Konten mengalir di belakang navbar floating; tiap tab memberi
-            // clearance lewat MediaQuery.padding.bottom yang disuntik
-            // Scaffold.
-            extendBody: true,
-            body: _DirectionalTabView(
+      child: Scaffold(
+        backgroundColor: context.q.bg,
+        extendBody: true,
+        body: _DirectionalTabView(
+          index: _tab,
+          children: [
+            TickerMode(
+              enabled: _tab == 0,
+              child: _BerandaTab(
+                repository: widget.repository,
+                pipeline: widget.pipeline,
+                progress: widget.progress,
+                ruleSet: widget.ruleSet,
+                onOpenTransaksi: _openTransaksi,
+                onOpenRencanaBatas: _openRencanaBatas,
+              ),
+            ),
+            TickerMode(
+              enabled: _tab == 1,
+              child: TransaksiScreen(
+                repository: widget.repository,
+                progress: widget.progress,
+                pipeline: widget.pipeline,
+                ruleSet: widget.ruleSet,
+              ),
+            ),
+            TickerMode(
+              enabled: _tab == 2,
+              child: RencanaScreen(
+                key: _rencanaKey,
+                repository: widget.repository,
+                progress: widget.progress,
+              ),
+            ),
+            TickerMode(
+              enabled: _tab == 3,
+              child: RekapScreen(
+                key: _rekapKey,
+                repository: widget.repository,
+                progress: widget.progress,
+              ),
+            ),
+          ],
+        ),
+        bottomNavigationBar: StreamBuilder<List<Bon>>(
+          stream: _bonsWatch,
+          builder: (context, snapshot) {
+            final hasOld = (snapshot.data ?? const <Bon>[]).any(
+              (b) => b.settledAt == null && bonNeedsBadge(b.occurredAt),
+            );
+            return QuestBottomNav(
               index: _tab,
-              children: [
-                TickerMode(
-                  enabled: _tab == 0,
-                  child: _BerandaTab(
-                    repository: widget.repository,
-                    pipeline: widget.pipeline,
-                    progress: widget.progress,
-                    ruleSet: widget.ruleSet,
-                    onOpenRekap: () =>
-                        _openRekap(RekapSegment.transaksi),
-                    onOpenRencanaBatas: _openRencanaBatas,
-                  ),
-                ),
-                TickerMode(
-                  enabled: _tab == 1,
-                  child: RekapScreen(
-                    key: _rekapKey,
-                    repository: widget.repository,
-                    progress: widget.progress,
-                  ),
-                ),
-                TickerMode(
-                  enabled: _tab == 2,
-                  child: RencanaScreen(
-                    key: _rencanaKey,
-                    repository: widget.repository,
-                    progress: widget.progress,
-                  ),
-                ),
-                TickerMode(
-                  enabled: _tab == 3,
-                  child: BonTab(
-                    repository: widget.repository,
-                    pipeline: widget.pipeline,
-                    ruleSet: widget.ruleSet,
-                    progress: widget.progress,
-                  ),
-                ),
-              ],
-            ),
-            // Tombol + di tengah navbar, dinamis per tab.
-            bottomNavigationBar: StreamBuilder<List<Bon>>(
-              stream: _bonsWatch,
-              builder: (context, snapshot) {
-                final hasOld = (snapshot.data ?? const <Bon>[]).any(
-                  (b) => b.settledAt == null && bonNeedsBadge(b.occurredAt),
-                );
-                return QuestBottomNav(
-                  index: _tab,
-                  onChanged: _onTabChanged,
-                  destinations: HomeScreen._destinations,
-                  badges: hasOld ? const {3} : const <int>{},
-                  centerAction: (
-                    tooltip: 'Catat baru',
-                    onTap: _primaryAction,
-                  ),
-                );
-              },
-            ),
-          ),
-          // Lonceng + ⋯ fix seperti navbar: hidup di shell (di atas
-          // Scaffold), tidak ikut slide pindah tab. Posisi meniru tata
-          // letak QuestHeader (SafeArea + padding s/m).
-          Positioned(
-            top: MediaQuery.paddingOf(context).top + Spacing.s,
-            right: Spacing.m,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _NotifBell(
-                  repository: widget.repository,
-                  pipeline: widget.pipeline,
-                  progress: widget.progress,
-                  ruleSet: widget.ruleSet,
-                  onOpenRencana: _openRencanaBatas,
-                  onOpenBon: () => setState(() => _tab = 3),
-                ),
-                const SizedBox(width: Spacing.s),
-                _HomeMenu(
-                  repository: widget.repository,
-                  pipeline: widget.pipeline,
-                  ruleSet: widget.ruleSet,
-                ),
-              ],
-            ),
-          ),
-        ],
+              onChanged: _onTabChanged,
+              destinations: HomeScreen._destinations,
+              badges: hasOld ? const {1} : const <int>{},
+              centerAction: (
+                tooltip: 'Catat baru',
+                onTap: _primaryAction,
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -422,190 +307,6 @@ class _DirectionalTabViewState extends State<_DirectionalTabView>
 }
 
 
-/// Lonceng notifikasi. Badge = ada item perhatian: draf menunggu
-/// keputusan, izin belum aktif, entri tak terbaca, atau bon tua belum
-/// lunas. Dihitung dari data yang sama dengan layar Notifikasi.
-class _NotifBell extends StatefulWidget {
-  const _NotifBell({
-    required this.repository,
-    required this.pipeline,
-    required this.progress,
-    required this.ruleSet,
-    required this.onOpenRencana,
-    required this.onOpenBon,
-  });
-
-  final LedgerRepository repository;
-  final CapturePipeline pipeline;
-  final ProgressService progress;
-  final RuleSet ruleSet;
-  final VoidCallback onOpenRencana;
-  final VoidCallback onOpenBon;
-
-  @override
-  State<_NotifBell> createState() => _NotifBellState();
-}
-
-class _NotifBellState extends State<_NotifBell> {
-  /// Izin listener di-hoist agar tidak dibuat ulang tiap build.
-  late final Future<bool> _listenerEnabled =
-      widget.pipeline.channel.isListenerEnabled();
-
-  late final Stream<List<Bon>> _bons = widget.repository.watchBons();
-  late final Stream<List<CaptureLog>> _logs =
-      widget.repository.watchCaptureLog();
-  late final Stream<List<Draft>> _drafts = widget.repository.watchDrafts();
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: _listenerEnabled,
-      builder: (context, listenerSnap) {
-        final enabled = listenerSnap.data ?? false;
-        return StreamBuilder<List<Draft>>(
-          stream: _drafts,
-          builder: (context, draftSnap) {
-            final draftCount = draftSnap.data?.length ?? 0;
-            return StreamBuilder<List<CaptureLog>>(
-              stream: _logs,
-              builder: (context, logSnap) {
-                final failed = (logSnap.data ?? const <CaptureLog>[])
-                    .where((l) => !l.parsed)
-                    .length;
-                return StreamBuilder<List<Bon>>(
-                  stream: _bons,
-                  builder: (context, bonSnap) {
-                    final aging = (bonSnap.data ?? const <Bon>[])
-                        .where((b) =>
-                            b.settledAt == null &&
-                            bonNeedsBadge(b.occurredAt))
-                        .length;
-                    final hasAttention =
-                        draftCount > 0 || !enabled || failed > 0 || aging > 0;
-                    return _HeaderIcon(
-                      icon: Icons.notifications_active_outlined,
-                      tooltip: 'Notifikasi',
-                      badge: hasAttention,
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => NotificationScreen(
-                            repository: widget.repository,
-                            pipeline: widget.pipeline,
-                            progress: widget.progress,
-                            ruleSet: widget.ruleSet,
-                            onOpenRencana: widget.onOpenRencana,
-                            onOpenBon: widget.onOpenBon,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-/// Tombol ⋯: buka layar Menu (Catat otomatis, Bank & akun, Backup).
-class _HomeMenu extends StatelessWidget {
-  const _HomeMenu({
-    required this.repository,
-    required this.pipeline,
-    required this.ruleSet,
-  });
-
-  final LedgerRepository repository;
-  final CapturePipeline pipeline;
-  final RuleSet ruleSet;
-
-  @override
-  Widget build(BuildContext context) {
-    return _HeaderIcon(
-      icon: Icons.more_horiz_rounded,
-      tooltip: 'Menu',
-      onPressed: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => MenuScreen(
-            repository: repository,
-            pipeline: pipeline,
-            ruleSet: ruleSet,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Tombol ikon modern untuk header: lingkaran putih bersih dengan subtle shadow & border.
-class _HeaderIcon extends StatelessWidget {
-  const _HeaderIcon({
-    required this.icon,
-    required this.tooltip,
-    this.badge = false,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final bool badge;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: Container(
-        width: 38,
-        height: 38,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          border: Border.all(color: const Color(0x0F000000)),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.05),
-              offset: const Offset(0, 3),
-              blurRadius: 10,
-            ),
-          ],
-        ),
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: onPressed,
-            customBorder: const CircleBorder(),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Icon(icon, size: 20, color: const Color(0xFF0F172A)),
-                if (badge)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFEF4444),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Beranda: panggung maskot & saldo hero, belanja hari ini, streak,
 /// dan transaksi terbaru. Pencatatan via tombol + tengah navbar.
 class _BerandaTab extends StatefulWidget {
@@ -614,7 +315,7 @@ class _BerandaTab extends StatefulWidget {
     required this.pipeline,
     required this.progress,
     required this.ruleSet,
-    required this.onOpenRekap,
+    required this.onOpenTransaksi,
     required this.onOpenRencanaBatas,
   });
 
@@ -622,7 +323,7 @@ class _BerandaTab extends StatefulWidget {
   final CapturePipeline pipeline;
   final ProgressService progress;
   final RuleSet ruleSet;
-  final VoidCallback onOpenRekap;
+  final VoidCallback onOpenTransaksi;
   final VoidCallback onOpenRencanaBatas;
 
   @override
@@ -670,42 +371,44 @@ class _BerandaTabState extends State<_BerandaTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7FB),
-      body: ListView(
-        padding: EdgeInsets.only(
-          bottom: Spacing.m + MediaQuery.paddingOf(context).bottom,
-        ),
-        children: [
-          UangCard(
-            progress: widget.progress,
-            repository: widget.repository,
+      backgroundColor: context.q.bg,
+      body: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: EdgeInsets.only(
+            bottom: Spacing.m + MediaQuery.paddingOf(context).bottom,
           ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: SpendingCard(
+          children: [
+            HomeTopBar(
               progress: widget.progress,
               repository: widget.repository,
+              pipeline: widget.pipeline,
+              ruleSet: widget.ruleSet,
+            ),
+            DraftAttentionBanner(
+              repository: widget.repository,
+              ruleSet: widget.ruleSet,
+              progress: widget.progress,
+              pipeline: widget.pipeline,
+            ),
+            TotalBalanceCard(
+              repository: widget.repository,
+              pipeline: widget.pipeline,
+              ruleSet: widget.ruleSet,
+              progress: widget.progress,
+            ),
+            BudgetSummaryCard(
+              progress: widget.progress,
               onTap: widget.onOpenRencanaBatas,
             ),
-          ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: StreakStrip(progress: widget.progress),
-          ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: TransaksiTerbaruCard(
+            RecentTransactionsCard(
               repository: widget.repository,
               progress: widget.progress,
-              onSeeAll: widget.onOpenRekap,
+              onSeeAll: widget.onOpenTransaksi,
             ),
-          ),
-          // Clearance navbar melayang di atas konten (extendBody).
-          const SizedBox(height: 96),
-        ],
+            const SizedBox(height: 96),
+          ],
+        ),
       ),
     );
   }

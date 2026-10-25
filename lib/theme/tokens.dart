@@ -34,13 +34,13 @@ class AppRadius {
   AppRadius._();
 
   /// Kartu standar — QuestCard & Container kartu permukaan.
-  static const double card = 22;
+  static const double card = 20;
 
   /// Tile/baris di dalam halaman atau kartu, sel kontrol dalam bingkai.
-  static const double tile = 18;
+  static const double tile = 14;
 
   /// Bingkai kontrol: segmented, bottom nav.
-  static const double frame = 22;
+  static const double frame = 18;
 
   /// Sel kecil padat: picker bulan, legenda donat, sel kalender.
   static const double cell = 12;
@@ -52,76 +52,88 @@ class AppRadius {
   static const double pill = 999;
 }
 
+class AppShadows {
+  AppShadows._();
+
+  static const List<BoxShadow> card = [
+    BoxShadow(
+      offset: Offset(0, 4),
+      blurRadius: 16,
+      color: Color(0x080F172A),
+    ),
+  ];
+
+  static const List<BoxShadow> elevated = [
+    BoxShadow(
+      offset: Offset(0, 8),
+      blurRadius: 24,
+      color: Color(0x0D0F172A),
+    ),
+  ];
+}
+
 class SeedColors {
   SeedColors._();
 
-  // ── Netral (dari burlap & tali Pochy) ──────────────────────────
-  /// Latar app — burlap terang dicerahkan.
-  static const Color bg = Color(0xFFFBF5EC);
+  // ── Netral Slate ───────────────────────────────────────────────
+  /// Latar app — Slate 50 ultra-clean.
+  static const Color bg = Color(0xFFF8FAFC);
 
-  /// Kartu/sheet — putih hangat hue burlap.
-  static const Color surface = Color(0xFFFFFDF9);
+  /// Kartu/sheet — putih murni.
+  static const Color surface = Color(0xFFFFFFFF);
 
-  /// Tint lembut: chip, track bar, zona sekunder.
-  static const Color surface2 = Color(0xFFF6E9DA);
+  /// Tint lembut: chip, track bar, zona sekunder — Slate 100.
+  static const Color surface2 = Color(0xFFF1F5F9);
 
-  /// Garis sekunder halus — bukan border kartu.
-  static const Color line = Color(0xFFEDE0CE);
+  /// Garis sekunder & border hairline — Slate 100.
+  static const Color line = Color(0xFFF1F5F9);
+  static const Color border = Color(0xFFF1F5F9);
 
-  /// Teks utama — tali/mata #3E2214 dicerahkan.
-  static const Color ink = Color(0xFF5B4433);
+  /// Teks utama — Obsidian Slate 900.
+  static const Color ink = Color(0xFF0F172A);
 
-  /// Teks sekunder — lipatan bayang karung.
-  static const Color muted = Color(0xFFAD9680);
+  /// Teks body — Slate 700.
+  static const Color body = Color(0xFF334155);
 
-  // ── Emas (dari koin #F1A23A + bintang kuning #FDF6BF) ──────────
-  /// Gradien koin: terang.
-  static const Color honeyBright = Color(0xFFF9DCA8);
+  /// Teks sekunder/muted — Slate 500.
+  static const Color muted = Color(0xFF64748B);
 
-  /// Gradien koin: ujung gelap; aksen brand/CTA utama.
-  static const Color honey = Color(0xFFE8B36B);
+  // ── Brand Primary & Aksen ──────────────────────────────────────
+  static const Color primary = Color(0xFF6366F1); // Indigo 500
+  static const Color primaryDeep = Color(0xFF4F46E5); // Indigo 600
+  static const Color primaryLight = Color(0xFFEEF2FF); // Indigo 50
+  static const Color violet = Color(0xFF8B5CF6); // Violet 500
+  static const Color lilacBg = Color(0xFFF3E8FF);
+  static const Color lilacText = Color(0xFF7E22CE);
 
-  /// Ujung lebih pekat untuk gradien & aksen tegas.
-  static const Color honeyDeep = Color(0xFFDE9F55);
+  // ── Emas & Amber ───────────────────────────────────────────────
+  static const Color honeyBright = Color(0xFFFDE68A);
+  static const Color honey = Color(0xFFF59E0B);
+  static const Color honeyDeep = Color(0xFFD97706);
+  static const Color honeyInk = Color(0xFFB45309);
+  static const Color honeyText = Color(0xFF78350F);
+  static const Color honey50 = Color(0xFFFFFBEB);
+  static const Color honey100 = Color(0xFFFEF3C7);
 
-  /// Emas diperdalam — teks tautan/emphasize di area netral.
-  static const Color honeyInk = Color(0xFFC08A3D);
-
-  /// Tinta teks tombol utama di atas gradien emas.
-  static const Color honeyText = Color(0xFF6B4A1E);
-
-  /// Tint emas paling terang — hero gradien awal, zona lembut.
-  static const Color honey50 = Color(0xFFFBE7BE);
-
-  /// Emas sedang — hero gradien tengah.
-  static const Color honey100 = Color(0xFFF3CD8F);
-
-  // ── Mint aksen (dari syal teal + bintang mint) ─────────────────
-  /// Aksen netral-aktif: status tenang, piutang, tint segmen.
-  static const Color mint = Color(0xFFA4D1C9);
-
-  /// Mint diperdalam — sel segmented aktif, aksen berisi.
-  static const Color mintDeep = Color(0xFF7FBDB1);
-
-  /// Mint untuk teks di atas tint terang.
-  static const Color mintInk = Color(0xFF3E7A6D);
-
-  /// Tint mint: chip streak, status baik.
-  static const Color mintTint = Color(0xFFE6F2EF);
+  // ── Mint / Cyan ────────────────────────────────────────────────
+  static const Color mint = Color(0xFF06B6D4);
+  static const Color mintDeep = Color(0xFF0891B2);
+  static const Color mintInk = Color(0xFF0E7490);
+  static const Color mintTint = Color(0xFFECFEFF);
 
   // ── Semantik arah ──────────────────────────────────────────────
-  /// Masuk / aman — mint diperdalam (menggantikan hijau lama; ADR-010).
-  static const Color incoming = Color(0xFF4A8C7E);
+  /// Masuk / aman — Emerald 500.
+  static const Color incoming = Color(0xFF10B981);
 
-  /// Keluar / OVER — merah mulut menangis disiram.
-  static const Color outgoing = Color(0xFFB05530);
+  /// Keluar / OVER — Rose/Red 500.
+  static const Color outgoing = Color(0xFFEF4444);
 
   /// Tint semantik (chip status).
-  static const Color incomingTint = Color(0xFFE3F0EC);
-  static const Color outgoingTint = Color(0xFFF7E4DA);
+  static const Color incomingTint = Color(0xFFECFDF5);
+  static const Color outgoingTint = Color(0xFFFEF2F2);
 
-  /// Netral finansial lama — kini merujuk mint (aksen tenang).
-  static const Color seed = mintDeep;
+  /// Netral finansial lama.
+  static const Color seed = primary;
 
   /// Warna kategori — BAHASA DATA (ADR-010): diindeks via
   /// Categories.colorIndex, tidak berubah, tidak dipakai di luar

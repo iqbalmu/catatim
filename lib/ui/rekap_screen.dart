@@ -73,6 +73,16 @@ class RekapScreenState extends State<RekapScreen> {
     if (m.year == now.year && m.month == now.month) return 'Bulan ini';
     return idMonthYear(m);
   }
+  void _shiftMonth(int delta) {
+    final current = _filter.month ?? DateTime.now();
+    setState(() {
+      _filter = RekapFilter(
+        month: DateTime(current.year, current.month + delta),
+        accountId: _filter.accountId,
+        query: _filter.query,
+      );
+    });
+  }
 
   Future<void> _openPeriodSheet() async {
     final result =
@@ -106,28 +116,19 @@ class RekapScreenState extends State<RekapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7FB),
+      backgroundColor: context.q.bg,
       appBar: AppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Rekap & Analisis',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
-                color: Color(0xFF161924),
-              ),
+            Text(
+              'Laporan',
+              style: context.qTitle(20),
             ),
             const SizedBox(height: 2),
             Text(
-              _periodLabel,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF7C8BA0),
-              ),
+              'Distribusi kategori & tren arus kas',
+              style: context.qSmall(),
             ),
           ],
         ),
@@ -135,75 +136,65 @@ class RekapScreenState extends State<RekapScreen> {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
-      // Kolom non-scroll: konten segmen (RekapTransaksi) yang menggulir
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Period Selector Bar
           Padding(
-            padding: const EdgeInsets.fromLTRB(
-              20,
-              4,
-              20,
-              0,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: Spacing.xs),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Pil periode kompak — buka sheet kalender
-                QuestPress(
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.chevron_left_rounded),
+                  onPressed: () => _shiftMonth(-1),
+                ),
+                InkWell(
                   onTap: _openPeriodSheet,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0x0A000000)),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x0A2B3A4A),
-                          offset: Offset(0, 4),
-                          blurRadius: 16,
-                        ),
-                      ],
-                    ),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.event_outlined, color: Color(0xFF8B5CF6), size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            _periodLabel,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF161924),
-                            ),
-                          ),
+                        Icon(Icons.event_outlined, color: context.q.primary, size: 18),
+                        const SizedBox(width: 6),
+                        Text(
+                          _periodLabel,
+                          style: context.qTitle(15),
                         ),
-                        const Icon(Icons.expand_more_rounded, color: Color(0xFF7C8BA0)),
+                        const SizedBox(width: 4),
+                        Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: context.q.muted),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
-                QuestSegmented<RekapSegment>(
-                  selected: _segment,
-                  onChanged: (s) => setState(() {
-                    _segment = s;
-                    _filter = _filter.onSegmentSwitch();
-                  }),
-                  options: const [
-                    (value: RekapSegment.donat, label: 'Kategori', icon: null),
-                    (value: RekapSegment.tren, label: 'Tren', icon: null),
-                    (value: RekapSegment.transaksi, label: 'Transaksi', icon: null),
-                    (value: RekapSegment.kalender, label: 'Kalender', icon: null),
-                  ],
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.chevron_right_rounded),
+                  onPressed: () => _shiftMonth(1),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 8),
-          const SizedBox(height: Spacing.m),
+
+          // Two visual options: Kategori & Tren
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: Spacing.xs),
+            child: QuestSegmented<RekapSegment>(
+              selected: _segment == RekapSegment.tren ? RekapSegment.tren : RekapSegment.donat,
+              onChanged: (s) => setState(() {
+                _segment = s;
+                _filter = _filter.onSegmentSwitch();
+              }),
+              options: const [
+                (value: RekapSegment.donat, label: 'Distribusi Kategori', icon: null),
+                (value: RekapSegment.tren, label: 'Tren Arus Kas', icon: null),
+              ],
+            ),
+          ),
+          const SizedBox(height: Spacing.s),
           Expanded(
             child: switch (_segment) {
               RekapSegment.transaksi => RekapTransaksi(

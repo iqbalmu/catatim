@@ -67,9 +67,8 @@ class QuestCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(Spacing.m),
     this.onTap,
-    this.radius = 24,
+    this.radius = AppRadius.card,
   });
-
   final Widget child;
   final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
@@ -82,15 +81,8 @@ class QuestCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.q.surface,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: const Color(0x0A000000), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: context.q.shadow,
-            offset: const Offset(0, 8),
-            blurRadius: 24,
-            spreadRadius: -2,
-          ),
-        ],
+        border: Border.all(color: context.q.line, width: 1),
+        boxShadow: AppShadows.card,
       ),
       child: child,
     );
