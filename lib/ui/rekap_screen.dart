@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../core/dates_id.dart';
+import '../core/money.dart';
 import '../core/rekap_filter.dart';
 import '../game/progress.dart';
+import '../models.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
@@ -176,6 +178,139 @@ class RekapScreenState extends State<RekapScreen> {
                   onPressed: () => _shiftMonth(1),
                 ),
               ],
+            ),
+          ),
+
+          // Executive Financial Summary Card
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: Spacing.xs),
+            child: Builder(
+              builder: (context) {
+                final win = _filter.window;
+                final now = DateTime.now();
+                final winStart = win?.start ?? DateTime(now.year, now.month);
+                final winEnd = win?.end ?? DateTime(now.year, now.month + 1);
+
+                return StreamBuilder<List<TxWithCategory>>(
+                  stream: widget.repository.watchBetweenWithCategory(
+                    winStart,
+                    winEnd,
+                    accountId: _filter.accountId,
+                  ),
+                  builder: (context, snapshot) {
+                    final rows = snapshot.data ?? const [];
+                    int totalIn = 0;
+                    int totalOut = 0;
+                    for (final r in rows) {
+                      if (r.tx.direction == Direction.incoming) {
+                        totalIn += r.tx.amount;
+                      } else if (r.tx.direction == Direction.outgoing && r.tx.kind != TxKind.transfer) {
+                        totalOut += r.tx.amount;
+                      }
+                    }
+                    final net = totalIn - totalOut;
+                    final isSurplus = net >= 0;
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: context.q.surface,
+                        borderRadius: BorderRadius.circular(AppRadius.card),
+                        border: Border.all(color: context.q.line),
+                        boxShadow: AppShadows.card,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.arrow_downward_rounded, size: 14, color: context.q.good),
+                                    const SizedBox(width: 4),
+                                    Text('PEMASUKAN', style: context.qEyebrow(9.5)),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  Money.format(totalIn),
+                                  style: TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: context.q.good,
+                                    fontFeatures: const [FontFeature.tabularFigures()],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(width: 1, height: 32, color: context.q.line),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 10),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(Icons.arrow_upward_rounded, size: 14, color: context.q.bad),
+                                      const SizedBox(width: 4),
+                                      Text('PENGELUARAN', style: context.qEyebrow(9.5)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    Money.format(totalOut),
+                                    style: TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: context.q.bad,
+                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Container(width: 1, height: 32, color: context.q.line),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 10),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        isSurplus ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                                        size: 14,
+                                        color: isSurplus ? context.q.good : context.q.bad,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text('ARUS BERSIH', style: context.qEyebrow(9.5)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${isSurplus ? '+' : '−'}${Money.format(net.abs())}',
+                                    style: TextStyle(
+                                      fontSize: 13.5,
+                                      fontWeight: FontWeight.w900,
+                                      color: isSurplus ? context.q.good : context.q.bad,
+                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
             ),
           ),
 

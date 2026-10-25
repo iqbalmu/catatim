@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../core/buckets.dart';
+import '../core/money.dart';
 import '../core/rekap_filter.dart';
 import '../models.dart';
 import '../storage/repository.dart';
@@ -101,7 +102,13 @@ class _RekapTrenState extends State<RekapTren> {
             final title = end.difference(start).inDays > 62
                 ? 'Tren tiap bulan'
                 : 'Tren tiap minggu';
-            return _MonthlyBarCard(buckets: buckets, title: title);
+            return Column(
+              children: [
+                _MonthlyBarCard(buckets: buckets, title: title),
+                const SizedBox(height: Spacing.m),
+                _TrendBreakdownCard(buckets: buckets),
+              ],
+            );
           },
         ),
       ],
@@ -160,6 +167,126 @@ class _MonthlyBarCard extends StatelessWidget {
     );
   }
 }
+class _TrendBreakdownCard extends StatelessWidget {
+  const _TrendBreakdownCard({required this.buckets});
+
+  final List<TrendBucket> buckets;
+
+  @override
+  Widget build(BuildContext context) {
+    if (buckets.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(Spacing.m),
+      decoration: BoxDecoration(
+        color: context.q.surface,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: context.q.line),
+        boxShadow: AppShadows.card,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Rincian Arus Kas Tiap Periode',
+            style: context.qTitle(15),
+          ),
+          const SizedBox(height: Spacing.s),
+          for (final b in buckets) ...[
+            _BucketRow(bucket: b),
+            if (b != buckets.last)
+              Divider(height: 16, thickness: 1, color: context.q.line),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BucketRow extends StatelessWidget {
+  const _BucketRow({required this.bucket});
+
+  final TrendBucket bucket;
+
+  @override
+  Widget build(BuildContext context) {
+    final net = bucket.incoming - bucket.outgoing;
+    final isSurplus = net >= 0;
+
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                bucket.label,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w800,
+                  color: context.q.text,
+                ),
+              ),
+              Text(
+                isSurplus ? 'Surplus' : 'Defisit',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: isSurplus ? context.q.good : context.q.bad,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          flex: 3,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '+${Money.format(bucket.incoming)}',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: context.q.good,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+              Text(
+                '−${Money.format(bucket.outgoing)}',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: context.q.bad,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: Spacing.s),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: isSurplus ? SeedColors.incomingTint : SeedColors.outgoingTint,
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
+          child: Text(
+            '${isSurplus ? '+' : '−'}${Money.format(net.abs())}',
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+              color: isSurplus ? context.q.good : context.q.bad,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 
 class _LegendDot extends StatelessWidget {
   const _LegendDot({required this.color, required this.label});

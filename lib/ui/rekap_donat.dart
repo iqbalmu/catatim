@@ -262,41 +262,81 @@ class _DonatCard extends StatelessWidget {
   }
 
   Widget _legendRow(BuildContext context, _Bucket b, int total) {
+    final pct = total > 0 ? (b.amount / total) : 0.0;
+    final pctInt = (pct * 100).round();
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: Spacing.xs),
+      padding: const EdgeInsets.only(bottom: Spacing.s),
       child: QuestPress(
         onTap: b.categoryId == null ? null : () => onTap(b.categoryId!),
         child: Container(
-          padding: Insets.chip,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(AppRadius.cell),
+            color: context.q.surface2,
+            borderRadius: BorderRadius.circular(AppRadius.tile),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: b.color,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: Spacing.s),
-              Expanded(
-                child: Text(
-                  b.label,
-                  overflow: TextOverflow.ellipsis,
-                  style: context.qBody(13),
-                ),
-              ),
-              Text(
-                '${(b.amount / total * 100).toStringAsFixed(0)}% · ${Money.format(b.amount)}',
-                style: context
-                    .qSmall(12)
-                    .copyWith(
+              Row(
+                children: [
+                  Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: b.color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: Spacing.s),
+                  Expanded(
+                    child: Text(
+                      b.label,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: context.q.text,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    Money.format(b.amount),
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: context.q.text,
                       fontFeatures: const [FontFeature.tabularFigures()],
                     ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: b.color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                    child: Text(
+                      '$pctInt%',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: b.color,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                child: LinearProgressIndicator(
+                  value: pct.clamp(0.0, 1.0),
+                  minHeight: 5,
+                  backgroundColor: context.q.line,
+                  valueColor: AlwaysStoppedAnimation<Color>(b.color),
+                ),
               ),
             ],
           ),
