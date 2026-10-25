@@ -20,9 +20,8 @@ const String connectDisclosureText =
     'Semua data tersimpan terenkripsi di HP ini dan tidak pernah dikirim '
     'ke server mana pun. Kamu bebas memutuskan hubungannya kapan saja.';
 
-/// Drawer detail satu akun: saldo sekarang, pengaturan baca notifikasi
-/// otomatis (khusus akun bank/e-wallet terhubung katalog), ubah nama &
-/// saldo awal, dan hapus akun.
+/// Drawer detail akun kompak: saldo ringkas, pengaturan baca notifikasi
+/// otomatis (bila terhubung bank), ubah nama & saldo awal, dan hapus akun.
 class AccountDetailSheet extends StatefulWidget {
   const AccountDetailSheet({
     super.key,
@@ -37,7 +36,7 @@ class AccountDetailSheet extends StatefulWidget {
   final RuleSet ruleSet;
   final int accountId;
 
-  /// Buka drawer detail akun.
+  /// Buka drawer detail akun secara kompak.
   static Future<void> show(
     BuildContext context, {
     required LedgerRepository repository,
@@ -51,7 +50,7 @@ class AccountDetailSheet extends StatefulWidget {
         padding: EdgeInsets.only(
           left: Spacing.m,
           right: Spacing.m,
-          top: Spacing.xs,
+          top: Spacing.xxs,
           bottom: MediaQuery.viewInsetsOf(context).bottom + Spacing.m,
         ),
         child: AccountDetailSheet(
@@ -181,7 +180,7 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
       if (mounted) {
         questSnack(
           context,
-          'Notifikasi ${bank.displayName} tidak dibaca lagi.',
+          'Notifikasi ${bank.displayName} dinonaktifkan.',
           icon: Icons.link_off_rounded,
         );
       }
@@ -277,7 +276,7 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
         }
         if (account == null) {
           return const Padding(
-            padding: EdgeInsets.all(Spacing.l),
+            padding: EdgeInsets.all(Spacing.m),
             child: Center(child: QuestSkeleton(rows: 2)),
           );
         }
@@ -303,19 +302,15 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // ── Header Drawer Akun ──
+                        // ── Header Kompak: Icon, Nama, Status, & Aksi ──
                         Row(
                           children: [
                             Container(
-                              width: 44,
-                              height: 44,
+                              width: 38,
+                              height: 38,
                               decoration: BoxDecoration(
-                                color: q.primary.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: q.primary.withValues(alpha: 0.2),
-                                  width: 1,
-                                ),
+                                color: q.primary.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               child: Icon(
                                 switch (account.kind) {
@@ -323,74 +318,41 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                                   AccountKind.ewallet => Icons.wallet_rounded,
                                   AccountKind.cash => Icons.payments_rounded,
                                 },
-                                size: 22,
+                                size: 20,
                                 color: q.primary,
                               ),
                             ),
-                            const SizedBox(width: Spacing.m),
+                            const SizedBox(width: Spacing.s),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     account.name,
-                                    style: context.qTitle(18),
+                                    style: context.qTitle(17),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: Spacing.xxs),
-                                  Row(
-                                    children: [
-                                      Text(
-                                        account.kind.label,
-                                        style: context.qSmall(12).copyWith(
-                                          color: q.muted,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      const SizedBox(width: Spacing.s),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 7,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: autoOn
-                                              ? q.good.withValues(alpha: 0.12)
-                                              : q.surface2,
-                                          borderRadius: BorderRadius.circular(AppRadius.pill),
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            if (autoOn) ...[
-                                              Container(
-                                                width: 6,
-                                                height: 6,
-                                                decoration: BoxDecoration(
-                                                  color: q.good,
-                                                  shape: BoxShape.circle,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 4),
-                                            ],
-                                            Text(
-                                              autoOn
-                                                  ? 'Auto-sync aktif'
-                                                  : (account.bankId != null ? 'Auto-sync nonaktif' : 'Manual'),
-                                              style: TextStyle(
-                                                fontSize: 10.5,
-                                                fontWeight: FontWeight.w700,
-                                                color: autoOn ? q.good : q.muted,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    autoOn
+                                        ? '${account.kind.label} · Auto-sync aktif'
+                                        : (account.bankId != null
+                                            ? '${account.kind.label} · Belum terhubung'
+                                            : '${account.kind.label} · Manual'),
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: autoOn ? FontWeight.w700 : FontWeight.w500,
+                                      color: autoOn ? q.good : q.muted,
+                                    ),
                                   ),
                                 ],
                               ),
+                            ),
+                            QuestIconButton(
+                              icon: Icons.delete_outline_rounded,
+                              tooltip: 'Hapus akun',
+                              onPressed: () => _delete(account),
                             ),
                             QuestIconButton(
                               icon: Icons.close_rounded,
@@ -399,23 +361,61 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                             ),
                           ],
                         ),
-                        const SizedBox(height: Spacing.m),
+                        const SizedBox(height: Spacing.s),
                         Divider(height: 1, thickness: 1, color: q.line),
-                        const SizedBox(height: Spacing.m),
+                        const SizedBox(height: Spacing.s),
 
-                        // ── Kartu Saldo Terkini ──
-                        _BalanceCard(
-                          balance: balance,
-                          openingBalance: account.openingBalance,
+                        // ── Strip Saldo Ringkas & Padat ──
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: q.surface2.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: q.line),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('SALDO SEKARANG', style: context.qEyebrow(10)),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    Money.format(balance),
+                                    style: TextStyle(
+                                      fontSize: 19,
+                                      fontWeight: FontWeight.w800,
+                                      color: balance < 0 ? q.bad : q.text,
+                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: q.surface,
+                                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                                  border: Border.all(color: q.line),
+                                ),
+                                child: Text(
+                                  'Awal: ${Money.format(account.openingBalance)}',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: q.muted,
+                                    fontFeatures: const [FontFeature.tabularFigures()],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
 
-                        // ── Baca Notifikasi Otomatis (jika terhubung bank) ──
+                        // ── Notifikasi Otomatis (Hanya bila akun Bank/E-wallet) ──
                         if (bank != null) ...[
-                          const SizedBox(height: Spacing.m),
-                          Padding(
-                            padding: const EdgeInsets.only(left: Spacing.xs, bottom: Spacing.xs),
-                            child: Text('BACA NOTIFIKASI OTOMATIS', style: context.qEyebrow()),
-                          ),
+                          const SizedBox(height: Spacing.s),
                           _AutoReadCard(
                             bank: bank,
                             active: autoOn,
@@ -425,74 +425,41 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                           ),
                         ],
 
-                        // ── Pengaturan Akun (Edit Nama & Saldo Awal) ──
-                        const SizedBox(height: Spacing.m),
-                        Padding(
-                          padding: const EdgeInsets.only(left: Spacing.xs, bottom: Spacing.xs),
-                          child: Text('PENGATURAN AKUN', style: context.qEyebrow()),
-                        ),
-                        QuestCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              if (_loaded) ...[
-                                TextField(
-                                  controller: _nameCtrl,
-                                  textCapitalization: TextCapitalization.words,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Nama tampilan',
-                                    hintText: 'Contoh: Tabungan Utama',
-                                    prefixIcon: Icon(Icons.edit_outlined, size: 20),
-                                  ),
-                                ),
-                                const SizedBox(height: Spacing.m),
-                                TextField(
-                                  controller: _openingCtrl,
-                                  keyboardType: TextInputType.number,
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                  ],
-                                  decoration: const InputDecoration(
-                                    labelText: 'Saldo awal',
-                                    prefixText: 'Rp ',
-                                    helperText: 'Saldo awal saat pertama kali dicatat',
-                                    prefixIcon: Icon(Icons.account_balance_wallet_outlined, size: 20),
-                                  ),
-                                ),
-                                const SizedBox(height: Spacing.m),
-                                QuestButton(
-                                  label: 'Simpan Perubahan',
-                                  icon: Icons.check_rounded,
-                                  onPressed: () => _save(account),
-                                ),
-                              ],
+                        // ── Form Input Langsung & Padat ──
+                        if (_loaded) ...[
+                          const SizedBox(height: Spacing.m),
+                          TextField(
+                            controller: _nameCtrl,
+                            textCapitalization: TextCapitalization.words,
+                            decoration: const InputDecoration(
+                              labelText: 'Nama tampilan',
+                              hintText: 'Contoh: Tabungan Utama',
+                              prefixIcon: Icon(Icons.edit_outlined, size: 18),
+                              isDense: true,
+                            ),
+                          ),
+                          const SizedBox(height: Spacing.s),
+                          TextField(
+                            controller: _openingCtrl,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
                             ],
-                          ),
-                        ),
-
-                        // ── Aksi Hapus Akun ──
-                        const SizedBox(height: Spacing.l),
-                        Center(
-                          child: TextButton.icon(
-                            style: TextButton.styleFrom(
-                              foregroundColor: q.bad,
-                              padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: Spacing.s),
+                            decoration: const InputDecoration(
+                              labelText: 'Saldo awal',
+                              prefixText: 'Rp ',
+                              prefixIcon: Icon(Icons.account_balance_wallet_outlined, size: 18),
+                              isDense: true,
                             ),
-                            icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                            label: const Text(
-                              'Hapus Akun Ini',
-                              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
-                            ),
-                            onPressed: () => _delete(account),
                           ),
-                        ),
-                        Center(
-                          child: Text(
-                            'Transaksi yang sudah tercatat tidak akan terhapus',
-                            style: context.qSmall(11).copyWith(color: q.muted),
+                          const SizedBox(height: Spacing.m),
+                          QuestButton(
+                            label: 'Simpan Perubahan',
+                            icon: Icons.check_rounded,
+                            onPressed: () => _save(account),
                           ),
-                        ),
-                        const SizedBox(height: Spacing.s),
+                        ],
+                        const SizedBox(height: Spacing.xs),
                       ],
                     ),
                   ),
@@ -506,82 +473,7 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
   }
 }
 
-/// Kartu saldo sekarang: angka besar + penjelasan singkat.
-class _BalanceCard extends StatelessWidget {
-  const _BalanceCard({
-    required this.balance,
-    required this.openingBalance,
-  });
-
-  final int balance;
-  final int openingBalance;
-
-  @override
-  Widget build(BuildContext context) {
-    final q = context.q;
-    return QuestCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('SALDO SAAT INI', style: context.qEyebrow()),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: q.surface2,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-                child: Text(
-                  'Awal: ${Money.format(openingBalance)}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: q.muted,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: Spacing.s),
-          FittedBox(
-            alignment: Alignment.centerLeft,
-            fit: BoxFit.scaleDown,
-            child: Text(
-              Money.format(balance),
-              style: context.qDisplay(28).copyWith(
-                color: balance < 0 ? q.bad : q.text,
-              ),
-            ),
-          ),
-          const SizedBox(height: Spacing.xs),
-          Row(
-            children: [
-              Icon(
-                Icons.check_circle_outline_rounded,
-                size: 14,
-                color: q.good,
-              ),
-              const SizedBox(width: Spacing.xs),
-              Expanded(
-                child: Text(
-                  'Sinkron dengan saldo awal & seluruh mutasi transaksi',
-                  style: context.qSmall(11).copyWith(color: q.muted),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Kartu baca otomatis milik akun ini: status + saklar + tombol izin.
+/// Kartu baca otomatis ringkas untuk akun bank/e-wallet.
 class _AutoReadCard extends StatelessWidget {
   const _AutoReadCard({
     required this.bank,
@@ -601,52 +493,38 @@ class _AutoReadCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final q = context.q;
     final bool permissionBlocked = active && !listenerOn;
-    final IconData icon = !active
-        ? Icons.notifications_none_rounded
-        : permissionBlocked
-            ? Icons.notifications_off_rounded
-            : Icons.notifications_active_rounded;
     final Color color = !active
         ? q.muted
         : permissionBlocked
             ? q.bad
             : q.good;
 
-    return QuestCard(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: q.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: q.line),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: active ? q.good.withValues(alpha: 0.12) : q.surface2,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: color, size: 20),
+              Icon(
+                !active
+                    ? Icons.notifications_none_rounded
+                    : permissionBlocked
+                        ? Icons.notifications_off_rounded
+                        : Icons.notifications_active_rounded,
+                color: color,
+                size: 20,
               ),
               const SizedBox(width: Spacing.s),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Capture Notifikasi ${bank.displayName}',
-                      style: context.qTitle(14),
-                    ),
-                    Text(
-                      active
-                          ? (permissionBlocked ? 'Izin sistem belum aktif' : 'Otomatis buat draf')
-                          : 'Tidak aktif',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                        color: color,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'Capture notifikasi ${bank.displayName}',
+                  style: context.qTitle(13.5),
                 ),
               ),
               QuestSwitch(
@@ -655,15 +533,6 @@ class _AutoReadCard extends StatelessWidget {
                 onChanged: onToggle,
               ),
             ],
-          ),
-          const SizedBox(height: Spacing.s),
-          Text(
-            !active
-                ? 'Nyalakan agar notifikasi ${bank.displayName} otomatis jadi draf konfirmasi di Beranda.'
-                : permissionBlocked
-                    ? 'Izin listener Android belum aktif di Pengaturan sistem. Notifikasi belum bisa dibaca.'
-                    : 'Setiap transaksi ${bank.displayName} akan otomatis muncul sebagai draf konfirmasi di Beranda.',
-            style: context.qBody(12.5).copyWith(color: q.muted),
           ),
           if (permissionBlocked) ...[
             const SizedBox(height: Spacing.s),
