@@ -37,28 +37,35 @@ class TransaksiScreen extends StatefulWidget {
     this.progress,
     this.pipeline,
     this.ruleSet,
+    this.onBonViewChanged,
   });
-
   final LedgerRepository repository;
   final ProgressService? progress;
   final CapturePipeline? pipeline;
   final RuleSet? ruleSet;
-
+  final ValueChanged<bool>? onBonViewChanged;
   @override
   State<TransaksiScreen> createState() => TransaksiScreenState();
 }
 
 class TransaksiScreenState extends State<TransaksiScreen> {
+  void _setBonView(bool show) {
+    if (_showBonView != show) {
+      setState(() => _showBonView = show);
+      widget.onBonViewChanged?.call(show);
+    }
+  }
+
   bool handleBack() {
     if (_showBonView) {
-      setState(() => _showBonView = false);
+      _setBonView(false);
       return true;
     }
     return false;
   }
 
   void showBon() {
-    setState(() => _showBonView = true);
+    _setBonView(true);
   }
   late DateTime _selectedMonth;
   final TextEditingController _searchCtrl = TextEditingController();
@@ -153,7 +160,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                   final unsettledCount = bons.where((b) => b.settledAt == null).length;
 
                   return InkWell(
-                    onTap: () => setState(() => _showBonView = true),
+                    onTap: () => _setBonView(true),
                     borderRadius: BorderRadius.circular(AppRadius.pill),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -452,7 +459,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
               IconButton(
                 visualDensity: VisualDensity.compact,
                 icon: const Icon(Icons.arrow_back_rounded),
-                onPressed: () => setState(() => _showBonView = false),
+                onPressed: () => _setBonView(false),
               ),
               const SizedBox(width: Spacing.xs),
               Expanded(
@@ -466,21 +473,6 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                     ),
                   ],
                 ),
-              ),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.add_rounded, size: 16),
-                label: const Text('Catat Bon'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.q.primary,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                ),
-                onPressed: () => BonSheet.show(context, widget.repository),
               ),
             ],
           ),

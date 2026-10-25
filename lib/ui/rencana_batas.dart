@@ -212,41 +212,12 @@ class _RencanaBatasState extends State<RencanaBatas> {
           },
         ),
         const SizedBox(height: Spacing.m),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'KATEGORI & ALOKASI ANGGARAN',
-                style: context.qEyebrow(11),
-              ),
-            ),
-            InkWell(
-              onTap: _addCategoryFlow,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: SeedColors.primaryLight,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.add_rounded, size: 14, color: context.q.primary),
-                    const SizedBox(width: 3),
-                    Text(
-                      'Kategori',
-                      style: TextStyle(
-                        color: context.q.primary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 11.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+        Padding(
+          padding: const EdgeInsets.only(top: Spacing.s),
+          child: Text(
+            'KATEGORI & ALOKASI ANGGARAN',
+            style: context.qEyebrow(11),
+          ),
         ),
         const SizedBox(height: Spacing.s),
         StreamBuilder<List<Category>>(
@@ -456,10 +427,6 @@ class _RencanaBatasState extends State<RencanaBatas> {
       icon: Icons.check_rounded,
     );
   }
-
-  /// Tambah kategori baru + alokasi awal opsional.
-  Future<void> _addCategoryFlow() =>
-      showAddCategoryFlow(context, widget.repository);
 
   /// Kelola satu jenis anggaran: ubah nama atau hapus (transaksi pindah
   /// ke "Lainnya").

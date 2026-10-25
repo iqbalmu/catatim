@@ -495,7 +495,7 @@ class QuestBottomNav extends StatelessWidget {
 
   /// Tombol + di tengah nav, dinamis per tab (label + aksi ikut konteks).
   /// Null = tanpa tombol tengah.
-  final ({String tooltip, VoidCallback onTap})? centerAction;
+  final ({String tooltip, VoidCallback onTap, IconData? icon})? centerAction;
 
   @override
   Widget build(BuildContext context) {
@@ -620,7 +620,11 @@ class QuestBottomNav extends StatelessWidget {
               ),
             ],
           ),
-          child: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
+          child: Icon(
+            action.icon ?? Icons.add_rounded,
+            color: Colors.white,
+            size: 30,
+          ),
         ),
       ),
     );

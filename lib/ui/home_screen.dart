@@ -14,6 +14,7 @@ import 'bon_screen.dart';
 import 'home_cards.dart';
 import 'laporan_screen.dart';
 import 'quest.dart';
+import 'rencana_batas.dart';
 import 'rencana_screen.dart';
 import 'transaction_sheet.dart';
 import 'transaksi_screen.dart';
@@ -58,10 +59,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   int _tab = 0;
+  bool _inBonView = false;
 
   /// Kunci layar Transaksi untuk mengelola sub-tampilan Bon & tombol Back.
   final _transaksiKey = GlobalKey<TransaksiScreenState>();
-
   void _openTransaksi() => setState(() => _tab = 1);
   void _openAnggaran() => setState(() => _tab = 2);
   void _openBon() {
@@ -80,11 +81,39 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  ({String tooltip, VoidCallback onTap, IconData? icon}) _getCenterAction() {
+    if (_tab == 1 && _inBonView) {
+      return (
+        tooltip: 'Catat bon baru',
+        onTap: () {
+          HapticFeedback.lightImpact();
+          BonSheet.show(context, widget.repository);
+        },
+        icon: Icons.handshake_outlined,
+      );
+    }
+    if (_tab == 2) {
+      return (
+        tooltip: 'Tambah kategori',
+        onTap: () {
+          HapticFeedback.lightImpact();
+          showAddCategoryFlow(context, widget.repository);
+        },
+        icon: Icons.add_rounded,
+      );
+    }
+    return (
+      tooltip: 'Catat transaksi',
+      onTap: _primaryAction,
+      icon: Icons.add_rounded,
+    );
+  }
+
   void _onTabChanged(int i) {
-    setState(() => _tab = i);
-    // Kembali ke Beranda setelah ubah batas di Rencana: hero pace/streak
-    // dihitung dari limit terbaru. Ditunda hingga slide mendarat agar
-    // konten tidak berubah tepat di tengah animasi (kedip).
+    setState(() {
+      _tab = i;
+      if (i != 1 && _inBonView) _inBonView = false;
+    });
     if (i == 0) {
       unawaited(
         Future.delayed(_refreshSettle).then((_) {
@@ -130,6 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 key: _transaksiKey,
                 repository: widget.repository,
                 progress: widget.progress,
+                onBonViewChanged: (inBon) => setState(() => _inBonView = inBon),
               ),
             ),
             TickerMode(
@@ -159,10 +189,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onChanged: _onTabChanged,
               destinations: HomeScreen._destinations,
               badges: hasOld ? const {1} : const <int>{},
-              centerAction: (
-                tooltip: 'Catat baru',
-                onTap: _primaryAction,
-              ),
+              centerAction: _getCenterAction(),
             );
           },
         ),
