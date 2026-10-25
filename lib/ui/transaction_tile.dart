@@ -38,9 +38,12 @@ class TransactionDayHeader extends StatelessWidget {
             ),
           ),
           if (totalOut != null && totalOut! > 0)
-            Text(
-              '-${Money.format(totalOut!)}',
-              style: context.qSmall(11).copyWith(color: context.q.bad),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                '-${Money.format(totalOut!)}',
+                style: context.qSmall(11).copyWith(color: context.q.bad),
+              ),
             ),
         ],
       ),
@@ -152,7 +155,10 @@ class TransactionTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: Spacing.s),
-            QuestAmount(amount: tx.amount, incoming: incoming),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 110),
+              child: QuestAmount(amount: tx.amount, incoming: incoming),
+            ),
           ],
         ),
       ),

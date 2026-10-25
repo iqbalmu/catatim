@@ -74,18 +74,24 @@ class HomeTopBar extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: Spacing.s),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'bukuduit',
-                      style: context.qTitle(18).copyWith(letterSpacing: -0.5),
-                    ),
-                    Text(
-                      'Kelola uang tanpa ribet',
-                      style: context.qSmall(11.5),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'bukuduit',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.qTitle(18).copyWith(letterSpacing: -0.5),
+                      ),
+                      Text(
+                        'Kelola uang tanpa ribet',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.qSmall(11.5),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -384,13 +390,21 @@ class DraftAttentionBanner extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Text(
-                        '${isIncoming ? '+' : '−'}${Money.format(draft.amount)}',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                          color: isIncoming ? context.q.good : context.q.bad,
-                          fontFeatures: const [FontFeature.tabularFigures()],
+                      const SizedBox(width: Spacing.s),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 130),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '${isIncoming ? '+' : '−'}${Money.format(draft.amount)}',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              color: isIncoming ? context.q.good : context.q.bad,
+                              fontFeatures: const [FontFeature.tabularFigures()],
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -403,18 +417,12 @@ class DraftAttentionBanner extends StatelessWidget {
                   children: [
                     Expanded(
                       flex: 3,
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.check_rounded, size: 16),
-                        label: const Text('Konfirmasi & Catat'),
+                      child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: context.q.primary,
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          textStyle: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w800,
-                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppRadius.pill),
                           ),
@@ -424,6 +432,24 @@ class DraftAttentionBanner extends StatelessWidget {
                           repository,
                           draft: draft,
                           progress: progress,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.check_rounded, size: 16),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                'Konfirmasi & Catat',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -541,9 +567,13 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      _obscured ? '••••••••' : Money.format(total),
-                      style: context.qDisplay(28),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        _obscured ? '••••••••' : Money.format(total),
+                        style: context.qDisplay(28),
+                      ),
                     ),
                     const SizedBox(height: Spacing.xxs),
                     if (widget.progress?.latest != null) ...[
@@ -555,9 +585,13 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                             color: context.q.bad,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            'Keluar bulan ini: ${Money.format(widget.progress!.latest!.monthOut)}',
-                            style: context.qSmall(12),
+                          Expanded(
+                            child: Text(
+                              'Keluar bulan ini: ${Money.format(widget.progress!.latest!.monthOut)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: context.qSmall(12),
+                            ),
                           ),
                         ],
                       ),
@@ -785,30 +819,36 @@ class BudgetSummaryCard extends StatelessWidget {
                 children: [
                   // Title Row
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: SeedColors.primaryLight,
-                              borderRadius: BorderRadius.circular(AppRadius.cell),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: SeedColors.primaryLight,
+                                borderRadius: BorderRadius.circular(AppRadius.cell),
+                              ),
+                              child: Icon(
+                                Icons.pie_chart_outline_rounded,
+                                color: context.q.primary,
+                                size: 18,
+                              ),
                             ),
-                            child: Icon(
-                              Icons.pie_chart_outline_rounded,
-                              color: context.q.primary,
-                              size: 18,
+                            const SizedBox(width: Spacing.s),
+                            Flexible(
+                              child: Text(
+                                'Anggaran Bulan Ini',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: context.qTitle(15),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: Spacing.s),
-                          Text(
-                            'Anggaran Bulan Ini',
-                            style: context.qTitle(15),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: Spacing.xs),
                       Icon(
                         Icons.chevron_right_rounded,
                         color: context.q.muted,
@@ -835,29 +875,36 @@ class BudgetSummaryCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.baseline,
                       textBaseline: TextBaseline.alphabetic,
                       children: [
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: 'Terpakai ',
-                                style: context.qSmall(12),
+                        Expanded(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: RichText(
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: 'Terpakai ',
+                                    style: context.qSmall(12),
+                                  ),
+                                  TextSpan(
+                                    text: Money.format(used),
+                                    style: TextStyle(
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: context.q.text,
+                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: ' dari ${Money.format(limit)}',
+                                    style: context.qSmall(12),
+                                  ),
+                                ],
                               ),
-                              TextSpan(
-                                text: Money.format(used),
-                                style: TextStyle(
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: context.q.text,
-                                  fontFeatures: const [FontFeature.tabularFigures()],
-                                ),
-                              ),
-                              TextSpan(
-                                text: ' dari ${Money.format(limit)}',
-                                style: context.qSmall(12),
-                              ),
-                            ],
+                            ),
                           ),
                         ),
+                        const SizedBox(width: Spacing.s),
                         Text(
                           '${(used * 100 / limit).round()}%',
                           style: TextStyle(
@@ -884,7 +931,9 @@ class BudgetSummaryCard extends StatelessWidget {
                     const SizedBox(height: Spacing.s),
 
                     // Indicators: Remaining & Daily Pace
-                    Row(
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -903,8 +952,7 @@ class BudgetSummaryCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (pace?.safeToSpend != null && pace!.safeToSpend! > 0) ...[
-                          const SizedBox(width: Spacing.xs),
+                        if (pace?.safeToSpend != null && pace!.safeToSpend! > 0)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
@@ -920,7 +968,6 @@ class BudgetSummaryCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                        ],
                       ],
                     ),
                   ],
@@ -955,12 +1002,16 @@ class RecentTransactionsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Transaksi Terbaru',
-                style: context.qTitle(17),
+              Expanded(
+                child: Text(
+                  'Transaksi Terbaru',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.qTitle(17),
+                ),
               ),
+              const SizedBox(width: Spacing.xs),
               InkWell(
                 onTap: onSeeAll,
                 borderRadius: BorderRadius.circular(AppRadius.pill),

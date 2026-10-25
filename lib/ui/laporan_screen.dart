@@ -280,7 +280,7 @@ class LaporanScreenState extends State<LaporanScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: context.q.bg,
+      backgroundColor: context.q.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
       ),

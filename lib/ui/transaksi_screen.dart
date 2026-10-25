@@ -13,6 +13,7 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'bon_screen.dart';
 import 'month_picker.dart';
+import 'quest.dart';
 import 'transaction_tile.dart';
 
 /// Cocokkan transaksi dengan query: pihak, kategori, bank, jenis, nominal.
@@ -98,14 +99,10 @@ class TransaksiScreenState extends State<TransaksiScreen> {
   }
 
   void _openMonthPicker() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: context.q.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(Spacing.m),
+    showQuestSheet<void>(
+      context,
+      (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(Spacing.m, 0, Spacing.m, Spacing.m),
         child: QuestMonthPicker(
           initialMonth: _selectedMonth,
           onChanged: (m) {
@@ -496,7 +493,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                 children: [
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.all(Spacing.m),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                       decoration: BoxDecoration(
                         color: context.q.surface,
                         borderRadius: BorderRadius.circular(AppRadius.card),
@@ -517,20 +514,36 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                                 ),
                               ),
                               const SizedBox(width: 6),
-                              Text('PIUTANG', style: context.qEyebrow(10)),
+                              Expanded(
+                                child: Text(
+                                  'PIUTANG',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: context.qEyebrow(10),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            Money.format(piutangTotal),
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              color: context.q.good,
-                              fontFeatures: const [FontFeature.tabularFigures()],
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              Money.format(piutangTotal),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                color: context.q.good,
+                                fontFeatures: const [FontFeature.tabularFigures()],
+                              ),
                             ),
                           ),
-                          Text('Orang berutang ke kita', style: context.qSmall(10.5)),
+                          Text(
+                            'Orang berutang ke kita',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.qSmall(10.5),
+                          ),
                         ],
                       ),
                     ),
@@ -538,7 +551,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                   const SizedBox(width: Spacing.s),
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.all(Spacing.m),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                       decoration: BoxDecoration(
                         color: context.q.surface,
                         borderRadius: BorderRadius.circular(AppRadius.card),
@@ -559,20 +572,36 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                                 ),
                               ),
                               const SizedBox(width: 6),
-                              Text('UTANG', style: context.qEyebrow(10)),
+                              Expanded(
+                                child: Text(
+                                  'UTANG',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: context.qEyebrow(10),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            Money.format(utangTotal),
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              color: context.q.bad,
-                              fontFeatures: const [FontFeature.tabularFigures()],
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              Money.format(utangTotal),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                color: context.q.bad,
+                                fontFeatures: const [FontFeature.tabularFigures()],
+                              ),
                             ),
                           ),
-                          Text('Kita berutang ke orang', style: context.qSmall(10.5)),
+                          Text(
+                            'Kita berutang ke orang',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.qSmall(10.5),
+                          ),
                         ],
                       ),
                     ),
@@ -740,13 +769,20 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Text(
-                                  Money.format(bon.amount),
-                                  style: TextStyle(
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.w900,
-                                    color: isPiutang ? context.q.good : context.q.bad,
-                                    fontFeatures: const [FontFeature.tabularFigures()],
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 120),
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerRight,
+                                    child: Text(
+                                      Money.format(bon.amount),
+                                      style: TextStyle(
+                                        fontSize: 14.5,
+                                        fontWeight: FontWeight.w900,
+                                        color: isPiutang ? context.q.good : context.q.bad,
+                                        fontFeatures: const [FontFeature.tabularFigures()],
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 4),

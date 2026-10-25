@@ -36,7 +36,7 @@ class GamificationSheet extends StatelessWidget {
         maxHeight: MediaQuery.sizeOf(context).height * 0.88,
       ),
       decoration: BoxDecoration(
-        color: context.q.bg,
+        color: context.q.surface,
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(AppRadius.sheet),
         ),
@@ -50,11 +50,11 @@ class GamificationSheet extends StatelessWidget {
               children: [
                 Center(
                   child: Container(
-                    width: 40,
+                    width: 36,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: context.q.muted.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(2),
+                      color: context.q.muted.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
                     ),
                   ),
                 ),

@@ -341,12 +341,14 @@ class _TransactionSheetState extends State<TransactionSheet> {
                   Expanded(
                     child: DropdownButtonFormField<int>(
                       initialValue: _categoryId,
+                      isExpanded: true,
                       decoration: const InputDecoration(labelText: 'Kategori'),
                       items: [
                         for (final c in _categories)
                           DropdownMenuItem(
                             value: c.id,
                             child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Container(
                                   width: 12,
@@ -363,7 +365,12 @@ class _TransactionSheetState extends State<TransactionSheet> {
                                   ),
                                 ),
                                 const SizedBox(width: Spacing.s),
-                                Text(c.name),
+                                Flexible(
+                                  child: Text(
+                                    c.name,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -382,12 +389,16 @@ class _TransactionSheetState extends State<TransactionSheet> {
               const SizedBox(height: Spacing.m),
               DropdownButtonFormField<int>(
                 initialValue: _accountId,
+                isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Akun (opsional)'),
                 items: [
                   for (final a in _accounts)
                     DropdownMenuItem(
                       value: a.id,
-                      child: Text('${a.name} · ${a.kind.label}'),
+                      child: Text(
+                        '${a.name} · ${a.kind.label}',
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                 ],
                 onChanged: (v) => setState(() => _accountId = v),
@@ -395,10 +406,14 @@ class _TransactionSheetState extends State<TransactionSheet> {
               const SizedBox(height: Spacing.m),
               DropdownButtonFormField<TxKind>(
                 initialValue: _kind,
+                isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Jenis'),
                 items: [
                   for (final k in TxKind.values)
-                    DropdownMenuItem(value: k, child: Text(k.label)),
+                    DropdownMenuItem(
+                      value: k,
+                      child: Text(k.label, overflow: TextOverflow.ellipsis),
+                    ),
                 ],
                 onChanged: (k) => setState(() => _kind = k ?? TxKind.payment),
               ),
