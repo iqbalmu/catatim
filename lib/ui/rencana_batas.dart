@@ -10,15 +10,14 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'quest.dart';
 
-/// Alur tambah jenis anggaran baru (kategori) + alokasi awal opsional.
-/// Dipakai tombol "Tambah" segmen Batas dan FAB "＋ Jenis" layar Rencana.
-Future<void> showAddJenisFlow(
+/// Alur tambah kategori baru + alokasi awal opsional.
+Future<void> showAddCategoryFlow(
   BuildContext context,
   LedgerRepository repository,
 ) async {
   final result = await showQuestDialog<_NewCategory>(
     context,
-    title: 'Tambah jenis anggaran',
+    title: 'Tambah Kategori Baru',
     content: _NewCategoryForm(),
     actions: [
       QuestButton(
@@ -61,14 +60,14 @@ Future<void> showAddJenisFlow(
     if (!context.mounted) return;
     questSnack(
       context,
-      'Jenis "${category.name}" berhasil ditambahkan.',
+      'Kategori "${category.name}" berhasil ditambahkan.',
       icon: Icons.check_rounded,
     );
   } catch (_) {
     if (!context.mounted) return;
     questSnack(
       context,
-      'Nama "${result.name}" sudah dipakai — coba nama lain, ya.',
+      'Nama kategori "${result.name}" sudah dipakai — coba nama lain.',
       icon: Icons.info_outline_rounded,
     );
   }
@@ -217,18 +216,33 @@ class _RencanaBatasState extends State<RencanaBatas> {
           children: [
             Expanded(
               child: Text(
-                'Jenis anggaran & alokasi',
-                style: context.qEyebrow(),
+                'KATEGORI & ALOKASI ANGGARAN',
+                style: context.qEyebrow(11),
               ),
             ),
-            QuestPress(
+            InkWell(
               onTap: _addCategoryFlow,
-              child: Text(
-                'Tambah',
-                style: TextStyle(
-                  color: context.q.honey,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: SeedColors.primaryLight,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_rounded, size: 14, color: context.q.primary),
+                    const SizedBox(width: 3),
+                    Text(
+                      'Kategori',
+                      style: TextStyle(
+                        color: context.q.primary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 11.5,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -443,9 +457,9 @@ class _RencanaBatasState extends State<RencanaBatas> {
     );
   }
 
-  /// Tambah jenis anggaran baru (kategori) + alokasi awal opsional.
+  /// Tambah kategori baru + alokasi awal opsional.
   Future<void> _addCategoryFlow() =>
-      showAddJenisFlow(context, widget.repository);
+      showAddCategoryFlow(context, widget.repository);
 
   /// Kelola satu jenis anggaran: ubah nama atau hapus (transaksi pindah
   /// ke "Lainnya").
@@ -460,7 +474,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
       content: _ManageCategoryForm(currentName: category.name),
       actions: [
         QuestButton(
-          label: 'Hapus jenis',
+          label: 'Hapus kategori',
           icon: Icons.delete_outline_rounded,
           tone: QuestTone.danger,
           onPressed: () => Navigator.pop(
@@ -696,7 +710,7 @@ class _NewCategoryFormState extends State<_NewCategoryForm> {
           autofocus: true,
           textCapitalization: TextCapitalization.words,
           decoration: const InputDecoration(
-            labelText: 'Nama jenis anggaran',
+            labelText: 'Nama kategori',
             hintText: 'Contoh: Makanan',
           ),
         ),
@@ -742,7 +756,7 @@ class _ManageCategoryFormState extends State<_ManageCategoryForm> {
       controller: nameCtrl,
       autofocus: true,
       textCapitalization: TextCapitalization.words,
-      decoration: const InputDecoration(labelText: 'Nama jenis anggaran'),
+      decoration: const InputDecoration(labelText: 'Nama kategori'),
     );
   }
 }

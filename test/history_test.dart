@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bukuduit/models.dart';
 import 'package:bukuduit/storage/database.dart';
 import 'package:bukuduit/storage/repository.dart';
-import 'package:bukuduit/ui/rekap_transaksi.dart';
+import 'package:bukuduit/ui/transaksi_screen.dart';
 
 void main() {
   test('matchesQuery mencocokkan pihak, kategori, bank, nominal', () async {

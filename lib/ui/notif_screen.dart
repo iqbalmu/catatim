@@ -45,7 +45,7 @@ class NotificationScreen extends StatefulWidget {
     required this.pipeline,
     required this.progress,
     required this.ruleSet,
-    required this.onOpenRencana,
+    required this.onOpenAnggaran,
     required this.onOpenBon,
   });
 
@@ -55,7 +55,7 @@ class NotificationScreen extends StatefulWidget {
   final RuleSet ruleSet;
 
   /// Tutup layar ini lalu alih ke tab Rencana / Bon.
-  final VoidCallback onOpenRencana;
+  final VoidCallback onOpenAnggaran;
   final VoidCallback onOpenBon;
 
   @override
@@ -85,7 +85,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   void _goTo(VoidCallback navigate) {
-    Navigator.pop(context);
+    Navigator.of(context).popUntil((route) => route.isFirst);
     navigate();
   }
 
@@ -210,8 +210,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 color: q.bad,
                                 title:
                                     'Batas ${critical?.label ?? 'harian'} terlampaui',
-                                subtitle: 'Yuk cek papan batasmu di Rencana',
-                                onTap: () => _goTo(widget.onOpenRencana),
+                                subtitle: 'Yuk cek batas pengeluaranmu di Anggaran',
+                                onTap: () => _goTo(widget.onOpenAnggaran),
                               )
                             else if (level == BudgetLevel.warning)
                               _NotifItem(
@@ -220,8 +220,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 title:
                                     'Batas ${critical?.label ?? 'harian'} '
                                     'mendekati plafon',
-                                subtitle: 'Yuk cek papan batasmu di Rencana',
-                                onTap: () => _goTo(widget.onOpenRencana),
+                                subtitle: 'Yuk cek batas pengeluaranmu di Anggaran',
+                                onTap: () => _goTo(widget.onOpenAnggaran),
                               ),
                             if (aging > 0)
                               _NotifItem(

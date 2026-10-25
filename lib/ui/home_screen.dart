@@ -59,14 +59,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int _tab = 0;
 
-  /// Kunci layar Rencana untuk memicu aksi tombol + tengah navbar.
-  final _rencanaKey = GlobalKey<RencanaScreenState>();
+  /// Kunci layar Transaksi untuk mengelola sub-tampilan Bon & tombol Back.
+  final _transaksiKey = GlobalKey<TransaksiScreenState>();
 
-
-  /// Deep-link Beranda (BatasCard/strip) → Rencana·Batas.
   void _openTransaksi() => setState(() => _tab = 1);
-  void _openRencanaBatas() => setState(() => _tab = 2);
-
+  void _openAnggaran() => setState(() => _tab = 2);
+  void _openBon() {
+    setState(() => _tab = 1);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _transaksiKey.currentState?.showBon();
+    });
+  }
   /// Aksi tombol + tengah navbar: Langsung catat transaksi 1-tap.
   void _primaryAction() {
     HapticFeedback.lightImpact();
@@ -96,8 +99,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return PopScope(
       canPop: _tab == 0,
       onPopInvokedWithResult: (didPop, _) {
-        // Back di tab non-Beranda kembali ke Beranda; di Beranda keluar.
-        if (!didPop && _tab != 0) setState(() => _tab = 0);
+        if (didPop) return;
+        if (_tab == 1) {
+          final handled = _transaksiKey.currentState?.handleBack() ?? false;
+          if (handled) return;
+        }
+        if (_tab != 0) setState(() => _tab = 0);
       },
       child: Scaffold(
         backgroundColor: context.q.bg,
@@ -113,22 +120,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 progress: widget.progress,
                 ruleSet: widget.ruleSet,
                 onOpenTransaksi: _openTransaksi,
-                onOpenRencanaBatas: _openRencanaBatas,
+                onOpenAnggaran: _openAnggaran,
+                onOpenBon: _openBon,
               ),
             ),
             TickerMode(
               enabled: _tab == 1,
               child: TransaksiScreen(
+                key: _transaksiKey,
                 repository: widget.repository,
                 progress: widget.progress,
-                pipeline: widget.pipeline,
-                ruleSet: widget.ruleSet,
               ),
             ),
             TickerMode(
               enabled: _tab == 2,
               child: RencanaScreen(
-                key: _rencanaKey,
                 repository: widget.repository,
                 progress: widget.progress,
               ),
@@ -313,7 +319,8 @@ class _BerandaTab extends StatefulWidget {
     required this.progress,
     required this.ruleSet,
     required this.onOpenTransaksi,
-    required this.onOpenRencanaBatas,
+    required this.onOpenAnggaran,
+    required this.onOpenBon,
   });
 
   final LedgerRepository repository;
@@ -321,8 +328,8 @@ class _BerandaTab extends StatefulWidget {
   final ProgressService progress;
   final RuleSet ruleSet;
   final VoidCallback onOpenTransaksi;
-  final VoidCallback onOpenRencanaBatas;
-
+  final VoidCallback onOpenAnggaran;
+  final VoidCallback onOpenBon;
   @override
   State<_BerandaTab> createState() => _BerandaTabState();
 }
@@ -381,12 +388,16 @@ class _BerandaTabState extends State<_BerandaTab> {
               repository: widget.repository,
               pipeline: widget.pipeline,
               ruleSet: widget.ruleSet,
+              onOpenAnggaran: widget.onOpenAnggaran,
+              onOpenBon: widget.onOpenBon,
             ),
             DraftAttentionBanner(
               repository: widget.repository,
               ruleSet: widget.ruleSet,
               progress: widget.progress,
               pipeline: widget.pipeline,
+              onOpenAnggaran: widget.onOpenAnggaran,
+              onOpenBon: widget.onOpenBon,
             ),
             TotalBalanceCard(
               repository: widget.repository,
@@ -396,7 +407,7 @@ class _BerandaTabState extends State<_BerandaTab> {
             ),
             BudgetSummaryCard(
               progress: widget.progress,
-              onTap: widget.onOpenRencanaBatas,
+              onTap: widget.onOpenAnggaran,
             ),
             RecentTransactionsCard(
               repository: widget.repository,

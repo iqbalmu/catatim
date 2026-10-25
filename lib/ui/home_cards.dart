@@ -26,13 +26,16 @@ class HomeTopBar extends StatelessWidget {
     required this.repository,
     required this.pipeline,
     required this.ruleSet,
+    required this.onOpenAnggaran,
+    required this.onOpenBon,
   });
 
   final ProgressService progress;
   final LedgerRepository repository;
   final CapturePipeline pipeline;
   final RuleSet ruleSet;
-
+  final VoidCallback onOpenAnggaran;
+  final VoidCallback onOpenBon;
   @override
   Widget build(BuildContext context) {
     final summary = progress.latest;
@@ -122,6 +125,64 @@ class HomeTopBar extends StatelessWidget {
           ),
           const SizedBox(width: Spacing.s),
 
+          // Notification Bell Inbox Button
+          StreamBuilder<List<Draft>>(
+            stream: repository.watchDrafts(),
+            builder: (context, snapshot) {
+              final draftCount = (snapshot.data ?? const []).length;
+              return InkWell(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => NotificationScreen(
+                      repository: repository,
+                      pipeline: pipeline,
+                      progress: progress,
+                      ruleSet: ruleSet,
+                      onOpenAnggaran: onOpenAnggaran,
+                      onOpenBon: onOpenBon,
+                    ),
+                  ),
+                ),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: context.q.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: context.q.line),
+                    boxShadow: AppShadows.card,
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Icon(
+                        Icons.notifications_outlined,
+                        color: context.q.text,
+                        size: 20,
+                      ),
+                      if (draftCount > 0)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            width: 7,
+                            height: 7,
+                            decoration: BoxDecoration(
+                              color: context.q.bad,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: Spacing.s),
+
           // Settings Button
           InkWell(
             onTap: () => Navigator.push(
@@ -131,7 +192,6 @@ class HomeTopBar extends StatelessWidget {
                   repository: repository,
                   pipeline: pipeline,
                   ruleSet: ruleSet,
-                  progress: progress,
                 ),
               ),
             ),
@@ -166,13 +226,16 @@ class DraftAttentionBanner extends StatelessWidget {
     required this.ruleSet,
     required this.progress,
     required this.pipeline,
+    required this.onOpenAnggaran,
+    required this.onOpenBon,
   });
 
   final LedgerRepository repository;
   final RuleSet ruleSet;
   final ProgressService progress;
   final CapturePipeline pipeline;
-
+  final VoidCallback onOpenAnggaran;
+  final VoidCallback onOpenBon;
   String _bankName(String bankId) =>
       ruleSet.bank(bankId)?.displayName ?? bankId;
 
@@ -253,8 +316,8 @@ class DraftAttentionBanner extends StatelessWidget {
                               pipeline: pipeline,
                               ruleSet: ruleSet,
                               progress: progress,
-                              onOpenRencana: () => Navigator.pop(context),
-                              onOpenBon: () => Navigator.pop(context),
+                              onOpenAnggaran: onOpenAnggaran,
+                              onOpenBon: onOpenBon,
                             ),
                           ),
                         ),
@@ -970,83 +1033,6 @@ class RecentTransactionsCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// ── Backwards Compatibility Aliases (agar transisi mulus) ─────────
-class UangCard extends StatelessWidget {
-  const UangCard({
-    super.key,
-    required this.progress,
-    this.repository,
-  });
-
-  final ProgressService progress;
-  final LedgerRepository? repository;
-
-  @override
-  Widget build(BuildContext context) {
-    if (repository == null) return const SizedBox.shrink();
-    return TotalBalanceCard(
-      repository: repository!,
-      pipeline: null as dynamic,
-      ruleSet: null as dynamic,
-      progress: progress,
-    );
-  }
-}
-
-class SpendingCard extends StatelessWidget {
-  const SpendingCard({
-    super.key,
-    required this.progress,
-    required this.repository,
-    required this.onTap,
-  });
-
-  final ProgressService progress;
-  final LedgerRepository repository;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return BudgetSummaryCard(
-      progress: progress,
-      onTap: onTap,
-    );
-  }
-}
-
-class StreakStrip extends StatelessWidget {
-  const StreakStrip({super.key, required this.progress});
-
-  final ProgressService progress;
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox.shrink();
-  }
-}
-
-class TransaksiTerbaruCard extends StatelessWidget {
-  const TransaksiTerbaruCard({
-    super.key,
-    required this.repository,
-    this.progress,
-    required this.onSeeAll,
-  });
-
-  final LedgerRepository repository;
-  final ProgressService? progress;
-  final VoidCallback onSeeAll;
-
-  @override
-  Widget build(BuildContext context) {
-    return RecentTransactionsCard(
-      repository: repository,
-      progress: progress,
-      onSeeAll: onSeeAll,
     );
   }
 }

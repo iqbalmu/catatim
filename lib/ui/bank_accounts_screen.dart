@@ -51,22 +51,6 @@ class BankAccountsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _reparse(BuildContext context, Set<String> connected) async {
-    final created = await repository.reparseUnparsed(
-      pipeline.engine,
-      connectedBankIds: connected,
-    );
-    if (!context.mounted) return;
-    questSnack(
-      context,
-      created > 0
-          ? '$created draf baru menunggumu di Notifikasi.'
-          : 'Belum ada notifikasi yang bisa dibaca ulang.',
-      icon: created > 0
-          ? Icons.mark_as_unread_rounded
-          : Icons.info_outline_rounded,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,77 +76,59 @@ class BankAccountsScreen extends StatelessWidget {
                 stream: repository.watchAccountBalances(),
                 builder: (context, balanceSnap) {
                   final balances = balanceSnap.data ?? const <int, int>{};
-                  return StreamBuilder<List<CaptureLog>>(
-                    stream: repository.watchCaptureLog(),
-                    builder: (context, logSnap) {
-                      final unread = (logSnap.data ?? const <CaptureLog>[])
-                          .where((l) => !l.parsed)
-                          .length;
-                      return ListView(
-                        padding: const EdgeInsets.fromLTRB(
-                          Spacing.m,
-                          Spacing.s,
-                          Spacing.m,
-                          Spacing.m,
-                        ),
-                        children: [
-                          const QuestSectionHeader(title: 'Akunmu'),
-                          if (accounts.isEmpty)
-                            QuestEmpty(
-                              title: 'Belum ada akun',
-                              hint: 'Yuk mulai — tambahkan dompet tunai, '
-                                  'atau hubungkan bank dan e-walletmu.',
-                              actionLabel: 'Tambah akun',
-                              onAction: () => _openAddSheet(context),
-                            )
-                          else
-                            for (final a in accounts) ...[
-                              _AccountTile(
-                                account: a,
-                                balance: balances[a.id] ?? a.openingBalance,
-                                connected: a.bankId != null &&
-                                    connected.contains(a.bankId),
-                                onTap: () => _openDetail(context, a),
-                              ),
-                              const SizedBox(height: Spacing.s),
-                            ],
-                          const SizedBox(height: Spacing.l),
-                          QuestButton(
-                            label: 'Tambah akun',
-                            icon: Icons.add_rounded,
-                            onPressed: () => _openAddSheet(context),
+                  return ListView(
+                    padding: const EdgeInsets.fromLTRB(
+                      Spacing.m,
+                      Spacing.s,
+                      Spacing.m,
+                      Spacing.m,
+                    ),
+                    children: [
+                      const QuestSectionHeader(title: 'Akunmu'),
+                      if (accounts.isEmpty)
+                        QuestEmpty(
+                          title: 'Belum ada akun',
+                          hint: 'Yuk mulai — tambahkan dompet tunai, '
+                              'atau hubungkan bank dan e-walletmu.',
+                          actionLabel: 'Tambah akun',
+                          onAction: () => _openAddSheet(context),
+                        )
+                      else
+                        for (final a in accounts) ...[
+                          _AccountTile(
+                            account: a,
+                            balance: balances[a.id] ?? a.openingBalance,
+                            connected: a.bankId != null &&
+                                connected.contains(a.bankId),
+                            onTap: () => _openDetail(context, a),
                           ),
-                          const SizedBox(height: Spacing.l),
-                          const QuestSectionHeader(title: 'Kalau ada kendala'),
-                          QuestCard(
-                            padding: EdgeInsets.zero,
-                            child: Column(
-                              children: [
-                                if (unread > 0)
-                                  _CareRow(
-                                    icon: Icons.mark_as_unread_rounded,
-                                    color: SeedColors.honeyDeep,
-                                    title: '$unread notifikasi belum terbaca',
-                                    subtitle:
-                                        'Isinya belum dikenali — coba baca '
-                                        'ulang, ya',
-                                    onTap: () => _reparse(context, connected),
-                                  ),
-                                _CareRow(
-                                  icon: Icons.battery_saver_rounded,
-                                  color: context.q.text,
-                                  title: 'Cek pengaturan baterai',
-                                  subtitle:
-                                      'Kalau HP-mu sering menutup aplikasi '
-                                      'di belakang',
-                                  onTap: pipeline.channel.openBatterySettings,
-                                ),
-                              ],
-                            ),
-                          ),
+                          const SizedBox(height: Spacing.s),
                         ],
-                      );
-                    },
+                      const SizedBox(height: Spacing.l),
+                      QuestButton(
+                        label: 'Tambah akun',
+                        icon: Icons.add_rounded,
+                        onPressed: () => _openAddSheet(context),
+                      ),
+                      const SizedBox(height: Spacing.l),
+                      const QuestSectionHeader(title: 'Kalau ada kendala'),
+                      QuestCard(
+                        padding: EdgeInsets.zero,
+                        child: Column(
+                          children: [
+                            _CareRow(
+                              icon: Icons.battery_saver_rounded,
+                              color: context.q.text,
+                              title: 'Cek pengaturan baterai',
+                              subtitle:
+                                  'Kalau HP-mu sering menutup aplikasi '
+                                  'di belakang',
+                              onTap: pipeline.channel.openBatterySettings,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   );
                 },
               );
