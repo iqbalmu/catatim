@@ -38,16 +38,12 @@ class BankAccountsScreen extends StatelessWidget {
   }
 
   void _openDetail(BuildContext context, Account account) {
-    Navigator.push(
+    AccountDetailSheet.show(
       context,
-      MaterialPageRoute(
-        builder: (_) => AccountDetailScreen(
-          repository: repository,
-          pipeline: pipeline,
-          ruleSet: ruleSet,
-          accountId: account.id,
-        ),
-      ),
+      repository: repository,
+      pipeline: pipeline,
+      ruleSet: ruleSet,
+      accountId: account.id,
     );
   }
 

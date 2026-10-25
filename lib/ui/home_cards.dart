@@ -624,16 +624,12 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                               account: acc,
                               balance: balances[acc.id] ?? acc.openingBalance,
                               obscured: _obscured,
-                              onTap: () => Navigator.push(
+                              onTap: () => AccountDetailSheet.show(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (_) => AccountDetailScreen(
-                                    repository: widget.repository,
-                                    pipeline: widget.pipeline,
-                                    ruleSet: widget.ruleSet,
-                                    accountId: acc.id,
-                                  ),
-                                ),
+                                repository: widget.repository,
+                                pipeline: widget.pipeline,
+                                ruleSet: widget.ruleSet,
+                                accountId: acc.id,
                               ),
                             ),
                           // "+ Tambah" Chip

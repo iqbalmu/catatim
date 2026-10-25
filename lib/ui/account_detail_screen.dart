@@ -20,11 +20,11 @@ const String connectDisclosureText =
     'Semua data tersimpan terenkripsi di HP ini dan tidak pernah dikirim '
     'ke server mana pun. Kamu bebas memutuskan hubungannya kapan saja.';
 
-/// Halaman detail satu akun: saldo sekarang, pengaturan baca notifikasi
+/// Drawer detail satu akun: saldo sekarang, pengaturan baca notifikasi
 /// otomatis (khusus akun bank/e-wallet terhubung katalog), ubah nama &
-/// saldo awal, dan hapus. Satu alur: semua tentang akun ini ada di sini.
-class AccountDetailScreen extends StatefulWidget {
-  const AccountDetailScreen({
+/// saldo awal, dan hapus akun.
+class AccountDetailSheet extends StatefulWidget {
+  const AccountDetailSheet({
     super.key,
     required this.repository,
     required this.pipeline,
@@ -37,16 +37,45 @@ class AccountDetailScreen extends StatefulWidget {
   final RuleSet ruleSet;
   final int accountId;
 
+  /// Buka drawer detail akun.
+  static Future<void> show(
+    BuildContext context, {
+    required LedgerRepository repository,
+    required CapturePipeline pipeline,
+    required RuleSet ruleSet,
+    required int accountId,
+  }) {
+    return showQuestSheet<void>(
+      context,
+      (context) => Padding(
+        padding: EdgeInsets.only(
+          left: Spacing.m,
+          right: Spacing.m,
+          top: Spacing.s,
+          bottom: MediaQuery.viewInsetsOf(context).bottom + Spacing.m,
+        ),
+        child: AccountDetailSheet(
+          repository: repository,
+          pipeline: pipeline,
+          ruleSet: ruleSet,
+          accountId: accountId,
+        ),
+      ),
+    );
+  }
+
   @override
-  State<AccountDetailScreen> createState() => _AccountDetailScreenState();
+  State<AccountDetailSheet> createState() => _AccountDetailSheetState();
 }
 
-class _AccountDetailScreenState extends State<AccountDetailScreen>
+/// Alias kompatibilitas jika masih ada import lama.
+typedef AccountDetailScreen = AccountDetailSheet;
+
+class _AccountDetailSheetState extends State<AccountDetailSheet>
     with WidgetsBindingObserver {
   final _nameCtrl = TextEditingController();
   final _openingCtrl = TextEditingController();
   bool _loaded = false;
-
   bool _listenerOn = false;
 
   /// Bank yang menunggu izin nyala — koneksi dilanjutkan otomatis saat
@@ -70,8 +99,6 @@ class _AccountDetailScreenState extends State<AccountDetailScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Kembali dari Pengaturan sistem → cek izin, lanjutkan koneksi bila
-    // menunggu.
     if (state == AppLifecycleState.resumed) _refreshListener();
   }
 
@@ -126,12 +153,10 @@ class _AccountDetailScreenState extends State<AccountDetailScreen>
         true;
   }
 
-  /// Tombol Nyalakan izin: pastikan izin aktif dulu.
   Future<void> _enablePermission() async {
     final understood = await _confirmDisclosure('Izinkan baca notifikasi?');
     if (!understood || !mounted) return;
     await widget.pipeline.channel.openListenerSettings();
-    // Status dicek lagi saat user kembali (resumed).
   }
 
   Future<void> _completeConnect(BankRules bank) async {
@@ -150,8 +175,6 @@ class _AccountDetailScreenState extends State<AccountDetailScreen>
     }
   }
 
-  /// Saklar baca notifikasi akun ini: nyala = hubungkan (tunggu izin
-  /// bila belum aktif), mati = putuskan.
   Future<void> _toggleAutoRead(BankRules bank, bool on) async {
     if (!on) {
       await widget.repository.setBankConnected(bank.id, false);
@@ -189,7 +212,8 @@ class _AccountDetailScreenState extends State<AccountDetailScreen>
         await widget.repository.setOpeningBalance(account.id, opening);
       }
       if (mounted) {
-        questSnack(context, 'Tersimpan.', icon: Icons.check_rounded);
+        questSnack(context, 'Perubahan berhasil disimpan.', icon: Icons.check_rounded);
+        Navigator.pop(context);
       }
     } catch (_) {
       if (mounted) {
@@ -219,7 +243,6 @@ class _AccountDetailScreenState extends State<AccountDetailScreen>
         ),
         QuestButton(
           label: 'Hapus',
-          icon: Icons.delete_outline_rounded,
           tone: QuestTone.danger,
           onPressed: () => Navigator.pop(context, true),
         ),
@@ -231,7 +254,7 @@ class _AccountDetailScreenState extends State<AccountDetailScreen>
     }
     await widget.repository.deleteAccount(account.id);
     if (mounted) {
-      questSnack(context, '${account.name} dihapus, ya.');
+      questSnack(context, '${account.name} berhasil dihapus.');
       Navigator.pop(context);
     }
   }
@@ -246,106 +269,168 @@ class _AccountDetailScreenState extends State<AccountDetailScreen>
             ?.where((a) => a.id == widget.accountId)
             .firstOrNull;
         if (accounts != null && account == null) {
-          // Stream sudah keluar tapi akunnya tidak ada — sudah dihapus.
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) Navigator.pop(context);
           });
         }
         if (account == null) {
-          return const Scaffold(body: Center(child: QuestSkeleton(rows: 1)));
+          return const Padding(
+            padding: EdgeInsets.all(Spacing.l),
+            child: Center(child: QuestSkeleton(rows: 2)),
+          );
         }
         final bank = account.bankId != null
             ? widget.ruleSet.bank(account.bankId!)
             : null;
-        return Scaffold(
-          backgroundColor: context.q.bg,
-          appBar: QuestHeader(
-            title: account.name,
-            subtitle: account.kind.label,
-            showBack: true,
-          ),
-          body: StreamBuilder<Set<String>>(
-            stream: widget.repository.watchConnectedBanks(),
-            builder: (context, connSnap) {
-              final connected = connSnap.data ?? const <String>{};
-              final autoOn = bank != null && connected.contains(bank.id);
-              return StreamBuilder<Map<int, int>>(
-                stream: widget.repository.watchAccountBalances(),
-                builder: (context, balSnap) {
-                  final balance =
-                      balSnap.data?[account.id] ?? account.openingBalance;
-                  return ListView(
-                    padding: const EdgeInsets.fromLTRB(
-                      Spacing.m,
-                      Spacing.s,
-                      Spacing.m,
-                      Spacing.m,
-                    ),
-                    children: [
-                      _BalanceCard(balance: balance),
-                      if (bank != null) ...[
-                        const SizedBox(height: Spacing.l),
-                        const QuestSectionHeader(title: 'Baca otomatis'),
-                        _AutoReadCard(
-                          bank: bank,
-                          active: autoOn,
-                          listenerOn: _listenerOn,
-                          onToggle: (on) => _toggleAutoRead(bank, on),
-                          onEnablePermission: _enablePermission,
-                        ),
-                      ],
-                      const SizedBox(height: Spacing.l),
-                      const QuestSectionHeader(title: 'Pengaturan akun'),
-                      QuestCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+
+        return StreamBuilder<Set<String>>(
+          stream: widget.repository.watchConnectedBanks(),
+          builder: (context, connSnap) {
+            final connected = connSnap.data ?? const <String>{};
+            final autoOn = bank != null && connected.contains(bank.id);
+            return StreamBuilder<Map<int, int>>(
+              stream: widget.repository.watchAccountBalances(),
+              builder: (context, balSnap) {
+                final balance =
+                    balSnap.data?[account.id] ?? account.openingBalance;
+
+                return SafeArea(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // ── Header Drawer Akun ──
+                        Row(
                           children: [
-                            if (_loaded) ...[
-                              TextField(
-                                controller: _nameCtrl,
-                                textCapitalization:
-                                    TextCapitalization.words,
-                                decoration: const InputDecoration(
-                                  labelText: 'Nama tampilan',
-                                ),
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: context.q.surface2,
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              const SizedBox(height: Spacing.m),
-                              TextField(
-                                controller: _openingCtrl,
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
+                              child: Icon(
+                                switch (account.kind) {
+                                  AccountKind.bank => Icons.account_balance_rounded,
+                                  AccountKind.ewallet => Icons.wallet_rounded,
+                                  AccountKind.cash => Icons.payments_rounded,
+                                },
+                                size: 22,
+                                color: context.q.primary,
+                              ),
+                            ),
+                            const SizedBox(width: Spacing.m),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    account.name,
+                                    style: context.qTitle(18),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: Spacing.xxs),
+                                  Text(
+                                    account.kind.label,
+                                    style: context.qSmall(12).copyWith(
+                                      color: context.q.muted,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ],
-                                decoration: const InputDecoration(
-                                  labelText: 'Saldo awal',
-                                  helperText:
-                                      'Dari angka ini saldomu dihitung '
-                                      'otomatis',
-                                ),
                               ),
-                              const SizedBox(height: Spacing.m),
-                              QuestButton(
-                                label: 'Simpan',
-                                icon: Icons.check_rounded,
-                                onPressed: () => _save(account),
-                              ),
-                            ],
+                            ),
+                            QuestIconButton(
+                              icon: Icons.close_rounded,
+                              tooltip: 'Tutup',
+                              onPressed: () => Navigator.pop(context),
+                            ),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: Spacing.l),
-                      QuestButton(
-                        label: 'Hapus akun',
-                        icon: Icons.delete_outline_rounded,
-                        tone: QuestTone.danger,
-                        onPressed: () => _delete(account),
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-          ),
+                        const SizedBox(height: Spacing.m),
+                        Divider(height: 1, thickness: 1, color: context.q.line),
+                        const SizedBox(height: Spacing.m),
+
+                        // ── Kartu Saldo ──
+                        _BalanceCard(balance: balance),
+
+                        // ── Baca Otomatis (jika terhubung bank) ──
+                        if (bank != null) ...[
+                          const SizedBox(height: Spacing.m),
+                          Padding(
+                            padding: const EdgeInsets.only(left: Spacing.xs, bottom: Spacing.xs),
+                            child: Text('BACA OTOMATIS', style: context.qEyebrow()),
+                          ),
+                          _AutoReadCard(
+                            bank: bank,
+                            active: autoOn,
+                            listenerOn: _listenerOn,
+                            onToggle: (on) => _toggleAutoRead(bank, on),
+                            onEnablePermission: _enablePermission,
+                          ),
+                        ],
+
+                        // ── Pengaturan Akun (Edit Nama & Saldo Awal) ──
+                        const SizedBox(height: Spacing.m),
+                        Padding(
+                          padding: const EdgeInsets.only(left: Spacing.xs, bottom: Spacing.xs),
+                          child: Text('PENGATURAN AKUN', style: context.qEyebrow()),
+                        ),
+                        QuestCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (_loaded) ...[
+                                TextField(
+                                  controller: _nameCtrl,
+                                  textCapitalization: TextCapitalization.words,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Nama tampilan',
+                                    hintText: 'Contoh: Tabungan Utama',
+                                  ),
+                                ),
+                                const SizedBox(height: Spacing.m),
+                                TextField(
+                                  controller: _openingCtrl,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
+                                  decoration: const InputDecoration(
+                                    labelText: 'Saldo awal',
+                                    helperText: 'Dari angka ini saldomu dihitung otomatis',
+                                    prefixText: 'Rp ',
+                                  ),
+                                ),
+                                const SizedBox(height: Spacing.m),
+                                QuestButton(
+                                  label: 'Simpan perubahan',
+                                  icon: Icons.check_rounded,
+                                  onPressed: () => _save(account),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+
+                        // ── Hapus Akun ──
+                        const SizedBox(height: Spacing.m),
+                        QuestButton(
+                          label: 'Hapus akun ini',
+                          icon: Icons.delete_outline_rounded,
+                          tone: QuestTone.danger,
+                          onPressed: () => _delete(account),
+                        ),
+                        const SizedBox(height: Spacing.s),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          },
         );
       },
     );
@@ -366,20 +451,20 @@ class _BalanceCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text('SALDO SEKARANG', style: context.qEyebrow()),
-          const SizedBox(height: Spacing.xxs),
+          const SizedBox(height: Spacing.xs),
           FittedBox(
             alignment: Alignment.centerLeft,
             fit: BoxFit.scaleDown,
             child: Text(
               Money.format(balance),
-              style: context.qDisplay(28).copyWith(
+              style: context.qDisplay(26).copyWith(
                 color: balance < 0 ? q.bad : q.text,
               ),
             ),
           ),
-          const SizedBox(height: Spacing.xxs),
+          const SizedBox(height: Spacing.xs),
           Text(
-            'termasuk saldo awal dan semua transaksinya',
+            'Termasuk saldo awal dan semua transaksinya',
             style: context.qSmall().copyWith(color: q.muted),
           ),
         ],
@@ -388,8 +473,7 @@ class _BalanceCard extends StatelessWidget {
   }
 }
 
-/// Kartu baca otomatis milik akun ini: status + saklar + (bila perlu)
-/// tombol menyalakan izin notifikasi.
+/// Kartu baca otomatis milik akun ini: status + saklar + tombol izin.
 class _AutoReadCard extends StatelessWidget {
   const _AutoReadCard({
     required this.bank,
@@ -426,19 +510,19 @@ class _AutoReadCard extends StatelessWidget {
             : 'Notifikasi dibaca';
     final String body = !active
         ? 'Nyalakan supaya notifikasi ${bank.displayName} otomatis jadi '
-            'draf di lonceng Notifikasi.'
+            'draf di Beranda.'
         : permissionBlocked
-            ? 'Akun ini sudah terhubung, tapi izinnya mati — draf tidak '
-                'bisa masuk.'
-            : 'Setiap notifikasi ${bank.displayName} otomatis jadi draf di '
-                'lonceng Notifikasi — tinggal pilih Catat atau Buang.';
+            ? 'Akun ini sudah terhubung, tapi izin sistem mati — draf tidak '
+            'bisa masuk.'
+            : 'Setiap notifikasi ${bank.displayName} otomatis masuk sebagai '
+            'draf konfirmasi di Beranda.';
     return QuestCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 26),
+              Icon(icon, color: color, size: 24),
               const SizedBox(width: Spacing.s),
               Expanded(
                 child: Text(
