@@ -85,45 +85,41 @@ class _RekapDonatState extends State<RekapDonat> {
     final start = win?.start ?? DateTime(now.year, now.month);
     final end = win?.end ?? DateTime(now.year, now.month + 1);
 
-    return ListView(
-      padding: EdgeInsets.fromLTRB(
-        Spacing.m,
-        Spacing.s,
-        Spacing.m,
-        Spacing.m + MediaQuery.paddingOf(context).bottom,
-      ),
-      children: [
-        StreamBuilder<List<TxWithCategory>>(
-          stream: _rows,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const QuestSkeleton(rows: 2, height: 120);
-            }
-            final rows = snapshot.data ?? const <TxWithCategory>[];
-            return Column(
-              children: [
-                _DonatCard(
-                  rows: rows,
-                  incoming: _incoming,
-                  onToggle: (v) => setState(() => _incoming = v),
-                  repository: widget.repository,
-                  start: start,
-                  end: end,
-                  onTap: (categoryId) => widget.onCategoryTap(
-                    widget.filter.applyDonatTap(
-                      categoryId: categoryId,
-                      monthStart: start,
-                      monthEnd: end,
-                    ),
+    return StreamBuilder<List<TxWithCategory>>(
+      stream: _rows,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(horizontal: Spacing.m),
+            child: QuestSkeleton(rows: 2, height: 120),
+          );
+        }
+        final rows = snapshot.data ?? const <TxWithCategory>[];
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.m),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _DonatCard(
+                rows: rows,
+                incoming: _incoming,
+                onToggle: (v) => setState(() => _incoming = v),
+                repository: widget.repository,
+                start: start,
+                end: end,
+                onTap: (categoryId) => widget.onCategoryTap(
+                  widget.filter.applyDonatTap(
+                    categoryId: categoryId,
+                    monthStart: start,
+                    monthEnd: end,
                   ),
                 ),
-                // Kartu "keluar terbesar" hanya bermakna di mode keluar.
-                if (!_incoming) _TopSpendCard(rows: rows),
-              ],
-            );
-          },
-        ),
-      ],
+              ),
+              if (!_incoming) _TopSpendCard(rows: rows),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -182,82 +178,153 @@ class _DonatCard extends StatelessWidget {
     final buckets = _buckets(context);
     final total = buckets.fold(0, (a, b) => a + b.amount);
 
-    return QuestCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 1. Donut Visual Card
+        QuestCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                width: 176,
-                child: QuestSegmented<bool>(
-                  selected: incoming,
-                  onChanged: onToggle,
-                  options: const [
-                    (value: false, label: 'Keluar', icon: null),
-                    (value: true, label: 'Masuk', icon: null),
-                  ],
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  SizedBox(
+                    width: 176,
+                    child: QuestSegmented<bool>(
+                      selected: incoming,
+                      onChanged: onToggle,
+                      options: const [
+                        (value: false, label: 'Keluar', icon: null),
+                        (value: true, label: 'Masuk', icon: null),
+                      ],
+                    ),
+                  ),
+                  _DeltaChip(
+                    repository: repository,
+                    start: start,
+                    end: end,
+                    spend: !incoming,
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: Spacing.m),
-          if (total == 0)
-            QuestEmpty(
-              title: incoming ? 'Belum ada pemasukan' : 'Belum ada pengeluaran',
-              hint: 'Catat transaksimu — Duit menunggu!',
-            )
-          else ...[
-            SizedBox(
-              height: 180,
-              child: Center(
-                child: SizedBox(
-                  width: 180,
+              const SizedBox(height: Spacing.m),
+              if (total == 0)
+                QuestEmpty(
+                  title: incoming ? 'Belum ada pemasukan' : 'Belum ada pengeluaran',
+                  hint: 'Catat transaksimu — Duit menunggu!',
+                )
+              else ...[
+                SizedBox(
                   height: 180,
-                  child: RepaintBoundary(
-                    child: CustomPaint(
-                      painter: _DonutPainter(
-                        buckets: buckets,
-                        total: total,
-                        dim: context.q.surface,
-                      ),
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              incoming ? 'Total masuk' : 'Total keluar',
-                              style: context.qSmall(),
+                  child: Center(
+                    child: SizedBox(
+                      width: 180,
+                      height: 180,
+                      child: RepaintBoundary(
+                        child: CustomPaint(
+                          painter: _DonutPainter(
+                            buckets: buckets,
+                            total: total,
+                            dim: context.q.surface,
+                          ),
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    incoming ? 'Total Masuk' : 'Total Keluar',
+                                    style: context.qSmall(11.5),
+                                    maxLines: 1,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      Money.format(total),
+                                      style: context.qTitle(17),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            Text(
-                              Money.format(total),
-                              style: context.qTitle(19),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
+                const SizedBox(height: Spacing.s),
+                // Top 3 category chips under Donut
+                Center(
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      for (final b in buckets.take(3))
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: b.color.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(color: b.color, shape: BoxShape.circle),
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                '${b.label} ${((b.amount / total) * 100).round()}%',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: b.color,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (total > 0) ...[
+          const SizedBox(height: Spacing.m),
+          // 2. Category Breakdown Card
+          QuestCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Rincian per Kategori',
+                      style: context.qTitle(15),
+                    ),
+                    Text(
+                      '${buckets.length} kategori',
+                      style: context.qSmall(12),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: Spacing.m),
+                for (final b in buckets) _legendRow(context, b, total),
+              ],
             ),
-            const SizedBox(height: Spacing.m),
-            for (final b in buckets) _legendRow(context, b, total),
-            const SizedBox(height: Spacing.s),
-            // Delta vs periode pembanding — angka tanpa konteks tidak
-            // membantu keputusan (mockup v2.1).
-            Align(
-              alignment: Alignment.centerLeft,
-              child: _DeltaChip(
-                repository: repository,
-                start: start,
-                end: end,
-                spend: !incoming,
-              ),
-            ),
-          ],
+          ),
         ],
-      ),
+      ],
     );
   }
 
@@ -300,13 +367,16 @@ class _DonatCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Text(
-                    Money.format(b.amount),
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w800,
-                      color: context.q.text,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      Money.format(b.amount),
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                        color: context.q.text,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
                     ),
                   ),
                   const SizedBox(width: 6),

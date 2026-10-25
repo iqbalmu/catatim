@@ -71,47 +71,42 @@ class _RekapTrenState extends State<RekapTren> {
     final start = win?.start ?? DateTime(now.year, now.month);
     final end = win?.end ?? DateTime(now.year, now.month + 1);
 
-    return ListView(
-      padding: EdgeInsets.fromLTRB(
-        Spacing.m,
-        Spacing.s,
-        Spacing.m,
-        Spacing.m + MediaQuery.paddingOf(context).bottom,
-      ),
-      children: [
-        StreamBuilder<List<TxWithCategory>>(
-          stream: _rows,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const QuestSkeleton(rows: 1, height: 220);
-            }
-            final rows = snapshot.data ?? const <TxWithCategory>[];
-            final points = <AmountPoint>[
-              for (final r in rows)
-                // Keluar murni: kaki transfer keluar tidak jadi titik.
-                if (r.tx.direction == Direction.incoming ||
-                    r.tx.kind != TxKind.transfer)
-                  (
-                    at: r.tx.occurredAt,
-                    direction: r.tx.direction,
-                    amount: r.tx.amount,
-                  ),
-            ];
-            final endInclusive = end.subtract(const Duration(days: 1));
-            final buckets = trendBuckets(points, start, endInclusive);
-            final title = end.difference(start).inDays > 62
-                ? 'Tren tiap bulan'
-                : 'Tren tiap minggu';
-            return Column(
-              children: [
-                _MonthlyBarCard(buckets: buckets, title: title),
-                const SizedBox(height: Spacing.m),
-                _TrendBreakdownCard(buckets: buckets),
-              ],
-            );
-          },
-        ),
-      ],
+    return StreamBuilder<List<TxWithCategory>>(
+      stream: _rows,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(horizontal: Spacing.m),
+            child: QuestSkeleton(rows: 1, height: 220),
+          );
+        }
+        final rows = snapshot.data ?? const <TxWithCategory>[];
+        final points = <AmountPoint>[
+          for (final r in rows)
+            if (r.tx.direction == Direction.incoming ||
+                r.tx.kind != TxKind.transfer)
+              (
+                at: r.tx.occurredAt,
+                direction: r.tx.direction,
+                amount: r.tx.amount,
+              ),
+        ];
+        final endInclusive = end.subtract(const Duration(days: 1));
+        final buckets = trendBuckets(points, start, endInclusive);
+        final title = end.difference(start).inDays > 62
+            ? 'Tren tiap bulan'
+            : 'Tren tiap minggu';
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: Spacing.m),
+          child: Column(
+            children: [
+              _MonthlyBarCard(buckets: buckets, title: title),
+              const SizedBox(height: Spacing.m),
+              _TrendBreakdownCard(buckets: buckets),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -244,22 +239,28 @@ class _BucketRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                '+${Money.format(bucket.incoming)}',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: context.q.good,
-                  fontFeatures: const [FontFeature.tabularFigures()],
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '+${Money.format(bucket.incoming)}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: context.q.good,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
               ),
-              Text(
-                '−${Money.format(bucket.outgoing)}',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: context.q.bad,
-                  fontFeatures: const [FontFeature.tabularFigures()],
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  '−${Money.format(bucket.outgoing)}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: context.q.bad,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
               ),
             ],
@@ -272,13 +273,16 @@ class _BucketRow extends StatelessWidget {
             color: isSurplus ? SeedColors.incomingTint : SeedColors.outgoingTint,
             borderRadius: BorderRadius.circular(AppRadius.pill),
           ),
-          child: Text(
-            '${isSurplus ? '+' : '−'}${Money.format(net.abs())}',
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w800,
-              color: isSurplus ? context.q.good : context.q.bad,
-              fontFeatures: const [FontFeature.tabularFigures()],
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              '${isSurplus ? '+' : '−'}${Money.format(net.abs())}',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+                color: isSurplus ? context.q.good : context.q.bad,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
           ),
         ),

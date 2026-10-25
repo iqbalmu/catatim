@@ -117,253 +117,346 @@ class RekapScreenState extends State<RekapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final win = _filter.window;
+    final now = DateTime.now();
+    final winStart = win?.start ?? DateTime(now.year, now.month);
+    final winEnd = win?.end ?? DateTime(now.year, now.month + 1);
+
     return Scaffold(
       backgroundColor: context.q.bg,
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: EdgeInsets.only(
+            bottom: 96 + MediaQuery.paddingOf(context).bottom,
+          ),
           children: [
-            Text(
-              'Laporan',
-              style: context.qTitle(20),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Distribusi kategori & tren arus kas',
-              style: context.qSmall(),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Period Selector Bar
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: Spacing.xs),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  icon: const Icon(Icons.chevron_left_rounded),
-                  onPressed: () => _shiftMonth(-1),
-                ),
-                InkWell(
-                  onTap: _openPeriodSheet,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+            // 1. Top Header Bar with Month Quick Selector
+            Padding(
+              padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.m, Spacing.m, Spacing.xs),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.event_outlined, color: context.q.primary, size: 18),
-                        const SizedBox(width: 6),
                         Text(
-                          _periodLabel,
-                          style: context.qTitle(15),
+                          'Laporan Finansial',
+                          style: context.qTitle(20),
                         ),
-                        const SizedBox(width: 4),
-                        Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: context.q.muted),
+                        Text(
+                          'Ringkasan arus kas & performa bulanan',
+                          style: context.qSmall(12),
+                        ),
                       ],
                     ),
                   ),
-                ),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  icon: const Icon(Icons.chevron_right_rounded),
-                  onPressed: () => _shiftMonth(1),
-                ),
-              ],
-            ),
-          ),
-
-          // Executive Financial Summary Card
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: Spacing.xs),
-            child: Builder(
-              builder: (context) {
-                final win = _filter.window;
-                final now = DateTime.now();
-                final winStart = win?.start ?? DateTime(now.year, now.month);
-                final winEnd = win?.end ?? DateTime(now.year, now.month + 1);
-
-                return StreamBuilder<List<TxWithCategory>>(
-                  stream: widget.repository.watchBetweenWithCategory(
-                    winStart,
-                    winEnd,
-                    accountId: _filter.accountId,
-                  ),
-                  builder: (context, snapshot) {
-                    final rows = snapshot.data ?? const [];
-                    int totalIn = 0;
-                    int totalOut = 0;
-                    for (final r in rows) {
-                      if (r.tx.direction == Direction.incoming) {
-                        totalIn += r.tx.amount;
-                      } else if (r.tx.direction == Direction.outgoing && r.tx.kind != TxKind.transfer) {
-                        totalOut += r.tx.amount;
-                      }
-                    }
-                    final net = totalIn - totalOut;
-                    final isSurplus = net >= 0;
-
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: context.q.surface,
-                        borderRadius: BorderRadius.circular(AppRadius.card),
-                        border: Border.all(color: context.q.line),
-                        boxShadow: AppShadows.card,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                  // Month Quick Jump Pill
+                  Container(
+                    decoration: BoxDecoration(
+                      color: context.q.surface,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                      border: Border.all(color: context.q.line),
+                      boxShadow: AppShadows.card,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          icon: const Icon(Icons.chevron_left_rounded, size: 18),
+                          onPressed: () => _shiftMonth(-1),
+                        ),
+                        InkWell(
+                          onTap: _openPeriodSheet,
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Row(
-                                  children: [
-                                    Icon(Icons.arrow_downward_rounded, size: 14, color: context.q.good),
-                                    const SizedBox(width: 4),
-                                    Text('PEMASUKAN', style: context.qEyebrow(9.5)),
-                                  ],
-                                ),
-                                const SizedBox(height: 2),
                                 Text(
-                                  Money.format(totalIn),
+                                  _periodLabel,
                                   style: TextStyle(
-                                    fontSize: 13.5,
+                                    fontSize: 12.5,
                                     fontWeight: FontWeight.w800,
-                                    color: context.q.good,
-                                    fontFeatures: const [FontFeature.tabularFigures()],
+                                    color: context.q.text,
                                   ),
+                                ),
+                                const SizedBox(width: 2),
+                                Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  size: 16,
+                                  color: context.q.muted,
                                 ),
                               ],
                             ),
                           ),
-                          Container(width: 1, height: 32, color: context.q.line),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 10),
+                        ),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          icon: const Icon(Icons.chevron_right_rounded, size: 18),
+                          onPressed: () => _shiftMonth(1),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: Spacing.s),
+
+            // 2. Hero Cashflow Statement Card
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Spacing.m),
+              child: StreamBuilder<List<TxWithCategory>>(
+                stream: widget.repository.watchBetweenWithCategory(
+                  winStart,
+                  winEnd,
+                  accountId: _filter.accountId,
+                ),
+                builder: (context, snapshot) {
+                  final rows = snapshot.data ?? const [];
+                  int totalIn = 0;
+                  int totalOut = 0;
+                  for (final r in rows) {
+                    if (r.tx.direction == Direction.incoming) {
+                      totalIn += r.tx.amount;
+                    } else if (r.tx.direction == Direction.outgoing && r.tx.kind != TxKind.transfer) {
+                      totalOut += r.tx.amount;
+                    }
+                  }
+                  final net = totalIn - totalOut;
+                  final isSurplus = net >= 0;
+                  final savingsPct = totalIn > 0 ? ((net / totalIn) * 100).round() : null;
+
+                  return Container(
+                    padding: const EdgeInsets.all(Spacing.m),
+                    decoration: BoxDecoration(
+                      color: context.q.surface,
+                      borderRadius: BorderRadius.circular(AppRadius.card),
+                      border: Border.all(color: context.q.line),
+                      boxShadow: AppShadows.card,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'ARUS KAS BERSIH',
+                                style: context.qEyebrow(10.5),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: isSurplus ? SeedColors.incomingTint : SeedColors.outgoingTint,
+                                borderRadius: BorderRadius.circular(AppRadius.pill),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    isSurplus ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                                    size: 13,
+                                    color: isSurplus ? context.q.good : context.q.bad,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    isSurplus ? 'Surplus' : 'Defisit',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: isSurplus ? context.q.good : context.q.bad,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: Spacing.xs),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            '${isSurplus ? '+' : '−'}${Money.format(net.abs())}',
+                            style: context.qDisplay(26).copyWith(
+                              color: isSurplus ? context.q.good : context.q.bad,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: Spacing.s),
+                        Divider(height: 1, thickness: 1, color: context.q.line),
+                        const SizedBox(height: Spacing.s),
+                        Row(
+                          children: [
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
                                     children: [
-                                      Icon(Icons.arrow_upward_rounded, size: 14, color: context.q.bad),
+                                      Icon(Icons.arrow_downward_rounded, size: 14, color: context.q.good),
                                       const SizedBox(width: 4),
-                                      Text('PENGELUARAN', style: context.qEyebrow(9.5)),
+                                      Flexible(
+                                        child: Text(
+                                          'Pemasukan',
+                                          style: context.qSmall(11),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                   const SizedBox(height: 2),
-                                  Text(
-                                    Money.format(totalOut),
-                                    style: TextStyle(
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.w800,
-                                      color: context.q.bad,
-                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      Money.format(totalIn),
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                        color: context.q.good,
+                                        fontFeatures: const [FontFeature.tabularFigures()],
+                                      ),
                                     ),
                                   ),
                                 ],
+                              ),
+                            ),
+                            Container(width: 1, height: 32, color: context.q.line),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: Spacing.s),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(Icons.arrow_upward_rounded, size: 14, color: context.q.bad),
+                                        const SizedBox(width: 4),
+                                        Flexible(
+                                          child: Text(
+                                            'Pengeluaran',
+                                            style: context.qSmall(11),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 2),
+                                    FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        Money.format(totalOut),
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w800,
+                                          color: context.q.bad,
+                                          fontFeatures: const [FontFeature.tabularFigures()],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (savingsPct != null) ...[
+                          const SizedBox(height: Spacing.s),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                            child: LinearProgressIndicator(
+                              value: (totalOut / totalIn).clamp(0.0, 1.0),
+                              minHeight: 6,
+                              backgroundColor: SeedColors.incomingTint,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                isSurplus ? context.q.good : context.q.bad,
                               ),
                             ),
                           ),
-                          Container(width: 1, height: 32, color: context.q.line),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.only(left: 10),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(
-                                        isSurplus ? Icons.trending_up_rounded : Icons.trending_down_rounded,
-                                        size: 14,
-                                        color: isSurplus ? context.q.good : context.q.bad,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text('ARUS BERSIH', style: context.qEyebrow(9.5)),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${isSurplus ? '+' : '−'}${Money.format(net.abs())}',
-                                    style: TextStyle(
-                                      fontSize: 13.5,
-                                      fontWeight: FontWeight.w900,
-                                      color: isSurplus ? context.q.good : context.q.bad,
-                                      fontFeatures: const [FontFeature.tabularFigures()],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          const SizedBox(height: 4),
+                          Text(
+                            isSurplus
+                                ? '$savingsPct% dari pemasukan berhasil dihemat'
+                                : 'Pengeluaran melebihi pemasukan bulan ini',
+                            style: context.qSmall(11),
                           ),
                         ],
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-
-          // Two visual options: Kategori & Tren
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: Spacing.xs),
-            child: QuestSegmented<RekapSegment>(
-              selected: _segment == RekapSegment.tren ? RekapSegment.tren : RekapSegment.donat,
-              onChanged: (s) => setState(() {
-                _segment = s;
-                _filter = _filter.onSegmentSwitch();
-              }),
-              options: const [
-                (value: RekapSegment.donat, label: 'Distribusi Kategori', icon: null),
-                (value: RekapSegment.tren, label: 'Tren Arus Kas', icon: null),
-              ],
-            ),
-          ),
-          const SizedBox(height: Spacing.s),
-          Expanded(
-            child: switch (_segment) {
-              RekapSegment.transaksi => RekapTransaksi(
-                repository: widget.repository,
-                filter: _filter,
-                onFilterChanged: (f) => setState(() => _filter = f),
+                      ],
+                    ),
+                  );
+                },
               ),
-              RekapSegment.donat => RekapDonat(
+            ),
+            const SizedBox(height: Spacing.m),
+
+            // 3. Segment Switcher (Pills)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: Spacing.m),
+              child: QuestSegmented<RekapSegment>(
+                selected: _segment == RekapSegment.tren ? RekapSegment.tren : RekapSegment.donat,
+                onChanged: (s) => setState(() {
+                  _segment = s;
+                  _filter = _filter.onSegmentSwitch();
+                }),
+                options: const [
+                  (value: RekapSegment.donat, label: 'Distribusi Kategori', icon: null),
+                  (value: RekapSegment.tren, label: 'Tren Arus Kas', icon: null),
+                ],
+              ),
+            ),
+            const SizedBox(height: Spacing.s),
+
+            // 4. View Content
+            if (_segment == RekapSegment.donat)
+              RekapDonat(
                 repository: widget.repository,
                 filter: _filter,
-                // Deep-link kategori (alur B): filter hasil applyDonatTap
-                // + pindah segmen ke Transaksi.
                 onCategoryTap: (f) => setState(() {
                   _filter = f;
                   _segment = RekapSegment.transaksi;
                 }),
-              ),
-              RekapSegment.tren => RekapTren(
+              )
+            else if (_segment == RekapSegment.tren)
+              RekapTren(
                 repository: widget.repository,
                 filter: _filter,
+              )
+            else if (_segment == RekapSegment.transaksi)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: Spacing.m),
+                child: RekapTransaksi(
+                  repository: widget.repository,
+                  filter: _filter,
+                  onFilterChanged: (f) => setState(() => _filter = f),
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: Spacing.m),
+                child: RekapKalender(
+                  repository: widget.repository,
+                  month: _filter.month ?? _filter.rangeStart ?? DateTime.now(),
+                  onDayTap: (day) => setState(() {
+                    _filter = _filter.applyKalenderTap(day);
+                    _segment = RekapSegment.transaksi;
+                  }),
+                ),
               ),
-              // Deep-link kalender: filter satu tanggal (applyKalenderTap
-              // di shell, field lain dipertahankan) + pindah segmen.
-              RekapSegment.kalender => RekapKalender(
-                repository: widget.repository,
-                month: _filter.month ?? _filter.rangeStart ?? DateTime.now(),
-                onDayTap: (day) => setState(() {
-                  _filter = _filter.applyKalenderTap(day);
-                  _segment = RekapSegment.transaksi;
-                }),
-              ),
-            },
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
