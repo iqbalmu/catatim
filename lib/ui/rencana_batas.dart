@@ -262,12 +262,11 @@ class _RencanaBatasState extends State<RencanaBatas> {
                                     : accountNames[b.accountId],
                                 used: _usedFor(used, b),
                                 limit: b.monthlyLimit,
-                                onEdit: () => _editAllocation(
+                                onTap: () => _manageCategoryAndBudget(
                                   c,
                                   existing: b,
                                   accounts: accounts,
                                 ),
-                                onManage: () => _manageCategory(c),
                               ),
                             // Kategori tanpa alokasi sama sekali.
                             if (!budgets.any((b) => b.categoryId == c.id))
@@ -275,12 +274,11 @@ class _RencanaBatasState extends State<RencanaBatas> {
                                 name: c.name,
                                 used: _usedForCategory(used, c.id),
                                 limit: null,
-                                onEdit: () => _editAllocation(
+                                onTap: () => _manageCategoryAndBudget(
                                   c,
                                   existing: null,
                                   accounts: accounts,
                                 ),
-                                onManage: () => _manageCategory(c),
                               ),
                           ],
                         ];
@@ -392,133 +390,137 @@ class _RencanaBatasState extends State<RencanaBatas> {
     );
   }
 
-  /// Edit alokasi satu kategori: nominal + scope akun.
-  Future<void> _editAllocation(
+  /// Kelola kategori & anggaran sekaligus dalam 1 modal tunggal:
+  /// ubah nama, atur/hapus batas alokasi, scope akun, dan hapus kategori.
+  Future<void> _manageCategoryAndBudget(
     Category category, {
     required Budget? existing,
     required List<Account> accounts,
   }) async {
-    final result = await _askAllocation(
-      context,
-      title: 'Alokasi ${category.name}',
-      currentLimit: existing?.monthlyLimit,
-      currentAccount: existing?.accountId,
-      accounts: accounts,
-    );
-    if (result == null || !mounted) return;
-    if (result.remove) {
-      await widget.repository.removeBudget(
-        category.id,
-        accountId: existing?.accountId,
-      );
-    } else {
-      await widget.repository.setBudget(
-        category.id,
-        result.limit ?? 0,
-        accountId: result.account,
-      );
-    }
-    if (!mounted) return;
-    questSnack(
-      context,
-      result.remove
-          ? 'Alokasi ${category.name} dihapus, ya.'
-          : 'Alokasi ${category.name} tersimpan.',
-      icon: Icons.check_rounded,
-    );
-  }
-
-  /// Kelola satu jenis anggaran: ubah nama atau hapus (transaksi pindah
-  /// ke "Lainnya").
-  Future<void> _manageCategory(Category category) async {
     final lainnya = (await widget.repository.watchCategories().first)
         .where((c) => c.name.toLowerCase() == 'lainnya' && c.id != category.id)
         .toList();
+    final canDelete = category.name.toLowerCase() != 'lainnya';
     if (!mounted) return;
-    final result = await showQuestDialog<_ManageCategory>(
+    final result = await _askCategoryAndBudget(
       context,
-      title: 'Kelola "${category.name}"',
-      content: _ManageCategoryForm(currentName: category.name),
-      actions: [
-        QuestButton(
-          label: 'Hapus kategori',
-          icon: Icons.delete_outline_rounded,
-          tone: QuestTone.danger,
-          onPressed: () => Navigator.pop(
-            context,
-            _ManageCategory(remove: true, newName: null),
-          ),
-        ),
-        QuestButton(
-          label: 'Simpan',
-          icon: Icons.check_rounded,
-          onPressed: () {
-            final state = _ManageCategoryForm.maybeOf(context);
-            Navigator.pop(
-              context,
-              _ManageCategory(
-                remove: false,
-                newName: state?.nameCtrl.text.trim(),
-              ),
-            );
-          },
-        ),
-      ],
+      category: category,
+      currentLimit: existing?.monthlyLimit,
+      currentAccount: existing?.accountId,
+      accounts: accounts,
+      canDelete: canDelete,
     );
     if (result == null || !mounted) return;
-    try {
-      if (result.remove) {
-        if (lainnya.isEmpty) {
-          questSnack(
-            context,
-            'Kategori "Lainnya" belum ada — transaksinya butuh tempat pindah.',
-            icon: Icons.info_outline_rounded,
-          );
-          return;
-        }
-        await widget.repository.deleteCategory(
-          category.id,
-          fallbackId: lainnya.first.id,
-        );
-        if (!mounted) return;
+
+    if (result.delete) {
+      if (lainnya.isEmpty) {
         questSnack(
           context,
-          '"${category.name}" dihapus — transaksinya pindah ke Lainnya.',
-          icon: Icons.check_rounded,
+          'Kategori "Lainnya" belum ada — transaksi butuh tempat pindah.',
+          icon: Icons.info_outline_rounded,
         );
-      } else if (result.newName != null &&
-          result.newName!.isNotEmpty &&
-          result.newName != category.name) {
-        await widget.repository.renameCategory(category.id, result.newName!);
-        if (!mounted) return;
-        questSnack(
-          context,
-          'Nama berubah jadi "${result.newName}".',
-          icon: Icons.check_rounded,
-        );
+        return;
       }
-    } catch (_) {
+      final sure = await showQuestDialog<bool>(
+        context,
+        title: 'Hapus Kategori?',
+        content: Text(
+          'Kategori "${category.name}" akan dihapus dan transaksinya dipindah ke kategori "Lainnya".',
+          style: context.qBody(13),
+        ),
+        actions: [
+          QuestButton(
+            label: 'Batal',
+            tone: QuestTone.secondary,
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          QuestButton(
+            label: 'Hapus',
+            tone: QuestTone.danger,
+            icon: Icons.delete_outline_rounded,
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
+      );
+      if (sure != true || !mounted) return;
+
+      await widget.repository.deleteCategory(
+        category.id,
+        fallbackId: lainnya.first.id,
+      );
       if (!mounted) return;
       questSnack(
         context,
-        'Nama "${result.newName}" sudah dipakai — coba nama lain, ya.',
-        icon: Icons.info_outline_rounded,
+        'Kategori "${category.name}" dihapus — transaksi dipindah ke Lainnya.',
+        icon: Icons.check_rounded,
       );
+      return;
+    }
+
+    // Rename jika diubah
+    if (result.name.isNotEmpty && result.name != category.name) {
+      try {
+        await widget.repository.renameCategory(category.id, result.name);
+      } catch (_) {
+        if (!mounted) return;
+        questSnack(
+          context,
+          'Nama "${result.name}" sudah dipakai — nama tidak diubah.',
+          icon: Icons.info_outline_rounded,
+        );
+      }
+    }
+
+    // Update atau hapus alokasi anggaran
+    if (result.limit != null && result.limit! > 0) {
+      await widget.repository.setBudget(
+        category.id,
+        result.limit!,
+        accountId: result.accountId,
+      );
+      if (!mounted) return;
+      questSnack(
+        context,
+        'Anggaran ${result.name.isNotEmpty ? result.name : category.name} tersimpan.',
+        icon: Icons.check_rounded,
+      );
+    } else {
+      if (existing != null) {
+        await widget.repository.removeBudget(
+          category.id,
+          accountId: existing.accountId,
+        );
+        if (!mounted) return;
+        questSnack(
+          context,
+          'Batas anggaran dihapus.',
+          icon: Icons.check_rounded,
+        );
+      } else {
+        if (!mounted) return;
+        questSnack(
+          context,
+          'Perubahan tersimpan.',
+          icon: Icons.check_rounded,
+        );
+      }
     }
   }
 }
 
 /// Hasil dialog alokasi.
-class _AllocationResult {
-  const _AllocationResult({
-    required this.remove,
+class _CategoryBudgetResult {
+  const _CategoryBudgetResult({
+    required this.name,
     required this.limit,
-    required this.account,
+    required this.accountId,
+    required this.delete,
   });
 
-  final bool remove;
+  final String name;
   final int? limit;
-  final int? account;
+  final int? accountId;
+  final bool delete;
 }
 
 /// Dialog input nominal rupiah. Simpan kosong → null (hapus);
@@ -567,36 +569,50 @@ Future<int?> _askAmount(
   });
 }
 
-/// Dialog alokasi: nominal + scope akun (semua atau satu akun).
-Future<_AllocationResult?> _askAllocation(
+/// Modal gabungan satu pintu: ubah nama kategori, atur batas bulanan,
+/// pilih scope akun, atau hapus kategori.
+Future<_CategoryBudgetResult?> _askCategoryAndBudget(
   BuildContext context, {
-  required String title,
+  required Category category,
   required int? currentLimit,
   required int? currentAccount,
   required List<Account> accounts,
+  required bool canDelete,
 }) {
+  final nameCtrl = TextEditingController(text: category.name);
   final limitCtrl = TextEditingController(
-    text: currentLimit == null ? '' : '$currentLimit',
+    text: currentLimit != null && currentLimit > 0 ? '$currentLimit' : '',
   );
   int? scope = currentAccount;
-  return showQuestDialog<_AllocationResult>(
+
+  return showQuestDialog<_CategoryBudgetResult>(
     context,
-    title: title,
+    title: 'Kelola Kategori & Anggaran',
     content: StatefulBuilder(
       builder: (context, setDialogState) => Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           TextField(
+            controller: nameCtrl,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Nama kategori',
+              hintText: 'Contoh: Makanan',
+            ),
+          ),
+          const SizedBox(height: Spacing.s),
+          TextField(
             controller: limitCtrl,
-            autofocus: true,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: const InputDecoration(
-              labelText: 'Alokasi bulanan (rupiah)',
+              prefixText: 'Rp ',
+              labelText: 'Batas bulanan',
+              hintText: 'Kosongkan jika tanpa batas',
             ),
           ),
-          const SizedBox(height: Spacing.m),
+          const SizedBox(height: Spacing.s),
           DropdownButtonFormField<int?>(
             initialValue: scope,
             isExpanded: true,
@@ -620,33 +636,42 @@ Future<_AllocationResult?> _askAllocation(
         tone: QuestTone.secondary,
         onPressed: () => Navigator.pop(context),
       ),
-      if (currentLimit != null)
+      if (canDelete)
         QuestButton(
-          label: 'Hapus alokasi',
+          label: 'Hapus',
           tone: QuestTone.danger,
+          icon: Icons.delete_outline_rounded,
           onPressed: () => Navigator.pop(
             context,
-            _AllocationResult(remove: true, limit: null, account: null),
+            const _CategoryBudgetResult(
+              name: '',
+              limit: null,
+              accountId: null,
+              delete: true,
+            ),
           ),
         ),
       QuestButton(
         label: 'Simpan',
         icon: Icons.check_rounded,
-        onPressed: () => Navigator.pop(
-          context,
-          _AllocationResult(
-            remove: false,
-            limit: limitCtrl.text.trim().isEmpty
-                ? 0
-                : Money.parseGroup(limitCtrl.text),
-            account: scope,
-          ),
-        ),
+        onPressed: () {
+          final limitVal = limitCtrl.text.trim().isEmpty
+              ? null
+              : int.tryParse(limitCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''));
+          Navigator.pop(
+            context,
+            _CategoryBudgetResult(
+              name: nameCtrl.text.trim(),
+              limit: limitVal,
+              accountId: scope,
+              delete: false,
+            ),
+          );
+        },
       ),
     ],
   );
 }
-
 class _NewCategory {
   const _NewCategory({required this.name, required this.limit});
   final String name;
@@ -692,38 +717,6 @@ class _NewCategoryFormState extends State<_NewCategoryForm> {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _ManageCategory {
-  const _ManageCategory({required this.remove, required this.newName});
-  final bool remove;
-  final String? newName;
-}
-
-class _ManageCategoryForm extends StatefulWidget {
-  const _ManageCategoryForm({required this.currentName});
-
-  static _ManageCategoryFormState? maybeOf(BuildContext context) =>
-      context.findAncestorStateOfType<_ManageCategoryFormState>();
-
-  final String currentName;
-
-  @override
-  State<_ManageCategoryForm> createState() => _ManageCategoryFormState();
-}
-
-class _ManageCategoryFormState extends State<_ManageCategoryForm> {
-  late final nameCtrl = TextEditingController(text: widget.currentName);
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: nameCtrl,
-      autofocus: true,
-      textCapitalization: TextCapitalization.words,
-      decoration: const InputDecoration(labelText: 'Nama kategori'),
     );
   }
 }
@@ -851,8 +844,7 @@ class _AllocationRow extends StatelessWidget {
     required this.name,
     required this.used,
     required this.limit,
-    required this.onEdit,
-    required this.onManage,
+    required this.onTap,
     this.scopeLabel,
   });
 
@@ -860,8 +852,7 @@ class _AllocationRow extends StatelessWidget {
   final String? scopeLabel;
   final int used;
   final int? limit;
-  final VoidCallback onEdit;
-  final VoidCallback onManage;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -870,42 +861,32 @@ class _AllocationRow extends StatelessWidget {
         ? null
         : LimitLine(label: name, used: used, limit: limit!);
     final over = line?.level == BudgetLevel.over;
+
     return Container(
       decoration: BoxDecoration(
         color: over ? q.bad.withValues(alpha: 0.12) : q.surface,
         borderRadius: BorderRadius.circular(AppRadius.tile),
-        boxShadow: [
-          BoxShadow(
-            color: q.shadow,
-            offset: const Offset(0, 6),
-            blurRadius: 18,
-          ),
-        ],
+        border: Border.all(color: q.line),
+        boxShadow: AppShadows.card,
       ),
       child: QuestPress(
-        onTap: onEdit,
+        onTap: onTap,
         child: Container(
-          // Transparan tapi opaque untuk hit-test: seluruh permukaan kartu
-          // bisa ditap, bukan hanya teks/barnya.
           color: Colors.transparent,
           padding: Insets.tile,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Tap nama = kelola jenis; sisanya = edit alokasi.
               Row(
                 children: [
                   Expanded(
-                    child: QuestPress(
-                      onTap: onManage,
-                      child: Text(
-                        scopeLabel == null ? name : '$name · $scopeLabel',
-                        style: context.qTitle(13).copyWith(
-                          color: line == null ? q.muted : null,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                    child: Text(
+                      scopeLabel == null ? name : '$name · $scopeLabel',
+                      style: context.qTitle(14).copyWith(
+                        color: line == null ? q.muted : null,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const SizedBox(width: Spacing.xs),
