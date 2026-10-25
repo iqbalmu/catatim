@@ -214,53 +214,84 @@ class _AccountTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: q.surface,
           borderRadius: BorderRadius.circular(AppRadius.tile),
-          boxShadow: [
-            BoxShadow(
-              color: q.shadow,
-              offset: const Offset(0, 6),
-              blurRadius: 18,
-            ),
-          ],
+          border: Border.all(color: q.line, width: 1),
+          boxShadow: AppShadows.card,
         ),
         child: Row(
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: connected ? q.good : q.surface2,
-                shape: BoxShape.circle,
+                color: connected
+                    ? q.primary.withValues(alpha: 0.12)
+                    : q.surface2,
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
-                connected
-                    ? Icons.link_rounded
-                    : switch (account.kind) {
-                        AccountKind.bank => Icons.account_balance_rounded,
-                        AccountKind.ewallet => Icons.wallet_rounded,
-                        AccountKind.cash => Icons.payments_rounded,
-                      },
-                color: connected ? Colors.white : q.text,
+                switch (account.kind) {
+                  AccountKind.bank => Icons.account_balance_rounded,
+                  AccountKind.ewallet => Icons.wallet_rounded,
+                  AccountKind.cash => Icons.payments_rounded,
+                },
+                color: connected ? q.primary : q.text,
                 size: 20,
               ),
             ),
-            const SizedBox(width: Spacing.s),
+            const SizedBox(width: Spacing.m),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(account.name, style: context.qTitle(15)),
                   Text(
-                    connected
-                        ? 'Terhubung'
-                        : (account.bankId != null
-                              ? 'Belum terhubung'
-                              : account.kind.label),
-                    style: TextStyle(
-                      color: connected ? q.good : q.muted,
-                      fontSize: 12,
-                      fontWeight:
-                          connected ? FontWeight.w700 : FontWeight.w400,
-                    ),
+                    account.name,
+                    style: context.qTitle(15),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: Spacing.xxs),
+                  Row(
+                    children: [
+                      Text(
+                        account.kind.label,
+                        style: context.qSmall(11.5).copyWith(color: q.muted),
+                      ),
+                      if (connected) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: q.good.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                          child: Text(
+                            'Terhubung',
+                            style: TextStyle(
+                              color: q.good,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ] else if (account.bankId != null) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: q.surface2,
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                          child: Text(
+                            'Belum terhubung',
+                            style: TextStyle(
+                              color: q.muted,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
@@ -270,13 +301,13 @@ class _AccountTile extends StatelessWidget {
               Money.format(balance),
               style: TextStyle(
                 fontWeight: FontWeight.w800,
-                fontSize: 13,
+                fontSize: 14,
                 color: balance < 0 ? q.bad : q.text,
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
             const SizedBox(width: Spacing.xs),
-            Icon(Icons.chevron_right_rounded, color: q.muted),
+            Icon(Icons.chevron_right_rounded, color: q.muted, size: 20),
           ],
         ),
       ),
