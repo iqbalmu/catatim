@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../game/progress.dart';
 import '../storage/repository.dart';
-import '../theme/quest.dart';
-import 'quest.dart';
 import 'rencana_batas.dart';
 
 /// Layar Rencana: akar tab (tanpa tombol kembali) berisi Batas
@@ -28,12 +26,35 @@ class RencanaScreenState extends State<RencanaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: context.q.bg,
-      appBar: QuestHeader(
-        title: 'Rencana',
-        subtitle: 'Atur batas belanjamu',
+      backgroundColor: const Color(0xFFF6F7FB),
+      appBar: AppBar(
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Target & Gamifikasi',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+                color: Color(0xFF161924),
+              ),
+            ),
+            SizedBox(height: 2),
+            Text(
+              'Target batas pengeluaran & level saver',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF7C8BA0),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
       ),
-      // Tombol + tinggal di tengah navbar — tanpa FAB melayang di tab ini.
       body: RencanaBatas(repository: widget.repository, progress: widget.progress),
     );
   }

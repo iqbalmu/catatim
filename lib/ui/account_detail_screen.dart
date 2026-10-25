@@ -242,9 +242,9 @@ class _AccountDetailScreenState extends State<AccountDetailScreen>
       stream: widget.repository.watchAccounts(),
       builder: (context, accSnap) {
         final accounts = accSnap.data;
-        final account = accounts == null
-            ? null
-            : accounts.where((a) => a.id == widget.accountId).firstOrNull;
+        final account = accounts
+            ?.where((a) => a.id == widget.accountId)
+            .firstOrNull;
         if (accounts != null && account == null) {
           // Stream sudah keluar tapi akunnya tidak ada — sudah dihapus.
           WidgetsBinding.instance.addPostFrameCallback((_) {

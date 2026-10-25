@@ -106,84 +106,103 @@ class RekapScreenState extends State<RekapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: context.q.bg,
-      appBar: QuestHeader(
-        title: 'Rekap',
-        subtitle: _periodLabel,
+      backgroundColor: const Color(0xFFF6F7FB),
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Rekap & Analisis',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+                color: Color(0xFF161924),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              _periodLabel,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF7C8BA0),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
       ),
-      // Tombol + tinggal di tengah navbar (dinamis per tab) — tanpa FAB
-      // melayang di tab ini.
-      // Kolom non-scroll: konten segmen (RekapTransaksi) yang menggulir,
-      // jangan sarangkan dua ListView tanpa shrinkWrap. Inset bawah
-      // diberikan sekali saja oleh ListView segmen.
+      // Kolom non-scroll: konten segmen (RekapTransaksi) yang menggulir
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              Spacing.m,
-              Spacing.s,
-              Spacing.m,
+              20,
+              4,
+              20,
               0,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Pil periode kompak — buka sheet kalender (pola Laporan).
+                // Pil periode kompak — buka sheet kalender
                 QuestPress(
                   onTap: _openPeriodSheet,
                   child: Container(
-                    padding: Insets.tile,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: context.q.surface,
-                      borderRadius: BorderRadius.circular(AppRadius.tile),
-                      boxShadow: [
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0x0A000000)),
+                      boxShadow: const [
                         BoxShadow(
-                          color: context.q.shadow,
-                          offset: const Offset(0, 6),
-                          blurRadius: 18,
+                          color: Color(0x0A2B3A4A),
+                          offset: Offset(0, 4),
+                          blurRadius: 16,
                         ),
                       ],
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.event_outlined, color: context.q.honeyInk),
-                        const SizedBox(width: Spacing.s),
+                        const Icon(Icons.event_outlined, color: Color(0xFF8B5CF6), size: 20),
+                        const SizedBox(width: 10),
                         Expanded(
-                          child: Text(_periodLabel, style: context.qTitle(15)),
+                          child: Text(
+                            _periodLabel,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF161924),
+                            ),
+                          ),
                         ),
-                        Icon(Icons.expand_more_rounded, color: context.q.muted),
+                        const Icon(Icons.expand_more_rounded, color: Color(0xFF7C8BA0)),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: Spacing.m),
+                const SizedBox(height: 12),
                 QuestSegmented<RekapSegment>(
                   selected: _segment,
                   onChanged: (s) => setState(() {
                     _segment = s;
-                    // Periode/akun/cari dipertahankan; kategori/tanggal
-                    // dihapus.
                     _filter = _filter.onSegmentSwitch();
                   }),
                   options: const [
-                    (
-                      value: RekapSegment.transaksi,
-                      label: 'Transaksi',
-                      icon: null,
-                    ),
-                    (value: RekapSegment.donat, label: 'Donat', icon: null),
+                    (value: RekapSegment.donat, label: 'Kategori', icon: null),
                     (value: RekapSegment.tren, label: 'Tren', icon: null),
-                    (
-                      value: RekapSegment.kalender,
-                      label: 'Kalender',
-                      icon: null,
-                    ),
+                    (value: RekapSegment.transaksi, label: 'Transaksi', icon: null),
+                    (value: RekapSegment.kalender, label: 'Kalender', icon: null),
                   ],
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 8),
           const SizedBox(height: Spacing.m),
           Expanded(
             child: switch (_segment) {

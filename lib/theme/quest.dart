@@ -34,17 +34,17 @@ class QuestPalette {
   final Color shadow;
 
   static const light = QuestPalette(
-    bg: SeedColors.bg,
-    surface: SeedColors.surface,
-    surface2: SeedColors.surface2,
-    line: SeedColors.line,
-    text: SeedColors.ink,
-    muted: SeedColors.muted,
-    good: SeedColors.incoming,
-    bad: SeedColors.outgoing,
-    honey: SeedColors.honey,
-    honeyInk: SeedColors.honeyText,
-    shadow: Color(0x174A3A14),
+    bg: Color(0xFFF6F7FB),
+    surface: Colors.white,
+    surface2: Color(0xFFF1F5F9),
+    line: Color(0x0A000000),
+    text: Color(0xFF161924),
+    muted: Color(0xFF7C8BA0),
+    good: Color(0xFF10B981),
+    bad: Color(0xFFEF4444),
+    honey: Color(0xFFF59E0B),
+    honeyInk: Color(0xFF6B46C1),
+    shadow: Color(0x0A2B3A4A),
   );
 
   /// Aksen mint (syal Pochy) — netral-aktif: segmented on, status tenang.

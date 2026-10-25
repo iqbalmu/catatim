@@ -2,19 +2,22 @@ import 'dart:async';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../capture/pipeline.dart';
+import '../core/dates_id.dart';
 import '../core/money.dart';
-import '../game/mascot.dart';
+import '../game/progress.dart';
 import '../models.dart';
+import '../rules/rule_set.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
-import '../theme/quest.dart';
-import '../theme/tokens.dart';
-import 'quest.dart';
-import '../core/dates_id.dart';
+import 'account_detail_screen.dart';
+import 'add_account_sheet.dart';
+
+const _tabular = [FontFeature.tabularFigures()];
 
 /// Bon tua: belum lunas dan umur kalender (today − occurredAt) > 30 hari.
-/// "Hari ini" dihitung dari tanggal kalender lokal, bukan selisih jam.
 bool bonNeedsBadge(DateTime occurredAt, {DateTime? now}) {
   final n = now ?? DateTime.now();
   final today = DateTime(n.year, n.month, n.day);
@@ -22,19 +25,74 @@ bool bonNeedsBadge(DateTime occurredAt, {DateTime? now}) {
   return today.difference(day).inDays > 30;
 }
 
-/// Tab Bon: utang-piutang pribadi.
+/// Palet warna design system
+class _FintechColors {
+  static const surface = Colors.white;
+  static const border = Color(0x0A000000);
+  static const textPrimary = Color(0xFF161924);
+  static const textSecondary = Color(0xFF7C8BA0);
+  static const textMuted = Color(0xFF9AA8BC);
+
+  static const lilacBg = Color(0xFFE9D8FD);
+  static const lilacText = Color(0xFF6B46C1);
+  static const purple = Color(0xFF8B5CF6);
+
+  static const green = Color(0xFF10B981);
+  static const greenBg = Color(0xFFDEF7EC);
+  static const greenText = Color(0xFF03543F);
+
+  static const red = Color(0xFFEF4444);
+  static const redBg = Color(0xFFFDE8E8);
+  static const redText = Color(0xFF9B1C1C);
+
+  static const amberBg = Color(0xFFFEF3C7);
+  static const amberText = Color(0xFFB45309);
+}
+
+/// Wadah kartu fintech
+BoxDecoration _cardDeco({double radius = 24}) => BoxDecoration(
+      color: _FintechColors.surface,
+      borderRadius: BorderRadius.circular(radius),
+      border: Border.all(color: _FintechColors.border, width: 1),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x0A2B3A4A),
+          offset: Offset(0, 8),
+          blurRadius: 24,
+          spreadRadius: -2,
+        ),
+      ],
+    );
+
+/// Tab 4: Hub Bon & Akun Bank
+/// Menggabungkan pencatatan utang-piutang (utilitas murni tanpa gamifikasi)
+/// dan pengelolaan koneksi notifikasi bank/e-wallet dalam satu alur yang jelas.
 class BonTab extends StatefulWidget {
-  const BonTab({super.key, required this.repository});
+  const BonTab({
+    super.key,
+    required this.repository,
+    this.pipeline,
+    this.ruleSet,
+    this.progress,
+  });
 
   final LedgerRepository repository;
+  final CapturePipeline? pipeline;
+  final RuleSet? ruleSet;
+  final ProgressService? progress;
 
   @override
   State<BonTab> createState() => _BonTabState();
 }
 
 class _BonTabState extends State<BonTab> {
-  /// Disematkan sekali agar rebuild tak subscribe ulang (anti-kedip).
   late final Stream<List<Bon>> _bons;
+
+  /// 0 = Bon Utang-Piutang, 1 = Akun & Notifikasi Bank
+  int _selectedHubSegment = 0;
+
+  /// Filter bon: 0 = Belum Lunas, 1 = Sudah Lunas
+  int _selectedBonFilter = 0;
 
   @override
   void initState() {
@@ -44,257 +102,687 @@ class _BonTabState extends State<BonTab> {
 
   @override
   Widget build(BuildContext context) {
+    final topPadding = MediaQuery.paddingOf(context).top;
+
     return Scaffold(
-      backgroundColor: context.q.bg,
-      appBar: QuestHeader(
-        title: 'Bon',
-        subtitle: 'Catat utang & piutangmu',
-      ),
-      // Tombol + tinggal di tengah navbar (dinamis per tab) — tanpa FAB
-      // melayang di tab ini.
-      body: StreamBuilder<List<Bon>>(
-        stream: _bons,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const QuestSkeleton(rows: 3);
-          }
-          final bons = snapshot.data ?? const <Bon>[];
-          var piutang = 0;
-          var utang = 0;
-          for (final b in bons) {
-            if (b.settledAt != null) continue;
-            if (b.direction == BonDirection.lent) {
-              piutang += b.amount;
-            } else {
-              utang += b.amount;
-            }
-          }
-          final open = [
-            for (final b in bons)
-              if (b.settledAt == null) b,
-          ];
-          final done = [
-            for (final b in bons)
-              if (b.settledAt != null) b,
-          ];
-
-          return ListView(
-            padding: EdgeInsets.fromLTRB(
-              Spacing.m,
-              Spacing.s,
-              Spacing.m,
-              Spacing.m + MediaQuery.paddingOf(context).bottom,
-            ),
-            children: [
-              _NetCard(net: piutang - utang),
-              const SizedBox(height: Spacing.m),
-              Row(
-                children: [
-                  Expanded(
-                    child: _TotalCard(
-                      label: 'Piutang',
-                      hint: 'orang berutang padamu',
-                      amount: piutang,
-                      incoming: true,
-                    ),
-                  ),
-                  const SizedBox(width: Spacing.s),
-                  Expanded(
-                    child: _TotalCard(
-                      label: 'Utang',
-                      hint: 'kamu berutang',
-                      amount: utang,
-                      incoming: false,
-                    ),
-                  ),
-                ],
-              ),
-              if (bons.isEmpty)
-                const QuestEmpty(
-                  title: 'Belum ada bon',
-                  hint: 'Ada utang atau piutang? Catat lewat tombol + di navbar bawah.',
-                )
-              else ...[
-                // Satu daftar (mockup v2.1): belum lunas dulu, arsip
-                // lunas menyusul dalam kondisi redup + tercoret.
-                for (final b in [...open, ...done])
-                  _BonTile(bon: b, repository: widget.repository),
-                // Perayaan kecil saat semua beres (mockup v2.1).
-                if (open.isEmpty && done.isNotEmpty) ...[
-                  const SizedBox(height: Spacing.s),
-                  _BonAllSettledCard(count: done.length),
-                ],
-              ],
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-/// Kartu posisi bersih: piutang − utang (belum lunas saja).
-class _NetCard extends StatelessWidget {
-  const _NetCard({required this.net});
-
-  final int net;
-
-  @override
-  Widget build(BuildContext context) {
-    final q = context.q;
-    final positive = net > 0;
-    final zero = net == 0;
-    final IconData icon = zero
-        ? Icons.balance_rounded
-        : positive
-        ? Icons.arrow_upward_rounded
-        : Icons.arrow_downward_rounded;
-    /// Warna makna mengikuti konvensi dot tint design system: lingkaran
-    /// warna transparan + ikon warna penuh yang sama (lih. avatar tile
-    /// Bon, notif, kartu Beranda).
-    final Color tint = zero
-        ? q.honeyInk
-        : positive
-        ? q.good
-        : q.bad;
-    // Meniru struktur kartu Saldo Beranda: kolom kiri (label, angka,
-    // keterangan) + elemen visual di kanan, semuanya rata kiri.
-    return Container(
-      padding: const EdgeInsets.fromLTRB(Spacing.l, 24, Spacing.l, 24),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [SeedColors.honeyBright, SeedColors.honey],
+      backgroundColor: const Color(0xFFF6F7FB),
+      body: ListView(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          topPadding + 10,
+          20,
+          96 + MediaQuery.paddingOf(context).bottom,
         ),
-        borderRadius: BorderRadius.circular(AppRadius.sheet),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+          // Header Judul Layar
+          const Text(
+            'Bon & Akun',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.6,
+              color: _FintechColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Utilitas utang-piutang & otomatisasi notifikasi bank',
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
+              color: _FintechColors.textSecondary,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Segmented Control Utama: [Bon Utang-Piutang] | [Akun & Notifikasi]
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
               children: [
-                Text(
-                  'POSISI BERSIH',
-                  style: context.qEyebrow().copyWith(color: q.honeyInk),
-                ),
-                const SizedBox(height: 4),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    Money.format(net.abs()),
-                    style: context.qDisplay(30).copyWith(color: q.text),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  zero
-                      ? 'tidak ada bon yang belum lunas'
-                      : positive
-                      ? 'piutangmu lebih besar dari utangmu — belum lunas'
-                      : 'utangmu lebih besar dari piutangmu — belum lunas',
-                  style: context.qSmall(13).copyWith(color: q.honeyInk),
-                ),
+                _hubSegmentButton(0, '🤝 Bon Utang-Piutang'),
+                _hubSegmentButton(1, '🏦 Akun & Notifikasi'),
               ],
             ),
           ),
-          const SizedBox(width: Spacing.m),
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: tint.withValues(alpha: 0.16),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: tint, size: 22),
-          ),
+
+          const SizedBox(height: 18),
+
+          // Konten Segmen Aktif
+          if (_selectedHubSegment == 0)
+            _buildBonSection()
+          else
+            _buildBankAccountsSection(),
         ],
       ),
     );
   }
-}
 
-class _TotalCard extends StatelessWidget {
-  const _TotalCard({
-    required this.label,
-    required this.hint,
-    required this.amount,
-    required this.incoming,
-  });
-
-  final String label;
-  final String hint;
-  final int amount;
-  final bool incoming;
-
-  @override
-  Widget build(BuildContext context) {
-    // Ringkasan dua kolom ber-tint (mockup v2.1): piutang mint,
-    // utang merah bata.
-    final tint = incoming ? SeedColors.mintTint : SeedColors.outgoingTint;
-    final fg = incoming ? SeedColors.mintInk : SeedColors.outgoing;
-    return Container(
-      padding: const EdgeInsets.all(Spacing.m),
-      decoration: BoxDecoration(
-        color: tint,
-        borderRadius: BorderRadius.circular(AppRadius.tile),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label.toUpperCase(),
+  Widget _hubSegmentButton(int index, String label) {
+    final active = _selectedHubSegment == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          setState(() => _selectedHubSegment = index);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          decoration: BoxDecoration(
+            color: active ? _FintechColors.lilacBg : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.2,
-              color: fg,
+              fontSize: 12.5,
+              fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+              color: active
+                  ? _FintechColors.lilacText
+                  : _FintechColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 2),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              Money.format(amount),
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: fg,
-                fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      ),
+    );
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // SEGMEN 1: BON UTANG-PIUTANG (UTILITAS BERSIH - TANPA GAMIFIKASI)
+  // ───────────────────────────────────────────────────────────────────────────
+
+  Widget _buildBonSection() {
+    return StreamBuilder<List<Bon>>(
+      stream: _bons,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(40),
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
+        }
+
+        final bons = snapshot.data ?? const <Bon>[];
+        var piutang = 0;
+        var utang = 0;
+        for (final b in bons) {
+          if (b.settledAt != null) continue;
+          if (b.direction == BonDirection.lent) {
+            piutang += b.amount;
+          } else {
+            utang += b.amount;
+          }
+        }
+
+        final open = [for (final b in bons) if (b.settledAt == null) b];
+        final done = [for (final b in bons) if (b.settledAt != null) b];
+        final currentList = _selectedBonFilter == 0 ? open : done;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Kartu Ringkasan Piutang vs Utang
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: _cardDeco(radius: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: _FintechColors.green,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'PIUTANG',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                                color: _FintechColors.greenText,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            Money.format(piutang),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: _FintechColors.textPrimary,
+                              fontFeatures: _tabular,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'orang berutang padamu',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            color: _FintechColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: _cardDeco(radius: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: _FintechColors.red,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'UTANG',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                                color: _FintechColors.redText,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            Money.format(utang),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              color: _FintechColors.textPrimary,
+                              fontFeatures: _tabular,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'kamu berutang',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            color: _FintechColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Tombol Cepat Tambah Bon
+            ElevatedButton.icon(
+              onPressed: () => BonSheet.show(context, widget.repository),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text(
+                'Catat Bon Baru',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _FintechColors.textPrimary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
+
+            const SizedBox(height: 16),
+
+            // Filter Status Bon: [Belum Lunas (X)] | [Riwayat Lunas (Y)]
+            Row(
+              children: [
+                _bonFilterChip(0, 'Belum Lunas (${open.length})'),
+                const SizedBox(width: 8),
+                _bonFilterChip(1, 'Sudah Lunas (${done.length})'),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // Daftar Bon
+            if (currentList.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(32),
+                decoration: _cardDeco(radius: 20),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFF1F5F9),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.handshake_outlined,
+                          size: 22,
+                          color: _FintechColors.textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        _selectedBonFilter == 0
+                            ? 'Tidak ada bon yang belum lunas'
+                            : 'Belum ada riwayat bon lunas',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: _FintechColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Semua urusan utang-piutangmu tertata rapi.',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: _FintechColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              for (final bon in currentList)
+                _CleanBonTile(
+                  bon: bon,
+                  repository: widget.repository,
+                ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _bonFilterChip(int index, String label) {
+    final active = _selectedBonFilter == index;
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        setState(() => _selectedBonFilter = index);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: active ? _FintechColors.textPrimary : Colors.white,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: active ? _FintechColors.textPrimary : const Color(0x0A000000),
           ),
-          Text(
-            hint,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+            color: active ? Colors.white : _FintechColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // SEGMEN 2: AKUN & NOTIFIKASI BANK OTOMATIS
+  // ───────────────────────────────────────────────────────────────────────────
+
+  Widget _buildBankAccountsSection() {
+    final pipeline = widget.pipeline;
+    final ruleSet = widget.ruleSet;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 1. Status Izin Notification Listener Android
+        if (pipeline != null)
+          FutureBuilder<bool>(
+            future: pipeline.channel.isListenerEnabled(),
+            builder: (context, snap) {
+              final enabled = snap.data ?? false;
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: _cardDeco(radius: 20),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: enabled
+                            ? _FintechColors.greenBg
+                            : _FintechColors.amberBg,
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                      child: Icon(
+                        enabled
+                            ? Icons.notifications_active_rounded
+                            : Icons.notifications_off_outlined,
+                        size: 20,
+                        color: enabled
+                            ? _FintechColors.green
+                            : _FintechColors.amberText,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            enabled
+                                ? 'Pembaca Notifikasi Aktif'
+                                : 'Izin Notifikasi Belum Aktif',
+                            style: const TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w800,
+                              color: _FintechColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            enabled
+                                ? 'Bukuduit otomatis membaca notifikasi bank terhubung.'
+                                : 'Aktifkan izin akses notifikasi agar Bukuduit bisa mencatat otomatis.',
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              color: _FintechColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () async {
+                        await pipeline.channel.openListenerSettings();
+                        setState(() {});
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: enabled
+                            ? const Color(0xFFF1F5F9)
+                            : _FintechColors.purple,
+                        foregroundColor: enabled
+                            ? _FintechColors.textPrimary
+                            : Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: Text(
+                        enabled ? 'Ubah' : 'Aktifkan',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+
+        const SizedBox(height: 16),
+
+        // 2. Kotak Masuk Draf Notifikasi yang Menunggu Konfirmasi
+        StreamBuilder<List<Draft>>(
+          stream: widget.repository.watchDrafts(),
+          builder: (context, draftSnap) {
+            final drafts = draftSnap.data ?? const <Draft>[];
+            if (drafts.isEmpty) return const SizedBox.shrink();
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: _FintechColors.lilacBg.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _FintechColors.purple.withValues(alpha: 0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.mark_email_unread_rounded,
+                        size: 16,
+                        color: _FintechColors.lilacText,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${drafts.length} Draf Transaksi Menunggu Konfirmasi',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: _FintechColors.lilacText,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  for (final draft in drafts)
+                    _DraftReviewTile(
+                      draft: draft,
+                      pipeline: pipeline,
+                      repository: widget.repository,
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
+
+        // 3. Daftar Akun & Saldo
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Daftar Akun',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: _FintechColors.textPrimary,
+              ),
+            ),
+            if (pipeline != null && ruleSet != null)
+              TextButton.icon(
+                onPressed: () => AddAccountSheet.show(
+                  context,
+                  repository: widget.repository,
+                  pipeline: pipeline,
+                  ruleSet: ruleSet,
+                ),
+                icon: const Icon(Icons.add_rounded, size: 16),
+                label: const Text(
+                  'Tambah Akun',
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                ),
+              ),
+          ],
+        ),
+
+        const SizedBox(height: 8),
+
+        StreamBuilder<List<Account>>(
+          stream: widget.repository.watchAccounts(),
+          builder: (context, accSnap) {
+            final accounts = accSnap.data ?? const <Account>[];
+            if (accounts.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(20),
+                decoration: _cardDeco(radius: 18),
+                child: const Center(
+                  child: Text(
+                    'Belum ada akun.',
+                    style: TextStyle(color: _FintechColors.textMuted),
+                  ),
+                ),
+              );
+            }
+
+            return StreamBuilder<Map<int, int>>(
+              stream: widget.repository.watchAccountBalances(),
+              builder: (context, balSnap) {
+                final balances = balSnap.data ?? const <int, int>{};
+                return Column(
+                  children: [
+                    for (final acc in accounts)
+                      _AccountTile(
+                        account: acc,
+                        balance: balances[acc.id] ?? acc.openingBalance,
+                        onTap: () {
+                          if (pipeline != null && ruleSet != null) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => AccountDetailScreen(
+                                  repository: widget.repository,
+                                  pipeline: pipeline,
+                                  ruleSet: ruleSet,
+                                  accountId: acc.id,
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                  ],
+                );
+              },
+            );
+          },
+        ),
+
+        const SizedBox(height: 20),
+
+        // 4. Katalog Koneksi Bank & E-Wallet (Toggle On/Off)
+        if (ruleSet != null) ...[
+          const Text(
+            'Koneksi Bank & E-Wallet',
             style: TextStyle(
-              fontSize: 10.5,
-              color: fg.withValues(alpha: 0.75),
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: _FintechColors.textPrimary,
             ),
           ),
+          const SizedBox(height: 4),
+          const Text(
+            'Pilih bank yang ingin kamu hubungkan ke notifikasi otomatis.',
+            style: TextStyle(
+              fontSize: 11.5,
+              color: _FintechColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          StreamBuilder<Set<String>>(
+            stream: widget.repository.watchConnectedBanks(),
+            builder: (context, connSnap) {
+              final connected = connSnap.data ?? const <String>{};
+
+              return Container(
+                decoration: _cardDeco(radius: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                child: Column(
+                  children: [
+                    for (var i = 0; i < ruleSet.banks.length; i++) ...[
+                      if (i > 0)
+                        const Divider(
+                          height: 1,
+                          thickness: 1,
+                          color: Color(0xFFF1F5F9),
+                        ),
+                      _BankToggleRow(
+                        bank: ruleSet.banks[i],
+                        isConnected: connected.contains(ruleSet.banks[i].id),
+                        onToggle: (val) async {
+                          HapticFeedback.selectionClick();
+                          await widget.repository.setBankConnected(
+                            ruleSet.banks[i].id,
+                            val,
+                          );
+                          if (val) {
+                            await widget.repository.ensureBankAccount(
+                              bankId: ruleSet.banks[i].id,
+                              name: ruleSet.banks[i].displayName,
+                              kind: AccountKind.bank,
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            },
+          ),
         ],
-      ),
+      ],
     );
   }
 }
 
-class _BonTile extends StatelessWidget {
-  const _BonTile({required this.bon, required this.repository});
+// ─────────────────────────────────────────────────────────────────────────────
+// SUB-KOMPONEN SEGMEN BON
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CleanBonTile extends StatelessWidget {
+  const _CleanBonTile({required this.bon, required this.repository});
 
   final Bon bon;
   final LedgerRepository repository;
 
-  /// Umur bon sejak dicatat: 'hari ini', '3 hari', '2 minggu', '1 bulan'.
   String _ageLabel(DateTime occurredAt) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final start = DateTime(
-      occurredAt.year,
-      occurredAt.month,
-      occurredAt.day,
-    );
+    final start = DateTime(occurredAt.year, occurredAt.month, occurredAt.day);
     final days = today.difference(start).inDays;
     if (days <= 0) return 'hari ini';
     if (days < 14) return '$days hari';
@@ -310,152 +798,242 @@ class _BonTile extends StatelessWidget {
         ? '?'
         : bon.person.trim()[0].toUpperCase();
 
-    return QuestPress(
-      onTap: () => BonSheet.show(context, repository, existing: bon),
-      child: Opacity(
-        opacity: settled ? 0.6 : 1,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: Spacing.s),
-          padding: Insets.tile,
-          decoration: BoxDecoration(
-            color: context.q.surface,
-            borderRadius: BorderRadius.circular(AppRadius.tile),
-            boxShadow: [
-              BoxShadow(
-                color: context.q.shadow,
-                offset: const Offset(0, 6),
-                blurRadius: 18,
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: lent
-                      ? context.q.good.withValues(alpha: 0.16)
-                      : context.q.bad.withValues(alpha: 0.16),
-                  shape: BoxShape.circle,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: _cardDeco(radius: 18),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => BonSheet.show(context, repository, existing: bon),
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                // Avatar Inisial
+                Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: lent
+                        ? _FintechColors.greenBg
+                        : _FintechColors.redBg,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Text(
+                    initial,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: lent
+                          ? _FintechColors.greenText
+                          : _FintechColors.redText,
+                    ),
+                  ),
                 ),
-                child: Text(initial, style: context.qTitle(19)),
-              ),
-              const SizedBox(width: Spacing.m),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(width: 14),
+
+                // Nama & Keterangan
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        bon.person,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w800,
+                          color: settled
+                              ? _FintechColors.textMuted
+                              : _FintechColors.textPrimary,
+                          decoration: settled
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${lent ? 'Dipinjamkan' : 'Dipinjam'} • ${_ageLabel(bon.occurredAt)} • ${idDayMonth(bon.occurredAt)}'
+                        '${bon.note != null && bon.note!.isNotEmpty ? ' • ${bon.note!}' : ''}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: _FintechColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 10),
+
+                // Nominal & Aksi 1-tap Lunasi
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      bon.person,
-                      overflow: TextOverflow.ellipsis,
-                      // Arsip lunas: tercorel (mockup v2.1).
-                      style: context.qTitle(15).copyWith(
-                        decoration: settled
-                            ? TextDecoration.lineThrough
-                            : null,
+                      '${lent ? '+' : '−'}${Money.format(bon.amount)}',
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                        color: settled
+                            ? _FintechColors.textMuted
+                            : lent
+                                ? _FintechColors.green
+                                : _FintechColors.red,
+                        fontFeatures: _tabular,
                       ),
                     ),
-                    const SizedBox(height: Spacing.xxs),
-                    Text(
-                      '${lent ? 'Dipinjamkan' : 'Dipinjam'} · '
-                      '${_date(bon.occurredAt)}'
-                      '${bon.note != null && bon.note!.isNotEmpty ? ' · ${bon.note!}' : ''}',
-                      overflow: TextOverflow.ellipsis,
-                      style: context.qSmall(),
-                    ),
+                    const SizedBox(height: 4),
+                    if (settled)
+                      Text(
+                        'Lunas ${idDayMonth(bon.settledAt!)}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: _FintechColors.textMuted,
+                        ),
+                      )
+                    else
+                      InkWell(
+                        onTap: () {
+                          HapticFeedback.lightImpact();
+                          repository.updateBon(
+                            bon.id,
+                            BonsCompanion(settledAt: Value(DateTime.now())),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(999),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _FintechColors.greenBg,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: const Text(
+                            '✓ Lunasi',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: _FintechColors.greenText,
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
-              ),
-              const SizedBox(width: Spacing.s),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  QuestAmount(amount: bon.amount, incoming: lent, size: 15),
-                  const SizedBox(height: Spacing.xxs),
-                  if (settled)
-                    Text(
-                      'Lunas ${_date(bon.settledAt!)}',
-                      style: context
-                          .qSmall(11)
-                          .copyWith(color: context.q.muted),
-                    )
-                  else
-                    Text(
-                      _ageLabel(bon.occurredAt),
-                      style: context.qSmall(11).copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: lent ? context.q.good : context.q.bad,
-                          ),
-                    ),
-                ],
-              ),
-              if (!settled) ...[
-                const SizedBox(width: Spacing.xs),
-                // "Tandai lunas" satu tap langsung di baris (mockup v2.1).
-                QuestPress(
-                  onTap: () => repository.updateBon(
-                    bon.id,
-                    BonsCompanion(settledAt: Value(DateTime.now())),
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 7,
-                    ),
-                    decoration: BoxDecoration(
-                      color: SeedColors.mintTint,
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                    ),
-                    child: Text(
-                      'Lunas',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w800,
-                        color: SeedColors.mintInk,
-                      ),
-                    ),
-                  ),
-                ),
               ],
-            ],
+            ),
           ),
         ),
       ),
     );
   }
-
-  String _date(DateTime dt) => idDayMonth(dt);
 }
 
-/// Kartu penutup: semua bon lunas — perayaan kecil konsisten bahasa
-/// maskot (mockup v2.1).
-class _BonAllSettledCard extends StatelessWidget {
-  const _BonAllSettledCard({required this.count});
+// ─────────────────────────────────────────────────────────────────────────────
+// SUB-KOMPONEN SEGMEN AKUN & NOTIFIKASI
+// ─────────────────────────────────────────────────────────────────────────────
 
-  final int count;
+class _DraftReviewTile extends StatelessWidget {
+  const _DraftReviewTile({
+    required this.draft,
+    required this.pipeline,
+    required this.repository,
+  });
+
+  final Draft draft;
+  final CapturePipeline? pipeline;
+  final LedgerRepository repository;
 
   @override
   Widget build(BuildContext context) {
-    return QuestCard(
+    final incoming = draft.direction == Direction.incoming;
+    final title = (draft.counterparty != null && draft.counterparty!.isNotEmpty)
+        ? draft.counterparty!
+        : draft.kind.label;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: Row(
         children: [
-          const RepaintBoundary(
-            child: Mascot(mood: MascotMood.celebrate, size: 64),
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: incoming ? _FintechColors.greenBg : _FintechColors.redBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              incoming ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+              size: 18,
+              color: incoming ? _FintechColors.green : _FintechColors.red,
+            ),
           ),
-          const SizedBox(width: Spacing.m),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Semua bon beres', style: context.qTitle(14)),
                 Text(
-                  '$count bon lunas — bersih untuk bulan ini',
-                  style: context.qSmall(12),
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _FintechColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  '${incoming ? '+' : '−'}${Money.format(draft.amount)}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: incoming ? _FintechColors.green : _FintechColors.textPrimary,
+                    fontFeatures: _tabular,
+                  ),
                 ),
               ],
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.check_circle_rounded, color: _FintechColors.green),
+            tooltip: 'Konfirmasi',
+            onPressed: () async {
+              HapticFeedback.lightImpact();
+              await repository.confirmDraft(
+                draft,
+                amount: draft.amount,
+                direction: draft.direction,
+                kind: draft.kind,
+                counterparty: draft.counterparty,
+                categoryId: draft.categoryId,
+                accountId: draft.accountId,
+                occurredAt: draft.occurredAt,
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.cancel_outlined, color: _FintechColors.textMuted),
+            tooltip: 'Abaikan',
+            onPressed: () async {
+              HapticFeedback.lightImpact();
+              await repository.discardDraft(draft.id);
+            },
           ),
         ],
       ),
@@ -463,9 +1041,166 @@ class _BonAllSettledCard extends StatelessWidget {
   }
 }
 
-/// Sheet tambah/ubah bon. Mode edit bila [existing] diberikan.
+class _AccountTile extends StatelessWidget {
+  const _AccountTile({
+    required this.account,
+    required this.balance,
+    required this.onTap,
+  });
+
+  final Account account;
+  final int balance;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: _cardDeco(radius: 16),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.account_balance_rounded,
+                    size: 19,
+                    color: _FintechColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        account.name,
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          color: _FintechColors.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        account.bankId != null ? 'Terhubung' : 'Manual',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: _FintechColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  Money.format(balance),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: _FintechColors.textPrimary,
+                    fontFeatures: _tabular,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: _FintechColors.textMuted,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BankToggleRow extends StatelessWidget {
+  const _BankToggleRow({
+    required this.bank,
+    required this.isConnected,
+    required this.onToggle,
+  });
+
+  final BankRules bank;
+  final bool isConnected;
+  final ValueChanged<bool> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: isConnected ? _FintechColors.lilacBg : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(
+              Icons.account_balance_wallet_outlined,
+              size: 18,
+              color: isConnected ? _FintechColors.lilacText : _FintechColors.textSecondary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  bank.displayName,
+                  style: const TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                    color: _FintechColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  isConnected ? 'Notifikasi aktif' : 'Dinonaktifkan',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isConnected ? _FintechColors.green : _FintechColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: isConnected,
+            activeTrackColor: _FintechColors.purple,
+            onChanged: onToggle,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MODAL SHEET TAMBAH / UBAH BON
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Modal Sheet pencatatan Bon
 class BonSheet extends StatefulWidget {
-  const BonSheet({super.key, required this.repository, this.existing});
+  const BonSheet({
+    super.key,
+    required this.repository,
+    this.existing,
+  });
 
   final LedgerRepository repository;
   final Bon? existing;
@@ -475,16 +1210,13 @@ class BonSheet extends StatefulWidget {
     LedgerRepository repository, {
     Bon? existing,
   }) {
-    return showQuestSheet<void>(
-      context,
-      (context) => Padding(
-        padding: EdgeInsets.only(
-          left: Spacing.m,
-          right: Spacing.m,
-          top: Spacing.s,
-          bottom: MediaQuery.of(context).viewInsets.bottom + Spacing.m,
-        ),
-        child: BonSheet(repository: repository, existing: existing),
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => BonSheet(
+        repository: repository,
+        existing: existing,
       ),
     );
   }
@@ -494,28 +1226,23 @@ class BonSheet extends StatefulWidget {
 }
 
 class _BonSheetState extends State<BonSheet> {
-  final _formKey = GlobalKey<FormState>();
-  final _personCtrl = TextEditingController();
-  final _amountCtrl = TextEditingController();
-  final _noteCtrl = TextEditingController();
-
+  late final TextEditingController _personCtrl;
+  late final TextEditingController _amountCtrl;
+  late final TextEditingController _noteCtrl;
   late BonDirection _direction;
-  late DateTime _occurredAt;
-
-  bool get _isEdit => widget.existing != null;
-  bool get _isSettled => widget.existing?.settledAt != null;
+  late DateTime _date;
 
   @override
   void initState() {
     super.initState();
-    final b = widget.existing;
-    _direction = b?.direction ?? BonDirection.lent;
-    _occurredAt = b?.occurredAt ?? DateTime.now();
-    if (b != null) {
-      _personCtrl.text = b.person;
-      _amountCtrl.text = b.amount.toString();
-      _noteCtrl.text = b.note ?? '';
-    }
+    final e = widget.existing;
+    _personCtrl = TextEditingController(text: e?.person ?? '');
+    _amountCtrl = TextEditingController(
+      text: e != null ? Money.format(e.amount).replaceAll('Rp', '') : '',
+    );
+    _noteCtrl = TextEditingController(text: e?.note ?? '');
+    _direction = e?.direction ?? BonDirection.lent;
+    _date = e?.occurredAt ?? DateTime.now();
   }
 
   @override
@@ -526,195 +1253,217 @@ class _BonSheetState extends State<BonSheet> {
     super.dispose();
   }
 
-  Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _occurredAt,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (picked != null) setState(() => _occurredAt = picked);
-  }
-
   Future<void> _save() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    final amount = int.tryParse(
-      _amountCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''),
-    );
-    if (amount == null || amount <= 0) return;
+    final person = _personCtrl.text.trim();
+    final amount = Money.tryParseGroup(_amountCtrl.text) ?? 0;
+    if (person.isEmpty || amount <= 0) return;
 
-    if (_isEdit) {
+    if (widget.existing != null) {
       await widget.repository.updateBon(
         widget.existing!.id,
         BonsCompanion(
-          person: Value(_personCtrl.text.trim()),
+          person: Value(person),
           amount: Value(amount),
           direction: Value(_direction),
-          note: Value(
-            _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
-          ),
-          occurredAt: Value(_occurredAt),
+          occurredAt: Value(_date),
+          note: Value(_noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim()),
         ),
       );
     } else {
       await widget.repository.addBon(
-        person: _personCtrl.text,
+        person: person,
         amount: amount,
         direction: _direction,
-        note: _noteCtrl.text,
-        occurredAt: _occurredAt,
+        occurredAt: _date,
+        note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
       );
     }
-    if (mounted) Navigator.pop(context);
-  }
 
-  Future<void> _toggleSettled() async {
-    await widget.repository.updateBon(
-      widget.existing!.id,
-      BonsCompanion(
-        settledAt: _isSettled ? const Value(null) : Value(DateTime.now()),
-      ),
-    );
     if (mounted) Navigator.pop(context);
-  }
-
-  Future<void> _delete() async {
-    final confirmed = await showQuestDialog<bool>(
-      context,
-      title: 'Hapus bon?',
-      content: Text(
-        'Bon ini akan hilang permanen — tidak bisa dikembalikan, ya.',
-        style: context.qBody(),
-      ),
-      actions: [
-        QuestButton(
-          label: 'Batal',
-          tone: QuestTone.secondary,
-          onPressed: () => Navigator.pop(context, false),
-        ),
-        QuestButton(
-          label: 'Hapus',
-          icon: Icons.delete_outline_rounded,
-          tone: QuestTone.danger,
-          onPressed: () => Navigator.pop(context, true),
-        ),
-      ],
-    );
-    if (confirmed ?? false) {
-      await widget.repository.deleteBon(widget.existing!.id);
-      if (mounted) Navigator.pop(context);
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _isEdit ? 'Ubah bon' : 'Catat bon',
-                      style: context.qTitle(20),
-                    ),
-                  ),
-                  if (_isEdit)
-                    QuestIconButton(
-                      icon: Icons.delete_outline_rounded,
-                      tooltip: 'Hapus',
-                      onPressed: _delete,
-                    ),
-                ],
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 20, 24, 24 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE2E8F0),
+                borderRadius: BorderRadius.circular(999),
               ),
-              const SizedBox(height: Spacing.m),
-              TextFormField(
-                controller: _personCtrl,
-                autofocus: !_isEdit,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Nama orang',
-                  hintText: 'Contoh: Budi',
-                ),
-                validator: (v) =>
-                    (v ?? '').trim().isEmpty ? 'Isi dulu nama orangnya, ya' : null,
-              ),
-              const SizedBox(height: Spacing.m),
-              TextFormField(
-                controller: _amountCtrl,
-                keyboardType: TextInputType.number,
-                style: context.qDisplay(30),
-                decoration: const InputDecoration(
-                  labelText: 'Nominal (Rp)',
-                  hintText: 'Contoh: 50000',
-                ),
-                validator: (v) =>
-                    (int.tryParse(
-                              (v ?? '').replaceAll(RegExp(r'[^0-9]'), ''),
-                            ) ??
-                            0) >
-                        0
-                    ? null
-                    : 'Isi dulu nominalnya, ya',
-              ),
-              const SizedBox(height: Spacing.m),
-              QuestSegmented<BonDirection>(
-                selected: _direction,
-                onChanged: (d) => setState(() => _direction = d),
-                options: const [
-                  (
-                    value: BonDirection.lent,
-                    label: 'Kamu meminjamkan',
-                    icon: Icons.arrow_upward_rounded,
-                  ),
-                  (
-                    value: BonDirection.borrowed,
-                    label: 'Kamu meminjam',
-                    icon: Icons.arrow_downward_rounded,
-                  ),
-                ],
-              ),
-              const SizedBox(height: Spacing.m),
-              QuestButton(
-                label: '${idDayMonth(_occurredAt)} ${_occurredAt.year}',
-                icon: Icons.event_outlined,
-                tone: QuestTone.secondary,
-                onPressed: _pickDate,
-              ),
-              const SizedBox(height: Spacing.m),
-              TextFormField(
-                controller: _noteCtrl,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  labelText: 'Catatan (opsional)',
-                ),
-              ),
-              const SizedBox(height: Spacing.l),
-              if (_isEdit) ...[
-                QuestButton(
-                  label: _isSettled ? 'Batalkan lunas' : 'Tandai lunas',
-                  icon: _isSettled
-                      ? Icons.undo_rounded
-                      : Icons.check_circle_outline_rounded,
-                  tone: _isSettled ? QuestTone.secondary : QuestTone.primary,
-                  onPressed: _toggleSettled,
-                ),
-                const SizedBox(height: Spacing.s),
-              ],
-              QuestButton(
-                label: _isEdit ? 'Simpan perubahan' : 'Simpan',
-                icon: Icons.check_rounded,
-                onPressed: _save,
-              ),
-              const SizedBox(height: Spacing.s),
-            ],
+            ),
           ),
-        ),
+          const SizedBox(height: 16),
+          Text(
+            widget.existing != null ? 'Ubah Catatan Bon' : 'Catat Bon Baru',
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: _FintechColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Selector Jenis Bon: Dipinjamkan (Piutang) vs Dipinjam (Utang)
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _direction = BonDirection.lent),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _direction == BonDirection.lent
+                            ? _FintechColors.green
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        'Dipinjamkan (Piutang)',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: _direction == BonDirection.lent
+                              ? Colors.white
+                              : _FintechColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _direction = BonDirection.borrowed),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _direction == BonDirection.borrowed
+                            ? _FintechColors.red
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        'Dipinjam (Utang)',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: _direction == BonDirection.borrowed
+                              ? Colors.white
+                              : _FintechColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // Input Nama Pihak
+          TextField(
+            controller: _personCtrl,
+            decoration: InputDecoration(
+              labelText: 'Nama Pihak (Orang / Teman)',
+              labelStyle: const TextStyle(fontSize: 13, color: _FintechColors.textSecondary),
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Input Nominal
+          TextField(
+            controller: _amountCtrl,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              prefixText: 'Rp ',
+              labelText: 'Nominal',
+              labelStyle: const TextStyle(fontSize: 13, color: _FintechColors.textSecondary),
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Input Catatan (opsional)
+          TextField(
+            controller: _noteCtrl,
+            decoration: InputDecoration(
+              labelText: 'Catatan (Opsional)',
+              labelStyle: const TextStyle(fontSize: 13, color: _FintechColors.textSecondary),
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          // Tombol Simpan
+          ElevatedButton(
+            onPressed: _save,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _FintechColors.textPrimary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: const Text(
+              'Simpan Catatan Bon',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+            ),
+          ),
+        ],
       ),
     );
   }

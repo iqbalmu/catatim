@@ -38,7 +38,7 @@ class HomeScreen extends StatefulWidget {
     QuestDestination(icon: Icons.home_rounded, label: 'Beranda'),
     QuestDestination(icon: Icons.bar_chart_rounded, label: 'Rekap'),
     QuestDestination(icon: Icons.track_changes_rounded, label: 'Rencana'),
-    QuestDestination(icon: Icons.handshake_outlined, label: 'Bon'),
+    QuestDestination(icon: Icons.account_balance_wallet_rounded, label: 'Bon & Akun'),
   ];
 
   @override
@@ -76,20 +76,87 @@ class _HomeScreenState extends State<HomeScreen> {
     _rekapKey.currentState?.openSegment(segment);
   }
 
-  /// Aksi tombol + tengah navbar — dinamis per tab.
+  /// Aksi tombol + tengah navbar: Buka menu pilihan cepat (Transaksi / Bon).
   void _primaryAction() {
-    switch (_tab) {
-      case 3:
-        BonSheet.show(context, widget.repository);
-      case 2:
-        _rencanaKey.currentState?.openPrimaryAction();
-      default:
-        TransactionSheet.show(
-          context,
-          widget.repository,
-          progress: widget.progress,
-        );
-    }
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2E8F0),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            const Text(
+              'Catat Baru',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF161924),
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDEF7EC),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.receipt_long_rounded, color: Color(0xFF03543F)),
+              ),
+              title: const Text('Catat Transaksi', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+              subtitle: const Text('Belanja, pemasukan, atau transfer akun', style: TextStyle(fontSize: 12)),
+              onTap: () {
+                Navigator.pop(ctx);
+                TransactionSheet.show(
+                  context,
+                  widget.repository,
+                  progress: widget.progress,
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE9D8FD),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(Icons.handshake_outlined, color: Color(0xFF6B46C1)),
+              ),
+              title: const Text('Catat Bon', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+              subtitle: const Text('Pinjamkan uang (piutang) atau pinjam (utang)', style: TextStyle(fontSize: 12)),
+              onTap: () {
+                Navigator.pop(ctx);
+                BonSheet.show(context, widget.repository);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _onTabChanged(int i) {
@@ -155,7 +222,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 TickerMode(
                   enabled: _tab == 3,
-                  child: BonTab(repository: widget.repository),
+                  child: BonTab(
+                    repository: widget.repository,
+                    pipeline: widget.pipeline,
+                    ruleSet: widget.ruleSet,
+                    progress: widget.progress,
+                  ),
                 ),
               ],
             ),
@@ -172,11 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   destinations: HomeScreen._destinations,
                   badges: hasOld ? const {3} : const <int>{},
                   centerAction: (
-                    tooltip: _tab == 2
-                        ? 'Jenis'
-                        : _tab == 3
-                            ? 'Catat bon'
-                            : 'Catat transaksi',
+                    tooltip: 'Catat baru',
                     onTap: _primaryAction,
                   ),
                 );
@@ -474,8 +542,7 @@ class _HomeMenu extends StatelessWidget {
   }
 }
 
-/// Tombol ikon polos untuk header minimal: tinta di atas kertas, tanpa
-/// lingkaran surface. Titik merah kecil = ada yang perlu dilihat.
+/// Tombol ikon modern untuk header: lingkaran putih bersih dengan subtle shadow & border.
 class _HeaderIcon extends StatelessWidget {
   const _HeaderIcon({
     required this.icon,
@@ -493,27 +560,39 @@ class _HeaderIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return Tooltip(
       message: tooltip,
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(AppRadius.tile),
-          child: SizedBox(
-            width: 40,
-            height: 40,
+      child: Container(
+        width: 38,
+        height: 38,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(color: const Color(0x0F000000)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+              offset: const Offset(0, 3),
+              blurRadius: 10,
+            ),
+          ],
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: onPressed,
+            customBorder: const CircleBorder(),
             child: Stack(
               alignment: Alignment.center,
               children: [
-                Icon(icon, size: 22, color: SeedColors.ink),
+                Icon(icon, size: 20, color: const Color(0xFF0F172A)),
                 if (badge)
                   Positioned(
                     top: 8,
                     right: 8,
                     child: Container(
-                      width: 8,
-                      height: 8,
+                      width: 7,
+                      height: 7,
                       decoration: const BoxDecoration(
-                        color: SeedColors.outgoing,
+                        color: Color(0xFFEF4444),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -591,32 +670,33 @@ class _BerandaTabState extends State<_BerandaTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Krem hangat dari burlap maskot — kartu-kartu bersinar di atasnya.
-      backgroundColor: SeedColors.bg,
+      backgroundColor: const Color(0xFFF6F7FB),
       body: ListView(
-        // Padding horizontal nol — dunia Pochy full-bleed; kartu lain
-        // membawa padding-nya sendiri.
         padding: EdgeInsets.only(
           bottom: Spacing.m + MediaQuery.paddingOf(context).bottom,
         ),
         children: [
-          UangCard(progress: widget.progress),
-          const SizedBox(height: Spacing.m),
+          UangCard(
+            progress: widget.progress,
+            repository: widget.repository,
+          ),
+          const SizedBox(height: 16),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.l),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: SpendingCard(
               progress: widget.progress,
+              repository: widget.repository,
               onTap: widget.onOpenRencanaBatas,
             ),
           ),
-          const SizedBox(height: Spacing.m),
+          const SizedBox(height: 16),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.l),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: StreakStrip(progress: widget.progress),
           ),
-          const SizedBox(height: Spacing.m),
+          const SizedBox(height: 16),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.l),
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: TransaksiTerbaruCard(
               repository: widget.repository,
               progress: widget.progress,

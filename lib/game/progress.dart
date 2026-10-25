@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 import '../core/budget.dart';
 import '../core/money.dart';
@@ -9,6 +9,42 @@ import '../storage/repository.dart';
 
 /// Streak disiplin yang layak dirayakan.
 const Set<int> kStreakMilestones = {3, 7, 14, 21, 30, 60, 100};
+
+/// Lencana pencapaian disiplin pengeluaran
+class SaverBadge {
+  const SaverBadge({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.unlocked,
+  });
+
+  final String id;
+  final String title;
+  final String description;
+  final IconData icon;
+  final bool unlocked;
+}
+
+/// Status Level & XP Gamifikasi Keuangan
+class SaverStats {
+  const SaverStats({
+    required this.level,
+    required this.title,
+    required this.currentXp,
+    required this.nextLevelXp,
+    required this.progress,
+    required this.badges,
+  });
+
+  final int level;
+  final String title;
+  final int currentXp;
+  final int nextLevelXp;
+  final double progress; // 0.0 sampai 1.0
+  final List<SaverBadge> badges;
+}
 
 /// Disiplin satu hari: pakai harian vs jatah harian saat itu.
 class DailyDiscipline {
@@ -47,6 +83,7 @@ class ProgressSummary {
     required this.dailyPace,
     required this.activeDays,
     required this.disciplineMonth,
+    required this.saverStats,
   });
 
   final int streakDays;
@@ -75,6 +112,9 @@ class ProgressSummary {
   /// Disiplin bulan berjalan (tanggal 1 → hari ini); kosong bila tanpa
   /// batas (streak dijeda).
   final List<DailyDiscipline> disciplineMonth;
+
+  /// Gamifikasi level & XP khusus disiplin pengeluaran
+  final SaverStats saverStats;
 }
 
 /// Otak di balik Duit: menerjemahkan kondisi anggaran + tren bulanan
@@ -254,6 +294,84 @@ class ProgressService extends ChangeNotifier {
       weeklyLimit: weekLimit,
       monthlyTotal: monthTotalLimit,
     );
+
+    // Gamifikasi: Hitung XP & Level Saver (Khusus Disiplin Spending)
+    final keptDays = disciplineMonth.where((d) => !d.future && d.within).length;
+    final totalXp = (keptDays * 50) + (streak * 50) + (activeDays.length * 10);
+    
+    final int level;
+    final String levelTitle;
+    final int levelFloorXp;
+    final int nextLevelXp;
+    if (totalXp < 200) {
+      level = 1;
+      levelTitle = 'Hemat Pemula';
+      levelFloorXp = 0;
+      nextLevelXp = 200;
+    } else if (totalXp < 500) {
+      level = 2;
+      levelTitle = 'Penjaga Dompet';
+      levelFloorXp = 200;
+      nextLevelXp = 500;
+    } else if (totalXp < 1000) {
+      level = 3;
+      levelTitle = 'Ahli Anggaran';
+      levelFloorXp = 500;
+      nextLevelXp = 1000;
+    } else if (totalXp < 2000) {
+      level = 4;
+      levelTitle = 'Master Keuangan';
+      levelFloorXp = 1000;
+      nextLevelXp = 2000;
+    } else {
+      level = 5;
+      levelTitle = 'Sultan Disiplin';
+      levelFloorXp = 2000;
+      nextLevelXp = 5000;
+    }
+
+    final levelProgress = ((totalXp - levelFloorXp) / (nextLevelXp - levelFloorXp)).clamp(0.0, 1.0);
+
+    final badges = [
+      SaverBadge(
+        id: 'shield_7d',
+        title: 'Perisai Disiplin',
+        description: '7 hari belanja sesuai batas target',
+        icon: Icons.shield_rounded,
+        unlocked: streak >= 7,
+      ),
+      SaverBadge(
+        id: 'streak_30d',
+        title: 'Streak Master',
+        description: '30 hari konsisten tanpa overbudget',
+        icon: Icons.local_fire_department_rounded,
+        unlocked: streak >= 30,
+      ),
+      SaverBadge(
+        id: 'target_safe',
+        title: 'Target Terjaga',
+        description: 'Pengeluaran bulan ini aman dalam batas',
+        icon: Icons.track_changes_rounded,
+        unlocked: snapshot.hasData && snapshot.worstLevel != BudgetLevel.over,
+      ),
+      SaverBadge(
+        id: 'active_logger',
+        title: 'Pencatat Tangkas',
+        description: 'Mencatat pengeluaran lebih dari 10 hari',
+        icon: Icons.edit_note_rounded,
+        unlocked: activeDays.length >= 10,
+      ),
+    ];
+
+    final saverStats = SaverStats(
+      level: level,
+      title: levelTitle,
+      currentXp: totalXp,
+      nextLevelXp: nextLevelXp,
+      progress: levelProgress,
+      badges: badges,
+    );
+
     latest = ProgressSummary(
       streakDays: streak,
       streakPaused: streakPaused,
@@ -267,6 +385,7 @@ class ProgressService extends ChangeNotifier {
       dailyPace: pace,
       activeDays: activeDays,
       disciplineMonth: disciplineMonth,
+      saverStats: saverStats,
     );
     notifyListeners();
   }

@@ -151,6 +151,13 @@ class _RencanaBatasState extends State<RencanaBatas> {
         Spacing.l + MediaQuery.of(context).padding.bottom,
       ),
       children: [
+        if (widget.progress?.latest != null) ...[
+          _SaverGamificationCard(
+            stats: widget.progress!.latest!.saverStats,
+            streak: widget.progress!.latest!.streakDays,
+          ),
+          const SizedBox(height: Spacing.m),
+        ],
         StreamBuilder<({int day, int week, int month})>(
           stream: _usage,
           builder: (context, usageSnap) {
@@ -1185,6 +1192,157 @@ class _WeeklyProgressCard extends StatelessWidget {
                   ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SaverGamificationCard extends StatelessWidget {
+  const _SaverGamificationCard({required this.stats, required this.streak});
+
+  final SaverStats stats;
+  final int streak;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0x0A000000)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A2B3A4A),
+            offset: Offset(0, 8),
+            blurRadius: 24,
+            spreadRadius: -2,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.military_tech_rounded,
+                  size: 24,
+                  color: Color(0xFFD97706),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Level ${stats.level}: ${stats.title}',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF161924),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${stats.currentXp} / ${stats.nextLevelXp} XP',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF7C8BA0),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '🔥 $streak Hari',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFFB45309),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              height: 8,
+              color: const Color(0xFFEEF2F6),
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: stats.progress,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFF59E0B), Color(0xFF8B5CF6)],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Lencana Prestasi Disiplin Spending',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF9AA8BC),
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              for (final badge in stats.badges)
+                Expanded(
+                  child: Tooltip(
+                    message: '${badge.title}: ${badge.description}',
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: badge.unlocked
+                            ? const Color(0xFFE9D8FD)
+                            : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        badge.icon,
+                        size: 20,
+                        color: badge.unlocked
+                            ? const Color(0xFF6B46C1)
+                            : const Color(0xFF9AA8BC),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),

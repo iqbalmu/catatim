@@ -67,7 +67,7 @@ class QuestCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(Spacing.m),
     this.onTap,
-    this.radius = AppRadius.card,
+    this.radius = 24,
   });
 
   final Widget child;
@@ -82,17 +82,13 @@ class QuestCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.q.surface,
         borderRadius: BorderRadius.circular(radius),
+        border: Border.all(color: const Color(0x0A000000), width: 1),
         boxShadow: [
           BoxShadow(
             color: context.q.shadow,
             offset: const Offset(0, 8),
-            blurRadius: 18,
-          ),
-          // Highlight lembut ala clay/toy — bagian dari cushion.
-          BoxShadow(
-            color: const Color(0x174A3A14),
-            offset: const Offset(0, -1),
-            blurRadius: 2,
+            blurRadius: 24,
+            spreadRadius: -2,
           ),
         ],
       ),
@@ -264,8 +260,8 @@ class QuestSegmented<T> extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: context.q.surface2,
-        borderRadius: BorderRadius.circular(AppRadius.frame),
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: [
@@ -296,7 +292,6 @@ class _SegmentCell<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final q = context.q;
     return QuestPress(
       onTap: onTap,
       child: AnimatedContainer(
@@ -304,18 +299,8 @@ class _SegmentCell<T> extends StatelessWidget {
         curve: QuestMotion.easeOut,
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          // Sel aktif mint penuh — mockup v2.1; emas tidak untuk state.
-          color: selected ? QuestPalette.mint : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadius.tile),
-          boxShadow: selected
-              ? const [
-                  BoxShadow(
-                    color: Color(0x4D7FBDB1),
-                    offset: Offset(0, 3),
-                    blurRadius: 8,
-                  ),
-                ]
-              : null,
+          color: selected ? const Color(0xFFE9D8FD) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -324,7 +309,9 @@ class _SegmentCell<T> extends StatelessWidget {
               Icon(
                 option.icon,
                 size: 18,
-                color: selected ? Colors.white : q.muted,
+                color: selected
+                    ? const Color(0xFF6B46C1)
+                    : const Color(0xFF7C8BA0),
               ),
               const SizedBox(width: Spacing.xs),
             ],
@@ -333,8 +320,11 @@ class _SegmentCell<T> extends StatelessWidget {
                 option.label,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: selected ? Colors.white : q.muted,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  fontSize: 12.5,
+                  color: selected
+                      ? const Color(0xFF6B46C1)
+                      : const Color(0xFF7C8BA0),
                 ),
               ),
             ),
@@ -500,7 +490,6 @@ class QuestBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final q = context.q;
     return SafeArea(
       top: false,
       child: Container(
@@ -509,15 +498,17 @@ class QuestBottomNav extends StatelessWidget {
           clipBehavior: Clip.none,
           children: [
             Container(
-              padding: const EdgeInsets.all(Spacing.xs),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
               decoration: BoxDecoration(
-                color: q.surface,
-                borderRadius: BorderRadius.circular(AppRadius.frame),
-                boxShadow: [
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: const Color(0x0A000000), width: 1),
+                boxShadow: const [
                   BoxShadow(
-                    color: q.shadow,
-                    offset: const Offset(0, 10),
-                    blurRadius: 26,
+                    color: Color(0x0D161924),
+                    offset: Offset(0, 8),
+                    blurRadius: 24,
+                    spreadRadius: -2,
                   ),
                 ],
               ),
@@ -525,8 +516,6 @@ class QuestBottomNav extends StatelessWidget {
                 children: [
                   for (var i = 0; i < destinations.length; i++) ...[
                     // Slot kosong untuk tombol + yang melayang di atasnya.
-                    // Lebih lebar dari tombol (64) agar pill menu aktif
-                    // tak menempel ke tombol.
                     if (centerAction != null &&
                         i == destinations.length ~/ 2)
                       const SizedBox(width: 74),
@@ -537,7 +526,7 @@ class QuestBottomNav extends StatelessWidget {
             ),
             if (centerAction != null)
               Positioned(
-                top: -20,
+                top: -18,
                 left: 0,
                 right: 0,
                 child: Center(child: _centerButton(context)),
@@ -549,44 +538,46 @@ class QuestBottomNav extends StatelessWidget {
   }
 
   Widget _navCell(BuildContext context, int i, QuestDestination dest) {
-    final q = context.q;
     final selected = i == index;
     return Expanded(
-      // Inset horizontal: pill aktif tak menyentuh tetangga/slot tombol +.
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
+        padding: const EdgeInsets.symmetric(horizontal: 2),
         child: QuestPress(
           onTap: () => onChanged(i),
           child: AnimatedContainer(
             duration: QuestMotion.fast,
             curve: QuestMotion.easeOut,
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: 6),
             decoration: BoxDecoration(
-              color: selected ? q.surface2 : Colors.transparent,
-              borderRadius: BorderRadius.circular(AppRadius.tile),
+              color: selected ? const Color(0xFFE9D8FD) : Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Badge(
                   isLabelVisible: badges.contains(i),
-                  backgroundColor: q.bad,
-                  smallSize: 10,
+                  backgroundColor: const Color(0xFFEF4444),
+                  smallSize: 8,
                   child: Icon(
                     dest.icon,
-                    size: 22,
-                    color: selected ? q.text : q.muted,
+                    size: 21,
+                    color: selected
+                        ? const Color(0xFF6B46C1)
+                        : const Color(0xFF7C8BA0),
                   ),
                 ),
-                const SizedBox(height: Spacing.xxs),
+                const SizedBox(height: 2),
                 Text(
                   dest.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 10,
-                    color: selected ? q.text : q.muted,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                    fontSize: 10.5,
+                    color: selected
+                        ? const Color(0xFF6B46C1)
+                        : const Color(0xFF7C8BA0),
                   ),
                 ),
               ],
@@ -598,7 +589,6 @@ class QuestBottomNav extends StatelessWidget {
   }
 
   /// Tombol + bundar di tengah nav — menonjol 20px ke atas navbar
-  /// (Positioned di Stack induk). Ikon saja, label jadi tooltip.
   Widget _centerButton(BuildContext context) {
     final action = centerAction!;
     return Tooltip(
@@ -606,22 +596,22 @@ class QuestBottomNav extends StatelessWidget {
       child: QuestPress(
         onTap: action.onTap,
         child: Container(
-          width: 64,
-          height: 64,
+          width: 58,
+          height: 58,
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
+              colors: [Color(0xFF8B5CF6), Color(0xFF6B46C1)],
             ),
             borderRadius: BorderRadius.circular(AppRadius.pill),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x73FFA726),
+                color: Color(0x408B5CF6),
                 offset: Offset(0, 6),
-                blurRadius: 14,
+                blurRadius: 16,
               ),
             ],
           ),
-          child: const Icon(Icons.add_rounded, color: Colors.white, size: 32),
+          child: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
         ),
       ),
     );
