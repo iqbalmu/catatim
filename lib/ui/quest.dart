@@ -159,7 +159,7 @@ class QuestButton extends StatelessWidget {
         shadow = null;
     }
     final button = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       decoration: BoxDecoration(
         color: gradient == null ? fill : null,
         gradient: gradient,
@@ -172,16 +172,22 @@ class QuestButton extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 20, color: fg),
-            const SizedBox(width: Spacing.s),
+            Icon(icon, size: 16, color: fg),
+            const SizedBox(width: Spacing.xs),
           ],
-          Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 16,
-              letterSpacing: 0.2,
-              color: fg,
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                  letterSpacing: 0.1,
+                  color: fg,
+                ),
+              ),
             ),
           ),
         ],
@@ -721,9 +727,12 @@ class QuestAmount extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      '${incoming ? '+' : '−'} ${Money.format(amount)}',
-      style: context.qAmount(size, incoming: incoming),
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(
+        '${incoming ? '+' : '−'}${Money.format(amount)}',
+        style: context.qAmount(size, incoming: incoming),
+      ),
     );
   }
 }
@@ -889,42 +898,119 @@ Future<T?> showQuestSheet<T>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (context) => Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const QuestGrabber(),
-        Flexible(child: builder(context)),
-      ],
+    backgroundColor: Colors.transparent,
+    builder: (context) => Container(
+      decoration: BoxDecoration(
+        color: context.q.surface,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(AppRadius.sheet),
+        ),
+        boxShadow: AppShadows.elevated,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: Spacing.s),
+          const QuestGrabber(),
+          Flexible(child: builder(context)),
+        ],
+      ),
     ),
   );
 }
 
+/// Drawer modal tunggal untuk seluruh dialog/konfirmasi/input di aplikasi.
+/// Menggantikan dialog mengambang di tengah layar dengan laci geser dari bawah.
 Future<T?> showQuestDialog<T>(
   BuildContext context, {
   required String title,
   required Widget content,
   required List<Widget> actions,
 }) {
-  return showDialog<T>(
+  return showModalBottomSheet<T>(
     context: context,
-    builder: (context) => Dialog(
-      insetPadding: const EdgeInsets.all(Spacing.l),
-      backgroundColor: Colors.transparent,
-      child: QuestCard(
-        radius: AppRadius.sheet,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(title, style: context.qTitle(19)),
-            const SizedBox(height: Spacing.s),
-            content,
-            const SizedBox(height: Spacing.m),
-            Wrap(spacing: Spacing.s, runSpacing: Spacing.s, children: actions),
-          ],
+    isScrollControlled: true,
+    useSafeArea: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      final q = context.q;
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
         ),
-      ),
-    ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: q.surface,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppRadius.sheet),
+            ),
+            boxShadow: AppShadows.elevated,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: Spacing.s),
+              const QuestGrabber(),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  Spacing.l,
+                  Spacing.s,
+                  Spacing.l,
+                  Spacing.xs,
+                ),
+                child: Text(title, style: context.qTitle(18)),
+              ),
+              Divider(height: 1, thickness: 1, color: q.line),
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(
+                    Spacing.l,
+                    Spacing.m,
+                    Spacing.l,
+                    Spacing.s,
+                  ),
+                  child: content,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  Spacing.l,
+                  Spacing.s,
+                  Spacing.l,
+                  Spacing.m,
+                ),
+                child: actions.length <= 2
+                    ? Row(
+                        children: [
+                          for (var i = 0; i < actions.length; i++) ...[
+                            if (i > 0) const SizedBox(width: Spacing.s),
+                            Expanded(child: actions[i]),
+                          ],
+                        ],
+                      )
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          actions.last,
+                          const SizedBox(height: Spacing.s),
+                          Row(
+                            children: [
+                              for (var i = 0; i < actions.length - 1; i++) ...[
+                                if (i > 0) const SizedBox(width: Spacing.s),
+                                Expanded(child: actions[i]),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
   );
 }
 

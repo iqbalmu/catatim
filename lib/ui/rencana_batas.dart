@@ -623,7 +623,10 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
                 child: Text('Semua akun'),
               ),
               for (final a in accounts)
-                DropdownMenuItem<int?>(value: a.id, child: Text(a.name)),
+                DropdownMenuItem<int?>(
+                  value: a.id,
+                  child: Text(a.name, overflow: TextOverflow.ellipsis),
+                ),
             ],
             onChanged: (v) => setDialogState(() => scope = v),
           ),
@@ -640,7 +643,6 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
         QuestButton(
           label: 'Hapus',
           tone: QuestTone.danger,
-          icon: Icons.delete_outline_rounded,
           onPressed: () => Navigator.pop(
             context,
             const _CategoryBudgetResult(
@@ -794,13 +796,17 @@ class _LimitMiniCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: Spacing.xxs),
-            Text(
-              line == null ? 'Belum diatur' : _ringkasRp(used),
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: line == null ? q.muted : (over ? q.bad : q.text),
-                fontFeatures: const [FontFeature.tabularFigures()],
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                line == null ? 'Belum diatur' : _ringkasRp(used),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: line == null ? q.muted : (over ? q.bad : q.text),
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
               ),
             ),
             const SizedBox(height: Spacing.xs),
@@ -815,12 +821,16 @@ class _LimitMiniCard extends StatelessWidget {
                 },
               ),
               const SizedBox(height: Spacing.xs),
-              Text(
-                over ? 'over · plafon ${_ringkasRp(limit!)}' : '/ ${_ringkasRp(limit!)}',
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: over ? FontWeight.w700 : FontWeight.w400,
-                  color: over ? q.bad : q.muted,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  over ? 'over · plafon ${_ringkasRp(limit!)}' : '/ ${_ringkasRp(limit!)}',
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: over ? FontWeight.w700 : FontWeight.w400,
+                    color: over ? q.bad : q.muted,
+                  ),
                 ),
               ),
             ] else
@@ -973,28 +983,35 @@ class _BatasBulananCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: SeedColors.primaryLight,
-                          borderRadius: BorderRadius.circular(AppRadius.cell),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: SeedColors.primaryLight,
+                            borderRadius: BorderRadius.circular(AppRadius.cell),
+                          ),
+                          child: Icon(
+                            Icons.calendar_month_rounded,
+                            color: q.primary,
+                            size: 18,
+                          ),
                         ),
-                        child: Icon(
-                          Icons.calendar_month_rounded,
-                          color: q.primary,
-                          size: 18,
+                        const SizedBox(width: Spacing.s),
+                        Flexible(
+                          child: Text(
+                            'Batas Total Bulanan',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: context.qTitle(15),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: Spacing.s),
-                      Text(
-                        'Batas Total Bulanan',
-                        style: context.qTitle(15),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: Spacing.xs),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
@@ -1024,17 +1041,24 @@ class _BatasBulananCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Text(
-                    hasLimit
-                        ? '${Money.format(used)} / ${Money.format(limit!)}'
-                        : 'Tap untuk mengatur batas bulanan',
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w800,
-                      color: hasLimit ? q.text : q.muted,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        hasLimit
+                            ? '${Money.format(used)} / ${Money.format(limit!)}'
+                            : 'Tap untuk mengatur batas bulanan',
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w800,
+                          color: hasLimit ? q.text : q.muted,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
                     ),
                   ),
+                  const SizedBox(width: Spacing.s),
                   if (hasLimit)
                     Text(
                       '${(used * 100 / limit!).round()}%',
