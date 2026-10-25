@@ -339,13 +339,13 @@ class _DraftTile extends StatelessWidget {
               height: 38,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: q.honey,
+                color: SeedColors.primaryLight,
                 shape: BoxShape.circle,
               ),
               child: Text(
                 initial,
                 style: TextStyle(
-                  color: q.honeyInk,
+                  color: q.primary,
                   fontWeight: FontWeight.w800,
                   fontSize: 16,
                 ),

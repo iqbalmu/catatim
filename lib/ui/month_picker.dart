@@ -108,7 +108,7 @@ class _MonthCell extends StatelessWidget {
         height: 40,
         margin: const EdgeInsets.all(Spacing.xxs),
         decoration: BoxDecoration(
-          color: selected ? q.honey : Colors.transparent,
+          color: selected ? q.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(AppRadius.cell),
         ),
         alignment: Alignment.center,
@@ -117,7 +117,7 @@ class _MonthCell extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: selected ? FontWeight.w800 : FontWeight.w400,
-            color: selected ? q.honeyInk : q.text,
+            color: selected ? Colors.white : q.text,
           ),
         ),
       ),

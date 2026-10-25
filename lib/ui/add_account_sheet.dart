@@ -568,12 +568,12 @@ class _BankAvatar extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: q.honey, shape: BoxShape.circle),
+      decoration: BoxDecoration(color: SeedColors.primaryLight, shape: BoxShape.circle),
       alignment: Alignment.center,
       child: Text(
         initial,
         style: TextStyle(
-          color: q.honeyInk,
+          color: q.primary,
           fontWeight: FontWeight.w800,
           fontSize: size >= 40 ? 17 : 15,
         ),
@@ -631,14 +631,14 @@ class _StepRow extends StatelessWidget {
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: q.honey,
+              color: SeedColors.primaryLight,
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
             child: Text(
               number,
               style: TextStyle(
-                color: q.honeyInk,
+                color: q.primary,
                 fontWeight: FontWeight.w800,
                 fontSize: 14,
               ),

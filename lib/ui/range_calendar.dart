@@ -229,11 +229,11 @@ class _DayCell extends StatelessWidget {
     final Color bg;
     final Color fg;
     if (isEdge) {
-      bg = q.honey;
-      fg = q.honeyInk;
+      bg = q.primary;
+      fg = Colors.white;
     } else if (inRange) {
-      bg = q.honey.withValues(alpha: 0.25);
-      fg = q.text;
+      bg = SeedColors.primaryLight;
+      fg = q.primary;
     } else {
       bg = Colors.transparent;
       fg = q.text;

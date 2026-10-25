@@ -116,40 +116,56 @@ class QuestButton extends StatelessWidget {
     final q = context.q;
     final Color fill;
     final Color fg;
+    final BoxBorder? border;
+    final List<BoxShadow>? shadow;
+    final Gradient? gradient;
+
     switch (tone) {
       case QuestTone.primary:
-        fill = Colors.transparent; // gradient di decoration.
-        // Tinta gelap di atas emas pastel — kontras (ADR-010).
-        fg = SeedColors.honeyText;
+        fill = Colors.transparent;
+        fg = Colors.white;
+        border = null;
+        gradient = LinearGradient(colors: [q.primary, q.primaryDeep]);
+        shadow = [
+          BoxShadow(
+            color: q.primary.withValues(alpha: 0.28),
+            offset: const Offset(0, 4),
+            blurRadius: 14,
+          ),
+        ];
       case QuestTone.secondary:
-        fill = q.surface2;
+        fill = q.surface;
         fg = q.text;
+        border = Border.all(color: q.line);
+        gradient = null;
+        shadow = AppShadows.card;
       case QuestTone.danger:
         fill = q.bad;
         fg = Colors.white;
+        border = null;
+        gradient = null;
+        shadow = [
+          BoxShadow(
+            color: q.bad.withValues(alpha: 0.25),
+            offset: const Offset(0, 4),
+            blurRadius: 12,
+          ),
+        ];
       case QuestTone.ghost:
         fill = Colors.transparent;
         fg = q.text;
+        border = null;
+        gradient = null;
+        shadow = null;
     }
     final button = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
-        color: tone == QuestTone.primary ? null : fill,
-        gradient: tone == QuestTone.primary
-            ? const LinearGradient(
-                colors: [SeedColors.honeyBright, SeedColors.honey],
-              )
-            : null,
+        color: gradient == null ? fill : null,
+        gradient: gradient,
+        border: border,
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        boxShadow: tone == QuestTone.primary
-            ? const [
-                BoxShadow(
-                  color: Color(0x52DE9F55),
-                  offset: Offset(0, 8),
-                  blurRadius: 18,
-                ),
-              ]
-            : null,
+        boxShadow: shadow,
       ),
       child: Row(
         mainAxisSize: expanded ? MainAxisSize.max : MainAxisSize.min,
@@ -207,25 +223,15 @@ class QuestChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            // Aksen netral-aktif = mint; emas khusus CTA (ADR-010).
-            color: selected ? QuestPalette.mint : q.surface2,
+            color: selected ? q.primary : q.surface2,
             borderRadius: BorderRadius.circular(AppRadius.pill),
-            boxShadow: selected
-                ? const [
-                    BoxShadow(
-                      color: Color(0x4D7FBDB1),
-                      offset: Offset(0, 6),
-                      blurRadius: 14,
-                    ),
-                  ]
-                : null,
           ),
           child: Text(
             label,
             style: TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 13,
-              color: selected ? QuestPalette.mintInk : q.muted,
+              color: selected ? Colors.white : q.text,
             ),
           ),
         ),
@@ -350,7 +356,7 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
   final bool compact;
 
   @override
-  Size get preferredSize => const Size.fromHeight(76);
+  Size get preferredSize => const Size.fromHeight(60);
 
   @override
   Widget build(BuildContext context) {
@@ -361,16 +367,28 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
           Spacing.m,
           Spacing.s,
           Spacing.m,
-          Spacing.s,
+          Spacing.xs,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             if (showBack) ...[
-              QuestIconButton(
-                icon: Icons.arrow_back_rounded,
-                tooltip: 'Kembali',
-                onPressed: () => Navigator.maybePop(context),
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: context.q.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: context.q.line),
+                  boxShadow: AppShadows.card,
+                ),
+                child: IconButton(
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  icon: Icon(Icons.arrow_back_rounded, color: context.q.text, size: 20),
+                  tooltip: 'Kembali',
+                  onPressed: () => Navigator.maybePop(context),
+                ),
               ),
               const SizedBox(width: Spacing.s),
             ],
@@ -390,10 +408,10 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
                             color: context.q.muted,
                             fontWeight: FontWeight.w800,
                           )
-                        : context.qTitle(24),
+                        : context.qTitle(20),
                   ),
                   if (!compact && subtitle != null)
-                    Text(subtitle!, style: context.qSmall()),
+                    Text(subtitle!, style: context.qSmall(12)),
                 ],
               ),
             ),
@@ -424,16 +442,15 @@ class QuestIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final q = context.q;
     final button = Container(
-      width: 44,
-      height: 44,
+      width: 38,
+      height: 38,
       decoration: BoxDecoration(
         color: q.surface,
         shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(color: q.shadow, offset: const Offset(0, 4), blurRadius: 12),
-        ],
+        border: Border.all(color: q.line),
+        boxShadow: AppShadows.card,
       ),
-      child: Icon(icon, color: q.text, size: 22),
+      child: Icon(icon, color: q.text, size: 20),
     );
     return Tooltip(
       message: tooltip ?? '',
@@ -738,7 +755,7 @@ class QuestBar extends StatelessWidget {
                 curve: QuestMotion.easeOut,
                 width: w,
                 height: double.infinity,
-                color: color ?? q.honey,
+                color: color ?? q.primary,
               ),
             );
           },
@@ -776,7 +793,7 @@ class QuestSwitch extends StatelessWidget {
           height: 32,
           padding: const EdgeInsets.all(Spacing.xs),
           decoration: BoxDecoration(
-            color: value ? q.honey : q.surface2,
+            color: value ? q.primary : q.surface2,
             borderRadius: BorderRadius.circular(AppRadius.pill),
           ),
           child: AnimatedAlign(
@@ -848,11 +865,11 @@ class QuestGrabber extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        width: 48,
-        height: 6,
+        width: 36,
+        height: 4,
         margin: const EdgeInsets.only(top: Spacing.s, bottom: Spacing.xs),
         decoration: BoxDecoration(
-          color: context.q.muted.withValues(alpha: 0.5),
+          color: context.q.muted.withValues(alpha: 0.25),
           borderRadius: BorderRadius.circular(AppRadius.pill),
         ),
       ),

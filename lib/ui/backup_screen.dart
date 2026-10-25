@@ -325,10 +325,10 @@ class _ActionRow extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: context.q.honey.withValues(alpha: 0.25),
+                color: SeedColors.primaryLight,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: context.q.text),
+              child: Icon(icon, color: context.q.primary),
             ),
             const SizedBox(width: Spacing.m),
             Expanded(

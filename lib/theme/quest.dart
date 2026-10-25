@@ -237,14 +237,14 @@ class QuestSchemes {
         backgroundColor: p.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.sheet),
-          side: BorderSide(color: p.line, width: 2),
+          side: BorderSide(color: p.line, width: 1),
         ),
       ),
       timePickerTheme: TimePickerThemeData(
         backgroundColor: p.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.sheet),
-          side: BorderSide(color: p.line, width: 2),
+          side: BorderSide(color: p.line, width: 1),
         ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
@@ -253,7 +253,7 @@ class QuestSchemes {
           borderRadius: const BorderRadius.vertical(
             top: Radius.circular(AppRadius.sheet),
           ),
-          side: BorderSide(color: p.line, width: 2),
+          side: BorderSide(color: p.line, width: 1),
         ),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -269,49 +269,48 @@ class QuestSchemes {
         fillColor: p.surface2,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: Spacing.m,
-          vertical: Spacing.m,
+          vertical: 14,
         ),
-        labelStyle: TextStyle(color: p.muted),
-        hintStyle: TextStyle(color: p.muted.withValues(alpha: 0.8)),
+        labelStyle: TextStyle(color: p.muted, fontSize: 13),
+        hintStyle: TextStyle(color: p.muted.withValues(alpha: 0.7), fontSize: 13),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.frame),
-          borderSide: BorderSide(color: p.line, width: 2),
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+          borderSide: BorderSide(color: p.line, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.frame),
-          borderSide: BorderSide(color: p.honey, width: 2),
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+          borderSide: BorderSide(color: p.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.frame),
-          borderSide: BorderSide(color: p.bad, width: 2),
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+          borderSide: BorderSide(color: p.bad, width: 1),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.frame),
-          borderSide: BorderSide(color: p.bad, width: 2),
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+          borderSide: BorderSide(color: p.bad, width: 1.5),
         ),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: p.surface2,
-        selectedColor: QuestPalette.mint,
-        labelStyle: TextStyle(fontWeight: FontWeight.w700, color: p.text),
+        selectedColor: p.primaryLight,
+        labelStyle: TextStyle(fontWeight: FontWeight.w700, color: p.text, fontSize: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.pill),
-          side: BorderSide(color: p.line, width: 2),
+          side: BorderSide(color: p.line, width: 1),
         ),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStatePropertyAll(p.surface),
         trackColor: WidgetStateProperty.resolveWith((states) {
-          // Aksen netral-aktif = mint (ADR-010); emas hanya CTA.
           if (states.contains(WidgetState.selected)) {
-            return QuestPalette.mint;
+            return p.primary;
           }
-          return p.muted.withValues(alpha: 0.5);
+          return p.muted.withValues(alpha: 0.4);
         }),
         trackOutlineColor: WidgetStatePropertyAll(p.line),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
-        color: p.honey,
+        color: p.primary,
         linearTrackColor: p.surface2,
       ),
       listTileTheme: ListTileThemeData(
