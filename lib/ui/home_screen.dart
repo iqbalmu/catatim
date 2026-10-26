@@ -57,6 +57,13 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _bonsWatch = widget.repository.watchBons();
   }
+  Timer? _refreshTimer;
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
 
   int _tab = 0;
   bool _inBonView = false;
@@ -66,7 +73,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void _openTransaksi() => setState(() => _tab = 1);
   void _openAnggaran() => setState(() => _tab = 2);
   void _openBon() {
-    setState(() => _tab = 1);
+    setState(() {
+      _tab = 1;
+      _inBonView = true;
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _transaksiKey.currentState?.showBon();
     });
@@ -110,16 +120,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onTabChanged(int i) {
+    if (i == _tab) {
+      // Tap pada tab aktif: bila di sub-tampilan Bon, kembali ke Transaksi.
+      if (i == 1 && _inBonView) {
+        _transaksiKey.currentState?.handleBack();
+      }
+      return;
+    }
     setState(() {
       _tab = i;
-      if (i != 1 && _inBonView) _inBonView = false;
+      if (i != 1 && _inBonView) {
+        _inBonView = false;
+        _transaksiKey.currentState?.handleBack();
+      }
     });
     if (i == 0) {
-      unawaited(
-        Future.delayed(_refreshSettle).then((_) {
-          if (mounted) return widget.progress.refresh();
-        }),
-      );
+      _refreshTimer?.cancel();
+      _refreshTimer = Timer(_refreshSettle, () {
+        if (mounted) widget.progress.refresh();
+      });
     }
   }
 
@@ -224,13 +243,21 @@ class _DirectionalTabViewState extends State<_DirectionalTabView>
     with SingleTickerProviderStateMixin {
   static const _rest = AlwaysStoppedAnimation<Offset>(Offset.zero);
 
-  /// Kunci stabil per posisi: state tiap tab bertahan saat anak dipindah
-  /// antara IndexedStack (diam) dan Stack (terbang).
-  late List<GlobalKey> _pageKeys;
+  /// Kunci stabil per posisi: state tiap tab bertahan utuh di pohon widget
+  /// baik saat diam maupun saat terbang transisi.
+  late final List<GlobalKey> _pageKeys = List<GlobalKey>.generate(
+    widget.children.length,
+    (_) => GlobalKey(),
+  );
 
   late final _slideController = AnimationController(
     vsync: this,
     duration: QuestMotion.medium,
+  );
+
+  late final _curvedAnimation = CurvedAnimation(
+    parent: _slideController,
+    curve: QuestMotion.easeOut,
   );
 
   /// Indeks yang tampil saat diam.
@@ -239,21 +266,19 @@ class _DirectionalTabViewState extends State<_DirectionalTabView>
   /// Penerbangan berjalan (dari → ke); null saat diam.
   ({int from, int to})? _flight;
 
-  Animation<Offset> _slide = _rest;
+  Animation<Offset> _outgoingSlide = _rest;
+  Animation<Offset> _incomingSlide = _rest;
 
   @override
   void initState() {
     super.initState();
-    _pageKeys = List<GlobalKey>.generate(
-      widget.children.length,
-      (_) => GlobalKey(),
-    );
     _shown = widget.index;
     _slideController.addStatusListener(_onSlideStatus);
   }
 
   @override
   void dispose() {
+    _curvedAnimation.dispose();
     _slideController.dispose();
     super.dispose();
   }
@@ -265,7 +290,8 @@ class _DirectionalTabViewState extends State<_DirectionalTabView>
         final flight = _flight;
         if (flight != null) _shown = flight.to;
         _flight = null;
-        _slide = _rest;
+        _outgoingSlide = _rest;
+        _incomingSlide = _rest;
       });
     }
   }
@@ -274,40 +300,32 @@ class _DirectionalTabViewState extends State<_DirectionalTabView>
   void didUpdateWidget(covariant _DirectionalTabView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.index != oldWidget.index) {
-      // Tunda ke luar fase build agar setState animasi aman.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        final target = widget.index;
-        if (target != (_flight?.to ?? _shown)) _goTo(target);
-      });
+      final target = widget.index;
+      final from = _flight?.to ?? _shown;
+      if (target != from && target >= 0 && target < widget.children.length) {
+        _startFlight(from: from, to: target);
+      }
     }
   }
 
-  void _goTo(int to) {
-    // Dari tab yang sedang menuju/ditampilkan — mengikuti posisi nyata.
-    final from = _flight?.to ?? _shown;
+  void _startFlight({required int from, required int to}) {
     if (to == from || to < 0 || to >= widget.children.length) return;
-    // Masih terbang: mendaratkan seketika dulu, lalu mulai yang baru.
-    // (Hanya terasa sebagai sentakan kecil pada tap beruntun.)
-    if (_flight != null && _slideController.isAnimating) {
-      _slideController.value = 1;
-    }
     if (MediaQuery.disableAnimationsOf(context)) {
-      setState(() => _shown = to);
+      _shown = to;
+      _outgoingSlide = _rest;
+      _incomingSlide = _rest;
       return;
     }
-    final curved = CurvedAnimation(
-      parent: _slideController,
-      curve: QuestMotion.easeOut,
-    );
-    setState(() {
-      _flight = (from: from, to: to);
-      _slide = Tween<Offset>(
-        // Target di kanan navbar masuk dari kanan, di kiri dari kiri.
-        begin: Offset(to > from ? 1 : -1, 0),
-        end: Offset.zero,
-      ).animate(curved);
-    });
+    final isForward = to > from;
+    _flight = (from: from, to: to);
+    _outgoingSlide = Tween<Offset>(
+      begin: Offset.zero,
+      end: Offset(isForward ? -1.0 : 1.0, 0),
+    ).animate(_curvedAnimation);
+    _incomingSlide = Tween<Offset>(
+      begin: Offset(isForward ? 1.0 : -1.0, 0),
+      end: Offset.zero,
+    ).animate(_curvedAnimation);
     _slideController.forward(from: 0);
   }
 
@@ -321,15 +339,30 @@ class _DirectionalTabViewState extends State<_DirectionalTabView>
     if (flight == null) {
       return IndexedStack(index: _shown, children: pages);
     }
-    // Tab lama diam di bawah (TickerMode dari parent sudah mematikannya),
-    // tab baru yang hidup meluncur masuk di atasnya — tanpa bekuan citra.
+    // Tab lama diam di bawah (TickerMode dari parent mematikannya),
+    // tab baru yang hidup meluncur masuk di atasnya dengan bayangan tepi lembut.
+    // Tab tidak aktif lainnya tetap di pohon widget lewat Offstage agar state/scroll
+    // tidak pernah di-dispose.
     return Stack(
+      clipBehavior: Clip.hardEdge,
       children: [
-        // Tiap lapisan di-cache raster sendiri: geser = komposit murah,
-        // bukan repaint ulang seluruh halaman tiap frame.
-        RepaintBoundary(child: pages[flight.from]),
+        for (var i = 0; i < widget.children.length; i++)
+          if (i != flight.from && i != flight.to)
+            Offstage(
+              offstage: true,
+              child: pages[i],
+            ),
         RepaintBoundary(
-          child: SlideTransition(position: _slide, child: pages[flight.to]),
+          child: SlideTransition(
+            position: _outgoingSlide,
+            child: pages[flight.from],
+          ),
+        ),
+        RepaintBoundary(
+          child: SlideTransition(
+            position: _incomingSlide,
+            child: pages[flight.to],
+          ),
         ),
       ],
     );
@@ -401,8 +434,10 @@ class _BerandaTabState extends State<_BerandaTab> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
+    return Scaffold(
+      backgroundColor: context.q.bg,
+      body: SafeArea(
+        bottom: false,
       child: ListView(
           padding: EdgeInsets.only(
             bottom: Spacing.m + MediaQuery.paddingOf(context).bottom,
@@ -441,6 +476,7 @@ class _BerandaTabState extends State<_BerandaTab> {
             ),
             const SizedBox(height: 96),
           ],
+        ),
       ),
     );
   }

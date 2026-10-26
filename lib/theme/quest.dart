@@ -158,8 +158,9 @@ class QuestMotion {
   static const Cubic spring = Cubic(0.34, 1.56, 0.64, 1);
 }
 
-/// Transisi pindah screen khas Quest: slide penuh dari kanan — feel
-/// navigasi maju; saat pop kembali ke kanan.
+/// Transisi pindah screen khas Quest: slide penuh dari kanan dengan
+/// parallax mundur pada screen di bawahnya — feel navigasi maju berdimensi;
+/// saat pop kembali meluncur keluar ke kanan.
 class QuestPageTransitionsBuilder extends PageTransitionsBuilder {
   const QuestPageTransitionsBuilder();
 
@@ -171,17 +172,22 @@ class QuestPageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: QuestMotion.easeOut,
-      reverseCurve: QuestMotion.easeOut,
-    );
+    final slideIn = Tween<Offset>(
+      begin: const Offset(1, 0),
+      end: Offset.zero,
+    ).chain(CurveTween(curve: QuestMotion.easeOut));
+
+    final parallaxOut = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(-0.25, 0),
+    ).chain(CurveTween(curve: QuestMotion.easeOut));
+
     return SlideTransition(
-      position: Tween(
-        begin: const Offset(1, 0),
-        end: Offset.zero,
-      ).animate(curved),
-      child: child,
+      position: secondaryAnimation.drive(parallaxOut),
+      child: SlideTransition(
+        position: animation.drive(slideIn),
+        child: child,
+      ),
     );
   }
 }

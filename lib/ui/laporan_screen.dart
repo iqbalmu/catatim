@@ -1665,31 +1665,21 @@ class _CategoryStructureCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Clean White-on-Slate Segmented Toggle (Full-Width = Zero Overflow)
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: context.q.surface2,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _ModeTabButton(
-                          label: 'Pengeluaran ($outTxCount)',
-                          selected: !showIncoming,
-                          onTap: () => onToggleMode(false),
-                        ),
-                      ),
-                      Expanded(
-                        child: _ModeTabButton(
-                          label: 'Pemasukan ($inTxCount)',
-                          selected: showIncoming,
-                          onTap: () => onToggleMode(true),
-                        ),
-                      ),
-                    ],
-                  ),
+                QuestSegmented<bool>(
+                  selected: showIncoming,
+                  onChanged: onToggleMode,
+                  options: [
+                    (
+                      value: false,
+                      label: 'Pengeluaran ($outTxCount)',
+                      icon: null,
+                    ),
+                    (
+                      value: true,
+                      label: 'Pemasukan ($inTxCount)',
+                      icon: null,
+                    ),
+                  ],
                 ),
 
                 if (activeStats.isEmpty || activeTotal <= 0) ...[
@@ -1782,46 +1772,6 @@ class _CategoryStructureCard extends StatelessWidget {
             ],
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _ModeTabButton extends StatelessWidget {
-  const _ModeTabButton({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-        decoration: BoxDecoration(
-          color: selected ? context.q.surface : Colors.transparent,
-          borderRadius: BorderRadius.circular(9),
-          boxShadow: selected ? AppShadows.card : null,
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 12.5,
-            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-            color: selected ? context.q.text : context.q.muted,
-          ),
-        ),
       ),
     );
   }
@@ -2251,51 +2201,42 @@ class _LaporanPeriodSheetState extends State<_LaporanPeriodSheet> {
             const SizedBox(height: Spacing.m),
             Text('Pilih Periode Laporan', style: context.qTitle(16)),
             const SizedBox(height: Spacing.s),
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: context.q.surface2,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _ModeTabButton(
-                      label: 'Per Bulan',
-                      selected: !_customMode,
-                      onTap: () => setState(() => _customMode = false),
-                    ),
-                  ),
-                  Expanded(
-                    child: _ModeTabButton(
-                      label: 'Rentang Tanggal',
-                      selected: _customMode,
-                      onTap: () => setState(() => _customMode = true),
-                    ),
-                  ),
-                ],
-              ),
+            QuestSegmented<bool>(
+              selected: _customMode,
+              onChanged: (val) => setState(() => _customMode = val),
+              options: const [
+                (value: false, label: 'Per Bulan', icon: null),
+                (value: true, label: 'Rentang Tanggal', icon: null),
+              ],
             ),
             const SizedBox(height: Spacing.m),
-            if (!_customMode)
-              QuestMonthPicker(
-                initialMonth: widget.initialMonth,
-                onChanged: (m) => Navigator.pop(context, (month: m, range: null)),
-              )
-            else ...[
-              QuestRangeCalendar(
-                initialRange: _range,
-                onChanged: (r) => setState(() => _range = r),
-              ),
-              const SizedBox(height: Spacing.m),
-              QuestButton(
-                label: 'Terapkan Rentang',
-                icon: Icons.check_rounded,
-                onPressed: _range == null
-                    ? null
-                    : () => Navigator.pop(context, (month: null, range: _range)),
-              ),
-            ],
+            AnimatedSize(
+              duration: QuestMotion.fast,
+              curve: QuestMotion.easeOut,
+              alignment: Alignment.topCenter,
+              child: !_customMode
+                  ? QuestMonthPicker(
+                      initialMonth: widget.initialMonth,
+                      onChanged: (m) => Navigator.pop(context, (month: m, range: null)),
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        QuestRangeCalendar(
+                          initialRange: _range,
+                          onChanged: (r) => setState(() => _range = r),
+                        ),
+                        const SizedBox(height: Spacing.m),
+                        QuestButton(
+                          label: 'Terapkan Rentang',
+                          icon: Icons.check_rounded,
+                          onPressed: _range == null
+                              ? null
+                              : () => Navigator.pop(context, (month: null, range: _range)),
+                        ),
+                      ],
+                    ),
+            ),
           ],
         ),
       ),

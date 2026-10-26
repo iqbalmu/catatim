@@ -161,7 +161,15 @@ class TransaksiScreenState extends State<TransaksiScreen> {
       backgroundColor: context.q.bg,
       body: SafeArea(
         bottom: false,
-        child: _showBonView ? _buildBonView() : _buildTransactionsView(),
+        child: AnimatedSwitcher(
+          duration: QuestMotion.fast,
+          switchInCurve: QuestMotion.easeOut,
+          switchOutCurve: QuestMotion.easeOut,
+          child: KeyedSubtree(
+            key: ValueKey<bool>(_showBonView),
+            child: _showBonView ? _buildBonView() : _buildTransactionsView(),
+          ),
+        ),
       ),
     );
   }
@@ -648,8 +656,8 @@ class TransaksiScreenState extends State<TransaksiScreen> {
               if (_bonPageCtrl.hasClients) {
                 _bonPageCtrl.animateToPage(
                   val,
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeOutCubic,
+                  duration: QuestMotion.medium,
+                  curve: QuestMotion.easeOut,
                 );
               }
             },
@@ -674,8 +682,8 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                 controller: _bonPageCtrl,
                 onPageChanged: (page) => setState(() => _bonSubTab = page),
                 children: [
-                  _buildBonList(unpaid, isLunas: false),
-                  _buildBonList(paid, isLunas: true),
+                  _buildBonList(unpaid, isLunas: false, key: const PageStorageKey('bon_unpaid')),
+                  _buildBonList(paid, isLunas: true, key: const PageStorageKey('bon_paid')),
                 ],
               );
             },
@@ -685,7 +693,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
     );
   }
 
-  Widget _buildBonList(List<Bon> bons, {required bool isLunas}) {
+  Widget _buildBonList(List<Bon> bons, {required bool isLunas, Key? key}) {
     if (bons.isEmpty) {
       return QuestEmpty(
         title: isLunas ? 'Belum ada riwayat bon lunas.' : 'Semua bon sudah lunas!',
@@ -696,6 +704,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
     }
 
     return ListView.builder(
+      key: key,
       padding: EdgeInsets.fromLTRB(
         Spacing.m,
         Spacing.xs,

@@ -288,7 +288,8 @@ class QuestChip extends StatelessWidget {
   }
 }
 
-/// Kontrol segmen custom (pengganti SegmentedButton): baris chip dalam bingkai.
+/// Kontrol segmen custom: baris chip dalam bingkai dengan thumb indikator
+/// yang bergeser secara halus (smooth sliding) mengikuti tab aktif.
 class QuestSegmented<T> extends StatelessWidget {
   const QuestSegmented({
     super.key,
@@ -303,80 +304,92 @@ class QuestSegmented<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final selectedIndex = options.indexWhere((o) => o.value == selected);
+    final count = options.length;
+    final alignX = count > 1 && selectedIndex >= 0
+        ? -1.0 + (selectedIndex * (2.0 / (count - 1)))
+        : 0.0;
+
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
+        color: context.q.surface2,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
+      child: Stack(
+        fit: StackFit.passthrough,
         children: [
-          for (final o in options)
-            Expanded(
-              child: _SegmentCell<T>(
-                option: o,
-                selected: o.value == selected,
-                onTap: () => onChanged(o.value),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SegmentCell<T> extends StatelessWidget {
-  const _SegmentCell({
-    required this.option,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final ({T value, String label, IconData? icon}) option;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return QuestPress(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: QuestMotion.fast,
-        curve: QuestMotion.easeOut,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: selected ? AppShadows.card : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (option.icon != null) ...[
-              Icon(
-                option.icon,
-                size: 18,
-                color: selected
-                    ? context.q.primary
-                    : context.q.muted,
-              ),
-              const SizedBox(width: Spacing.xs),
-            ],
-            Flexible(
-              child: Text(
-                option.label,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                  fontSize: 12.5,
-                  color: selected
-                      ? context.q.text
-                      : context.q.muted,
+          // Sliding indicator thumb
+          if (count > 0 && selectedIndex >= 0)
+            Positioned.fill(
+              child: AnimatedAlign(
+                alignment: Alignment(alignX, 0),
+                duration: QuestMotion.medium,
+                curve: QuestMotion.easeOut,
+                child: FractionallySizedBox(
+                  widthFactor: 1.0 / count,
+                  heightFactor: 1.0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: context.q.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: AppShadows.card,
+                    ),
+                  ),
                 ),
               ),
             ),
-          ],
-        ),
+          // Option labels on top
+          Row(
+            children: [
+              for (var i = 0; i < options.length; i++)
+                Expanded(
+                  child: QuestPress(
+                    onTap: () => onChanged(options[i].value),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                      alignment: Alignment.center,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (options[i].icon != null) ...[
+                            Icon(
+                              options[i].icon,
+                              size: 16,
+                              color: i == selectedIndex
+                                  ? context.q.primary
+                                  : context.q.muted,
+                            ),
+                            const SizedBox(width: Spacing.xs),
+                          ],
+                          Flexible(
+                            child: AnimatedDefaultTextStyle(
+                              duration: QuestMotion.fast,
+                              curve: QuestMotion.easeOut,
+                              style: TextStyle(
+                                fontFamily: 'Nunito',
+                                fontSize: 12.5,
+                                fontWeight: i == selectedIndex
+                                    ? FontWeight.w800
+                                    : FontWeight.w600,
+                                color: i == selectedIndex
+                                    ? context.q.text
+                                    : context.q.muted,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              child: Text(options[i].label),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
