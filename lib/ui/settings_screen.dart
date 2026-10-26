@@ -9,7 +9,7 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'backup_screen.dart';
 import 'bank_accounts_screen.dart';
-import 'notif_screen.dart';
+import 'capture_settings_screen.dart';
 import 'quest.dart';
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({
@@ -117,21 +117,18 @@ class SettingsScreen extends StatelessWidget {
                     color: q.good,
                     bgColor: SeedColors.incomingTint,
                   ),
-                  title: Text('Status Capture Notifikasi', style: context.qTitle(15)),
+                  title: Text('Pengaturan Capture Notifikasi', style: context.qTitle(15)),
                   subtitle: Text(
-                    'Riwayat capture notifikasi bank offline',
+                    'Izin sistem, bank terhubung, & optimasi baterai',
                     style: context.qSmall(12),
                   ),
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => NotificationScreen(
+                      builder: (_) => CaptureSettingsScreen(
                         repository: repository,
                         pipeline: pipeline,
                         ruleSet: ruleSet,
-                        progress: progress,
-                        onOpenAnggaran: onOpenAnggaran,
-                        onOpenBon: onOpenBon,
                       ),
                     ),
                   ),
