@@ -100,12 +100,14 @@ class BankAccountsScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: Spacing.s),
                         ],
-                      const SizedBox(height: Spacing.l),
-                      QuestButton(
-                        label: 'Tambah akun',
-                        icon: Icons.add_rounded,
-                        onPressed: () => _openAddSheet(context),
-                      ),
+                      if (accounts.isNotEmpty) ...[
+                        const SizedBox(height: Spacing.l),
+                        QuestButton(
+                          label: 'Tambah akun',
+                          icon: Icons.add_rounded,
+                          onPressed: () => _openAddSheet(context),
+                        ),
+                      ],
                       const SizedBox(height: Spacing.l),
                       const QuestSectionHeader(title: 'Kalau ada kendala'),
                       QuestCard(

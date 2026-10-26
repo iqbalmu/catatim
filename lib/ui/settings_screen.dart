@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../capture/pipeline.dart';
+import '../game/progress.dart';
 import '../rules/rule_set.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
@@ -8,32 +9,35 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'backup_screen.dart';
 import 'bank_accounts_screen.dart';
-
+import 'notif_screen.dart';
+import 'quest.dart';
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({
     super.key,
     required this.repository,
     required this.pipeline,
     required this.ruleSet,
+    this.progress,
+    this.onOpenAnggaran,
+    this.onOpenBon,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
   final RuleSet ruleSet;
-
+  final ProgressService? progress;
+  final VoidCallback? onOpenAnggaran;
+  final VoidCallback? onOpenBon;
   @override
   Widget build(BuildContext context) {
+    final q = context.q;
+
     return Scaffold(
-      backgroundColor: context.q.bg,
-      appBar: AppBar(
-        backgroundColor: context.q.bg,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: false,
-        title: Text(
-          'Pengaturan',
-          style: context.qTitle(20),
-        ),
+      backgroundColor: q.bg,
+      appBar: const QuestHeader(
+        title: 'Pengaturan',
+        subtitle: 'Konfigurasi & preferensi sistem',
+        showBack: true,
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
@@ -43,109 +47,146 @@ class SettingsScreen extends StatelessWidget {
           Spacing.xl,
         ),
         children: [
-          // ── Seksi 1: Rekening & Bank ────────────────────────────
-          _SectionHeader(title: 'REKENING & OTOMATISASI'),
-          const SizedBox(height: Spacing.xs),
-          Container(
-            decoration: BoxDecoration(
-              color: context.q.surface,
-              borderRadius: BorderRadius.circular(AppRadius.card),
-              border: Border.all(color: context.q.line),
-              boxShadow: AppShadows.card,
-            ),
-            child: StreamBuilder<List<Account>>(
-              stream: repository.watchAccounts(),
-              builder: (context, snapshot) {
-                final accounts = snapshot.data ?? const [];
-                return _SettingsRow(
-                  icon: Icons.account_balance_wallet_rounded,
-                  iconColor: context.q.primary,
-                  iconBg: SeedColors.primaryLight,
-                  title: 'Kelola Akun & Bank',
-                  subtitle: '${accounts.length} akun terdaftar · Tambah, edit, koneksi bank',
+          // ── Seksi 1: Data & Rekening ──
+          const QuestSectionHeader(title: 'Data & Rekening'),
+          QuestCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                StreamBuilder<List<Account>>(
+                  stream: repository.watchAccounts(),
+                  builder: (context, snapshot) {
+                    final accounts = snapshot.data ?? const [];
+                    return QuestListTile(
+                      leading: _SettingIcon(
+                        icon: Icons.account_balance_wallet_rounded,
+                        color: q.primary,
+                        bgColor: q.primaryLight,
+                      ),
+                      title: Text('Kelola Akun & Bank', style: context.qTitle(15)),
+                      subtitle: Text(
+                        '${accounts.length} akun terdaftar · Tambah & koneksi bank',
+                        style: context.qSmall(12),
+                      ),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BankAccountsScreen(
+                            repository: repository,
+                            pipeline: pipeline,
+                            ruleSet: ruleSet,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                Divider(height: 1, thickness: 1, color: q.line),
+                QuestListTile(
+                  leading: _SettingIcon(
+                    icon: Icons.shield_outlined,
+                    color: q.primary,
+                    bgColor: q.primaryLight,
+                  ),
+                  title: Text('Backup & Pulihkan Data', style: context.qTitle(15)),
+                  subtitle: Text(
+                    'Salinan database terenkripsi PIN lokal di HP',
+                    style: context.qSmall(12),
+                  ),
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => BankAccountsScreen(
+                      builder: (_) => BackupScreen(repository: repository),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: Spacing.m),
+
+          // ── Seksi 2: Otomatisasi & Capture ──
+          const QuestSectionHeader(title: 'Otomatisasi & Capture'),
+          QuestCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                QuestListTile(
+                  leading: _SettingIcon(
+                    icon: Icons.notifications_active_outlined,
+                    color: q.good,
+                    bgColor: SeedColors.incomingTint,
+                  ),
+                  title: Text('Status Capture Notifikasi', style: context.qTitle(15)),
+                  subtitle: Text(
+                    'Riwayat capture notifikasi bank offline',
+                    style: context.qSmall(12),
+                  ),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => NotificationScreen(
                         repository: repository,
                         pipeline: pipeline,
                         ruleSet: ruleSet,
+                        progress: progress,
+                        onOpenAnggaran: onOpenAnggaran,
+                        onOpenBon: onOpenBon,
                       ),
                     ),
                   ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: Spacing.m),
-
-          // ── Seksi 2: Keamanan & Data ────────────────────────────
-          _SectionHeader(title: 'KEAMANAN & DATA'),
-          const SizedBox(height: Spacing.xs),
-          Container(
-            decoration: BoxDecoration(
-              color: context.q.surface,
-              borderRadius: BorderRadius.circular(AppRadius.card),
-              border: Border.all(color: context.q.line),
-              boxShadow: AppShadows.card,
-            ),
-            child: _SettingsRow(
-              icon: Icons.shield_outlined,
-              iconColor: context.q.primary,
-              iconBg: SeedColors.primaryLight,
-              title: 'Backup & Pulihkan Database',
-              subtitle: 'Salinan terenkripsi PIN, simpan aman di perangkat',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BackupScreen(repository: repository),
                 ),
-              ),
+                QuestListTile(
+                  leading: _SettingIcon(
+                    icon: Icons.battery_saver_rounded,
+                    color: q.text,
+                    bgColor: q.surface2,
+                  ),
+                  title: Text('Pengaturan Baterai Sistem', style: context.qTitle(15)),
+                  subtitle: Text(
+                    'Cegah Android menutup listener di latar belakang',
+                    style: context.qSmall(12),
+                  ),
+                  onTap: pipeline.channel.openBatterySettings,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: Spacing.m),
 
-          // ── Seksi 3: Info Aplikasi ──────────────────────────────
-          _SectionHeader(title: 'TENTANG BUKUDUIT'),
-          const SizedBox(height: Spacing.xs),
-          Container(
-            padding: const EdgeInsets.all(Spacing.m),
-            decoration: BoxDecoration(
-              color: context.q.surface,
-              borderRadius: BorderRadius.circular(AppRadius.card),
-              border: Border.all(color: context.q.line),
-              boxShadow: AppShadows.card,
-            ),
+          // ── Seksi 3: Tentang Aplikasi ──
+          const QuestSectionHeader(title: 'Tentang Bukuduit'),
+          QuestCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
-                      width: 44,
-                      height: 44,
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [context.q.primary, context.q.violet],
+                          colors: [q.primary, q.violet],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
-                        borderRadius: BorderRadius.circular(AppRadius.tile),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(
                         Icons.account_balance_wallet_rounded,
                         color: Colors.white,
-                        size: 24,
+                        size: 20,
                       ),
                     ),
                     const SizedBox(width: Spacing.s),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('bukuduit', style: context.qTitle(17)),
+                        Text('bukuduit', style: context.qTitle(16)),
                         Text(
                           'Versi 1.0.0 · Offline Personal Finance',
-                          style: context.qSmall(),
+                          style: context.qSmall(12),
                         ),
                       ],
                     ),
@@ -153,8 +194,8 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: Spacing.s),
                 Text(
-                  'Pencatat keuangan pribadi offline dengan capture notifikasi bank otomatis.',
-                  style: context.qBody(13),
+                  'Pencatat keuangan pribadi offline dengan capture notifikasi bank lokal di perangkatmu.',
+                  style: context.qBody(12.5),
                 ),
                 const SizedBox(height: Spacing.s),
                 Container(
@@ -162,13 +203,13 @@ class SettingsScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: SeedColors.incomingTint,
                     borderRadius: BorderRadius.circular(AppRadius.tile),
-                    border: Border.all(color: const Color(0xFFA7F3D0)),
+                    border: Border.all(color: q.good.withValues(alpha: 0.25)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.cloud_off_rounded,
-                        color: Color(0xFF059669),
+                        color: q.good,
                         size: 18,
                       ),
                       const SizedBox(width: 8),
@@ -178,7 +219,7 @@ class SettingsScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF065F46),
+                            color: q.good,
                           ),
                         ),
                       ),
@@ -194,96 +235,27 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 2),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.8,
-          color: context.q.muted,
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsRow extends StatelessWidget {
-  const _SettingsRow({
+class _SettingIcon extends StatelessWidget {
+  const _SettingIcon({
     required this.icon,
-    required this.iconColor,
-    required this.iconBg,
-    required this.title,
-    required this.subtitle,
-    this.onTap,
+    required this.color,
+    required this.bgColor,
   });
 
   final IconData icon;
-  final Color iconColor;
-  final Color iconBg;
-  final String title;
-  final String subtitle;
-  final VoidCallback? onTap;
+  final Color color;
+  final Color bgColor;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.card),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Spacing.m,
-          vertical: 14,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(AppRadius.tile),
-              ),
-              child: Icon(icon, color: iconColor, size: 20),
-            ),
-            const SizedBox(width: Spacing.s),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w700,
-                      color: context.q.text,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: context.qSmall(12),
-                  ),
-                ],
-              ),
-            ),
-            if (onTap != null)
-              Icon(
-                Icons.chevron_right_rounded,
-                color: context.q.muted.withValues(alpha: 0.5),
-                size: 20,
-              ),
-          ],
-        ),
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(10),
       ),
+      child: Icon(icon, color: color, size: 20),
     );
   }
 }

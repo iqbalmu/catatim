@@ -163,12 +163,12 @@ class GamificationSheet extends StatelessWidget {
                   padding: const EdgeInsets.all(Spacing.m),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
+                      colors: [SeedColors.honey50, SeedColors.honey100],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(AppRadius.card),
-                    border: Border.all(color: const Color(0xFFFDE68A)),
+                    border: Border.all(color: SeedColors.honeyBright),
                   ),
                   child: Row(
                     children: [
@@ -186,10 +186,10 @@ class GamificationSheet extends StatelessWidget {
                             ),
                           ],
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.local_fire_department_rounded,
-                          color: Color(0xFFF59E0B),
-                          size: 32,
+                          color: context.q.warn,
+                          size: 30,
                         ),
                       ),
                       const SizedBox(width: Spacing.m),
@@ -199,10 +199,10 @@ class GamificationSheet extends StatelessWidget {
                           children: [
                             Text(
                               isPaused ? 'Streak Dijeda' : '$streakDays Hari Streak Disiplin',
-                              style: const TextStyle(
-                                fontSize: 17,
+                              style: TextStyle(
+                                fontSize: 16.5,
                                 fontWeight: FontWeight.w900,
-                                color: Color(0xFF78350F),
+                                color: SeedColors.honeyText,
                                 letterSpacing: -0.3,
                               ),
                             ),
@@ -214,7 +214,7 @@ class GamificationSheet extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFF92400E),
+                                color: SeedColors.honeyInk,
                               ),
                             ),
                           ],

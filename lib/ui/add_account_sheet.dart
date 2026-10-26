@@ -476,8 +476,8 @@ class _AddAccountSheetState extends State<AddAccountSheet>
         ),
         const SizedBox(height: Spacing.xs),
         Text(
-          'Setiap notifikasi transaksinya otomatis jadi draf di layar '
-          'Notifikasi — tinggal pilih Catat atau Buang.',
+          'Setiap notifikasi transaksinya otomatis muncul sebagai draf '
+          'konfirmasi di Beranda — tinggal pilih Catat atau Abaikan.',
           style: context.qSmall(),
           textAlign: TextAlign.center,
         ),

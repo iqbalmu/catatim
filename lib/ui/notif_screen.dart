@@ -43,21 +43,20 @@ class NotificationScreen extends StatefulWidget {
     super.key,
     required this.repository,
     required this.pipeline,
-    required this.progress,
     required this.ruleSet,
-    required this.onOpenAnggaran,
-    required this.onOpenBon,
+    this.progress,
+    this.onOpenAnggaran,
+    this.onOpenBon,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
-  final ProgressService progress;
+  final ProgressService? progress;
   final RuleSet ruleSet;
 
   /// Tutup layar ini lalu alih ke tab Rencana / Bon.
-  final VoidCallback onOpenAnggaran;
-  final VoidCallback onOpenBon;
-
+  final VoidCallback? onOpenAnggaran;
+  final VoidCallback? onOpenBon;
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();
 }
@@ -84,9 +83,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  void _goTo(VoidCallback navigate) {
+  void _goTo(VoidCallback? navigate) {
     Navigator.of(context).popUntil((route) => route.isFirst);
-    navigate();
+    navigate?.call();
   }
 
   void _openDraft(Draft draft) {
@@ -181,7 +180,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                     bonNeedsBadge(b.occurredAt),
                               )
                               .length;
-                          final summary = widget.progress.latest;
+                          final summary = widget.progress?.latest;
                           final level = summary?.snapshot.worstLevel;
                           final critical = summary?.snapshot.criticalLine;
                           final items = [
@@ -197,7 +196,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             if (unread > 0)
                               _NotifItem(
                                 icon: Icons.mark_as_unread_rounded,
-                                color: SeedColors.honeyDeep,
+                                color: q.warn,
                                 title: '$unread belum terbaca',
                                 subtitle:
                                     'Coba baca lagi atau catat manual',
@@ -216,14 +215,13 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             else if (level == BudgetLevel.warning)
                               _NotifItem(
                                 icon: Icons.error_outline_rounded,
-                                color: SeedColors.honeyDeep,
+                                color: q.warn,
                                 title:
                                     'Batas ${critical?.label ?? 'harian'} '
                                     'mendekati plafon',
                                 subtitle: 'Yuk cek batas pengeluaranmu di Anggaran',
                                 onTap: () => _goTo(widget.onOpenAnggaran),
                               ),
-                            if (aging > 0)
                               _NotifItem(
                                 icon: Icons.handshake_outlined,
                                 color: q.bad,
