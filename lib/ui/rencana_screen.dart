@@ -16,19 +16,9 @@ class RencanaScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: context.q.bg,
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Anggaran',
-              style: context.qTitle(20),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'Kontrol batas pengeluaran & alokasi kategori',
-              style: context.qSmall(),
-            ),
-          ],
+        title: Text(
+          'Anggaran',
+          style: context.qTitle(20),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,

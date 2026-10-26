@@ -244,7 +244,12 @@ class _RencanaBatasState extends State<RencanaBatas> {
                             usedSnap.data ??
                             const <({int? category, int? account}), int>{};
                         if (categories.isEmpty) {
-                          return const QuestSkeleton(rows: 2);
+                          return QuestEmpty(
+                            title: 'Belum ada kategori',
+                            hint: 'Tambah kategori pertama untuk mulai mengalokasikan anggaran.',
+                            actionLabel: 'Tambah Kategori',
+                            onAction: () => showAddCategoryFlow(context, widget.repository),
+                          );
                         }
                         final accountNames = {
                           for (final a in accounts) a.id: a.name,
@@ -767,13 +772,8 @@ class _LimitMiniCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: over ? q.bad.withValues(alpha: 0.12) : q.surface,
           borderRadius: BorderRadius.circular(AppRadius.tile),
-          boxShadow: [
-            BoxShadow(
-              color: q.shadow,
-              offset: const Offset(0, 6),
-              blurRadius: 18,
-            ),
-          ],
+          border: Border.all(color: q.line),
+          boxShadow: AppShadows.card,
         ),
         child: Container(
           // Transparan tapi opaque untuk hit-test: seluruh permukaan
@@ -816,7 +816,7 @@ class _LimitMiniCard extends StatelessWidget {
                 height: 5,
                 color: switch (line.level) {
                   BudgetLevel.over => q.bad,
-                  BudgetLevel.warning => q.honey,
+                  BudgetLevel.warning => q.warn,
                   BudgetLevel.ok => q.good,
                 },
               ),
@@ -827,16 +827,16 @@ class _LimitMiniCard extends StatelessWidget {
                 child: Text(
                   over ? 'over · plafon ${_ringkasRp(limit!)}' : '/ ${_ringkasRp(limit!)}',
                   style: TextStyle(
-                    fontSize: 9.5,
-                    fontWeight: over ? FontWeight.w700 : FontWeight.w400,
+                    fontSize: 10.5,
+                    fontWeight: over ? FontWeight.w700 : FontWeight.w500,
                     color: over ? q.bad : q.muted,
                   ),
                 ),
               ),
             ] else
               Text(
-                'tap untuk atur',
-                style: TextStyle(fontSize: 9, color: q.muted),
+                'Tap untuk atur',
+                style: TextStyle(fontSize: 10.5, color: q.muted),
               ),
             ],
           ),
@@ -905,7 +905,7 @@ class _AllocationRow extends StatelessWidget {
               ),
               Text(
                 line == null
-                    ? 'belum dialokasikan'
+                    ? (used > 0 ? 'Terpakai ${_ringkasRp(used)} · belum ada batas' : 'Belum dialokasikan')
                     : '${_ringkasRp(used)} / ${_ringkasRp(limit!)}'
                           ' · ${line.usedPercent}%${over ? ' over' : ''}',
                 style: TextStyle(
@@ -924,7 +924,7 @@ class _AllocationRow extends StatelessWidget {
                     ? q.line
                     : switch (line.level) {
                         BudgetLevel.over => q.bad,
-                        BudgetLevel.warning => q.honey,
+                        BudgetLevel.warning => q.warn,
                         BudgetLevel.ok => q.good,
                       },
               ),
@@ -953,137 +953,127 @@ class _BatasBulananCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final q = context.q;
     final hasLimit = limit != null && limit! > 0;
+    final isOver = hasLimit && used >= limit!;
     final sisa = (limit ?? 0) - used;
-    final over = hasLimit && sisa < 0;
     final fraction = hasLimit ? (used / limit!).clamp(0.0, 1.0) : 0.0;
 
     Color progressColor;
-    if (over) {
+    if (isOver) {
       progressColor = q.bad;
-    } else if (fraction >= 0.8) {
-      progressColor = SeedColors.honey;
+    } else if (fraction >= 0.75) {
+      progressColor = q.warn;
     } else {
       progressColor = q.good;
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: q.surface,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: q.line),
-        boxShadow: AppShadows.card,
-      ),
-      child: QuestPress(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(Spacing.m),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return QuestCard(
+      variant: QuestCardVariant.hero,
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: SeedColors.primaryLight,
-                            borderRadius: BorderRadius.circular(AppRadius.cell),
-                          ),
-                          child: Icon(
-                            Icons.calendar_month_rounded,
-                            color: q.primary,
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: Spacing.s),
-                        Flexible(
-                          child: Text(
-                            'Batas Total Bulanan',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: context.qTitle(15),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: Spacing.xs),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: hasLimit
-                          ? (over ? SeedColors.outgoingTint : SeedColors.incomingTint)
-                          : q.surface2,
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                    ),
-                    child: Text(
-                      hasLimit
-                          ? (over ? 'Over ${Money.format(-sisa)}' : 'Sisa ${Money.format(sisa)}')
-                          : 'Belum diatur',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: hasLimit
-                            ? (over ? q.bad : q.good)
-                            : q.muted,
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: SeedColors.primaryLight,
+                        borderRadius: BorderRadius.circular(AppRadius.cell),
+                      ),
+                      child: Icon(
+                        Icons.calendar_month_rounded,
+                        color: q.primary,
+                        size: 18,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: Spacing.m),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
+                    const SizedBox(width: Spacing.s),
+                    Flexible(
                       child: Text(
-                        hasLimit
-                            ? '${Money.format(used)} / ${Money.format(limit!)}'
-                            : 'Tap untuk mengatur batas bulanan',
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w800,
-                          color: hasLimit ? q.text : q.muted,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
+                        'Batas Total Bulanan',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.qTitle(16),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: Spacing.s),
-                  if (hasLimit)
-                    Text(
-                      '${(used * 100 / limit!).round()}%',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
-                        color: progressColor,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-              const SizedBox(height: Spacing.s),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-                child: LinearProgressIndicator(
-                  value: fraction,
-                  minHeight: 10,
-                  backgroundColor: q.surface2,
-                  valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+              const SizedBox(width: Spacing.xs),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: hasLimit
+                      ? (isOver ? SeedColors.outgoingTint : SeedColors.incomingTint)
+                      : q.surface2,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: Text(
+                  hasLimit
+                      ? (isOver ? 'Over ${Money.format(used - limit!)}' : 'Sisa ${Money.format(sisa)}')
+                      : 'Belum diatur',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: hasLimit
+                        ? (isOver ? q.bad : q.good)
+                        : q.muted,
+                  ),
                 ),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: Spacing.m),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    hasLimit
+                        ? '${Money.format(used)} / ${Money.format(limit!)}'
+                        : 'Tap untuk mengatur batas bulanan',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: hasLimit ? q.text : q.muted,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: Spacing.s),
+              if (hasLimit)
+                Text(
+                  '${(used * 100 / limit!).round()}%',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: progressColor,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: Spacing.s),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            child: LinearProgressIndicator(
+              value: fraction,
+              minHeight: 8,
+              backgroundColor: q.surface2,
+              valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+            ),
+          ),
+        ],
       ),
     );
   }
