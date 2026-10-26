@@ -20,6 +20,7 @@ import 'transaction_tile.dart';
 bool matchesQuery(TxWithCategory item, String query) {
   final q = query.trim().toLowerCase();
   if (q.isEmpty) return true;
+  final cleanQ = q.replaceAll(RegExp(r'[^0-9a-z]'), '');
   final tx = item.tx;
   final haystacks = [
     tx.counterparty ?? '',
@@ -27,10 +28,10 @@ bool matchesQuery(TxWithCategory item, String query) {
     tx.bankId,
     tx.kind.label,
     tx.amount.toString(),
+    Money.format(tx.amount),
   ].map((s) => s.toLowerCase());
-  return haystacks.any((h) => h.contains(q));
+  return haystacks.any((h) => h.contains(q) || (cleanQ.isNotEmpty && h.replaceAll(RegExp(r'[^0-9a-z]'), '').contains(cleanQ)));
 }
-
 class TransaksiScreen extends StatefulWidget {
   const TransaksiScreen({
     super.key,
@@ -131,23 +132,56 @@ class TransaksiScreenState extends State<TransaksiScreen> {
 
     return Column(
       children: [
-        // Top Header
+        // Top Header: Title + Month Selector + Bon Shortcut
         Padding(
           padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.m, Spacing.m, Spacing.xs),
           child: Row(
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              Text('Transaksi', style: context.qTitle(20)),
+              const Spacer(),
+
+              // Month Selector Pill
+              Container(
+                decoration: BoxDecoration(
+                  color: context.q.surface2,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  border: Border.all(color: context.q.line),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Transaksi', style: context.qTitle(20)),
-                    Text(
-                      'Riwayat lengkap pengeluaran & pemasukan',
-                      style: context.qSmall(),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      constraints: const BoxConstraints(),
+                      icon: const Icon(Icons.chevron_left_rounded, size: 20),
+                      onPressed: () => _shiftMonth(-1),
+                    ),
+                    QuestPress(
+                      onTap: _openMonthPicker,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+                        child: Text(
+                          idMonthYear(_selectedMonth),
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: context.q.text,
+                          ),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      constraints: const BoxConstraints(),
+                      icon: const Icon(Icons.chevron_right_rounded, size: 20),
+                      onPressed: () => _shiftMonth(1),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: Spacing.s),
 
               // Button Bon Shortcut
               StreamBuilder<List<Bon>>(
@@ -156,16 +190,15 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                   final bons = snapshot.data ?? const [];
                   final unsettledCount = bons.where((b) => b.settledAt == null).length;
 
-                  return InkWell(
+                  return QuestPress(
                     onTap: () => _setBonView(true),
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: unsettledCount > 0 ? const Color(0xFFFEF3C7) : context.q.surface2,
+                        color: unsettledCount > 0 ? context.q.warnTint : context.q.surface2,
                         borderRadius: BorderRadius.circular(AppRadius.pill),
                         border: Border.all(
-                          color: unsettledCount > 0 ? const Color(0xFFFDE68A) : context.q.line,
+                          color: unsettledCount > 0 ? context.q.warn.withValues(alpha: 0.3) : context.q.line,
                         ),
                       ),
                       child: Row(
@@ -174,29 +207,29 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                           Icon(
                             Icons.handshake_outlined,
                             size: 16,
-                            color: unsettledCount > 0 ? const Color(0xFFD97706) : context.q.text,
+                            color: unsettledCount > 0 ? context.q.warn : context.q.text,
                           ),
-                          const SizedBox(width: 5),
+                          const SizedBox(width: 4),
                           Text(
                             'Bon',
                             style: TextStyle(
-                              fontSize: 12.5,
+                              fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: unsettledCount > 0 ? const Color(0xFF92400E) : context.q.text,
+                              color: unsettledCount > 0 ? context.q.warn : context.q.text,
                             ),
                           ),
                           if (unsettledCount > 0) ...[
-                            const SizedBox(width: 5),
+                            const SizedBox(width: 4),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFD97706),
+                              decoration: BoxDecoration(
+                                color: context.q.warn,
                                 shape: BoxShape.circle,
                               ),
                               child: Text(
                                 '$unsettledCount',
                                 style: const TextStyle(
-                                  fontSize: 10,
+                                  fontSize: 9.5,
                                   fontWeight: FontWeight.w800,
                                   color: Colors.white,
                                 ),
@@ -212,45 +245,6 @@ class TransaksiScreenState extends State<TransaksiScreen> {
             ],
           ),
         ),
-
-        // Month Picker Bar
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: Spacing.xs),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.chevron_left_rounded),
-                onPressed: () => _shiftMonth(-1),
-              ),
-              InkWell(
-                onTap: _openMonthPicker,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        idMonthYear(_selectedMonth),
-                        style: context.qTitle(15),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: context.q.muted),
-                    ],
-                  ),
-                ),
-              ),
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.chevron_right_rounded),
-                onPressed: () => _shiftMonth(1),
-              ),
-            ],
-          ),
-        ),
-
         // Search Input
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: Spacing.xs),
@@ -356,7 +350,10 @@ class TransaksiScreenState extends State<TransaksiScreen> {
             ),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
+                return const Padding(
+                  padding: EdgeInsets.all(Spacing.m),
+                  child: QuestSkeleton(rows: 4),
+                );
               }
 
               final allItems = snapshot.data ?? const [];
@@ -371,33 +368,11 @@ class TransaksiScreenState extends State<TransaksiScreen> {
               }).toList();
 
               if (filtered.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.receipt_long_outlined,
-                        size: 52,
-                        color: context.q.muted.withValues(alpha: 0.4),
-                      ),
-                      const SizedBox(height: Spacing.s),
-                      Text(
-                        'Tidak ada transaksi',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: context.q.text,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _searchQuery.isNotEmpty
-                            ? 'Coba kata kunci pencarian yang lain.'
-                            : 'Belum ada transaksi di bulan ${idMonthYear(_selectedMonth)}.',
-                        style: context.qSmall(12),
-                      ),
-                    ],
-                  ),
+                return QuestEmpty(
+                  title: 'Tidak ada transaksi',
+                  hint: _searchQuery.isNotEmpty
+                      ? 'Coba kata kunci pencarian yang lain.'
+                      : 'Belum ada transaksi di bulan ${idMonthYear(_selectedMonth)}.',
                 );
               }
 
@@ -613,64 +588,16 @@ class TransaksiScreenState extends State<TransaksiScreen> {
         ),
         const SizedBox(height: Spacing.s),
 
-        // Sub Tabs: [Belum Lunas] vs [Lunas]
+        // Sub Tabs: [Belum Lunas] vs [Lunas] via QuestSegmented
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: Spacing.m),
-          child: Container(
-            decoration: BoxDecoration(
-              color: context.q.surface2,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () => setState(() => _bonSubTab = 0),
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: _bonSubTab == 0 ? context.q.surface : Colors.transparent,
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                        boxShadow: _bonSubTab == 0 ? AppShadows.card : null,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        'Belum Lunas',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: _bonSubTab == 0 ? FontWeight.w800 : FontWeight.w600,
-                          color: _bonSubTab == 0 ? context.q.text : context.q.muted,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: InkWell(
-                    onTap: () => setState(() => _bonSubTab = 1),
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: _bonSubTab == 1 ? context.q.surface : Colors.transparent,
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                        boxShadow: _bonSubTab == 1 ? AppShadows.card : null,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        'Lunas',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: _bonSubTab == 1 ? FontWeight.w800 : FontWeight.w600,
-                          color: _bonSubTab == 1 ? context.q.text : context.q.muted,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          child: QuestSegmented<int>(
+            selected: _bonSubTab,
+            onChanged: (val) => setState(() => _bonSubTab = val),
+            options: const [
+              (value: 0, label: 'Belum Lunas', icon: null),
+              (value: 1, label: 'Lunas', icon: null),
+            ],
           ),
         ),
         const SizedBox(height: Spacing.s),
@@ -686,13 +613,13 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                   : allBons.where((b) => b.settledAt != null).toList();
 
               if (filtered.isEmpty) {
-                return Center(
-                  child: Text(
-                    _bonSubTab == 0
-                        ? 'Semua bon sudah lunas!'
-                        : 'Belum ada riwayat bon yang dilunasi.',
-                    style: context.qSmall(13),
-                  ),
+                return QuestEmpty(
+                  title: _bonSubTab == 0
+                      ? 'Semua bon sudah lunas!'
+                      : 'Belum ada riwayat bon lunas.',
+                  hint: _bonSubTab == 0
+                      ? 'Catat bon baru jika ada pinjam-meminjam uang.'
+                      : 'Bon yang sudah dilunasi akan tercatat di sini.',
                 );
               }
 

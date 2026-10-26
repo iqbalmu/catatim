@@ -100,13 +100,8 @@ class TransactionTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.q.surface,
           borderRadius: BorderRadius.circular(AppRadius.tile),
-          boxShadow: [
-            BoxShadow(
-              color: context.q.shadow,
-              offset: const Offset(0, 6),
-              blurRadius: 18,
-            ),
-          ],
+          border: Border.all(color: context.q.line, width: 1),
+          boxShadow: AppShadows.card,
         ),
         child: Row(
           children: [
@@ -130,26 +125,10 @@ class TransactionTile extends StatelessWidget {
                     style: context.qTitle(15),
                   ),
                   const SizedBox(height: Spacing.xxs),
-                  Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: dotColor,
-                        ),
-                      ),
-                      const SizedBox(width: Spacing.xs),
-                      Flexible(
-                        child: Text(
-                          '${category?.name ?? tx.kind.label} · ${tx.bankId} · '
-                          '${tx.source.label}',
-                          overflow: TextOverflow.ellipsis,
-                          style: context.qSmall(),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    '${category?.name ?? tx.kind.label} · ${tx.bankId}',
+                    overflow: TextOverflow.ellipsis,
+                    style: context.qSmall(12),
                   ),
                 ],
               ),

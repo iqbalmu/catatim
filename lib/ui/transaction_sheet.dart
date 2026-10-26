@@ -303,8 +303,9 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 keyboardType: TextInputType.number,
                 style: context.qDisplay(30),
                 decoration: InputDecoration(
-                  labelText: 'Nominal (Rp)',
-                  hintText: 'Isi angkanya saja, misalnya 150000',
+                  prefixText: 'Rp ',
+                  labelText: 'Nominal',
+                  hintText: '0',
                   helperText: _preview,
                 ),
                 validator: (v) =>

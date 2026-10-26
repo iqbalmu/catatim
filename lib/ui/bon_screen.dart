@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../core/dates_id.dart';
 import '../core/money.dart';
 import '../models.dart';
 import '../storage/database.dart';
@@ -45,7 +47,7 @@ class _BonSheetState extends State<BonSheet> {
   late final TextEditingController _amountCtrl;
   late final TextEditingController _noteCtrl;
   late BonDirection _direction;
-  late final DateTime _date;
+  late DateTime _date;
 
   @override
   void initState() {
@@ -66,6 +68,18 @@ class _BonSheetState extends State<BonSheet> {
     _amountCtrl.dispose();
     _noteCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() => _date = picked);
+    }
   }
 
   Future<void> _save() async {
@@ -135,80 +149,120 @@ class _BonSheetState extends State<BonSheet> {
 
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
-        Spacing.l,
-        Spacing.xs,
-        Spacing.l,
-        Spacing.l + MediaQuery.viewInsetsOf(context).bottom,
+        Spacing.m,
+        Spacing.xxs,
+        Spacing.m,
+        Spacing.m + MediaQuery.viewInsetsOf(context).bottom,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            editing ? 'Ubah Catatan Bon' : 'Catat Bon Baru',
-            style: context.qTitle(18),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  editing ? 'Ubah Catatan Bon' : 'Catat Bon Baru',
+                  style: context.qTitle(18),
+                ),
+              ),
+              if (editing)
+                QuestIconButton(
+                  icon: Icons.delete_outline_rounded,
+                  tooltip: 'Hapus bon',
+                  onPressed: _delete,
+                ),
+              QuestIconButton(
+                icon: Icons.close_rounded,
+                tooltip: 'Tutup',
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
           ),
-          const SizedBox(height: Spacing.m),
+          const SizedBox(height: Spacing.s),
+          Divider(height: 1, thickness: 1, color: q.line),
+          const SizedBox(height: Spacing.s),
           QuestSegmented<BonDirection>(
             selected: _direction,
             onChanged: (d) => setState(() => _direction = d),
             options: const [
               (
                 value: BonDirection.lent,
-                label: 'Dipinjamkan',
+                label: 'Dipinjamkan (Piutang)',
                 icon: null,
               ),
               (
                 value: BonDirection.borrowed,
-                label: 'Dipinjam',
+                label: 'Dipinjam (Utang)',
                 icon: null,
               ),
             ],
           ),
-          const SizedBox(height: Spacing.xs),
-          Text(
-            _direction == BonDirection.lent
-                ? 'Piutang — orang lain berutang kepadamu.'
-                : 'Utang — kamu berutang kepada orang lain.',
-            style: context.qSmall(12),
-          ),
-          const SizedBox(height: Spacing.m),
+          const SizedBox(height: Spacing.s),
           TextField(
             controller: _personCtrl,
             textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(labelText: 'Nama pihak'),
+            decoration: const InputDecoration(
+              labelText: 'Nama pihak',
+              prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
+              isDense: true,
+            ),
           ),
           const SizedBox(height: Spacing.s),
           TextField(
             controller: _amountCtrl,
             keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: const InputDecoration(
               prefixText: 'Rp ',
               labelText: 'Nominal',
+              prefixIcon: Icon(Icons.payments_outlined, size: 20),
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: Spacing.s),
+          QuestPress(
+            onTap: _pickDate,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+              decoration: BoxDecoration(
+                color: q.surface2,
+                borderRadius: BorderRadius.circular(AppRadius.tile),
+                border: Border.all(color: q.line),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.event_outlined, size: 18, color: q.muted),
+                  const SizedBox(width: Spacing.s),
+                  Text(
+                    idFullDate(_date),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: q.text,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(Icons.edit_calendar_outlined, size: 16, color: q.muted),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: Spacing.s),
           TextField(
             controller: _noteCtrl,
-            decoration: const InputDecoration(labelText: 'Catatan (opsional)'),
+            decoration: const InputDecoration(
+              labelText: 'Catatan (opsional)',
+              prefixIcon: Icon(Icons.notes_rounded, size: 20),
+              isDense: true,
+            ),
           ),
-          const SizedBox(height: Spacing.l),
+          const SizedBox(height: Spacing.m),
           QuestButton(
-            label: editing ? 'Simpan perubahan' : 'Simpan bon',
+            label: editing ? 'Simpan Perubahan' : 'Simpan Bon',
             icon: Icons.check_rounded,
             onPressed: _save,
           ),
-          if (editing) ...[
-            const SizedBox(height: Spacing.s),
-            TextButton.icon(
-              onPressed: _delete,
-              icon: Icon(Icons.delete_outline_rounded, color: q.bad, size: 18),
-              label: Text(
-                'Hapus bon ini',
-                style: TextStyle(color: q.bad, fontWeight: FontWeight.w700),
-              ),
-            ),
-          ],
         ],
       ),
     );
