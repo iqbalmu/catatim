@@ -347,6 +347,7 @@ class _SegmentCell<T> extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
+          boxShadow: selected ? AppShadows.card : null,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

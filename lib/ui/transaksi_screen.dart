@@ -76,6 +76,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
   Direction? _selectedDirection;
   bool _showBonView = false;
   int _bonSubTab = 0; // 0 = Belum Lunas, 1 = Lunas
+  late final PageController _bonPageCtrl = PageController(initialPage: _bonSubTab);
 
   @override
   void initState() {
@@ -87,6 +88,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _bonPageCtrl.dispose();
     super.dispose();
   }
 
@@ -100,16 +102,54 @@ class TransaksiScreenState extends State<TransaksiScreen> {
   }
 
   void _openMonthPicker() {
-    showQuestSheet<void>(
-      context,
-      (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(Spacing.m, 0, Spacing.m, Spacing.m),
-        child: QuestMonthPicker(
-          initialMonth: _selectedMonth,
-          onChanged: (m) {
-            Navigator.pop(ctx);
-            setState(() => _selectedMonth = m);
-          },
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.q.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.s, Spacing.m, Spacing.m),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: context.q.muted.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                ),
+              ),
+              const SizedBox(height: Spacing.m),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Pilih Bulan Transaksi', style: context.qTitle(16)),
+                  QuestIconButton(
+                    icon: Icons.close_rounded,
+                    tooltip: 'Tutup',
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Spacing.s),
+              Divider(height: 1, thickness: 1, color: context.q.line),
+              const SizedBox(height: Spacing.m),
+              QuestMonthPicker(
+                initialMonth: _selectedMonth,
+                onChanged: (m) {
+                  Navigator.pop(ctx);
+                  setState(() => _selectedMonth = m);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -132,15 +172,19 @@ class TransaksiScreenState extends State<TransaksiScreen> {
 
     return Column(
       children: [
-        // Top Header: Title + Month Selector + Bon Shortcut
+        // Top Header: Title (Kiri) + Month Selector (Tengah) + Bon Shortcut (Kanan)
         Padding(
           padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.m, Spacing.m, Spacing.xs),
           child: Row(
             children: [
-              Text('Transaksi', style: context.qTitle(20)),
-              const Spacer(),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Transaksi', style: context.qTitle(20)),
+                ),
+              ),
 
-              // Month Selector Pill
+              // Month Selector Pill (Pas di Tengah)
               Container(
                 decoration: BoxDecoration(
                   color: context.q.surface2,
@@ -181,67 +225,73 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                   ],
                 ),
               ),
-              const SizedBox(width: Spacing.s),
 
-              // Button Bon Shortcut
-              StreamBuilder<List<Bon>>(
-                stream: widget.repository.watchBons(),
-                builder: (context, snapshot) {
-                  final bons = snapshot.data ?? const [];
-                  final unsettledCount = bons.where((b) => b.settledAt == null).length;
+              // Button Bon Shortcut (Kanan)
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: StreamBuilder<List<Bon>>(
+                    stream: widget.repository.watchBons(),
+                    builder: (context, snapshot) {
+                      final bons = snapshot.data ?? const [];
+                      final unsettledCount = bons.where((b) => b.settledAt == null).length;
 
-                  return QuestPress(
-                    onTap: () => _setBonView(true),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: unsettledCount > 0 ? context.q.warnTint : context.q.surface2,
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                        border: Border.all(
-                          color: unsettledCount > 0 ? context.q.warn.withValues(alpha: 0.3) : context.q.line,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.handshake_outlined,
-                            size: 16,
-                            color: unsettledCount > 0 ? context.q.warn : context.q.text,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Bon',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: unsettledCount > 0 ? context.q.warn : context.q.text,
+                      return QuestPress(
+                        onTap: () => _setBonView(true),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: unsettledCount > 0 ? context.q.warnTint : context.q.surface2,
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                            border: Border.all(
+                              color: unsettledCount > 0
+                                  ? context.q.warn.withValues(alpha: 0.3)
+                                  : context.q.line,
                             ),
                           ),
-                          if (unsettledCount > 0) ...[
-                            const SizedBox(width: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: context.q.warn,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Text(
-                                '$unsettledCount',
-                                style: const TextStyle(
-                                  fontSize: 9.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.handshake_outlined,
+                                 size: 16,
+                                 color: unsettledCount > 0 ? context.q.warn : context.q.text,
+                               ),
+                               const SizedBox(width: 4),
+                               Text(
+                                 'Bon',
+                                 style: TextStyle(
+                                   fontSize: 12,
+                                   fontWeight: FontWeight.w700,
+                                   color: unsettledCount > 0 ? context.q.warn : context.q.text,
+                                 ),
+                               ),
+                               if (unsettledCount > 0) ...[
+                                 const SizedBox(width: 4),
+                                 Container(
+                                   padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                   decoration: BoxDecoration(
+                                     color: context.q.warn,
+                                     shape: BoxShape.circle,
+                                   ),
+                                   child: Text(
+                                     '$unsettledCount',
+                                     style: const TextStyle(
+                                       fontSize: 9.5,
+                                       fontWeight: FontWeight.w800,
+                                       color: Colors.white,
+                                     ),
+                                   ),
+                                 ),
+                               ],
+                             ],
+                           ),
+                         ),
+                       );
+                     },
+                   ),
+                 ),
+               ),
             ],
           ),
         ),
@@ -593,7 +643,16 @@ class TransaksiScreenState extends State<TransaksiScreen> {
           padding: const EdgeInsets.symmetric(horizontal: Spacing.m),
           child: QuestSegmented<int>(
             selected: _bonSubTab,
-            onChanged: (val) => setState(() => _bonSubTab = val),
+            onChanged: (val) {
+              setState(() => _bonSubTab = val);
+              if (_bonPageCtrl.hasClients) {
+                _bonPageCtrl.animateToPage(
+                  val,
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutCubic,
+                );
+              }
+            },
             options: const [
               (value: 0, label: 'Belum Lunas', icon: null),
               (value: 1, label: 'Lunas', icon: null),
@@ -602,166 +661,174 @@ class TransaksiScreenState extends State<TransaksiScreen> {
         ),
         const SizedBox(height: Spacing.s),
 
-        // Bon List
+        // Bon List via PageView for smooth horizontal slide transitions
         Expanded(
           child: StreamBuilder<List<Bon>>(
             stream: widget.repository.watchBons(),
             builder: (context, snapshot) {
               final allBons = snapshot.data ?? const [];
-              final filtered = _bonSubTab == 0
-                  ? allBons.where((b) => b.settledAt == null).toList()
-                  : allBons.where((b) => b.settledAt != null).toList();
+              final unpaid = allBons.where((b) => b.settledAt == null).toList();
+              final paid = allBons.where((b) => b.settledAt != null).toList();
 
-              if (filtered.isEmpty) {
-                return QuestEmpty(
-                  title: _bonSubTab == 0
-                      ? 'Semua bon sudah lunas!'
-                      : 'Belum ada riwayat bon lunas.',
-                  hint: _bonSubTab == 0
-                      ? 'Catat bon baru jika ada pinjam-meminjam uang.'
-                      : 'Bon yang sudah dilunasi akan tercatat di sini.',
-                );
-              }
-
-              return ListView.builder(
-                padding: EdgeInsets.fromLTRB(
-                  Spacing.m,
-                  Spacing.xs,
-                  Spacing.m,
-                  96 + MediaQuery.paddingOf(context).bottom,
-                ),
-                itemCount: filtered.length,
-                itemBuilder: (context, i) {
-                  final bon = filtered[i];
-                  final isPiutang = bon.direction == BonDirection.lent;
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: Spacing.s),
-                    decoration: BoxDecoration(
-                      color: context.q.surface,
-                      borderRadius: BorderRadius.circular(AppRadius.card),
-                      border: Border.all(color: context.q.line),
-                      boxShadow: AppShadows.card,
-                    ),
-                    child: InkWell(
-                      onTap: () => BonSheet.show(
-                        context,
-                        widget.repository,
-                        existing: bon,
-                      ),
-                      borderRadius: BorderRadius.circular(AppRadius.card),
-                      child: Padding(
-                        padding: const EdgeInsets.all(Spacing.m),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: isPiutang ? SeedColors.incomingTint : SeedColors.outgoingTint,
-                                borderRadius: BorderRadius.circular(AppRadius.cell),
-                              ),
-                              child: Icon(
-                                isPiutang ? Icons.arrow_outward_rounded : Icons.arrow_downward_rounded,
-                                color: isPiutang ? context.q.good : context.q.bad,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: Spacing.s),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    bon.person,
-                                    style: TextStyle(
-                                      fontSize: 14.5,
-                                      fontWeight: FontWeight.w800,
-                                      color: context.q.text,
-                                    ),
-                                  ),
-                                  if (bon.note != null && bon.note!.isNotEmpty)
-                                    Text(
-                                      bon.note!,
-                                      style: context.qSmall(11.5),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  Text(
-                                    idDayMonth(bon.occurredAt),
-                                    style: context.qSmall(10.5),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                ConstrainedBox(
-                                  constraints: const BoxConstraints(maxWidth: 120),
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    alignment: Alignment.centerRight,
-                                    child: Text(
-                                      Money.format(bon.amount),
-                                      style: TextStyle(
-                                        fontSize: 14.5,
-                                        fontWeight: FontWeight.w900,
-                                        color: isPiutang ? context.q.good : context.q.bad,
-                                        fontFeatures: const [FontFeature.tabularFigures()],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                // Quick Settle Button
-                                InkWell(
-                                  onTap: () async {
-                                    if (bon.settledAt == null) {
-                                      await widget.repository.updateBon(
-                                        bon.id,
-                                        BonsCompanion(settledAt: Value(DateTime.now())),
-                                      );
-                                    } else {
-                                      await widget.repository.updateBon(
-                                        bon.id,
-                                        const BonsCompanion(settledAt: Value(null)),
-                                      );
-                                    }
-                                  },
-                                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: bon.settledAt == null
-                                          ? SeedColors.primaryLight
-                                          : context.q.surface2,
-                                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                                    ),
-                                    child: Text(
-                                      bon.settledAt == null ? 'Lunasi' : 'Batal Lunas',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
-                                        color: bon.settledAt == null
-                                            ? context.q.primary
-                                            : context.q.muted,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
+              return PageView(
+                controller: _bonPageCtrl,
+                onPageChanged: (page) => setState(() => _bonSubTab = page),
+                children: [
+                  _buildBonList(unpaid, isLunas: false),
+                  _buildBonList(paid, isLunas: true),
+                ],
               );
             },
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildBonList(List<Bon> bons, {required bool isLunas}) {
+    if (bons.isEmpty) {
+      return QuestEmpty(
+        title: isLunas ? 'Belum ada riwayat bon lunas.' : 'Semua bon sudah lunas!',
+        hint: isLunas
+            ? 'Bon yang sudah dilunasi akan tercatat di sini.'
+            : 'Catat bon baru jika ada pinjam-meminjam uang.',
+      );
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.fromLTRB(
+        Spacing.m,
+        Spacing.xs,
+        Spacing.m,
+        96 + MediaQuery.paddingOf(context).bottom,
+      ),
+      itemCount: bons.length,
+      itemBuilder: (context, i) {
+        final bon = bons[i];
+        final isPiutang = bon.direction == BonDirection.lent;
+        return Container(
+          margin: const EdgeInsets.only(bottom: Spacing.s),
+          decoration: BoxDecoration(
+            color: context.q.surface,
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: context.q.line),
+            boxShadow: AppShadows.card,
+          ),
+          child: InkWell(
+            onTap: () => BonSheet.show(
+              context,
+              widget.repository,
+              existing: bon,
+            ),
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            child: Padding(
+              padding: const EdgeInsets.all(Spacing.m),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: isPiutang ? SeedColors.incomingTint : SeedColors.outgoingTint,
+                      borderRadius: BorderRadius.circular(AppRadius.cell),
+                    ),
+                    child: Icon(
+                      isPiutang ? Icons.arrow_outward_rounded : Icons.arrow_downward_rounded,
+                      color: isPiutang ? context.q.good : context.q.bad,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: Spacing.s),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          bon.person,
+                          style: TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w800,
+                            color: context.q.text,
+                          ),
+                        ),
+                        if (bon.note != null && bon.note!.isNotEmpty)
+                          Text(
+                            bon.note!,
+                            style: context.qSmall(11.5),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        Text(
+                          idDayMonth(bon.occurredAt),
+                          style: context.qSmall(10.5),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 120),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            Money.format(bon.amount),
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w900,
+                              color: isPiutang ? context.q.good : context.q.bad,
+                              fontFeatures: const [FontFeature.tabularFigures()],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      // Quick Settle Button
+                      InkWell(
+                        onTap: () async {
+                          if (bon.settledAt == null) {
+                            await widget.repository.updateBon(
+                              bon.id,
+                              BonsCompanion(settledAt: Value(DateTime.now())),
+                            );
+                          } else {
+                            await widget.repository.updateBon(
+                              bon.id,
+                              const BonsCompanion(settledAt: Value(null)),
+                            );
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: bon.settledAt == null
+                                ? SeedColors.primaryLight
+                                : context.q.surface2,
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                          child: Text(
+                            bon.settledAt == null ? 'Lunasi' : 'Batal Lunas',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: bon.settledAt == null
+                                  ? context.q.primary
+                                  : context.q.muted,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
