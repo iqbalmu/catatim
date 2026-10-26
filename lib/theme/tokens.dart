@@ -12,6 +12,7 @@ class Spacing {
   static const double xxs = 2;
   static const double xs = 4;
   static const double s = 8;
+  static const double sm = 12;
   static const double m = 16;
   static const double l = 24;
   static const double xl = 32;
@@ -48,6 +49,9 @@ class AppRadius {
   /// Permukaan hero: kartu utama home, dialog, sheet.
   static const double sheet = 24;
 
+  /// Frame navigasi bawah.
+  static const double nav = 28;
+
   /// Bentuk pil: chip, tombol, bar progres, switch.
   static const double pill = 999;
 }
@@ -62,6 +66,13 @@ class AppShadows {
       color: Color(0x080F172A),
     ),
   ];
+  static const List<BoxShadow> raised = [
+    BoxShadow(
+      offset: Offset(0, 6),
+      blurRadius: 18,
+      color: Color(0x0C0F172A),
+    ),
+  ];
 
   static const List<BoxShadow> elevated = [
     BoxShadow(
@@ -73,7 +84,6 @@ class AppShadows {
 }
 
 class SeedColors {
-  SeedColors._();
 
   // ── Netral Slate ───────────────────────────────────────────────
   /// Latar app — Slate 50 ultra-clean.
@@ -121,17 +131,20 @@ class SeedColors {
   static const Color mintInk = Color(0xFF0E7490);
   static const Color mintTint = Color(0xFFECFEFF);
 
-  // ── Semantik arah ──────────────────────────────────────────────
+  // ── Semantik arah & status ──────────────────────────────────────
   /// Masuk / aman — Emerald 500.
   static const Color incoming = Color(0xFF10B981);
 
   /// Keluar / OVER — Rose/Red 500.
   static const Color outgoing = Color(0xFFEF4444);
 
+  /// Peringatan / mendekati batas (75-99%) — Amber 500.
+  static const Color warn = Color(0xFFF59E0B);
+  static const Color warnTint = Color(0xFFFEF3C7);
+
   /// Tint semantik (chip status).
   static const Color incomingTint = Color(0xFFECFDF5);
   static const Color outgoingTint = Color(0xFFFEF2F2);
-
   /// Netral finansial lama.
   static const Color seed = primary;
 

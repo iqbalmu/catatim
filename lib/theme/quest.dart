@@ -16,6 +16,8 @@ class QuestPalette {
     required this.body,
     required this.muted,
     required this.good,
+    required this.warn,
+    required this.warnTint,
     required this.bad,
     required this.honey,
     required this.honeyInk,
@@ -34,6 +36,8 @@ class QuestPalette {
   final Color body;
   final Color muted;
   final Color good;
+  final Color warn;
+  final Color warnTint;
   final Color bad;
   final Color honey;
   final Color honeyInk;
@@ -52,9 +56,11 @@ class QuestPalette {
     body: SeedColors.body,
     muted: SeedColors.muted,
     good: SeedColors.incoming,
+    warn: SeedColors.warn,
+    warnTint: SeedColors.warnTint,
     bad: SeedColors.outgoing,
-    honey: SeedColors.primary,
-    honeyInk: SeedColors.primaryDeep,
+    honey: SeedColors.honey,
+    honeyInk: SeedColors.honeyInk,
     primary: SeedColors.primary,
     primaryDeep: SeedColors.primaryDeep,
     primaryLight: SeedColors.primaryLight,

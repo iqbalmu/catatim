@@ -99,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
           HapticFeedback.lightImpact();
           showAddCategoryFlow(context, widget.repository);
         },
-        icon: Icons.add_rounded,
+        icon: Icons.playlist_add_rounded,
       );
     }
     return (
@@ -401,11 +401,9 @@ class _BerandaTabState extends State<_BerandaTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: context.q.bg,
-      body: SafeArea(
-        bottom: false,
-        child: ListView(
+    return SafeArea(
+      bottom: false,
+      child: ListView(
           padding: EdgeInsets.only(
             bottom: Spacing.m + MediaQuery.paddingOf(context).bottom,
           ),
@@ -443,7 +441,6 @@ class _BerandaTabState extends State<_BerandaTab> {
             ),
             const SizedBox(height: 96),
           ],
-        ),
       ),
     );
   }

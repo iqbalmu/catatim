@@ -58,31 +58,74 @@ class _QuestPressState extends State<QuestPress> {
   }
 }
 
-/// Kartu lembut: permukaan putih hangat + cushion shadow (dua lapis:
-/// bayangan hangat bawah + highlight tipis atas) — tanpa border.
-/// "Empuk, bukan datar" (DESIGN.md v2.1).
+enum QuestCardVariant { card, hero, flat }
+
+/// Kartu standar Design System dengan 3 varian peran:
+/// - `card`: kartu konten standar (radius 20, hairline border, shadow halus).
+/// - `hero`: kartu utama/sorotan (radius 24, padding lebih lega, shadow elevated).
+/// - `flat`: kartu ringkas/strip (warna surface2 lembut, hairline border, tanpa shadow).
 class QuestCard extends StatelessWidget {
   const QuestCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(Spacing.m),
+    this.padding,
     this.onTap,
-    this.radius = AppRadius.card,
+    this.radius,
+    this.variant = QuestCardVariant.card,
+    this.color,
+    this.border,
+    this.shadow,
   });
+
   final Widget child;
-  final EdgeInsetsGeometry padding;
+  final EdgeInsetsGeometry? padding;
   final VoidCallback? onTap;
-  final double radius;
+  final double? radius;
+  final QuestCardVariant variant;
+  final Color? color;
+  final BoxBorder? border;
+  final List<BoxShadow>? shadow;
 
   @override
   Widget build(BuildContext context) {
+    final q = context.q;
+    final Color effectiveColor = color ??
+        switch (variant) {
+          QuestCardVariant.card => q.surface,
+          QuestCardVariant.hero => q.surface,
+          QuestCardVariant.flat => q.surface2.withValues(alpha: 0.5),
+        };
+
+    final double effectiveRadius = radius ??
+        switch (variant) {
+          QuestCardVariant.card => AppRadius.card,
+          QuestCardVariant.hero => AppRadius.sheet,
+          QuestCardVariant.flat => AppRadius.tile,
+        };
+
+    final EdgeInsetsGeometry effectivePadding = padding ??
+        switch (variant) {
+          QuestCardVariant.card => const EdgeInsets.all(Spacing.m),
+          QuestCardVariant.hero => const EdgeInsets.all(Spacing.m + Spacing.xs),
+          QuestCardVariant.flat => const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        };
+
+    final List<BoxShadow>? effectiveShadow = shadow ??
+        switch (variant) {
+          QuestCardVariant.card => AppShadows.card,
+          QuestCardVariant.hero => AppShadows.elevated,
+          QuestCardVariant.flat => null,
+        };
+
+    final BoxBorder effectiveBorder = border ?? Border.all(color: q.line, width: 1);
+
     final card = Container(
-      padding: padding,
+      padding: effectivePadding,
       decoration: BoxDecoration(
-        color: context.q.surface,
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: context.q.line, width: 1),
-        boxShadow: AppShadows.card,
+        color: effectiveColor,
+        borderRadius: BorderRadius.circular(effectiveRadius),
+        border: effectiveBorder,
+        boxShadow: effectiveShadow,
       ),
       child: child,
     );
@@ -90,7 +133,6 @@ class QuestCard extends StatelessWidget {
     return QuestPress(onTap: onTap, child: card);
   }
 }
-
 enum QuestTone { primary, secondary, danger, ghost }
 
 /// Tombol chunky khas game: isi penuh + border tinta + offset shadow yang
@@ -515,17 +557,10 @@ class QuestBottomNav extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: const Color(0x0A000000), width: 1),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x0D161924),
-                    offset: Offset(0, 8),
-                    blurRadius: 24,
-                    spreadRadius: -2,
-                  ),
-                ],
+                color: context.q.surface,
+                borderRadius: BorderRadius.circular(AppRadius.nav),
+                border: Border.all(color: context.q.line, width: 1),
+                boxShadow: AppShadows.elevated,
               ),
               child: Row(
                 children: [
@@ -565,14 +600,14 @@ class QuestBottomNav extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 6),
             decoration: BoxDecoration(
               color: selected ? SeedColors.primaryLight : Colors.transparent,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppRadius.tile),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Badge(
                   isLabelVisible: badges.contains(i),
-                  backgroundColor: const Color(0xFFEF4444),
+                  backgroundColor: context.q.bad,
                   smallSize: 8,
                   child: Icon(
                     dest.icon,
@@ -637,57 +672,117 @@ class QuestBottomNav extends StatelessWidget {
   }
 }
 
-/// Pil aksi melayang — dipakai tiap tab sebagai
-/// `Scaffold.floatingActionButton` (dengan `Padding` bawah agar melayang di
-/// atas navbar floating, bukan tertutup).
-class QuestFab extends StatelessWidget {
-  const QuestFab({
+/// Badge status pil kecil untuk status koneksi, kategori, atau filter.
+class QuestStatusBadge extends StatelessWidget {
+  const QuestStatusBadge({
     super.key,
     required this.label,
-    required this.icon,
-    required this.onTap,
+    this.color,
+    this.bgColor,
+    this.dotColor,
   });
 
   final String label;
-  final IconData icon;
-  final VoidCallback onTap;
+  final Color? color;
+  final Color? bgColor;
+  final Color? dotColor;
 
   @override
   Widget build(BuildContext context) {
-    return QuestPress(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFFC94D), Color(0xFFFFA726)],
-          ),
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x73FFA726),
-              offset: Offset(0, 8),
-              blurRadius: 18,
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white, size: 24),
-            const SizedBox(width: Spacing.s),
-            Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 17,
-                color: Colors.white,
+    final q = context.q;
+    final effectiveColor = color ?? q.muted;
+    final effectiveBg = bgColor ?? q.surface2;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: effectiveBg,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (dotColor != null) ...[
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: dotColor,
+                shape: BoxShape.circle,
               ),
             ),
+            const SizedBox(width: 4),
           ],
-        ),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+              color: effectiveColor,
+            ),
+          ),
+        ],
       ),
     );
+  }
+}
+
+/// Baris item daftar seragam: leading avatar/icon + title + subtitle + trailing + onTap.
+class QuestListTile extends StatelessWidget {
+  const QuestListTile({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.leading,
+    this.trailing,
+    this.onTap,
+    this.padding = Insets.tile,
+  });
+
+  final Widget title;
+  final Widget? subtitle;
+  final Widget? leading;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    final row = Padding(
+      padding: padding,
+      child: Row(
+        children: [
+          if (leading != null) ...[
+            leading!,
+            const SizedBox(width: Spacing.m),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                title,
+                if (subtitle != null) ...[
+                  const SizedBox(height: Spacing.xxs),
+                  subtitle!,
+                ],
+              ],
+            ),
+          ),
+          if (trailing != null) ...[
+            const SizedBox(width: Spacing.s),
+            trailing!,
+          ] else if (onTap != null) ...[
+            const SizedBox(width: Spacing.s),
+            Icon(Icons.chevron_right_rounded, color: q.muted, size: 20),
+          ],
+        ],
+      ),
+    );
+
+    if (onTap == null) return row;
+    return QuestPress(onTap: onTap, child: row);
   }
 }
 
