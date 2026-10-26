@@ -561,6 +561,11 @@ class QuestBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final count = destinations.length;
+    final hasCenter = centerAction != null;
+    final half = count ~/ 2;
+    final activeIndex = index.clamp(0, count > 0 ? count - 1 : 0);
+
     return SafeArea(
       top: false,
       child: Container(
@@ -568,25 +573,58 @@ class QuestBottomNav extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-              decoration: BoxDecoration(
-                color: context.q.surface,
-                borderRadius: BorderRadius.circular(AppRadius.nav),
-                border: Border.all(color: context.q.line, width: 1),
-                boxShadow: AppShadows.elevated,
-              ),
-              child: Row(
-                children: [
-                  for (var i = 0; i < destinations.length; i++) ...[
-                    // Slot kosong untuk tombol + yang melayang di atasnya.
-                    if (centerAction != null &&
-                        i == destinations.length ~/ 2)
-                      const SizedBox(width: 74),
-                    _navCell(context, i, destinations[i]),
-                  ],
-                ],
-              ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final gap = hasCenter ? 74.0 : 0.0;
+                final innerWidth = constraints.maxWidth - 8.0;
+                final itemWidth = count > 0 ? (innerWidth - gap) / count : 0.0;
+                final targetLeft = (activeIndex < half || !hasCenter)
+                    ? (activeIndex * itemWidth)
+                    : (activeIndex * itemWidth) + gap;
+
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: context.q.surface,
+                    borderRadius: BorderRadius.circular(AppRadius.nav),
+                    border: Border.all(color: context.q.line, width: 1),
+                    boxShadow: AppShadows.elevated,
+                  ),
+                  child: Stack(
+                    children: [
+                      // Sliding indicator pill
+                      if (count > 0)
+                        AnimatedPositioned(
+                          duration: QuestMotion.medium,
+                          curve: QuestMotion.easeOut,
+                          left: targetLeft,
+                          top: 0,
+                          bottom: 0,
+                          width: itemWidth,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: SeedColors.primaryLight,
+                                borderRadius: BorderRadius.circular(AppRadius.tile),
+                              ),
+                            ),
+                          ),
+                        ),
+                      // Destination items on top
+                      Row(
+                        children: [
+                          for (var i = 0; i < destinations.length; i++) ...[
+                            if (hasCenter && i == half)
+                              const SizedBox(width: 74),
+                            _navCell(context, i, destinations[i]),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
             if (centerAction != null)
               Positioned(
@@ -608,14 +646,9 @@ class QuestBottomNav extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 2),
         child: QuestPress(
           onTap: () => onChanged(i),
-          child: AnimatedContainer(
-            duration: QuestMotion.fast,
-            curve: QuestMotion.easeOut,
+          child: Container(
             padding: const EdgeInsets.symmetric(vertical: 6),
-            decoration: BoxDecoration(
-              color: selected ? SeedColors.primaryLight : Colors.transparent,
-              borderRadius: BorderRadius.circular(AppRadius.tile),
-            ),
+            color: Colors.transparent,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -632,17 +665,20 @@ class QuestBottomNav extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  dest.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                AnimatedDefaultTextStyle(
+                  duration: QuestMotion.fast,
+                  curve: QuestMotion.easeOut,
                   style: TextStyle(
+                    fontFamily: 'Nunito',
                     fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                     fontSize: 10.5,
                     color: selected
                         ? context.q.primary
                         : context.q.muted,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  child: Text(dest.label),
                 ),
               ],
             ),
