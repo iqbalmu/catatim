@@ -1,92 +1,71 @@
-# Design System Bukuduit — "Mainan Hangat" v2.1
+# Design System Bukuduit — "Slate-Indigo Clean" v3.0
 
-Arah visual (diperbarui 2026-10-20, menggantikan "Playful Rapi" 2026-10-11):
-**hangat, empuk, dan mainan** — menerjemahkan render 3D maskot Pochy
-(lighting, material clay, syal teal, koin emas) ke bahasa UI. Keputusan
-lengkap: [ADR-010](decisions/010-palet-dari-piksel-maskot.md). Dokumen ini
-satu-satunya sumber kebenaran visual; widget-kit hidup di
-`lib/ui/quest.dart` + `lib/theme/`.
+Arah visual (diperbarui 2026-10-27, menggantikan "Mainan Hangat" burlap v2.1):
+**bersih, tenang, dan berbobot finansial** — menggunakan palet ultra-clean Slate 50
+dengan aksen fungsional Indigo, Emerald, Amber, dan Rose. Dokumen ini adalah sumber
+kebenaran visual aplikasi; widget-kit terpusat di `lib/ui/quest.dart` + `lib/theme/`.
 
-> **Pilot Beranda v5 "Dunia Pochy" (2026-10-23, menggantikan pilot v4
-> "Kartu Hangat"):** konsep game ala KobyBank — Beranda dibuka
-> **dunia full-bleed**: langit `honey50` bertemu rumput `mint` dengan
-> horizon tegas (stop 42%), **Pochy 172 di tengah** via `MascotStage`
-> (glow `honey100`), nama + chip streak + kalimat Duit di bawahnya,
-> koin emas kecil berserakan, lalu **pill HUD putih** berisi sisa aman
-> hari ini + bar 6px (tap → Rencana). Strip saldo + kartu Rencana/arus/
-> transaksi/insight bergaya v4 menyusul di bawahnya. Warna tetap 100%
-> `SeedColors` (ADR-010). Tab lain menyusul bila pilot disetujui.
+## Prinsip Desain
 
-## Prinsip
+1. **Satu Hero per Layar.** Setiap tampilan memiliki satu jangkar visual dominan (misal: Total Saldo di Beranda, Status Batas Bulanan di Anggaran, Net Arus Kas di Laporan).
+2. **Tiga Level Permukaan Kartu (`QuestCardVariant`):**
+   - `hero`: Kartu jangkar utama (radius 24, padding lega, elevasi menonjol).
+   - `card`: Kartu konten standar (radius 20, hairline border `#F1F5F9`, shadow halus).
+   - `flat`: Strip ringkas atau sub-konten (latar `surface2`, hairline border, tanpa shadow).
+3. **Anggaran Aksen Warna Terkendali:**
+   - **Indigo (`#6366F1` / `#4F46E5`)**: Hanya untuk brand dan elemen interaktif / CTA primer.
+   - **Emerald (`#10B981`)**: Khusus pemasukan dan status aman / aktif.
+   - **Amber (`#F59E0B`)**: Khusus peringatan mendekati batas anggaran (75–99%) dan gamifikasi.
+   - **Rose (`#EF4444`)**: Khusus pengeluaran dan status over-budget / aksi destruktif.
+4. **Angka Adalah Raja:**
+   - Semua nominal finansial memakai `FontFeature.tabularFigures()` dengan tipografi tebal (`qDisplay` 28–34 atau `qTitle`).
+5. **Tanpa Dekorasi Berlebih:**
+   - Menghapus tagline dekoratif, penomoran buatan (seperti `01–04`), dan nesting kartu di dalam kartu.
 
-1. **Duit adalah meter, kategori adalah bahasa.** Ekspresi maskot selalu
-   mencerminkan kondisi anggaran nyata (ADR-007); warna kategori membawa
-   informasi di seluruh app — bukan dekorasi.
-2. **Angka adalah raja.** Angka besar, tabular, kontras tinggi. Dekorasi
-   tidak boleh menurunkan keterbacaan angka.
-3. **Empuk, bukan datar.** Pemisahan via cushion shadow (dua lapis:
-   bayangan hangat bawah + highlight tipis atas) — bukan border tebal,
-   bukan hard shadow.
-4. **Satu kartu = satu ide.** Maksimal satu zona hero per layar.
-5. **Semua warna dari piksel Pochy.** Tidak ada hex baru yang dikarang —
-   setiap token punya sumber di karakter (tubuh, koin, syal, mulut,
-   bintang pastel).
-6. **Duit adalah wajah, bukan hiasan.** Karakter tampil besar di tempat
-   yang penting (panggung hero, meter batas), menyebut perasaannya, dan
-   menyapa dari header Beranda — bukan menempel kecil di sudut kartu.
+## Palet Token (`lib/theme/tokens.dart` & `quest.dart`)
 
-## Palet — "Pastel Pochy" (satu tema; TANPA dark mode — ADR-010)
-
-| Token | Nilai | Sumber piksel Pochy |
+| Token | Nilai Hex | Peran |
 |---|---|---|
-| `bg` | `#FBF5EC` | burlap `#E1BC94` dicerahkan |
-| `surface` | `#FFFDF9` | putih hangat hue burlap |
-| `surface2` | `#F6E9DA` | burlap `#BF946F` + putih |
-| `line` | `#EDE0CE` | bayang tipis burlap |
-| `ink` | `#5B4433` | tali/mata `#3E2214` dicerahkan |
-| `muted` | `#AD9680` | lipatan bayang `#926A4A` |
-| emas | `#F9DCA8 → #E8B36B` | bintang kuning `#FDF6BF` → koin `#F1A23A` redup |
-| `goldInk` | `#C08A3D` | emas gelap — teks/tautan/CTA teks |
-| aksen mint | `#A4D1C9` / `#7FBDB1` | syal teal + bintang mint |
-| `accentInk` | `#3E7A6D` | mint diperdalam untuk teks |
-| `accentTint` | `#E6F2EF` | mint + putih |
-| `good` | `#4A8C7E` | mint diperdalam (menggantikan hijau lama) |
-| `bad` | `#B05530` | mulut menangis `#AA3E0C` disiram |
+| `bg` | `#F8FAFC` | Latar aplikasi (Slate 50) |
+| `surface` | `#FFFFFF` | Permukaan kartu murni |
+| `surface2` | `#F1F5F9` | Tint latar sekunder / strip (Slate 100) |
+| `line` / `border` | `#F1F5F9` | Garis pembatas hairline halus |
+| `text` / `ink` | `#0F172A` | Teks judul utama (Slate 900) |
+| `body` | `#334155` | Teks bacaan konten (Slate 700) |
+| `muted` | `#64748B` | Teks sekunder / keterangan (Slate 500) |
+| `primary` | `#6366F1` | Brand & tombol CTA utama (Indigo 500) |
+| `primaryLight` | `#EEF2FF` | Latar tint CTA & banner draf (Indigo 50) |
+| `good` / `incoming` | `#10B981` | Pemasukan & status aman (Emerald 500) |
+| `incomingTint` | `#ECFDF5` | Latar chip pemasukan / surplus |
+| `warn` | `#F59E0B` | Peringatan mendekati batas 75-99% (Amber 500) |
+| `warnTint` | `#FEF3C7` | Latar chip peringatan / streak |
+| `bad` / `outgoing` | `#EF4444` | Pengeluaran & over-budget (Rose 500) |
+| `outgoingTint` | `#FEF2F2` | Latar chip pengeluaran / defisit |
 
-Maskot = satu-satunya elemen full-color pekat; emas tidak lagi warna
-"semua halaman" — CTA + zona maskot saja yang paling terang. Aksen
-mint mengambil peran "netral-aktif" (segmented, switch, status tenang).
+## Tipografi — Nunito
 
-Bahasa kategori: palet 9 warna TIDAK berubah (ADR-010) — itu bahasa
-data (`Categories.colorIndex`), bukan chrome: dot transaksi, donut,
-chip kategori, garis chart. Tidak dipakai di luar konteks kategorinya.
-
-## Tipografi — Nunito (file TTF dibundel offline via `fonts:` di
-`pubspec.yaml`; package `google_fonts` tidak dipakai)
-
-| Peran | Ukuran/berat | Pakai |
+| Peran | Ukuran / Bobot | Kegunaan |
 |---|---|---|
-| Display angka | 26–40 / 800, `tabularFigures` | sisa aman, saldo, total |
-| Judul | 17–20 / 800 | judul kartu, layar |
-| Body | 14–15 / 400–600 | konten |
-| Kecil | 12–13 / 600 | meta, subjudul |
-| Eyebrow | 10–10,5 / 800, uppercase, letter-spacing 1,5 | label seksi |
+| `qDisplay` | 28–34 / w900, `tabularFigures` | Hero saldo, nominal display utama |
+| `qTitle` | 15–20 / w800 | Judul kartu, judul halaman |
+| `qBody` | 13–14 / w500–w600 | Teks konten, keterangan input |
+| `qSmall` | 11–12 / w500–w600 | Metadata baris, subjudul, status |
+| `qEyebrow` | 10–11 / w800, uppercase | Label seksi, kategori pelacak |
 
-Angka selalu `FontFeature.tabularFigures()`. Jangan campur font lain.
+## Bentuk & Elevasi
 
-## Bentuk & elevasi
-
-- Radius: kartu **22**, tile **18**, bingkai kontrol **22**, sheet
-  **24**, sel kecil **12**, tombol & chip/pill **999** (`AppRadius`;
-  tombol utama memakai pill, tinggi ≥46).
-- Elevation — **cushion shadow** (satu-satunya mekanisme pemisah):
-  - kartu: `0 8px 18px rgba(90,70,40,.09)` + `inset 0 2px 0
-    rgba(255,255,255,.9)` + `inset 0 -2px 0 rgba(120,95,60,.05)`
-  - elemen melayang (nav): `0 12px 28px rgba(90,65,30,.20)` + inset
-    highlight
-  - hero/emas: glow `0 12px 26px rgba(190,140,70,.30)` + inset highlight
-- **Dilarang**: border tebal 2–3px, hard shadow offset, outline ganda.
-- Spacing: grid `4 / 8 / 16 / 24 / 32` (existing `Spacing`).
+- **Radius (`AppRadius`)**:
+  - `sheet`: **24px** (hero card, drawer sheet).
+  - `card`: **20px** (kartu konten standar).
+  - `nav`: **28px** (bottom navigation bar).
+  - `frame`: **18px** (bingkai segmented).
+  - `tile`: **14px** (tile item daftar, field input).
+  - `cell`: **12px** (avatar ikon kecil, picker cell).
+  - `pill`: **999px** (tombol, badge status, switch).
+- **Elevasi (`AppShadows`)**:
+  - `card`: `Offset(0, 4), blurRadius: 16, color: Color(0x080F172A)`
+  - `raised`: `Offset(0, 6), blurRadius: 18, color: Color(0x0C0F172A)`
+  - `elevated`: `Offset(0, 8), blurRadius: 24, color: Color(0x0D0F172A)`
 
 ## Komponen
 
