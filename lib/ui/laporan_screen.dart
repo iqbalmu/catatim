@@ -16,7 +16,7 @@ import 'month_picker.dart';
 import 'range_calendar.dart';
 import 'transaction_sheet.dart';
 import 'transaction_tile.dart';
-
+import 'quest.dart';
 const _tabular = [FontFeature.tabularFigures()];
 
 const List<String> _idMonthsFull = [
@@ -899,43 +899,23 @@ IconData _iconForCategory(Category? cat) {
 
 class _ReportSectionHeader extends StatelessWidget {
   const _ReportSectionHeader({
-    required this.step,
+    this.step,
     required this.title,
   });
 
-  final String step;
+  final String? step;
   final String title;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(
-            color: SeedColors.primaryLight,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Text(
-            step,
-            style: TextStyle(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w900,
-              color: context.q.primary,
-              fontFeatures: _tabular,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: context.qEyebrow(11),
-          ),
-        ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.only(top: Spacing.s),
+      child: Text(
+        title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: context.qEyebrow(11),
+      ),
     );
   }
 }
@@ -2050,7 +2030,7 @@ class _TopExpenseRow extends StatelessWidget {
               height: 28,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: rank == 1 ? const Color(0xFFFEF2F2) : context.q.surface2,
+                color: rank == 1 ? SeedColors.outgoingTint : context.q.surface2,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -2308,23 +2288,12 @@ class _LaporanPeriodSheetState extends State<_LaporanPeriodSheet> {
                 onChanged: (r) => setState(() => _range = r),
               ),
               const SizedBox(height: Spacing.m),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.q.primary,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.tile),
-                  ),
-                ),
+              QuestButton(
+                label: 'Terapkan Rentang',
+                icon: Icons.check_rounded,
                 onPressed: _range == null
                     ? null
                     : () => Navigator.pop(context, (month: null, range: _range)),
-                child: const Text(
-                  'Terapkan Rentang',
-                  style: TextStyle(fontWeight: FontWeight.w800),
-                ),
               ),
             ],
           ],
