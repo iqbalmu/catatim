@@ -246,3 +246,67 @@ re-parse → draf + log ditandai terbaca, dup digugurkan tercatat
 `ignored_dup` (terlihat), prune hapus log terbaca >30 hari (yang
 belum terbaca utuh), draf juga ter-dedup terhadap transaksi
 terkonfirmasi.
+
+## B. Integritas Data — 2026-10-31
+
+| ID | Temuan | Severity |
+|---|---|---|
+| B-01 | Money: parsing & batas nominal aman | ✓ Lolos |
+| B-02 | Konvensi periode `[start, end)` terdokumentasi, implementasi `BETWEEN` inklusif — transaksi tepat 00:00:00.000 tanggal 1 masuk dua bulan | Rendah |
+| B-03 | Draf terisolasi dari saldo/laporan; fallback hapus kategori benar | ✓ Lolos |
+| B-04 | Dedup ±120 dtk — terverifikasi runtime (lihat C-01) | ✓ Lolos |
+| B-05 | Streak & mood dihitung ulang murni dari data | ✓ Lolos |
+| B-06 | Restore dua fase — terverifikasi E2E (lihat A-11) | ✓ Lolos |
+
+**B-01.** `Money.parseGroup`: strip non-digit, koma desimal dipotong ke
+bawah, angka >int64 melempar `FormatException` → `tryParseGroup`
+null. Engine memagari 1 ≤ nominal ≤ 1 triliun (`_minSaneAmount` /
+`_maxSaneAmount`) — `Rp0` dan nominal gila ditolak. Arah +/- bukan
+bagian nominal (terpisah sebagai direction).
+
+**B-02.** Pemanggil memakai `end = awal bulan berikutnya` dan
+`isBetweenValues` → SQL `BETWEEN` (inklusif dua ujung). Laporan
+rentang kustom sudah dinormalisasi benar (`end = hari terakhir + 1`,
+`laporan_screen.dart:94`). Sisa risiko: transaksi bertimecode persis
+00:00:00.000 tanggal 1 terhitung di dua bulan (notifikasi bank: 1 dari
+~86 juta ms per hari; input manual memakai `DateTime.now()` — aman).
+*Rekomendasi:* ganti ke `isBiggerOrEqualValue(start) &
+isSmallerThanValue(end)` agar sesuai konvensi, atau perbaiki
+dokumentasinya.
+
+**B-03.** Saldo = `openingBalance` + transaksi (`repository.dart:747`);
+query laporan (`_withCategoryQuery`) hanya membaca tabel transactions —
+draf tidak pernah masuk. Hapus kategori → transaksi dipindah ke
+fallback ("Lainnya") + alokasi ikut terhapus (`deleteCategory`).
+
+**B-05.** Streak dihitung dari `txCountByDaySince` (data asli) tiap
+refresh; tidak ada kolom state streak/mood di schema — tidak bisa
+drift. Mood = fungsi kondisi murni.
+
+## E. Storage & Migrasi — 2026-10-31
+
+| ID | Temuan | Severity |
+|---|---|---|
+| E-01 | Tangga migrasi solid & self-heal, tapi transisi v3→v5, v6→v7, dan lompatan v1→v10 langsung tak ada fixture test | Rendah |
+| E-02 | Nol index pada tabel transaksi — `EXPLAIN QUERY PLAN`: `SCAN transactions` | Rendah |
+| E-03 | `LedgerRepository` satu-satunya pintu data | ✓ Lolos |
+
+**E-01.** Tangga migrasi pakai guard `_hasColumn` + `beforeOpen`
+self-heal (buat-ulang tabel hilang, seed idempoten, backfill
+category/account NULL-only) — desainnya kuat. Fixture test yang ada:
+v1→v2, v2→v3, v5→v6, v7→v8, v8→v9, v9→v10. Yang belum: DB v3 & v6
+langsung ke v10, dan v1→v10 sekali jalan. *Rekomendasi:* tambah
+fixture untuk jalur lompatan (paling realistis: user lama tidak update
+app berbulan-bulan).
+
+**E-02.** Tidak ada satu pun `CREATE INDEX`/`@TableIndex`. Query panas
+(periode+akun pada transactions) melakukan full scan; semua stream
+`watch()` mengulang scan pada tiap perubahan tabel. Pada skala
+personal (ribu-tahun baris) masih mikro-detik — tidak terasa — tapi
+murah untuk dicegah. *Rekomendasi:* `@TableIndex` pada
+`transactions.occurredAt` (plus `accountId` bila audit F menunjukkan
+jank), migrasi v11.
+
+**E-03.** Import drift hanya di `lib/storage/`; tiga file UI
+mengimpor `class Value` semata (companion builder — bukan akses DB).
+`PRAGMA foreign_keys = ON` dijalankan tiap `beforeOpen`.
