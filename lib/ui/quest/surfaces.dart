@@ -53,7 +53,11 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
                 child: IconButton(
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
-                  icon: Icon(Icons.arrow_back_rounded, color: context.q.text, size: 20),
+                  icon: Icon(
+                    Icons.arrow_back_rounded,
+                    color: context.q.text,
+                    size: 20,
+                  ),
                   tooltip: 'Kembali',
                   onPressed: () => Navigator.maybePop(context),
                 ),
@@ -72,10 +76,12 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
                   Text(
                     title,
                     style: compact
-                        ? context.qSmall(13).copyWith(
-                            color: context.q.muted,
-                            fontWeight: FontWeight.w800,
-                          )
+                        ? context
+                              .qSmall(13)
+                              .copyWith(
+                                color: context.q.muted,
+                                fontWeight: FontWeight.w800,
+                              )
                         : context.qTitle(20),
                   ),
                   if (!compact && subtitle != null)

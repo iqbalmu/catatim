@@ -60,7 +60,10 @@ class QuestSegmented<T> extends StatelessWidget {
                   child: QuestPress(
                     onTap: () => onChanged(options[i].value),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 4,
+                      ),
                       alignment: Alignment.center,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,

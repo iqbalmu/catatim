@@ -155,8 +155,9 @@ class QuestButton extends StatelessWidget {
     );
     // Tanpa Opacity saat enabled: saveLayer + blur shadow besar di Impeller
     // bisa membilas isi layer hingga tombol tampak pucat.
-    final wrapped =
-        onPressed == null ? Opacity(opacity: 0.45, child: button) : button;
+    final wrapped = onPressed == null
+        ? Opacity(opacity: 0.45, child: button)
+        : button;
     return QuestPress(onTap: onPressed, child: wrapped);
   }
 }
@@ -248,9 +249,7 @@ class QuestSwitch extends StatelessWidget {
               decoration: const BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(color: Color(0x1F000000), blurRadius: 4),
-                ],
+                boxShadow: [BoxShadow(color: Color(0x1F000000), blurRadius: 4)],
               ),
             ),
           ),

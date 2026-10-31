@@ -31,35 +31,43 @@ class QuestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final q = context.q;
-    final Color effectiveColor = color ??
+    final Color effectiveColor =
+        color ??
         switch (variant) {
           QuestCardVariant.card => q.surface,
           QuestCardVariant.hero => q.surface,
           QuestCardVariant.flat => q.surface2.withValues(alpha: 0.5),
         };
 
-    final double effectiveRadius = radius ??
+    final double effectiveRadius =
+        radius ??
         switch (variant) {
           QuestCardVariant.card => AppRadius.card,
           QuestCardVariant.hero => AppRadius.sheet,
           QuestCardVariant.flat => AppRadius.tile,
         };
 
-    final EdgeInsetsGeometry effectivePadding = padding ??
+    final EdgeInsetsGeometry effectivePadding =
+        padding ??
         switch (variant) {
           QuestCardVariant.card => const EdgeInsets.all(Spacing.m),
           QuestCardVariant.hero => const EdgeInsets.all(Spacing.m + Spacing.xs),
-          QuestCardVariant.flat => const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          QuestCardVariant.flat => const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 12,
+          ),
         };
 
-    final List<BoxShadow>? effectiveShadow = shadow ??
+    final List<BoxShadow>? effectiveShadow =
+        shadow ??
         switch (variant) {
           QuestCardVariant.card => AppShadows.card,
           QuestCardVariant.hero => AppShadows.elevated,
           QuestCardVariant.flat => null,
         };
 
-    final BoxBorder effectiveBorder = border ?? Border.all(color: q.line, width: 1);
+    final BoxBorder effectiveBorder =
+        border ?? Border.all(color: q.line, width: 1);
 
     final card = Container(
       padding: effectivePadding,

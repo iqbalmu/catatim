@@ -56,7 +56,10 @@ class QuestBottomNav extends StatelessWidget {
                     : (activeIndex * itemWidth) + gap;
 
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: context.q.surface,
                     borderRadius: BorderRadius.circular(AppRadius.nav),
@@ -79,7 +82,9 @@ class QuestBottomNav extends StatelessWidget {
                             child: Container(
                               decoration: BoxDecoration(
                                 color: SeedColors.primaryLight,
-                                borderRadius: BorderRadius.circular(AppRadius.tile),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.tile,
+                                ),
                               ),
                             ),
                           ),
@@ -140,9 +145,7 @@ class QuestBottomNav extends StatelessWidget {
                       child: Icon(
                         dest.icon,
                         size: 21,
-                        color: selected
-                            ? context.q.primary
-                            : context.q.muted,
+                        color: selected ? context.q.primary : context.q.muted,
                       ),
                     ),
                   ),
@@ -155,9 +158,7 @@ class QuestBottomNav extends StatelessWidget {
                     fontFamily: 'Nunito',
                     fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                     fontSize: 10.5,
-                    color: selected
-                        ? context.q.primary
-                        : context.q.muted,
+                    color: selected ? context.q.primary : context.q.muted,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

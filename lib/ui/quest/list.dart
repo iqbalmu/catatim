@@ -27,10 +27,7 @@ class QuestListTile extends StatelessWidget {
       padding: padding,
       child: Row(
         children: [
-          if (leading != null) ...[
-            leading!,
-            const SizedBox(width: Spacing.m),
-          ],
+          if (leading != null) ...[leading!, const SizedBox(width: Spacing.m)],
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
