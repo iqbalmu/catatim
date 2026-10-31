@@ -25,6 +25,7 @@ class _FakeChannel extends CaptureChannel {
   Future<void> learnBankPackage(String packageName) async {
     learnedPackages.add(packageName);
   }
+
   @override
   Future<List<RawCapture>> drainQueue() async {
     final drained = List<RawCapture>.of(items);
@@ -35,6 +36,7 @@ class _FakeChannel extends CaptureChannel {
   @override
   Stream<RawCapture> stream() => Stream.fromIterable(items);
 }
+
 Map<String, dynamic> _bank(String id, String name) => {
   'id': id,
   'displayName': name,
@@ -158,27 +160,85 @@ void main() {
     expect(await db.select(db.captureLogs).get(), isEmpty);
   });
 
-  test('bank terhubung yang tak terparse masuk log untuk dibaca ulang', () async {
-    await repo.setBankConnected('blu', true);
+  test(
+    'bank terhubung yang tak terparse jadi draf mentah (mode belajar)',
+    () async {
+      // Perilaku mode belajar: format belum dikenal TETAP jadi draf yang
+      // menunggu keputusan user — bukan sekadar log "belum terbaca".
+      await repo.setBankConnected('blu', true);
+      await started([
+        RawCapture(
+          packageName: 'com.blu.app',
+          title: 'Blu',
+          body: 'Blu: ada info penting tentang akunmu',
+          postedAt: DateTime(2026, 10, 10, 9),
+        ),
+      ]);
+
+      final drafts = await db.select(db.drafts).get();
+      expect(drafts, hasLength(1));
+      expect(drafts.first.bankId, 'blu');
+      expect(drafts.first.amount, 0); // tanpa nominal → user isi
+    },
+  );
+
+  test(
+    'mode belajar: app custom apa pun jadi draf dengan tebakan nominal',
+    () async {
+      await repo.setCustomBankConnected('com.strike.app', 'Strike', true);
+      await started([
+        RawCapture(
+          packageName: 'com.strike.app',
+          title: 'Strike',
+          body: 'Pembayaran berhasil Rp75.000 di KOPI KENANGAN',
+          postedAt: DateTime(2026, 10, 10, 9),
+        ),
+      ]);
+
+      final drafts = await db.select(db.drafts).get();
+      expect(drafts, hasLength(1));
+      expect(drafts.first.bankId, 'app:com.strike.app');
+      expect(drafts.first.amount, 75000); // tebakan pola umum
+      expect(drafts.first.direction, Direction.outgoing); // kata "pembayaran"
+    },
+  );
+
+  test('draf mentah tanpa nominal tidak saling menelan', () async {
+    await repo.setCustomBankConnected('com.strike.app', 'Strike', true);
+    final base = DateTime(2026, 10, 10, 9);
     await started([
       RawCapture(
-        packageName: 'com.blu.app',
-        title: 'Blu',
-        body: 'Blu: ada info penting tentang akunmu',
-        postedAt: DateTime(2026, 10, 10, 9),
+        packageName: 'com.strike.app',
+        title: 'Strike',
+        body: 'Transaksi A tanpa angka',
+        postedAt: base,
+      ),
+      RawCapture(
+        packageName: 'com.strike.app',
+        title: 'Strike',
+        body: 'Transaksi A tanpa angka', // identik → dedup
+        postedAt: base.add(const Duration(seconds: 30)),
+      ),
+      RawCapture(
+        packageName: 'com.strike.app',
+        title: 'Strike',
+        body: 'Transaksi B lain tanpa angka',
+        postedAt: base.add(const Duration(seconds: 60)),
       ),
     ]);
 
-    expect(await db.select(db.drafts).get(), isEmpty);
-    final logs = await db.select(db.captureLogs).get();
-    expect(logs, hasLength(1));
-    expect(logs.first.parsed, isFalse);
+    final drafts = await db.select(db.drafts).get();
+    expect(drafts, hasLength(2)); // A sekali + B
+    expect(drafts.every((d) => d.amount == 0), isTrue);
   });
 
   test('notifikasi ganda bank terhubung hanya jadi satu draf', () async {
     await repo.setBankConnected('blu', true);
     final raw = _blu();
-    await started([raw, _blu(at: raw.postedAt.add(const Duration(seconds: 30)))]);
+    await started([
+      raw,
+      _blu(at: raw.postedAt.add(const Duration(seconds: 30))),
+    ]);
 
     expect(await db.select(db.drafts).get(), hasLength(1));
     // Duplikat yang digugurkan tetap terlihat sebagai log ignored_dup.

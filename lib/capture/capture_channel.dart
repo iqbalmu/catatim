@@ -24,6 +24,25 @@ class CaptureChannel {
   Future<void> openListenerSettings() async {
     await _method.invokeMethod<void>('openListenerSettings');
   }
+
+  /// Daftar app terpasang yang bisa dibuka (paket + label) — untuk
+  /// menghubungkan app apa pun di Mode Belajar.
+  Future<List<({String package, String label})>> listLaunchableApps() async {
+    try {
+      final rows =
+          await _method.invokeMethod<List<dynamic>>('listLaunchableApps');
+      return [
+        for (final row in rows ?? const <dynamic>[])
+          if (row is Map && row['package'] is String)
+            (
+              package: row['package'] as String,
+              label: (row['label'] ?? '') as String,
+            ),
+      ];
+    } on PlatformException {
+      return const [];
+    }
+  }
   /// Kirim daftar paket bank terhubung — native hanya menulis notifikasi
   /// dari paket ini (plus paket yang sudah dipelajari) ke antrean disk.
   /// Gagal senyap: antrean kosong lebih aman daripada antrean bocor.

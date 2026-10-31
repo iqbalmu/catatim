@@ -354,6 +354,103 @@ class LedgerRepository {
     await setSetting(connectedBanksKey, current.join(','));
   }
 
+  // --- bank custom (mode belajar: app apa pun) --------------------------------
+
+  static const customBanksKey = 'custom_banks';
+
+  /// App apa pun yang dihubungkan user lewat Mode Belajar — disimpan
+  /// sebagai baris "paket|nama" di app_settings.
+  Future<List<({String package, String label})>> customBanks() async {
+    final raw = await getSetting(customBanksKey);
+    return _parseCustomBanks(raw);
+  }
+
+  /// Versi hidup dari [customBanks].
+  Stream<List<({String package, String label})>> watchCustomBanks() {
+    return (_db.select(_db.appSettings)
+          ..where((s) => s.key.equals(customBanksKey)))
+        .watchSingleOrNull()
+        .map((row) => _parseCustomBanks(row?.valueText));
+  }
+
+  static List<({String package, String label})> _parseCustomBanks(
+    String? raw,
+  ) {
+    if (raw == null || raw.trim().isEmpty) return const [];
+    return [
+      for (final line in raw.split('\n'))
+        if (line.contains('|'))
+          (
+            package: line.substring(0, line.indexOf('|')).trim(),
+            label: line.substring(line.indexOf('|') + 1).trim(),
+          ),
+    ];
+  }
+
+  /// Hubungkan / putuskan app custom. bankId-nya berbentuk `app:<paket>`.
+  Future<void> setCustomBankConnected(
+    String package,
+    String label,
+    bool connected,
+  ) async {
+    final current = [...await customBanks()];
+    if (connected && !current.any((c) => c.package == package)) {
+      current.add((package: package, label: label));
+    } else if (!connected) {
+      current.removeWhere((c) => c.package == package);
+    }
+    await setSetting(
+      customBanksKey,
+      [for (final c in current) '${c.package}|${c.label}'].join('\n'),
+    );
+  }
+
+  /// Draf "mentah" dari app custom (mode belajar): format notifikasinya
+  /// belum dikenal rule — user yang melengkapi nominal/kategori saat
+  /// konfirmasi. Dedup khusus: isi mentah identik (paket+judul+isi) dalam
+  /// jendela [dedupWindow] hanya jadi satu draf — nominal 0 dua kali tidak
+  /// boleh saling menelan.
+  Future<int?> addRawDraftFromCapture({
+    required RawCapture raw,
+    required String bankId,
+    required String bankName,
+    required int amount,
+    required Direction direction,
+  }) {
+    return _db.transaction(() async {
+      final from = raw.postedAt.subtract(dedupWindow);
+      final to = raw.postedAt.add(dedupWindow);
+      final title = raw.title.trim();
+      final body = raw.body.trim();
+      final dup = await (_db.select(_db.drafts)
+            ..where(
+              (d) =>
+                  d.bankId.equals(bankId) &
+                  d.rawTitle.equals(title) &
+                  d.rawBody.equals(body) &
+                  d.occurredAt.isBetweenValues(from, to),
+            )
+            ..limit(1))
+          .getSingleOrNull();
+      if (dup != null) return null;
+      return _db
+          .into(_db.drafts)
+          .insert(
+            DraftsCompanion.insert(
+              bankId: bankId,
+              kind: TxKind.other,
+              direction: direction,
+              amount: amount,
+              occurredAt: raw.postedAt,
+              rawTitle: Value(title),
+              rawBody: Value(body),
+              categoryId: Value(await _defaultCategoryId(TxKind.other)),
+              accountId: Value(await _accountIdForBank(bankId)),
+            ),
+          );
+    });
+  }
+
   /// Akun milik bank [bankId]: cari yang tertaut, adopsi dari nama bila ada
   /// (DB lama), atau buat baru. Tak pernah duplikat per bankId.
   Future<Account> ensureBankAccount({

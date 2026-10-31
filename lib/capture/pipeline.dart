@@ -66,31 +66,48 @@ class CapturePipeline extends ChangeNotifier {
   Future<void> _handle(RawCapture raw) async {
     if (raw.packageName == _ownPackage) return;
     try {
-      // Hanya bank terhubung yang dibaca — selebihnya diabaikan diam-diam.
+      // Mode belajar: yang diproses = bank katalog terhubung ATAU app
+      // custom yang dihubungkan user; selebihnya diabaikan diam-diam.
       final connected = await repository.connectedBankIds();
-      if (connected.isEmpty) return;
+      final customs = await repository.customBanks();
+      if (connected.isEmpty && customs.isEmpty) return;
       final bank = _detectConnected(raw, connected);
-      if (bank == null) return;
+      String? customLabel;
+      for (final c in customs) {
+        if (c.package == raw.packageName) customLabel = c.label;
+      }
+      if (bank == null && customLabel == null) return;
 
-      if (!engine.packageNamesFor(connected).contains(raw.packageName)) {
+      if (bank != null &&
+          !engine.packageNamesFor(connected).contains(raw.packageName)) {
         // Bank terdeteksi lewat keyword tapi paketnya asing — pelajari
         // paketnya agar notifikasi berikutnya ikut diantrikan ke disk
         // saat app mati (mis. bank tanpa packageNames di katalog).
         await channel.learnBankPackage(raw.packageName);
       }
 
-
-      final draft = engine.parse(
-        packageName: raw.packageName,
-        title: raw.title,
-        body: raw.body,
-      );
-      if (draft == null) {
-        // Bank terhubung tapi isinya bukan transaksi yang dikenali —
-        // catat mentah agar layar Notifikasi bisa menawarkan "baca ulang".
-        await repository.recordUnparsedCapture(raw);
-      } else if (connected.contains(draft.bankId)) {
+      ParsedDraft? draft;
+      if (bank != null) {
+        draft = engine.parse(
+          packageName: raw.packageName,
+          title: raw.title,
+          body: raw.body,
+        );
+      }
+      if (draft != null && connected.contains(draft.bankId)) {
         await repository.addDraftFromCapture(raw: raw, draft: draft);
+      } else {
+        // Format belum dikenal rule — TETAP jadi draf mentah yang
+        // menunggu keputusan user (isi nominal/kategori saat konfirmasi),
+        // baik dari bank katalog maupun app custom.
+        final guess = engine.guess(raw.title, raw.body);
+        await repository.addRawDraftFromCapture(
+          raw: raw,
+          bankId: draft?.bankId ?? bank?.id ?? 'app:${raw.packageName}',
+          bankName: customLabel ?? bank?.displayName ?? '',
+          amount: guess.amount ?? 0,
+          direction: guess.direction,
+        );
       }
       handledCount++;
       notifyListeners();
@@ -115,12 +132,16 @@ class CapturePipeline extends ChangeNotifier {
   }
 
   /// Susun dan dorong daftar paket yang boleh diantrikan native ke
-  /// disk: paket katalog bank terhubung (paket belajar ditambahkan
-  /// native sendiri dan bertahan antar proses). Dipanggil saat start
-  /// dan setiap koneksi bank berubah.
+  /// disk: paket katalog bank terhubung + app custom mode belajar
+  /// (paket belajar keyword ditambahkan native sendiri dan bertahan
+  /// antar proses). Dipanggil saat start dan setiap koneksi berubah.
   Future<void> syncAllowedPackages() async {
     final connected = await repository.connectedBankIds();
-    await channel.setAllowedPackages(engine.packageNamesFor(connected));
+    final customs = await repository.customBanks();
+    await channel.setAllowedPackages({
+      ...engine.packageNamesFor(connected),
+      for (final c in customs) c.package,
+    });
   }
 
   @override

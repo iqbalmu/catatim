@@ -739,4 +739,69 @@ void main() {
       expect(d.accountId, linked.id);
     });
   });
+
+  group('mode belajar: bank custom', () {
+    test('CRUD koneksi app custom tersimpan & terpantau', () async {
+      await repo.setCustomBankConnected('com.strike.app', 'Strike', true);
+      await repo.setCustomBankConnected('id.gojek.app', 'Gojek', true);
+      var list = await repo.customBanks();
+      expect(list.map((c) => c.package), ['com.strike.app', 'id.gojek.app']);
+      expect(list.first.label, 'Strike');
+
+      // Putus satu — sisanya utuh, urutan dipertahankan.
+      await repo.setCustomBankConnected('com.strike.app', '', false);
+      list = await repo.customBanks();
+      expect(list, hasLength(1));
+      expect(list.single.package, 'id.gojek.app');
+
+      // Re-hubung tak menduplikat.
+      await repo.setCustomBankConnected('id.gojek.app', 'Gojek', true);
+      expect(await repo.customBanks(), hasLength(1));
+    });
+
+    test('draf mentah: dedup isi identik, beda isi tak menelan', () async {
+      final at = DateTime(2026, 10, 10, 9);
+      final a = RawCapture(
+        packageName: 'com.strike.app',
+        title: 'Strike',
+        body: 'Isi sama',
+        postedAt: at,
+      );
+      final first = await repo.addRawDraftFromCapture(
+        raw: a,
+        bankId: 'app:com.strike.app',
+        bankName: 'Strike',
+        amount: 0,
+        direction: Direction.incoming,
+      );
+      final dup = await repo.addRawDraftFromCapture(
+        raw: RawCapture(
+          packageName: a.packageName,
+          title: a.title,
+          body: a.body,
+          postedAt: at.add(const Duration(seconds: 60)),
+        ),
+        bankId: 'app:com.strike.app',
+        bankName: 'Strike',
+        amount: 0,
+        direction: Direction.incoming,
+      );
+      final other = await repo.addRawDraftFromCapture(
+        raw: RawCapture(
+          packageName: a.packageName,
+          title: a.title,
+          body: 'Isi berbeda',
+          postedAt: at.add(const Duration(seconds: 90)),
+        ),
+        bankId: 'app:com.strike.app',
+        bankName: 'Strike',
+        amount: 0,
+        direction: Direction.incoming,
+      );
+      expect(first, isNotNull);
+      expect(dup, isNull); // identik → digugurkan
+      expect(other, isNotNull); // beda isi → tetap
+      expect(await db.select(db.drafts).get(), hasLength(2));
+    });
+  });
 }

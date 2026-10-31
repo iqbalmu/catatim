@@ -25,7 +25,7 @@ alasan tiap keputusan ada di [`decisions/`](decisions/).
 | Capture | `lib/capture/` | Drain antrian (tahan baris korup), filter bank terhubung, antrean pemrosesan berurutan, fallback capture log. |
 | Rules | `lib/rules/`, `assets/rules/seed_rules.json` | Parse teks notifikasi → draf transaksi. Seed rules murni, murni Dart. |
 | Core | `lib/core/` | Money (int rupiah), buckets tren, budget (`LimitLine`/`BudgetSnapshot`), format tanggal ID. Murni Dart, tanpa drift/Flutter. |
-| Storage | `lib/storage/` | Drift schema v10, SQLCipher, `LedgerRepository` satu-satunya akses data. |
+| Storage | `lib/storage/` | Drift schema v11, SQLCipher, `LedgerRepository` satu-satunya akses data. |
 
 ## Alur capture
 
@@ -80,7 +80,15 @@ Hasil parse selalu menjadi **draf** menunggu keputusan user — tidak
 pernah auto-catat. Timpa perilaku parsing dilakukan lewat loop
 capture log → perbaiki seed → parse ulang, bukan aturan per-user.
 
-## Model data (drift schema v10)
+**Mode Belajar** (2026-10-31): app bank/e-wallet apa pun bisa
+dihubungkan dari daftar app terpasang (disimpan `app:<paket>` di
+`custom_banks`). Notifikasi yang formatnya belum dikenal rule TIDAK
+dibuang — menjadi **draf mentah**: nominal ditebak pola umum
+(`RuleEngine.guess`), arah dari kata umum, tanpa nominal → user isi;
+dedup draf mentah berbasis isi (paket+judul+isi). Semua tetap
+menunggu keputusan user.
+
+## Model data (drift schema v11)
 
 | Tabel | Isi |
 |---|---|
@@ -93,7 +101,7 @@ capture log → perbaiki seed → parse ulang, bukan aturan per-user.
 | `bons` | Utang-piutang: arah, nominal, pihak, status lunas |
 | `capture_logs` | Notifikasi mentah + status parse + penanda `ignored_dup`; bahan tuning rules |
 
-Migrasi v1→v10 self-heal: tabel/kolom yang hilang dibuat ulang, broken
+Migrasi v1→v11 self-heal (v11: index occurred_at): tabel/kolom yang hilang dibuat ulang, broken
 v2 diperbaiki, kategori/akun ter-seed, backfill dijalankan di
 `beforeOpen`. v8 memensiunkan Target/Sisihkan (ADR-009); v9 menambah
 draf + tautan akun↔bank; v10 membuang `user_rules` dan menambah
@@ -135,7 +143,7 @@ draf + tautan akun↔bank; v10 membuang `user_rules` dan menambah
 ## Pengujian
 
 147 test, 15 file: rule engine (seed + fallback), budget, progress/
-streak/mood, repository (dedup, saldo, migrasi v1→v10, alokasi, log
+streak/mood, repository (dedup, saldo, migrasi v1→v11, alokasi, log
 lifecycle), pipeline (draf, dedup, baris korup, allowlist paket),
 money, buckets, rekap filter, CSV, history — plus 6 file widget test
 komponen Quest (motion, nav, segmented, tab directional, transisi,

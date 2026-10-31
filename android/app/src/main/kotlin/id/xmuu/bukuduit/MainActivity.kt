@@ -51,6 +51,23 @@ class MainActivity : FlutterActivity() {
                         result.success(null)
                     }
                     "drainQueue" -> result.success(NotificationCatcher.drainQueue(this))
+                    "listLaunchableApps" -> {
+                        val pm = packageManager
+                        val intent = Intent(Intent.ACTION_MAIN).addCategory(
+                            Intent.CATEGORY_LAUNCHER
+                        )
+                        val apps = pm.queryIntentActivities(intent, 0)
+                            .mapNotNull { info ->
+                                val pkg = info.activityInfo?.packageName ?: return@mapNotNull null
+                                if (pkg == packageName) return@mapNotNull null
+                                val label = pm.getApplicationLabel(
+                                    info.activityInfo.applicationInfo
+                                ).toString()
+                                mapOf("package" to pkg, "label" to label)
+                            }
+                            .sortedBy { (it["label"] as String).lowercase() }
+                        result.success(apps)
+                    }
                     else -> result.notImplemented()
                 }
             }

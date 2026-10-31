@@ -90,6 +90,50 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     await widget.pipeline.syncAllowedPackages();
   }
 
+  Future<void> _toggleCustom(
+    ({String package, String label}) app,
+    bool connected,
+  ) async {
+    await widget.repository.setCustomBankConnected(
+      app.package,
+      app.label,
+      connected,
+    );
+    if (mounted) {
+      questSnack(
+        context,
+        connected
+            ? 'Notifikasi ${app.label} kini menunggu keputusanmu.'
+            : 'Capture ${app.label} diputus.',
+        icon: connected ? Icons.check_rounded : Icons.link_off_rounded,
+      );
+    }
+    await widget.pipeline.syncAllowedPackages();
+  }
+
+  Future<void> _pickApp() async {
+    final apps = await widget.pipeline.channel.listLaunchableApps();
+    if (!mounted) return;
+    if (apps.isEmpty) {
+      questSnack(
+        context,
+        'Daftar app tidak bisa dibaca di perangkat ini.',
+        icon: Icons.info_outline_rounded,
+      );
+      return;
+    }
+    final existing = await widget.repository.customBanks();
+    if (!mounted) return;
+    final picked = await showModalBottomSheet<({String package, String label})>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _AppPickerSheet(apps: apps, connected: existing),
+    );
+    if (!mounted || picked == null) return;
+    await _toggleCustom(picked, true);
+  }
+
   AccountKind _accountKindForBank(BankRules bank) {
     final nameLower = bank.displayName.toLowerCase();
     if (nameLower.contains('gopay') ||
@@ -314,9 +358,92 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
               ),
               const SizedBox(height: Spacing.m),
 
-              // ── 3. Ketahanan Latar Belakang (Baterai) ──
+              // ── Mode Belajar: app apa pun ──
               QuestEnter(
                 index: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const QuestSectionHeader(title: 'App Lain — Mode Belajar'),
+                    QuestCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Bank/e-wallet yang belum didukung? Hubungkan app-nya: '
+                            'SEMUA notifikasinya jadi draf yang kamu putuskan — '
+                            'nominal & kategori kamu isi sendiri saat konfirmasi.',
+                            style: context.qSmall(12).copyWith(color: q.muted),
+                          ),
+                          const SizedBox(height: Spacing.s),
+                          StreamBuilder<List<({String package, String label})>>(
+                            stream: widget.repository.watchCustomBanks(),
+                            builder: (context, snap) {
+                              final customs =
+                                  snap.data ?? const [];
+                              if (customs.isEmpty) {
+                                return const SizedBox.shrink();
+                              }
+                              return Column(
+                                children: [
+                                  for (final app in customs) ...[
+                                    QuestListTile(
+                                      leading: Container(
+                                        width: 38,
+                                        height: 38,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: SeedColors.primaryLight,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Text(
+                                          app.label.characters.first
+                                              .toUpperCase(),
+                                          style: TextStyle(
+                                            color: q.primary,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                      ),
+                                      title: Text(
+                                        app.label,
+                                        style: context.qTitle(14),
+                                      ),
+                                      subtitle: Text(
+                                        app.package,
+                                        style: context.qSmall(10.5).copyWith(
+                                          color: q.muted,
+                                        ),
+                                      ),
+                                      trailing: QuestSwitch(
+                                        value: true,
+                                        label: 'Capture ${app.label}',
+                                        onChanged: (val) =>
+                                            _toggleCustom(app, val),
+                                      ),
+                                    ),
+                                    Divider(height: 1, thickness: 1, color: q.line),
+                                  ],
+                                ],
+                              );
+                            },
+                          ),
+                          QuestButton(
+                            label: 'Hubungkan App Lain',
+                            icon: Icons.add_rounded,
+                            tone: QuestTone.secondary,
+                            onPressed: _pickApp,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: Spacing.m),
+              // ── 3. Ketahanan Latar Belakang (Baterai) ──
+              QuestEnter(
+                index: 3,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -371,7 +498,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
 
               // ── 4. Diagnostik / Baca Ulang ──
               QuestEnter(
-                index: 3,
+                index: 4,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -424,7 +551,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
               ),
 
               QuestEnter(
-                index: 4,
+                index: 5,
                 child:
               // ── 4b. Duplikat yang diabaikan dedup ──
               StreamBuilder<List<CaptureLog>>(
@@ -519,7 +646,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
               const SizedBox(height: Spacing.m),
 
               QuestEnter(
-                index: 5,
+                index: 6,
                 child:
               // ── 5. Jaminan Privasi ──
               Container(
@@ -546,6 +673,123 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Sheet pilih app terpasang untuk Mode Belajar: pencarian + daftar,
+/// app yang sudah terhubung ditandai.
+class _AppPickerSheet extends StatefulWidget {
+  const _AppPickerSheet({required this.apps, required this.connected});
+
+  final List<({String package, String label})> apps;
+  final List<({String package, String label})> connected;
+
+  @override
+  State<_AppPickerSheet> createState() => _AppPickerSheetState();
+}
+
+class _AppPickerSheetState extends State<_AppPickerSheet> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    final lower = _query.toLowerCase();
+    final filtered = widget.apps
+        .where(
+          (a) =>
+              a.label.toLowerCase().contains(lower) ||
+              a.package.toLowerCase().contains(lower),
+        )
+        .toList();
+    final connectedPkgs = widget.connected.map((c) => c.package).toSet();
+    return Container(
+      height: MediaQuery.sizeOf(context).height * 0.75,
+      decoration: BoxDecoration(
+        color: q.bg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          const QuestGrabber(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Spacing.m,
+              0,
+              Spacing.m,
+              Spacing.s,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Hubungkan App', style: context.qTitle(15)),
+                const SizedBox(height: Spacing.xs),
+                Text(
+                  'Pilih app bank/e-wallet — notifikasinya akan jadi draf '
+                  'yang kamu putuskan.',
+                  style: context.qSmall(12).copyWith(color: q.muted),
+                ),
+                const SizedBox(height: Spacing.s),
+                TextField(
+                  onChanged: (v) => setState(() => _query = v),
+                  decoration: const InputDecoration(
+                    hintText: 'Cari nama app…',
+                    prefixIcon: Icon(Icons.search_rounded, size: 20),
+                    isDense: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: filtered.isEmpty
+                ? Center(
+                    child: Text(
+                      'Tidak ada app yang cocok.',
+                      style: context.qSmall(12).copyWith(color: q.muted),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: filtered.length,
+                    itemBuilder: (_, i) {
+                      final app = filtered[i];
+                      final isOn = connectedPkgs.contains(app.package);
+                      return QuestListTile(
+                        onTap: () => Navigator.pop(context, app),
+                        leading: Container(
+                          width: 36,
+                          height: 36,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: isOn ? SeedColors.incomingTint : q.surface2,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            app.label.characters.first.toUpperCase(),
+                            style: TextStyle(
+                              color: isOn ? q.good : q.text,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        title: Text(app.label, style: context.qTitle(13.5)),
+                        subtitle: Text(
+                          app.package,
+                          style: context.qSmall(10).copyWith(color: q.muted),
+                        ),
+                        trailing: isOn
+                            ? Icon(Icons.link_rounded, size: 18, color: q.good)
+                            : const Icon(
+                                Icons.chevron_right_rounded,
+                                size: 22,
+                              ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }

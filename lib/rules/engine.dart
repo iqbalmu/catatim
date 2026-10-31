@@ -114,6 +114,28 @@ class RuleEngine {
     return null;
   }
 
+  /// Tebakan untuk notifikasi berformat tak dikenal (mode belajar):
+  /// nominal dari pola umum + arah dari kata umum. Boleh salah —
+  /// nominal/arah/kategori final tetap keputusan user saat konfirmasi.
+  ({int? amount, Direction direction}) guess(String title, String body) {
+    final text = '$title $body';
+    final amount = _extractAmount(null, text);
+    final lower = text.toLowerCase();
+    const inWords = [
+      'masuk', 'kredit', 'menerima', 'diterima', 'ditambahkan', 'top up',
+    ];
+    const outWords = [
+      'keluar', 'debit', 'pembayaran', 'membayar', 'belanja', 'tarik',
+      'transfer ke',
+    ];
+    final isIn = inWords.any(lower.contains);
+    final isOut = outWords.any(lower.contains);
+    return (
+      amount: amount,
+      direction: isOut && !isIn ? Direction.outgoing : Direction.incoming,
+    );
+  }
+
   String? _extractGroup(String? pattern, String text) {
     if (pattern == null) return null;
     final match = RegExp(pattern, caseSensitive: false).firstMatch(text);

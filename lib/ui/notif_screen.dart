@@ -64,11 +64,24 @@ class _NotificationScreenState extends State<NotificationScreen> {
   late final Future<bool> _listenerEnabled =
       widget.pipeline.channel.isListenerEnabled();
 
+  /// Nama bank custom mode belajar — bankId `app:<paket>` → label.
+  late final Future<Map<String, String>> _customNames = widget.repository
+      .customBanks()
+      .then(
+        (list) => {
+          for (final c in list) 'app:${c.package}': c.label,
+        },
+      );
+
   LedgerRepository get _repo => widget.repository;
 
-  String _bankName(String bankId) =>
-      widget.ruleSet.bank(bankId)?.displayName ?? bankId;
-
+  Future<String> _bankName(String bankId) async {
+    if (bankId.startsWith('app:')) {
+      final customs = await _customNames;
+      return customs[bankId] ?? bankId.substring(4);
+    }
+    return widget.ruleSet.bank(bankId)?.displayName ?? bankId;
+  }
   void _openBankAccounts() {
     Navigator.push(
       context,
@@ -260,10 +273,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 for (var i = 0; i < drafts.length; i++)
                                   QuestEnter(
                                     index: 1 + i,
-                                    child: _DraftTile(
-                                      draft: drafts[i],
-                                      bankName: _bankName(drafts[i].bankId),
-                                      onTap: () => _openDraft(drafts[i]),
+                                    child: FutureBuilder<String>(
+                                      future: _bankName(drafts[i].bankId),
+                                      builder: (context, nameSnap) => _DraftTile(
+                                        draft: drafts[i],
+                                        bankName:
+                                            nameSnap.data ?? drafts[i].bankId,
+                                        onTap: () => _openDraft(drafts[i]),
+                                      ),
                                     ),
                                   ),
                                 const SizedBox(height: Spacing.s),
@@ -384,12 +401,29 @@ class _DraftTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: Spacing.s),
-            QuestMoney(
-              amount: draft.amount,
-              prefix: incoming ? '+' : '−',
-              alignment: Alignment.centerRight,
-              style: context.qAmount(15, incoming: incoming),
-            ),
+            if (draft.amount == 0)
+              // Draf mentah mode belajar: nominal belum terbaca — user isi.
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Spacing.s,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: q.warnTint,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Isi nominal',
+                  style: context.qSmall(10.5).copyWith(color: q.warn),
+                ),
+              )
+            else
+              QuestMoney(
+                amount: draft.amount,
+                prefix: incoming ? '+' : '−',
+                alignment: Alignment.centerRight,
+                style: context.qAmount(15, incoming: incoming),
+              ),
           ],
         ),
       ),
