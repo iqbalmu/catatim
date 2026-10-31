@@ -358,3 +358,31 @@ pipeline hwui yang dilacak) — jank harus diukur lewat
 `flutter run --profile` + timeline di device nyata. Di-emulator,
 scroll laporan & navigasi terasa lancar secara kualitatif; layar
 laporan release terverifikasi render benar (empty state konsisten).
+
+## G. Integrasi Android — 2026-10-31
+
+| ID | Temuan | Severity |
+|---|---|---|
+| G-01 | Build release ditandatangani **debug key** (`build.gradle.kts:32`, TODO asli Flutter) | Sedang — blokir rilis |
+| G-02 | `dynamic_color` dependensi mati — tak dipakai di `lib/` (konsisten ADR-010 satu tema terang) | Rendah |
+| G-03 | Predictive back tidak diaktifkan (`enableOnBackInvokedCallback` absen) — back klasik, tanpa animasi prediktif Android 14+ | Rendah |
+| G-04 | minSdk 24 / targetSdk 36 — modern, cukup untuk listener & SAF | ✓ Lolos |
+
+**G-01.** `signingConfig = signingConfigs.getByName("debug")` — APK
+release tak bisa diunggah Play Store dan terpasang dari sumber mana pun
+tanpa peringatan sistem. *Rekomendasi:* buat keystore rilis + isi
+signingConfig sebelum distribusi; jangan commit kredensial.
+
+**G-02.** `dynamic_color: 1.9.0` di pubspec tanpa satu pun pemakaian —
+hapus dari dependensi (mengurangi dependensi build). Bertabrakan dgn
+niat ADR-010 memang tidak — hanya tidak terpakai.
+
+**G-03.** Tanpa `android:enableOnBackInvokedCallback="true"`, gesture
+back tetap berfungsi (klasik) tetapi animasi prediktif Android 14+
+tidak muncul. Opsional; uji dulu transisi kustom (QuestPageTransitions)
+tidak bentrok bila diaktifkan.
+
+**G-04.** targetSdk 36 ⇒ edge-to-edge diwajibkan Android 15+ — aman:
+layar terverifikasi render benar (header & konten tidak menempel
+status bar). Tidak ada `dataExtractionRules` — menerima berkat
+`allowBackup=false` (A-01).
