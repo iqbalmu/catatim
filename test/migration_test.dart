@@ -250,7 +250,9 @@ void main() {
       )
     ''');
     raw.execute('PRAGMA user_version = 5');
-    raw.execute("INSERT INTO categories (name, color_index) VALUES ('Makanan', 0)");
+    raw.execute(
+      "INSERT INTO categories (name, color_index) VALUES ('Makanan', 0)",
+    );
     raw.execute(
       "INSERT INTO accounts (name, kind, color_index, created_at) "
       "VALUES ('blu by BCA', 'bank', 0, 1790000000)",
@@ -377,7 +379,9 @@ void main() {
       )
     ''');
     raw.execute('PRAGMA user_version = 6');
-    raw.execute("INSERT INTO categories (name, color_index) VALUES ('Makanan', 0)");
+    raw.execute(
+      "INSERT INTO categories (name, color_index) VALUES ('Makanan', 0)",
+    );
     raw.execute(
       "INSERT INTO accounts (name, kind, color_index, created_at) "
       "VALUES ('blu by BCA', 'bank', 0, 1790000000)",
@@ -569,22 +573,25 @@ void main() {
     // capture_logs mendapat kolom ignored_dup; dup yang digugurkan
     // dedup tercatat dan bisa dilihat.
     ParsedDraft d({required int amount}) => ParsedDraft(
-          bankId: 'blu',
-          bankName: 'blu by BCA',
-          ruleName: 'transfer masuk',
-          kind: TxKind.transfer,
-          direction: Direction.incoming,
-          amount: amount,
-        );
+      bankId: 'blu',
+      bankName: 'blu by BCA',
+      ruleName: 'transfer masuk',
+      kind: TxKind.transfer,
+      direction: Direction.incoming,
+      amount: amount,
+    );
     RawCapture cap(DateTime at) => RawCapture(
-          packageName: 'id.bm.blu',
-          title: 'blu',
-          body: 'Transfer masuk Rp1.000',
-          postedAt: at,
-        );
+      packageName: 'id.bm.blu',
+      title: 'blu',
+      body: 'Transfer masuk Rp1.000',
+      postedAt: at,
+    );
     final base = DateTime(2026, 10, 12, 9);
     expect(
-      await repository.addDraftFromCapture(raw: cap(base), draft: d(amount: 1000)),
+      await repository.addDraftFromCapture(
+        raw: cap(base),
+        draft: d(amount: 1000),
+      ),
       isNotNull,
     );
     expect(
@@ -600,6 +607,180 @@ void main() {
 
     await db.close();
   });
+
+  test(
+    'migrasi lompatan v3→v11: data lama utuh, schema terbaru lengkap',
+    () async {
+      // Audit E-01: user nyata tidak update app berbulan-bulan — DB v3
+      // harus bisa melompat langsung ke v11 (budgets, draf, index).
+      final raw = sqlite3.open(dbFile.path);
+      raw.execute(
+        'ALTER TABLE transactions ADD COLUMN category_id INTEGER NULL '
+        'REFERENCES categories (id)',
+      );
+      raw.execute(
+        'ALTER TABLE transactions ADD COLUMN account_id INTEGER NULL '
+        'REFERENCES accounts (id)',
+      );
+      raw.execute('''
+      CREATE TABLE categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        color_index INTEGER NOT NULL
+      )
+    ''');
+      raw.execute('''
+      CREATE TABLE app_settings (
+        key TEXT NOT NULL PRIMARY KEY,
+        value_text TEXT NOT NULL
+      )
+    ''');
+      raw.execute('''
+      CREATE TABLE accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        kind TEXT NOT NULL,
+        color_index INTEGER NOT NULL,
+        created_at INTEGER NOT NULL DEFAULT (CAST(strftime('%s','now') AS INTEGER))
+      )
+    ''');
+      raw.execute('''
+      CREATE TABLE bons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT NOT NULL UNIQUE,
+        person TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        direction TEXT NOT NULL,
+        note TEXT NULL,
+        occurred_at INTEGER NOT NULL,
+        settled_at INTEGER NULL,
+        created_at INTEGER NOT NULL
+      )
+    ''');
+      raw.execute('PRAGMA user_version = 3');
+      raw.close();
+
+      final db = AppDatabase(NativeDatabase(dbFile));
+
+      // Transaksi v1 tetap terbaca; kategori & akun ter-backfill dari seed.
+      final rows = await repo(db).watchRecentWithCategory().first;
+      expect(rows.single.tx.uuid, 'legacy-1');
+      expect(rows.single.category?.name, 'Transfer');
+      expect(rows.single.tx.accountId, isNotNull);
+
+      // Tabel hasil lompatan tersedia & kosong benar.
+      expect(await db.select(db.budgets).get(), isEmpty);
+      expect(await db.select(db.drafts).get(), isEmpty);
+      final legacy = await db
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE name = 'user_rules'",
+          )
+          .get();
+      expect(legacy, isEmpty);
+
+      // Index v11 dibuat (audit E-02).
+      final idx = await db
+          .customSelect(
+            "SELECT name FROM sqlite_master "
+            "WHERE type = 'index' AND name = 'idx_transactions_occurred_at'",
+          )
+          .get();
+      expect(idx, isNotEmpty);
+
+      await db.close();
+    },
+  );
+
+  test(
+    'migrasi lompatan v6→v11: alokasi lama utuh, draf & index tersedia',
+    () async {
+      // Audit E-01: DB v6 (budgets bentuk baru) melompat ke v11.
+      final raw = sqlite3.open(dbFile.path);
+      raw.execute(
+        'ALTER TABLE transactions ADD COLUMN category_id INTEGER NULL '
+        'REFERENCES categories (id)',
+      );
+      raw.execute(
+        'ALTER TABLE transactions ADD COLUMN account_id INTEGER NULL '
+        'REFERENCES accounts (id)',
+      );
+      raw.execute('''
+      CREATE TABLE categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        color_index INTEGER NOT NULL
+      )
+    ''');
+      raw.execute('''
+      CREATE TABLE app_settings (
+        key TEXT NOT NULL PRIMARY KEY,
+        value_text TEXT NOT NULL
+      )
+    ''');
+      raw.execute('''
+      CREATE TABLE accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        kind TEXT NOT NULL,
+        color_index INTEGER NOT NULL,
+        opening_balance INTEGER NOT NULL DEFAULT (0),
+        created_at INTEGER NOT NULL
+      )
+    ''');
+      raw.execute('''
+      CREATE TABLE bons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT NOT NULL UNIQUE,
+        person TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        direction TEXT NOT NULL,
+        note TEXT NULL,
+        occurred_at INTEGER NOT NULL,
+        settled_at INTEGER NULL,
+        created_at INTEGER NOT NULL
+      )
+    ''');
+      raw.execute('''
+      CREATE TABLE budgets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category_id INTEGER NOT NULL REFERENCES categories (id),
+        account_id INTEGER NULL REFERENCES accounts (id),
+        monthly_limit INTEGER NOT NULL,
+        UNIQUE (category_id, account_id)
+      )
+    ''');
+      raw.execute('PRAGMA user_version = 6');
+      raw.execute(
+        "INSERT INTO categories (name, color_index) VALUES ('Makanan', 0)",
+      );
+      raw.execute(
+        "INSERT INTO accounts (name, kind, color_index, created_at) "
+        "VALUES ('blu by BCA', 'bank', 0, 1790000000)",
+      );
+      raw.execute(
+        "INSERT INTO budgets (category_id, account_id, monthly_limit) "
+        "VALUES ((SELECT id FROM categories WHERE name = 'Makanan'), NULL, 5000000)",
+      );
+      raw.close();
+
+      final db = AppDatabase(NativeDatabase(dbFile));
+      final budgets = await db.select(db.budgets).get();
+      expect(budgets.single.monthlyLimit, 5000000);
+      expect(budgets.single.accountId, isNull);
+
+      // Draf (v9) & penanda ignored_dup (v10) bisa dipakai.
+      expect(await db.select(db.drafts).get(), isEmpty);
+      final idx = await db
+          .customSelect(
+            "SELECT name FROM sqlite_master "
+            "WHERE type = 'index' AND name = 'idx_transactions_occurred_at'",
+          )
+          .get();
+      expect(idx, isNotEmpty);
+
+      await db.close();
+    },
+  );
 }
 
 LedgerRepository repo(AppDatabase db) => LedgerRepository(db);
