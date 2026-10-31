@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'app.dart';
+import 'ui/locked_screen.dart';
+
 import 'capture/capture_channel.dart';
 import 'capture/pipeline.dart';
 import 'game/progress.dart';
@@ -15,6 +17,12 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await applyPendingRestore(); // pulihkan backup yang di-stage user
+  // DB lama tak terbaca dengan kunci perangkat ini (mis. pindah HP)
+  // → layar pemulihan, bukan crash generik (audit A-06).
+  if (await isDatabaseLocked()) {
+    runApp(const BukuduitLockedApp());
+    return;
+  }
   final db = AppDatabase(await openAppDatabase());
   final repository = LedgerRepository(db);
   await seedDummyIfEmpty(db, repository); // data contoh (debug, DB kosong)

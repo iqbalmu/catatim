@@ -339,6 +339,37 @@ Future<bool> _hasColumn(Migrator m, String table, String column) async {
       .get();
   return rows.any((r) => r.data['name'] == column);
 }
+/// Apakah DB aktif ada tapi tak terbaca dengan passphrase perangkat
+/// ini — mis. data dipulihkan/pindah ke perangkat lain tanpa kunci
+/// Keystore-nya. True → app menampilkan layar pemulihan (audit A-06),
+/// bukan gagal start dengan error generik.
+Future<bool> isDatabaseLocked() async {
+  final file = await currentDatabaseFile();
+  if (!file.existsSync()) return false;
+  final db = AppDatabase(await openAppDatabase());
+  try {
+    await db.customSelect('SELECT count(*) AS c FROM sqlite_master').get();
+    return false;
+  } catch (_) {
+    return true;
+  } finally {
+    await db.close();
+  }
+}
+
+/// Executor terenkripsi untuk file DB tertentu — helper top-level
+/// murni agar closure `setup` TIDAK membawa konteks pemanggilnya
+/// (BuildContext/State) ke isolate background: objek seperti itu
+/// unsendable dan membuat `Isolate.spawn` melempar (bug audit A-11 —
+/// rekey backup gagal senyap).
+QueryExecutor encryptedExecutor(File file, String passphrase) {
+  return NativeDatabase.createInBackground(
+    file,
+    setup: (rawDb) {
+      rawDb.execute("PRAGMA key = '$passphrase'");
+    },
+  );
+}
 
 /// Lokasi file DB aktif — dipakai openAppDatabase & layar Backup.
 Future<File> currentDatabaseFile() async {
@@ -358,14 +389,7 @@ Future<String> currentPassphrase() => _passphrase();
 Future<QueryExecutor> openAppDatabase() async {
   final file = await currentDatabaseFile();
   final passphrase = await _passphrase();
-  return LazyDatabase(() async {
-    return NativeDatabase.createInBackground(
-      file,
-      setup: (rawDb) {
-        rawDb.execute("PRAGMA key = '$passphrase'");
-      },
-    );
-  });
+  return LazyDatabase(() async => encryptedExecutor(file, passphrase));
 }
 
 Future<String> _passphrase() async {

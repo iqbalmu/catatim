@@ -1,9 +1,6 @@
 import 'dart:io';
 
-import 'package:drift/native.dart';
-import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -12,6 +9,7 @@ import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'quest.dart';
+import 'restore_flow.dart';
 
 /// Backup & pulihkan: dua tombol, tanpa istilah teknis.
 ///
@@ -27,8 +25,31 @@ class BackupScreen extends StatefulWidget {
   State<BackupScreen> createState() => _BackupScreenState();
 }
 
-class _BackupScreenState extends State<BackupScreen> {
+class _BackupScreenState extends State<BackupScreen>
+    with WidgetsBindingObserver {
   bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Jendela berbagi bisa ditutup lewat tombol BACK tanpa menyelesaikan
+  /// future share() — app kembali aktif = anggap selesai, tombol hidup
+  /// lagi (audit A-10).
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _busy && mounted) {
+      setState(() => _busy = false);
+    }
+  }
 
   void _snack(String message, {IconData? icon}) {
     if (!mounted) return;
@@ -58,88 +79,19 @@ class _BackupScreenState extends State<BackupScreen> {
         '-${n.hour.toString().padLeft(2, '0')}${n.minute.toString().padLeft(2, '0')}';
   }
 
-  /// Minta PIN 4–12 digit ke user; null bila batal.
-  Future<String?> _askPin({required bool repeat}) async {
-    final firstCtrl = TextEditingController();
-    final secondCtrl = TextEditingController();
-    final pin = await showQuestDialog<String>(
-      context,
-      title: 'Kunci backup (PIN)',
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            repeat
-                ? 'Masukkan PIN yang kamu buat saat menyimpan backup ini.'
-                : 'Buat PIN untuk mengunci file backup. Ingat baik-baik — '
-                      'tanpa PIN ini backup tidak bisa dibuka.',
-            style: context.qBody(13),
-          ),
-          const SizedBox(height: Spacing.m),
-          TextField(
-            controller: firstCtrl,
-            autofocus: true,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            obscureText: true,
-            maxLength: 12,
-            decoration: const InputDecoration(
-              labelText: 'PIN (4–12 angka)',
-              counterText: '',
-            ),
-          ),
-          if (!repeat) ...[
-            const SizedBox(height: Spacing.s),
-            TextField(
-              controller: secondCtrl,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              obscureText: true,
-              maxLength: 12,
-              decoration: const InputDecoration(
-                labelText: 'Ulangi PIN',
-                counterText: '',
-              ),
-            ),
-          ],
-        ],
-      ),
-      actions: [
-        QuestButton(
-          label: 'Batal',
-          tone: QuestTone.secondary,
-          onPressed: () => Navigator.pop(context),
-        ),
-        QuestButton(
-          label: 'Lanjut',
-          icon: Icons.check_rounded,
-          onPressed: () {
-            final first = firstCtrl.text.trim();
-            if (first.length < 4) {
-              Navigator.pop(context);
-              return;
-            }
-            if (!repeat && first != secondCtrl.text.trim()) {
-              Navigator.pop(context);
-              return;
-            }
-            Navigator.pop(context, first);
-          },
-        ),
-      ],
-    );
-    if (pin == null || pin.length < 4) return null;
-    if (!repeat && pin != secondCtrl.text.trim()) {
-      _snack('PIN tidak sama, coba lagi.', icon: Icons.info_outline_rounded);
-      return null;
-    }
-    return pin;
-  }
 
   Future<void> _backup() => _run(() async {
-    final pin = await _askPin(repeat: false);
+    final pin = await askBackupPin(context, repeat: false);
     if (pin == null) return;
+    // Bersihkan salinan lama secara proaktif: share() bisa tidak
+    // pernah selesai bila sheet ditutup paksa (tombol BACK), jadi
+    // pembersihan hanya pasca-share tidak bisa diandalkan.
+    final cache = (await getTemporaryDirectory()).listSync();
+    for (final entry in cache) {
+      if (entry is File && entry.path.contains('bukuduit-backup-')) {
+        entry.deleteSync();
+      }
+    }
     await widget.repository.checkpoint();
     final dbFile = await currentDatabaseFile();
     final path = await _tmpPath('bukuduit-backup-${_stamp()}.sqlite');
@@ -147,100 +99,28 @@ class _BackupScreenState extends State<BackupScreen> {
     // Kunci ulang salinan dengan PIN user (DB aktif tetap terkunci
     // passphrase perangkat).
     final deviceKey = await currentPassphrase();
-    final db = AppDatabase(
-      NativeDatabase.createInBackground(
-        File(path),
-        setup: (rawDb) {
-          rawDb.execute("PRAGMA key = '$deviceKey'");
-        },
-      ),
-    );
+    final db = AppDatabase(encryptedExecutor(File(path), deviceKey));
     try {
       await db.customStatement("PRAGMA rekey = '$pin'");
     } finally {
       await db.close();
     }
-    await SharePlus.instance.share(
-      ShareParams(
-        files: [XFile(path)],
-        text: 'Backup data Bukuduit — simpan + ingat PIN-nya!',
-      ),
-    );
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(path)],
+          text: 'Backup data Bukuduit — simpan + ingat PIN-nya!',
+        ),
+      );
+    } finally {
+      // Salinan sudah diserahkan share target — jangan tinggal di cache.
+      final tmp = File(path);
+      if (tmp.existsSync()) await tmp.delete();
+    }
     _snack('Backup tersimpan — ingat PIN-nya!', icon: Icons.backup_outlined);
   });
 
-  Future<void> _restore() async {
-    final picked = await openFile(
-      acceptedTypeGroups: [
-        const XTypeGroup(label: 'Backup', extensions: ['sqlite', 'db']),
-      ],
-    );
-    if (!mounted) return;
-    if (picked == null) return;
-    final confirmed = await showQuestDialog<bool>(
-      context,
-      title: 'Pulihkan backup?',
-      content: Text(
-        'Semua data di HP ini akan diganti dengan isi file "${picked.name}". '
-        'App-nya akan menutup sendiri — buka lagi setelahnya, ya.',
-        style: context.qBody(),
-      ),
-      actions: [
-        QuestButton(
-          label: 'Batal',
-          tone: QuestTone.secondary,
-          onPressed: () => Navigator.pop(context, false),
-        ),
-        QuestButton(
-          label: 'Pulihkan',
-          icon: Icons.restore_rounded,
-          tone: QuestTone.danger,
-          onPressed: () => Navigator.pop(context, true),
-        ),
-      ],
-    );
-    if (confirmed != true) return;
-    await _run(() async {
-      final pin = await _askPin(repeat: true);
-      if (pin == null) return;
-      final dir = await getTemporaryDirectory();
-      final stagingPath = '${dir.path}/restore_staging.sqlite';
-      await File(picked.path).copy(stagingPath);
-      // Verifikasi PIN bisa membuka file, lalu kunci ulang ke passphrase
-      // perangkat agar DB utama tetap terbuka normal setelah restart.
-      final deviceKey = await currentPassphrase();
-      final probe = AppDatabase(
-        NativeDatabase.createInBackground(
-          File(stagingPath),
-          setup: (rawDb) {
-            rawDb.execute("PRAGMA key = '$pin'");
-          },
-        ),
-      );
-      try {
-        await probe.customSelect(
-          'SELECT count(*) AS c FROM sqlite_master',
-          variables: const [],
-          readsFrom: const {},
-        ).get();
-        await probe.customStatement("PRAGMA rekey = '$deviceKey'");
-      } catch (_) {
-        await probe.close();
-        await File(stagingPath).delete();
-        _snack(
-          'PIN-nya tidak cocok atau filenya rusak — coba lagi, ya.',
-          icon: Icons.error_outline_rounded,
-        );
-        return;
-      }
-      await probe.close();
-      final docs = await getApplicationDocumentsDirectory();
-      File('${docs.path}/restore_pending').writeAsStringSync('1');
-      if (mounted) {
-        await SystemNavigator.pop();
-      }
-    });
-  }
+  Future<void> _restore() => _run(() => startRestoreFlow(context));
 
   @override
   Widget build(BuildContext context) {
