@@ -38,6 +38,18 @@ class MainActivity : FlutterActivity() {
                         )
                         result.success(null)
                     }
+                    "setAllowedPackages" -> {
+                        val pkgs = (call.arguments as? List<*>)
+                            ?.filterIsInstance<String>()
+                            ?: emptyList()
+                        NotificationCatcher.setAllowedPackages(this, pkgs)
+                        result.success(null)
+                    }
+                    "learnBankPackage" -> {
+                        val pkg = call.arguments as? String
+                        if (pkg != null) NotificationCatcher.learnPackage(this, pkg)
+                        result.success(null)
+                    }
                     "drainQueue" -> result.success(NotificationCatcher.drainQueue(this))
                     else -> result.notImplemented()
                 }
@@ -89,6 +101,43 @@ class NotificationCatcher : NotificationListenerService() {
         private const val QUEUE_MAX_BYTES = 1_000_000L
         private const val QUEUE_KEEP_LINES = 1000
 
+        private const val PREFS = "bukuduit_capture"
+        private const val KEY_ALLOWED = "allowed_packages"
+        private const val KEY_LEARNED = "learned_packages"
+
+        /// Dorong daftar paket bank terhubung dari Dart. Hanya paket
+        /// dalam daftar ini (plus yang sudah dipelajari) yang boleh
+        /// ditulis ke antrean disk — OTP/notifikasi app lain tak pernah
+        /// menyentuh storage. Native tetap transport: daftar datang
+        /// dari Dart, di sini hanya disimpan dan dicocokkan.
+        fun setAllowedPackages(context: Context, packages: List<String>) {
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val learned = prefs.getStringSet(KEY_LEARNED, emptySet()) ?: emptySet()
+            prefs.edit()
+                .putStringSet(KEY_ALLOWED, packages.toSet() + learned)
+                .apply()
+        }
+
+        /// Paket yang ternyata milik bank terhubung (dicocokkan Dart
+        /// lewat keyword, mis. bank tanpa packageNames) — antrikan
+        /// notifikasi paket ini selanjutnya.
+        fun learnPackage(context: Context, pkg: String) {
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val learned = prefs.getStringSet(KEY_LEARNED, emptySet()) ?: emptySet()
+            if (pkg in learned) return
+            val allowed = prefs.getStringSet(KEY_ALLOWED, emptySet()) ?: emptySet()
+            prefs.edit()
+                .putStringSet(KEY_LEARNED, learned + pkg)
+                .putStringSet(KEY_ALLOWED, allowed + pkg)
+                .apply()
+        }
+
+        private fun isAllowed(context: Context, pkg: String): Boolean {
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val allowed = prefs.getStringSet(KEY_ALLOWED, emptySet()) ?: emptySet()
+            return pkg in allowed
+        }
+
         fun enqueue(context: Context, line: String) {
             synchronized(lock) {
                 val file = File(context.filesDir, QUEUE_FILE)
@@ -138,7 +187,12 @@ class NotificationCatcher : NotificationListenerService() {
             .put("postedAt", sbn.postTime)
             .toString()
 
-        enqueue(applicationContext, line)
+        // Hanya paket bank terhubung/pelajaran yang boleh menebar ke
+        // disk; sink live tetap menerima semuanya agar Dart bisa
+        // mencocokkan keyword dan mempelajari paket bank baru.
+        if (isAllowed(applicationContext, sbn.packageName)) {
+            enqueue(applicationContext, line)
+        }
 
         val current = sink ?: return
         mainHandler.post { runCatching { current.success(line) } }

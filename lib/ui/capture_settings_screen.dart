@@ -86,6 +86,8 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         );
       }
     }
+    // Allowlist antrean native harus mengikuti koneksi terbaru.
+    await widget.pipeline.syncAllowedPackages();
   }
 
   AccountKind _accountKindForBank(BankRules bank) {

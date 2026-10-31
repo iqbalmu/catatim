@@ -48,6 +48,11 @@ flowchart LR
 - Antrian file membuat notifikasi tidak hilang saat app mati; ukurannya
   dibatasi (±1 MB, disimpan 1000 baris terakhir) dan notifikasi ongoing
   (musik/unduhan) dilewati.
+- **Allowlist paket (amandemen ADR-001, audit A-02):** hanya paket bank
+  terhubung yang boleh ditulis ke antrean disk — notifikasi app lain
+  (OTP, chat) tak pernah menyentuh storage. Sink live tetap menerima
+  semuanya; bank yang cocok lewat keyword dengan paket asing
+  "dipelajari" (`learnBankPackage`) lalu diantrikan sejak saat itu.
 - Baris antrian yang korup dilewati — satu baris rusak tidak membuang
   antrean lainnya.
 - Notifikasi yang gagal parse disimpan mentah di Capture Log; setelah

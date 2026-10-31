@@ -13,7 +13,18 @@ class _FakeChannel extends CaptureChannel {
   _FakeChannel(this.items);
 
   List<RawCapture> items;
+  final allowedPushes = <Set<String>>[];
+  final learnedPackages = <String>[];
 
+  @override
+  Future<void> setAllowedPackages(Set<String> packages) async {
+    allowedPushes.add(packages);
+  }
+
+  @override
+  Future<void> learnBankPackage(String packageName) async {
+    learnedPackages.add(packageName);
+  }
   @override
   Future<List<RawCapture>> drainQueue() async {
     final drained = List<RawCapture>.of(items);
@@ -82,6 +93,46 @@ void main() {
     expect(drafts, hasLength(1));
     expect(drafts.first.bankId, 'blu');
     expect(await db.select(db.transactions).get(), isEmpty);
+  });
+
+  test('start mendorong allowlist paket bank terhubung ke native', () async {
+    await repo.setBankConnected('blu', true);
+    await repo.setBankConnected('gopay', true);
+    final channel = _FakeChannel(const []);
+    final pipeline = CapturePipeline(
+      channel: channel,
+      engine: RuleEngine(_rules()),
+      repository: repo,
+    );
+    await pipeline.start();
+
+    expect(channel.allowedPushes, [
+      {'com.blu.app', 'com.gopay.app'},
+    ]);
+  });
+
+  test('bank cocok keyword tapi paket asing: paket dipelajari', () async {
+    await repo.setBankConnected('gopay', true);
+    final channel = _FakeChannel([
+      RawCapture(
+        packageName: 'com.strike.app',
+        title: 'GoPay',
+        body: 'Kamu menerima transfer masuk Rp5.000 dari SARI',
+        postedAt: DateTime(2026, 10, 10, 9),
+      ),
+    ]);
+    final pipeline = CapturePipeline(
+      channel: channel,
+      engine: RuleEngine(_rules()),
+      repository: repo,
+    );
+    await pipeline.start();
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    final drafts = await db.select(db.drafts).get();
+    expect(drafts, hasLength(1));
+    expect(drafts.first.bankId, 'gopay');
+    expect(channel.learnedPackages, ['com.strike.app']);
   });
 
   test('notifikasi bank yang belum terhubung diabaikan diam-diam', () async {

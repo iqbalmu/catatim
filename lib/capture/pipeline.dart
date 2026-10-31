@@ -39,6 +39,9 @@ class CapturePipeline extends ChangeNotifier {
   Future<void> start() async {
     if (_started) return;
     _started = true;
+    // Allowlist didorong lebih dulu: notifikasi non-bank yang tiba
+    // setelah ini tidak lagi disimpan native ke disk.
+    await syncAllowedPackages();
     // Notifikasi yang tertangkap saat app mati tersimpan di antrian native.
     try {
       for (final raw in await channel.drainQueue()) {
@@ -68,6 +71,14 @@ class CapturePipeline extends ChangeNotifier {
       if (connected.isEmpty) return;
       final bank = _detectConnected(raw, connected);
       if (bank == null) return;
+
+      if (!engine.packageNamesFor(connected).contains(raw.packageName)) {
+        // Bank terdeteksi lewat keyword tapi paketnya asing — pelajari
+        // paketnya agar notifikasi berikutnya ikut diantrikan ke disk
+        // saat app mati (mis. bank tanpa packageNames di katalog).
+        await channel.learnBankPackage(raw.packageName);
+      }
+
 
       final draft = engine.parse(
         packageName: raw.packageName,
@@ -101,6 +112,15 @@ class CapturePipeline extends ChangeNotifier {
       lowerText: lower,
       onlyIds: connected,
     );
+  }
+
+  /// Susun dan dorong daftar paket yang boleh diantrikan native ke
+  /// disk: paket katalog bank terhubung (paket belajar ditambahkan
+  /// native sendiri dan bertahan antar proses). Dipanggil saat start
+  /// dan setiap koneksi bank berubah.
+  Future<void> syncAllowedPackages() async {
+    final connected = await repository.connectedBankIds();
+    await channel.setAllowedPackages(engine.packageNamesFor(connected));
   }
 
   @override

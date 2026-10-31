@@ -87,6 +87,13 @@ class RuleEngine {
     return null;
   }
 
+  /// Package names katalog milik bank-bank ini — dipakai pipeline untuk
+  /// menyusun allowlist antrean native. Tidak termasuk paket belajaran.
+  Set<String> packageNamesFor(Set<String> bankIds) => {
+        for (final b in _ruleSet.banks)
+          if (bankIds.contains(b.id)) ...b.packageNames,
+      };
+
   int? _extractAmount(String? customPattern, String text) {
     // Pola custom dari aturan pengguna bersifat eksklusif: bila gagal
     // mencocokkan, JANGAN jatuh ke pola default — salah-potong lebih

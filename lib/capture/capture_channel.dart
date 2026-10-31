@@ -24,6 +24,29 @@ class CaptureChannel {
   Future<void> openListenerSettings() async {
     await _method.invokeMethod<void>('openListenerSettings');
   }
+  /// Kirim daftar paket bank terhubung — native hanya menulis notifikasi
+  /// dari paket ini (plus paket yang sudah dipelajari) ke antrean disk.
+  /// Gagal senyap: antrean kosong lebih aman daripada antrean bocor.
+  Future<void> setAllowedPackages(Set<String> packages) async {
+    try {
+      await _method.invokeMethod<void>(
+        'setAllowedPackages',
+        packages.toList(),
+      );
+    } on PlatformException {
+      // diabaikan — bukan platform yang didukung
+    }
+  }
+
+  /// Catat paket yang ternyata milik bank terhubung (dicocokkan lewat
+  /// keyword) agar notifikasi paket ini ikut diantrikan di disk.
+  Future<void> learnBankPackage(String packageName) async {
+    try {
+      await _method.invokeMethod<void>('learnBankPackage', packageName);
+    } on PlatformException {
+      // diabaikan — bukan platform yang didukung
+    }
+  }
 
   /// Buka pengaturan optimisasi baterai (penting untuk vendor agresif
   /// seperti vivo/Funtouch yang mematikan listener latar belakang).

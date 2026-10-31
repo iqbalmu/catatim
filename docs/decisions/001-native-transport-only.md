@@ -2,7 +2,8 @@
 
 ## Status
 
-Diterima (2026-10-10, sejak commit awal).
+Diterima (2026-10-10, sejak commit awal). Amandemen 2026-10-31:
+allowlist paket (lihat "Amandemen").
 
 ## Konteks
 
@@ -16,6 +17,28 @@ Kotlin (`NotificationCatcher`) hanya: baca notifikasi → JSON mentah →
 tulis antrian file (`capture_queue.jsonl`) → kirim via EventChannel.
 Seluruh logika — filter, parse, dedup, simpan — di Dart
 (`CapturePipeline` + `RuleEngine`).
+
+## Amandemen (2026-10-31): allowlist paket antrean
+
+Hasil audit keamanan (A-02): menulis SEMUA notifikasi ke
+`capture_queue.jsonl` plaintext berarti OTP/chat ikut tertinggal di
+disk tanpa batas waktu. Kini Dart mendorong daftar paket bank
+terhubung (`CapturePipeline.syncAllowedPackages`); native hanya
+menulis paket dalam daftar itu ke antrean.
+
+Batasan amandemen — native tetap tidak MEMUTUSKAN apa pun:
+
+- Daftar datang dari Dart; native hanya menyimpan & mencocokkan string
+  (metadata paket, bukan isi notifikasi).
+- Sink live (EventChannel) tetap menerima semua notifikasi agar Dart
+  bisa mencocokkan keyword; ketika bank terhubung cocok lewat keyword
+  tapi paketnya asing, Dart mengirim `learnBankPackage` dan native
+  mencatat paket itu (bertahan di SharedPreferences) untuk antrean
+  berikutnya.
+- Allowlist kosong = tidak ada yang ditulis ke disk (default aman).
+- Risiko: app jahat bisa memalsukan teks ber-keyword bank agar paketnya
+  dipelajari — dibatasi kap antrean 1 MB/1000 baris; dampaknya junk
+  di antrean, bukan kebocoran data.
 
 ## Alternatif yang ditolak
 
