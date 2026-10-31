@@ -530,6 +530,55 @@ void main() {
       expect(await db.select(db.drafts).get(), hasLength(1));
     });
 
+    test('dup yang digugurkan dedup tercatat terlihat (ignored_dup)', () async {
+      final raw = capture();
+      await repo.addDraftFromCapture(raw: raw, draft: draft());
+      expect(
+        await repo.addDraftFromCapture(
+          raw: capture(postedAt: raw.postedAt.add(const Duration(seconds: 30))),
+          draft: draft(),
+        ),
+        isNull,
+      );
+      final ignored = await repo.watchIgnoredDuplicates().first;
+      expect(ignored, hasLength(1));
+      expect(ignored.single.parsed, isTrue);
+      // Pengiriman ulang identik tidak menambah baris log.
+      expect(
+        await repo.addDraftFromCapture(
+          raw: capture(postedAt: raw.postedAt.add(const Duration(seconds: 60))),
+          draft: draft(),
+        ),
+        isNull,
+      );
+      expect(await repo.watchIgnoredDuplicates().first, hasLength(1));
+    });
+
+    test('log bisa dihapus per baris', () async {
+      await repo.recordUnparsedCapture(capture());
+      final log = (await db.select(db.captureLogs).get()).single;
+      await repo.deleteCaptureLog(log.id);
+      expect(await db.select(db.captureLogs).get(), isEmpty);
+    });
+
+    test('prune menghapus log terbaca tua; yang belum terbaca utuh', () async {
+      final old = DateTime.now().subtract(const Duration(days: 40));
+      // Dua log tua: satu sudah terbaca (parsed), satu belum.
+      await repo.recordUnparsedCapture(capture(body: 'sudah', postedAt: old));
+      await repo.recordUnparsedCapture(capture(body: 'belum', postedAt: old));
+      final logs = await db.select(db.captureLogs).get();
+      final read = logs.firstWhere((l) => l.body == 'sudah');
+      await (db.update(db.captureLogs)..where((c) => c.id.equals(read.id)))
+          .write(const CaptureLogsCompanion(parsed: Value(true)));
+      // Log segar belum terbaca — harus tetap ada.
+      await repo.recordUnparsedCapture(capture(body: 'segar'));
+
+      final removed = await repo.pruneCaptureLogs();
+      expect(removed, 1);
+      final left = await db.select(db.captureLogs).get();
+      expect(left.map((l) => l.body).toSet(), {'belum', 'segar'});
+    });
+
     test('draf juga ter-dedup terhadap transaksi yang sudah dikonfirmasi', () async {
       final raw = capture();
       await repo.addDraftFromCapture(raw: raw, draft: draft());

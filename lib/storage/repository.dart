@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../models.dart';
-import '../rules/engine.dart' show RuleEngine, UserRuleDef;
+import '../rules/engine.dart' show RuleEngine;
 import 'database.dart';
 
 /// Transaksi + kategori ter-join (kategori null bila belum disetel).
@@ -34,27 +34,14 @@ class LedgerRepository {
   // --- capture ------------------------------------------------------------
 
 
-  /// Catat notifikasi yang tidak berhasil diparse (untuk layar Capture Log).
+  /// Catat notifikasi yang tidak berhasil diparse (untuk Diagnostik).
   ///
   /// Log mentah yang identik (paket+judul+isi dalam jendela dedup) hanya
   /// dicatat sekali — melindungi dari pemrosesan ganda drain+stream.
-  Future<void> recordUnparsedCapture(RawCapture raw) async {
-    final from = raw.postedAt.subtract(dedupWindow);
-    final to = raw.postedAt.add(dedupWindow);
-    final dup =
-        await (_db.select(_db.captureLogs)
-              ..where(
-                (c) =>
-                    c.parsed.equals(false) &
-                    c.packageName.equals(raw.packageName) &
-                    c.title.equals(raw.title) &
-                    c.body.equals(raw.body) &
-                    c.postedAt.isBetweenValues(from, to),
-              )
-              ..limit(1))
-            .getSingleOrNull();
-    if (dup != null) return;
-    await _logCapture(raw, parsed: false);
+  Future<void> recordUnparsedCapture(RawCapture raw) {
+    return _db.transaction(() async {
+      await _logCaptureOnce(raw, parsed: false);
+    });
   }
 
   /// Notifikasi mentah yang belum berhasil diparse.
@@ -63,6 +50,34 @@ class LedgerRepository {
           ..where((c) => c.parsed.equals(false))
           ..orderBy([(c) => OrderingTerm.desc(c.postedAt)]))
         .get();
+  }
+
+  /// Notifikasi dikenali namun digugurkan dedup (duplikat) — bisa
+  /// ditindaklanjuti manual atau dihapus dari Diagnostik.
+  Stream<List<CaptureLog>> watchIgnoredDuplicates({int limit = 20}) {
+    return (_db.select(_db.captureLogs)
+          ..where((c) => c.ignoredDup.equals(true))
+          ..orderBy([(c) => OrderingTerm.desc(c.postedAt)])
+          ..limit(limit))
+        .watch();
+  }
+
+  /// Hapus satu baris log notifikasi.
+  Future<void> deleteCaptureLog(int id) {
+    return (_db.delete(_db.captureLogs)..where((c) => c.id.equals(id))).go();
+  }
+
+  /// Bersihkan log yang tak lagi relevan: sudah terbaca atau duplikat
+  /// yang lebih tua dari 30 hari. Mengembalikan jumlah baris terhapus.
+  Future<int> pruneCaptureLogs() async {
+    final cutoff = DateTime.now().subtract(const Duration(days: 30));
+    return (_db.delete(_db.captureLogs)
+          ..where(
+            (c) =>
+                (c.parsed.equals(true) | c.ignoredDup.equals(true)) &
+                c.postedAt.isSmallerThanValue(cutoff),
+          ))
+        .go();
   }
 
   /// Parse ulang semua capture gagal dengan rules terkini, berbatas bank
@@ -99,13 +114,14 @@ class LedgerRepository {
       final draft = parse(raw);
       if (draft == null || !connectedBankIds.contains(draft.bankId)) continue;
       final id = await addDraftFromCapture(raw: raw, draft: draft);
-      if (id == null) continue; // duplikat: tak perlu dibaca ulang lagi
+      // Dikenali → tandai terbaca; duplikat yang digugurkan sudah
+      // tercatat sebagai baris ignored_dup, tak perlu dicoba ulang.
       await (_db.update(
         _db.captureLogs,
       )..where((c) => c.id.equals(log.id))).write(
         const CaptureLogsCompanion(parsed: Value(true)),
       );
-      created++;
+      if (id != null) created++;
     }
     return created;
   }
@@ -191,52 +207,58 @@ class LedgerRepository {
   Future<int?> addDraftFromCapture({
     required RawCapture raw,
     required ParsedDraft draft,
-  }) async {
-    final from = raw.postedAt.subtract(dedupWindow);
-    final to = raw.postedAt.add(dedupWindow);
-    final dupTx =
-        await (_db.select(_db.transactions)
-              ..where(
-                (t) =>
-                    t.bankId.equals(draft.bankId) &
-                    t.amount.equals(draft.amount) &
-                    t.direction.equalsValue(draft.direction) &
-                    t.occurredAt.isBetweenValues(from, to),
-              )
-              ..limit(1))
-            .getSingleOrNull();
-    if (dupTx != null) return null;
-    final dupDraft =
-        await (_db.select(_db.drafts)
-              ..where(
-                (d) =>
-                    d.bankId.equals(draft.bankId) &
-                    d.amount.equals(draft.amount) &
-                    d.direction.equalsValue(draft.direction) &
-                    d.occurredAt.isBetweenValues(from, to),
-              )
-              ..limit(1))
-            .getSingleOrNull();
-    if (dupDraft != null) return null;
+  }) {
+    return _db.transaction(() async {
+      final from = raw.postedAt.subtract(dedupWindow);
+      final to = raw.postedAt.add(dedupWindow);
+      final dupTx =
+          await (_db.select(_db.transactions)
+                ..where(
+                  (t) =>
+                      t.bankId.equals(draft.bankId) &
+                      t.amount.equals(draft.amount) &
+                      t.direction.equalsValue(draft.direction) &
+                      t.occurredAt.isBetweenValues(from, to),
+                )
+                ..limit(1))
+              .getSingleOrNull();
+      if (dupTx != null) {
+        await _logCaptureOnce(raw, parsed: true, ignoredDup: true);
+        return null;
+      }
+      final dupDraft =
+          await (_db.select(_db.drafts)
+                ..where(
+                  (d) =>
+                      d.bankId.equals(draft.bankId) &
+                      d.amount.equals(draft.amount) &
+                      d.direction.equalsValue(draft.direction) &
+                      d.occurredAt.isBetweenValues(from, to),
+                )
+                ..limit(1))
+              .getSingleOrNull();
+      if (dupDraft != null) {
+        await _logCaptureOnce(raw, parsed: true, ignoredDup: true);
+        return null;
+      }
 
-    return _db
-        .into(_db.drafts)
-        .insert(
-          DraftsCompanion.insert(
-            bankId: draft.bankId,
-            kind: draft.kind,
-            direction: draft.direction,
-            amount: draft.amount,
-            counterparty: Value(draft.counterparty),
-            occurredAt: raw.postedAt,
-            rawTitle: Value(raw.title),
-            rawBody: Value(raw.body),
-            categoryId: Value(await _defaultCategoryId(draft.kind)),
-            accountId: Value(
-              draft.accountId ?? await _accountIdForBank(draft.bankId),
+      return _db
+          .into(_db.drafts)
+          .insert(
+            DraftsCompanion.insert(
+              bankId: draft.bankId,
+              kind: draft.kind,
+              direction: draft.direction,
+              amount: draft.amount,
+              counterparty: Value(draft.counterparty),
+              occurredAt: raw.postedAt,
+              rawTitle: Value(raw.title),
+              rawBody: Value(raw.body),
+              categoryId: Value(await _defaultCategoryId(draft.kind)),
+              accountId: Value(await _accountIdForBank(draft.bankId)),
             ),
-          ),
-        );
+          );
+    });
   }
 
   /// Draf menunggu keputusan, terbaru dulu — hidup (watch).
@@ -764,55 +786,6 @@ class LedgerRepository {
     await (_db.delete(_db.categories)..where((c) => c.id.equals(id))).go();
   }
 
-  // --- aturan pengguna ------------------------------------------------------
-
-  Stream<List<UserRule>> watchUserRules() {
-    return (_db.select(_db.userRules)
-          ..orderBy([
-            (r) => OrderingTerm.desc(r.enabled),
-            (r) => OrderingTerm.asc(r.id),
-          ]))
-        .watch();
-  }
-
-  Future<List<UserRule>> getUserRules({bool? enabled}) async {
-    final query = _db.select(_db.userRules);
-    if (enabled != null) {
-      query.where((r) => r.enabled.equals(enabled));
-    }
-    return query.get();
-  }
-
-  Future<int> addUserRule(UserRulesCompanion data) =>
-      _db.into(_db.userRules).insert(data);
-
-  Future<void> updateUserRule(int id, UserRulesCompanion data) {
-    return (_db.update(_db.userRules)..where((r) => r.id.equals(id)))
-        .write(data);
-  }
-
-  Future<void> deleteUserRule(int id) {
-    return (_db.delete(_db.userRules)..where((r) => r.id.equals(id))).go();
-  }
-
-  /// Petakan baris DB → definisi untuk engine.
-  Future<List<UserRuleDef>> userRuleDefs() async {
-    final rows = await getUserRules(enabled: true);
-    return [
-      for (final r in rows)
-        UserRuleDef(
-          id: r.id,
-          name: r.name,
-          packageName: r.packageName,
-          matchText: r.matchText,
-          amountPattern: r.amountPattern,
-          direction: r.direction.direction,
-          kind: r.kind,
-          accountId: r.accountId,
-        ),
-    ];
-  }
-
   // --- backup -----------------------------------------------------------------
 
   /// Flush WAL ke file utama sebelum file DB dicopy untuk backup.
@@ -944,23 +917,29 @@ class LedgerRepository {
     await (_db.delete(_db.accounts)..where((a) => a.id.equals(id))).go();
   }
 
-  Future<void> _logCapture(
+  /// Tulis log mentah sekali — konten identik (paket+judul+isi) dalam
+  /// jendela dedup tidak ditulis dua kali, melindungi dari pemrosesan
+  /// ganda drain+stream. [ignoredDup] memisahkan jenis penanda.
+  Future<void> _logCaptureOnce(
     RawCapture raw, {
     required bool parsed,
-    int? transactionId,
-    int? updateLogId,
+    bool ignoredDup = false,
   }) async {
-    if (updateLogId != null) {
-      await (_db.update(
-        _db.captureLogs,
-      )..where((c) => c.id.equals(updateLogId))).write(
-        CaptureLogsCompanion(
-          parsed: Value(parsed),
-          transactionId: Value(transactionId),
-        ),
-      );
-      return;
-    }
+    final from = raw.postedAt.subtract(dedupWindow);
+    final to = raw.postedAt.add(dedupWindow);
+    final dup =
+        await (_db.select(_db.captureLogs)
+              ..where(
+                (c) =>
+                    c.ignoredDup.equals(ignoredDup) &
+                    c.packageName.equals(raw.packageName) &
+                    c.title.equals(raw.title) &
+                    c.body.equals(raw.body) &
+                    c.postedAt.isBetweenValues(from, to),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    if (dup != null) return;
     await _db
         .into(_db.captureLogs)
         .insert(
@@ -970,7 +949,7 @@ class LedgerRepository {
             body: raw.body,
             postedAt: raw.postedAt,
             parsed: parsed,
-            transactionId: Value(transactionId),
+            ignoredDup: Value(ignoredDup),
           ),
         );
   }

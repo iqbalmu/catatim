@@ -19,6 +19,7 @@ Future<void> main() async {
   final repository = LedgerRepository(db);
   await seedDummyIfEmpty(db, repository); // data contoh (debug, DB kosong)
   await refreshSeedDemoDates(db); // geser tanggal demo mengikuti hari ini
+  unawaited(repository.pruneCaptureLogs()); // log terbaca/dup >30 hari
   // Katalog bank dimuat sekali — dipakai engine (parser) + UI (hubungkan).
   // Aturan pengguna tak lagi di-seed/di-load ke pipeline: model hubungkan
   // bank memakai seed rules murni agar bankId selalu ID katalog asli.
@@ -29,7 +30,6 @@ Future<void> main() async {
     channel: const CaptureChannel(),
     engine: engine,
     repository: repository,
-    progress: progress,
   );
   unawaited(pipeline.start());
   unawaited(progress.refresh());

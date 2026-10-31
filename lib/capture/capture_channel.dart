@@ -32,23 +32,26 @@ class CaptureChannel {
   }
 
   /// Ambil notifikasi yang tertangkap saat app tidak berjalan, lalu
-  /// antrian native dikosongkan.
+  /// antrian native dikosongkan. Baris korup dilewati — satu baris
+  /// rusak tidak boleh membuang seluruh antrean.
   Future<List<RawCapture>> drainQueue() async {
     try {
       final lines = await _method.invokeMethod<List<dynamic>>('drainQueue');
-      return [
-        for (final line in lines ?? const <dynamic>[])
-          RawCapture.fromLine(line as String),
-      ];
+      return parseCaptureLines([
+        for (final line in lines ?? const <dynamic>[]) line as String,
+      ]);
     } on PlatformException {
       return const [];
     }
   }
 
-  /// Notifikasi baru secara live (JSON line dari native).
-  Stream<RawCapture> stream() => _events.receiveBroadcastStream().map(
-    (event) => RawCapture.fromLine(event as String),
-  );
+  /// Notifikasi baru secara live (JSON line dari native). Baris korup
+  /// dilewati diam-diam.
+  Stream<RawCapture> stream() => _events
+      .receiveBroadcastStream()
+      .map((event) => tryParseCaptureLine(event as String))
+      .where((c) => c != null)
+      .cast<RawCapture>();
 }
 
 /// encode JSON line — dipakai native; util ini untuk test.
@@ -58,3 +61,17 @@ String encodeCaptureLine(RawCapture capture) => jsonEncode({
   'body': capture.body,
   'postedAt': capture.postedAt.millisecondsSinceEpoch,
 });
+
+/// Parse satu JSON line notifikasi; null bila baris korup.
+RawCapture? tryParseCaptureLine(String line) {
+  try {
+    return RawCapture.fromLine(line);
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Parse semua baris antrean; baris korup dilewati, sisanya diproses.
+List<RawCapture> parseCaptureLines(List<String> lines) => [
+      for (final line in lines) ?tryParseCaptureLine(line),
+    ];

@@ -44,7 +44,7 @@ void main() {
         posted_at INTEGER NOT NULL,
         parsed INTEGER NOT NULL,
         transaction_id INTEGER NULL,
-        created_at INTEGER NOT NULL
+        created_at INTEGER NOT NULL DEFAULT (CAST(strftime('%s','now') AS INTEGER))
       )
     ''');
     raw.execute("PRAGMA user_version = 1");
@@ -405,6 +405,16 @@ void main() {
         .get();
     expect(leftovers, isEmpty);
 
+    // Tabel user_rules dibuang migrasi v10 — aturan pengguna
+    // dipensiunkan bersama model hubungkan bank.
+    final userRulesLeft = await db
+        .customSelect(
+          "SELECT name FROM sqlite_master WHERE type = 'table' "
+          "AND name = 'user_rules'",
+        )
+        .get();
+    expect(userRulesLeft, isEmpty);
+
     await db.close();
   });
 
@@ -478,6 +488,115 @@ void main() {
     // Akun lama tertaut ke bank katalog via nama.
     final accs = await db.select(db.accounts).get();
     expect(accs.singleWhere((a) => a.name == 'blu by BCA').bankId, 'blu');
+
+    await db.close();
+  });
+
+  test('migrasi v9→v10: user_rules dibuang, ignored_dup tersedia', () async {
+    // Skema v9 = v8 + tabel draf + accounts.bank_id.
+    final raw = sqlite3.open(dbFile.path);
+    raw.execute(
+      'ALTER TABLE transactions ADD COLUMN category_id INTEGER NULL '
+      'REFERENCES categories (id)',
+    );
+    raw.execute(
+      'ALTER TABLE transactions ADD COLUMN account_id INTEGER NULL '
+      'REFERENCES accounts (id)',
+    );
+    raw.execute('''
+      CREATE TABLE categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        color_index INTEGER NOT NULL
+      )
+    ''');
+    raw.execute('''
+      CREATE TABLE app_settings (
+        key TEXT NOT NULL PRIMARY KEY,
+        value_text TEXT NOT NULL
+      )
+    ''');
+    raw.execute('''
+      CREATE TABLE accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        kind TEXT NOT NULL,
+        color_index INTEGER NOT NULL,
+        opening_balance INTEGER NOT NULL DEFAULT (0),
+        bank_id TEXT NULL,
+        created_at INTEGER NOT NULL
+      )
+    ''');
+    raw.execute('''
+      CREATE TABLE drafts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bank_id TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        direction TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        counterparty TEXT NULL,
+        occurred_at INTEGER NOT NULL,
+        raw_title TEXT NULL,
+        raw_body TEXT NULL,
+        category_id INTEGER NULL,
+        account_id INTEGER NULL,
+        created_at INTEGER NOT NULL DEFAULT (CAST(strftime('%s','now') AS INTEGER))
+      )
+    ''');
+    raw.execute(
+      'CREATE TABLE user_rules (id INTEGER PRIMARY KEY AUTOINCREMENT, '
+      'name TEXT NOT NULL)',
+    );
+    raw.execute(
+      "INSERT INTO accounts (name, kind, color_index, created_at) "
+      "VALUES ('blu by BCA', 'bank', 0, 1790000000)",
+    );
+    raw.execute('PRAGMA user_version = 9');
+    raw.close();
+
+    final db = AppDatabase(NativeDatabase(dbFile));
+    final repository = repo(db);
+
+    // user_rules dibuang migrasi v10.
+    final userRulesLeft = await db
+        .customSelect(
+          "SELECT name FROM sqlite_master WHERE type = 'table' "
+          "AND name = 'user_rules'",
+        )
+        .get();
+    expect(userRulesLeft, isEmpty);
+
+    // capture_logs mendapat kolom ignored_dup; dup yang digugurkan
+    // dedup tercatat dan bisa dilihat.
+    ParsedDraft d({required int amount}) => ParsedDraft(
+          bankId: 'blu',
+          bankName: 'blu by BCA',
+          ruleName: 'transfer masuk',
+          kind: TxKind.transfer,
+          direction: Direction.incoming,
+          amount: amount,
+        );
+    RawCapture cap(DateTime at) => RawCapture(
+          packageName: 'id.bm.blu',
+          title: 'blu',
+          body: 'Transfer masuk Rp1.000',
+          postedAt: at,
+        );
+    final base = DateTime(2026, 10, 12, 9);
+    expect(
+      await repository.addDraftFromCapture(raw: cap(base), draft: d(amount: 1000)),
+      isNotNull,
+    );
+    expect(
+      await repository.addDraftFromCapture(
+        raw: cap(base.add(const Duration(seconds: 30))),
+        draft: d(amount: 1000),
+      ),
+      isNull,
+    );
+    final ignored = await repository.watchIgnoredDuplicates().first;
+    expect(ignored, hasLength(1));
+    expect(ignored.single.ignoredDup, isTrue);
 
     await db.close();
   });

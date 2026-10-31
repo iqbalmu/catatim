@@ -130,5 +130,18 @@ void main() {
     await started([raw, _blu(at: raw.postedAt.add(const Duration(seconds: 30)))]);
 
     expect(await db.select(db.drafts).get(), hasLength(1));
+    // Duplikat yang digugurkan tetap terlihat sebagai log ignored_dup.
+    final logs = await db.select(db.captureLogs).get();
+    expect(logs, hasLength(1));
+    expect(logs.first.ignoredDup, isTrue);
+    expect(logs.first.parsed, isTrue);
+  });
+
+  test('baris antrean korup dilewati tanpa membuang sisanya', () async {
+    final good = encodeCaptureLine(_blu());
+    final parsed = parseCaptureLines(['{{{bukan json', good, '']);
+    expect(parsed, hasLength(1));
+    expect(parsed.single.body, _blu().body);
+    expect(tryParseCaptureLine('{"packageName":'), isNull);
   });
 }

@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../capture/pipeline.dart';
+import '../core/dates_id.dart';
 import '../models.dart';
 import '../rules/rule_set.dart';
+import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'quest.dart';
+import 'transaction_sheet.dart';
 
 /// Halaman Pengaturan Capture Notifikasi Bank & E-Wallet Offline
 class CaptureSettingsScreen extends StatefulWidget {
@@ -384,6 +387,96 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                     ),
                   ],
                 ),
+              ),
+
+              // ── 4b. Duplikat yang diabaikan dedup ──
+              StreamBuilder<List<CaptureLog>>(
+                stream: widget.repository.watchIgnoredDuplicates(),
+                builder: (context, dupSnap) {
+                  final dups = dupSnap.data ?? const <CaptureLog>[];
+                  if (dups.isEmpty) return const SizedBox.shrink();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const QuestSectionHeader(
+                        title: 'Duplikat yang Diabaikan',
+                      ),
+                      Text(
+                        'Notifikasi ini dianggap duplikat — bank, nominal, dan arah sama dalam 2 menit — sehingga tidak menjadi draf. Tap untuk mencatat manual, geser ke kiri untuk menghapus.',
+                        style: context.qSmall(12).copyWith(color: q.muted),
+                      ),
+                      const SizedBox(height: Spacing.xs),
+                      QuestCard(
+                        padding: EdgeInsets.zero,
+                        child: Column(
+                          children: [
+                            for (var i = 0; i < dups.length; i++) ...[
+                              Dismissible(
+                                key: ValueKey('ignored-dup-${dups[i].id}'),
+                                direction: DismissDirection.endToStart,
+                                onDismissed: (_) => widget.repository
+                                    .deleteCaptureLog(dups[i].id),
+                                background: Container(
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(
+                                    right: Spacing.m,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: q.bad.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.card,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.delete_outline_rounded,
+                                    color: q.bad,
+                                  ),
+                                ),
+                                child: QuestListTile(
+                                  leading: Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      color: q.surface2,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(
+                                      Icons.copy_rounded,
+                                      color: q.muted,
+                                      size: 19,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    dups[i].body,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: context.qTitle(14),
+                                  ),
+                                  subtitle: Text(
+                                    '${idDateTime(dups[i].postedAt)} · '
+                                    '${dups[i].packageName}',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: q.muted,
+                                    ),
+                                  ),
+                                  onTap: () => TransactionSheet.show(
+                                    context,
+                                    widget.repository,
+                                  ),
+                                ),
+                              ),
+                              if (i < dups.length - 1)
+                                Divider(height: 1, thickness: 1, color: q.line),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.m),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: Spacing.m),
 

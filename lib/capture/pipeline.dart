@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../game/progress.dart';
 import '../models.dart';
 import '../rules/engine.dart';
 import '../rules/rule_set.dart' show BankRules;
@@ -21,16 +20,18 @@ class CapturePipeline extends ChangeNotifier {
     required this.channel,
     required this.engine,
     required this.repository,
-    this.progress,
   });
 
   final CaptureChannel channel;
   final RuleEngine engine;
   final LedgerRepository repository;
-  final ProgressService? progress;
 
   StreamSubscription<RawCapture>? _subscription;
   bool _started = false;
+
+  /// Antrean pemrosesan berurutan — notifikasi yang tiba nyaris
+  /// bersamaan (drain + stream) tidak boleh balapan menulis DB.
+  Future<void> _tail = Future<void>.value();
 
   /// Jumlah notifikasi yang ditangani sejak app berjalan (untuk indikator).
   int handledCount = 0;
@@ -41,15 +42,22 @@ class CapturePipeline extends ChangeNotifier {
     // Notifikasi yang tertangkap saat app mati tersimpan di antrian native.
     try {
       for (final raw in await channel.drainQueue()) {
-        await _handle(raw);
+        _submit(raw);
       }
+      await _tail;
     } catch (_) {
       // drain gagal (channel belum siap) — live stream tetap dipasang.
     }
     _subscription = channel.stream().listen(
-      (raw) => _handle(raw),
+      _submit,
       onError: (Object _) {},
     );
+  }
+
+  /// Antrekan pemrosesan satu notifikasi — bergiliran, agar cek dedup
+  /// lalu simpan tidak balapan dengan notifikasi lain.
+  void _submit(RawCapture raw) {
+    _tail = _tail.then((_) => _handle(raw));
   }
 
   Future<void> _handle(RawCapture raw) async {

@@ -117,27 +117,10 @@ class CaptureLogs extends Table {
   BoolColumn get parsed => boolean()();
   IntColumn get transactionId => integer().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
-}
 
-/// Aturan capture buatan pengguna — diprioritaskan di atas seed rules.
-class UserRules extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get name => text()();
-
-  /// Null = cocok paket mana pun; terisi = hanya paket ini.
-  TextColumn get packageName => text().nullable()();
-
-  /// Null = bebas kata kunci; terisi = harus mengandung teks ini.
-  TextColumn get matchText => text().nullable()();
-
-  /// Pola nominal custom; null = pakai pola default engine.
-  TextColumn get amountPattern => text().nullable()();
-
-  TextColumn get direction => textEnum<UserRuleDirection>()();
-  TextColumn get kind => textEnum<TxKind>()();
-  IntColumn get accountId => integer().nullable().references(Accounts, #id)();
-  BoolColumn get enabled => boolean().withDefault(const Constant(true))();
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  /// Notifikasi dikenali tapi digugurkan dedup (±120s) — disimpan agar
+  /// keputusan mengabaikannya tetap terlihat dan bisa ditindaklanjuti.
+  BoolColumn get ignoredDup => boolean().withDefault(const Constant(false))();
 }
 
 @DriftDatabase(
@@ -150,14 +133,13 @@ class UserRules extends Table {
     Accounts,
     Budgets,
     Bons,
-    UserRules,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -178,9 +160,6 @@ class AppDatabase extends _$AppDatabase {
             if (!await _hasColumn(m, 'transactions', 'account_id')) {
               await m.addColumn(transactions, transactions.accountId);
             }
-          }
-          if (from < 4) {
-            await m.createTable(userRules);
           }
           if (from < 5) {
             await m.createTable(budgets);
@@ -225,6 +204,15 @@ class AppDatabase extends _$AppDatabase {
               );
             }
           }
+          if (from < 10) {
+            // Aturan buatan pengguna dipensiunkan bersama model
+            // hubungkan bank; tabelnya dibuang. Notifikasi yang digugurkan
+            // dedup kini dicatat (ignored_dup) agar tetap terlihat.
+            await customStatement('DROP TABLE IF EXISTS user_rules');
+            if (!await _hasColumn(m, 'capture_logs', 'ignored_dup')) {
+              await m.addColumn(captureLogs, captureLogs.ignoredDup);
+            }
+          }
         },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -235,10 +223,12 @@ class AppDatabase extends _$AppDatabase {
       await m.createTable(appSettings);
       await m.createTable(accounts);
       await m.createTable(bons);
-      await m.createTable(userRules);
       await m.createTable(budgets);
 
       await m.createTable(drafts);
+      if (!await _hasColumn(m, 'capture_logs', 'ignored_dup')) {
+        await m.addColumn(captureLogs, captureLogs.ignoredDup);
+      }
       // Seed kategori bawaan sekali — berlaku untuk DB baru maupun hasil
       // upgrade.
       final existing = await select(categories).get();

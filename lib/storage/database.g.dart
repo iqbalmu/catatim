@@ -2334,6 +2334,21 @@ class $CaptureLogsTable extends CaptureLogs
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _ignoredDupMeta = const VerificationMeta(
+    'ignoredDup',
+  );
+  @override
+  late final GeneratedColumn<bool> ignoredDup = GeneratedColumn<bool>(
+    'ignored_dup',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("ignored_dup" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2344,6 +2359,7 @@ class $CaptureLogsTable extends CaptureLogs
     parsed,
     transactionId,
     createdAt,
+    ignoredDup,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2418,6 +2434,12 @@ class $CaptureLogsTable extends CaptureLogs
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('ignored_dup')) {
+      context.handle(
+        _ignoredDupMeta,
+        ignoredDup.isAcceptableOrUnknown(data['ignored_dup']!, _ignoredDupMeta),
+      );
+    }
     return context;
   }
 
@@ -2459,6 +2481,10 @@ class $CaptureLogsTable extends CaptureLogs
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      ignoredDup: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}ignored_dup'],
+      )!,
     );
   }
 
@@ -2477,6 +2503,10 @@ class CaptureLog extends DataClass implements Insertable<CaptureLog> {
   final bool parsed;
   final int? transactionId;
   final DateTime createdAt;
+
+  /// Notifikasi dikenali tapi digugurkan dedup (±120s) — disimpan agar
+  /// keputusan mengabaikannya tetap terlihat dan bisa ditindaklanjuti.
+  final bool ignoredDup;
   const CaptureLog({
     required this.id,
     required this.packageName,
@@ -2486,6 +2516,7 @@ class CaptureLog extends DataClass implements Insertable<CaptureLog> {
     required this.parsed,
     this.transactionId,
     required this.createdAt,
+    required this.ignoredDup,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2500,6 +2531,7 @@ class CaptureLog extends DataClass implements Insertable<CaptureLog> {
       map['transaction_id'] = Variable<int>(transactionId);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    map['ignored_dup'] = Variable<bool>(ignoredDup);
     return map;
   }
 
@@ -2515,6 +2547,7 @@ class CaptureLog extends DataClass implements Insertable<CaptureLog> {
           ? const Value.absent()
           : Value(transactionId),
       createdAt: Value(createdAt),
+      ignoredDup: Value(ignoredDup),
     );
   }
 
@@ -2532,6 +2565,7 @@ class CaptureLog extends DataClass implements Insertable<CaptureLog> {
       parsed: serializer.fromJson<bool>(json['parsed']),
       transactionId: serializer.fromJson<int?>(json['transactionId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      ignoredDup: serializer.fromJson<bool>(json['ignoredDup']),
     );
   }
   @override
@@ -2546,6 +2580,7 @@ class CaptureLog extends DataClass implements Insertable<CaptureLog> {
       'parsed': serializer.toJson<bool>(parsed),
       'transactionId': serializer.toJson<int?>(transactionId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'ignoredDup': serializer.toJson<bool>(ignoredDup),
     };
   }
 
@@ -2558,6 +2593,7 @@ class CaptureLog extends DataClass implements Insertable<CaptureLog> {
     bool? parsed,
     Value<int?> transactionId = const Value.absent(),
     DateTime? createdAt,
+    bool? ignoredDup,
   }) => CaptureLog(
     id: id ?? this.id,
     packageName: packageName ?? this.packageName,
@@ -2569,6 +2605,7 @@ class CaptureLog extends DataClass implements Insertable<CaptureLog> {
         ? transactionId.value
         : this.transactionId,
     createdAt: createdAt ?? this.createdAt,
+    ignoredDup: ignoredDup ?? this.ignoredDup,
   );
   CaptureLog copyWithCompanion(CaptureLogsCompanion data) {
     return CaptureLog(
@@ -2584,6 +2621,9 @@ class CaptureLog extends DataClass implements Insertable<CaptureLog> {
           ? data.transactionId.value
           : this.transactionId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      ignoredDup: data.ignoredDup.present
+          ? data.ignoredDup.value
+          : this.ignoredDup,
     );
   }
 
@@ -2597,7 +2637,8 @@ class CaptureLog extends DataClass implements Insertable<CaptureLog> {
           ..write('postedAt: $postedAt, ')
           ..write('parsed: $parsed, ')
           ..write('transactionId: $transactionId, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('ignoredDup: $ignoredDup')
           ..write(')'))
         .toString();
   }
@@ -2612,6 +2653,7 @@ class CaptureLog extends DataClass implements Insertable<CaptureLog> {
     parsed,
     transactionId,
     createdAt,
+    ignoredDup,
   );
   @override
   bool operator ==(Object other) =>
@@ -2624,7 +2666,8 @@ class CaptureLog extends DataClass implements Insertable<CaptureLog> {
           other.postedAt == this.postedAt &&
           other.parsed == this.parsed &&
           other.transactionId == this.transactionId &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.ignoredDup == this.ignoredDup);
 }
 
 class CaptureLogsCompanion extends UpdateCompanion<CaptureLog> {
@@ -2636,6 +2679,7 @@ class CaptureLogsCompanion extends UpdateCompanion<CaptureLog> {
   final Value<bool> parsed;
   final Value<int?> transactionId;
   final Value<DateTime> createdAt;
+  final Value<bool> ignoredDup;
   const CaptureLogsCompanion({
     this.id = const Value.absent(),
     this.packageName = const Value.absent(),
@@ -2645,6 +2689,7 @@ class CaptureLogsCompanion extends UpdateCompanion<CaptureLog> {
     this.parsed = const Value.absent(),
     this.transactionId = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.ignoredDup = const Value.absent(),
   });
   CaptureLogsCompanion.insert({
     this.id = const Value.absent(),
@@ -2655,6 +2700,7 @@ class CaptureLogsCompanion extends UpdateCompanion<CaptureLog> {
     required bool parsed,
     this.transactionId = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.ignoredDup = const Value.absent(),
   }) : packageName = Value(packageName),
        title = Value(title),
        body = Value(body),
@@ -2669,6 +2715,7 @@ class CaptureLogsCompanion extends UpdateCompanion<CaptureLog> {
     Expression<bool>? parsed,
     Expression<int>? transactionId,
     Expression<DateTime>? createdAt,
+    Expression<bool>? ignoredDup,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -2679,6 +2726,7 @@ class CaptureLogsCompanion extends UpdateCompanion<CaptureLog> {
       if (parsed != null) 'parsed': parsed,
       if (transactionId != null) 'transaction_id': transactionId,
       if (createdAt != null) 'created_at': createdAt,
+      if (ignoredDup != null) 'ignored_dup': ignoredDup,
     });
   }
 
@@ -2691,6 +2739,7 @@ class CaptureLogsCompanion extends UpdateCompanion<CaptureLog> {
     Value<bool>? parsed,
     Value<int?>? transactionId,
     Value<DateTime>? createdAt,
+    Value<bool>? ignoredDup,
   }) {
     return CaptureLogsCompanion(
       id: id ?? this.id,
@@ -2701,6 +2750,7 @@ class CaptureLogsCompanion extends UpdateCompanion<CaptureLog> {
       parsed: parsed ?? this.parsed,
       transactionId: transactionId ?? this.transactionId,
       createdAt: createdAt ?? this.createdAt,
+      ignoredDup: ignoredDup ?? this.ignoredDup,
     );
   }
 
@@ -2731,6 +2781,9 @@ class CaptureLogsCompanion extends UpdateCompanion<CaptureLog> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (ignoredDup.present) {
+      map['ignored_dup'] = Variable<bool>(ignoredDup.value);
+    }
     return map;
   }
 
@@ -2744,7 +2797,8 @@ class CaptureLogsCompanion extends UpdateCompanion<CaptureLog> {
           ..write('postedAt: $postedAt, ')
           ..write('parsed: $parsed, ')
           ..write('transactionId: $transactionId, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('ignoredDup: $ignoredDup')
           ..write(')'))
         .toString();
   }
@@ -3829,637 +3883,6 @@ class BonsCompanion extends UpdateCompanion<Bon> {
   }
 }
 
-class $UserRulesTable extends UserRules
-    with TableInfo<$UserRulesTable, UserRule> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $UserRulesTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
-  static const VerificationMeta _nameMeta = const VerificationMeta('name');
-  @override
-  late final GeneratedColumn<String> name = GeneratedColumn<String>(
-    'name',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _packageNameMeta = const VerificationMeta(
-    'packageName',
-  );
-  @override
-  late final GeneratedColumn<String> packageName = GeneratedColumn<String>(
-    'package_name',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _matchTextMeta = const VerificationMeta(
-    'matchText',
-  );
-  @override
-  late final GeneratedColumn<String> matchText = GeneratedColumn<String>(
-    'match_text',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _amountPatternMeta = const VerificationMeta(
-    'amountPattern',
-  );
-  @override
-  late final GeneratedColumn<String> amountPattern = GeneratedColumn<String>(
-    'amount_pattern',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  @override
-  late final GeneratedColumnWithTypeConverter<UserRuleDirection, String>
-  direction = GeneratedColumn<String>(
-    'direction',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  ).withConverter<UserRuleDirection>($UserRulesTable.$converterdirection);
-  @override
-  late final GeneratedColumnWithTypeConverter<TxKind, String> kind =
-      GeneratedColumn<String>(
-        'kind',
-        aliasedName,
-        false,
-        type: DriftSqlType.string,
-        requiredDuringInsert: true,
-      ).withConverter<TxKind>($UserRulesTable.$converterkind);
-  static const VerificationMeta _accountIdMeta = const VerificationMeta(
-    'accountId',
-  );
-  @override
-  late final GeneratedColumn<int> accountId = GeneratedColumn<int>(
-    'account_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES accounts (id)',
-    ),
-  );
-  static const VerificationMeta _enabledMeta = const VerificationMeta(
-    'enabled',
-  );
-  @override
-  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
-    'enabled',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("enabled" IN (0, 1))',
-    ),
-    defaultValue: const Constant(true),
-  );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta(
-    'createdAt',
-  );
-  @override
-  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
-    'created_at',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: false,
-    defaultValue: currentDateAndTime,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    id,
-    name,
-    packageName,
-    matchText,
-    amountPattern,
-    direction,
-    kind,
-    accountId,
-    enabled,
-    createdAt,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'user_rules';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<UserRule> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('name')) {
-      context.handle(
-        _nameMeta,
-        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_nameMeta);
-    }
-    if (data.containsKey('package_name')) {
-      context.handle(
-        _packageNameMeta,
-        packageName.isAcceptableOrUnknown(
-          data['package_name']!,
-          _packageNameMeta,
-        ),
-      );
-    }
-    if (data.containsKey('match_text')) {
-      context.handle(
-        _matchTextMeta,
-        matchText.isAcceptableOrUnknown(data['match_text']!, _matchTextMeta),
-      );
-    }
-    if (data.containsKey('amount_pattern')) {
-      context.handle(
-        _amountPatternMeta,
-        amountPattern.isAcceptableOrUnknown(
-          data['amount_pattern']!,
-          _amountPatternMeta,
-        ),
-      );
-    }
-    if (data.containsKey('account_id')) {
-      context.handle(
-        _accountIdMeta,
-        accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
-      );
-    }
-    if (data.containsKey('enabled')) {
-      context.handle(
-        _enabledMeta,
-        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
-      );
-    }
-    if (data.containsKey('created_at')) {
-      context.handle(
-        _createdAtMeta,
-        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
-      );
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  UserRule map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return UserRule(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      name: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}name'],
-      )!,
-      packageName: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}package_name'],
-      ),
-      matchText: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}match_text'],
-      ),
-      amountPattern: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}amount_pattern'],
-      ),
-      direction: $UserRulesTable.$converterdirection.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.string,
-          data['${effectivePrefix}direction'],
-        )!,
-      ),
-      kind: $UserRulesTable.$converterkind.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.string,
-          data['${effectivePrefix}kind'],
-        )!,
-      ),
-      accountId: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}account_id'],
-      ),
-      enabled: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}enabled'],
-      )!,
-      createdAt: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}created_at'],
-      )!,
-    );
-  }
-
-  @override
-  $UserRulesTable createAlias(String alias) {
-    return $UserRulesTable(attachedDatabase, alias);
-  }
-
-  static JsonTypeConverter2<UserRuleDirection, String, String>
-  $converterdirection = const EnumNameConverter<UserRuleDirection>(
-    UserRuleDirection.values,
-  );
-  static JsonTypeConverter2<TxKind, String, String> $converterkind =
-      const EnumNameConverter<TxKind>(TxKind.values);
-}
-
-class UserRule extends DataClass implements Insertable<UserRule> {
-  final int id;
-  final String name;
-
-  /// Null = cocok paket mana pun; terisi = hanya paket ini.
-  final String? packageName;
-
-  /// Null = bebas kata kunci; terisi = harus mengandung teks ini.
-  final String? matchText;
-
-  /// Pola nominal custom; null = pakai pola default engine.
-  final String? amountPattern;
-  final UserRuleDirection direction;
-  final TxKind kind;
-  final int? accountId;
-  final bool enabled;
-  final DateTime createdAt;
-  const UserRule({
-    required this.id,
-    required this.name,
-    this.packageName,
-    this.matchText,
-    this.amountPattern,
-    required this.direction,
-    required this.kind,
-    this.accountId,
-    required this.enabled,
-    required this.createdAt,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['name'] = Variable<String>(name);
-    if (!nullToAbsent || packageName != null) {
-      map['package_name'] = Variable<String>(packageName);
-    }
-    if (!nullToAbsent || matchText != null) {
-      map['match_text'] = Variable<String>(matchText);
-    }
-    if (!nullToAbsent || amountPattern != null) {
-      map['amount_pattern'] = Variable<String>(amountPattern);
-    }
-    {
-      map['direction'] = Variable<String>(
-        $UserRulesTable.$converterdirection.toSql(direction),
-      );
-    }
-    {
-      map['kind'] = Variable<String>(
-        $UserRulesTable.$converterkind.toSql(kind),
-      );
-    }
-    if (!nullToAbsent || accountId != null) {
-      map['account_id'] = Variable<int>(accountId);
-    }
-    map['enabled'] = Variable<bool>(enabled);
-    map['created_at'] = Variable<DateTime>(createdAt);
-    return map;
-  }
-
-  UserRulesCompanion toCompanion(bool nullToAbsent) {
-    return UserRulesCompanion(
-      id: Value(id),
-      name: Value(name),
-      packageName: packageName == null && nullToAbsent
-          ? const Value.absent()
-          : Value(packageName),
-      matchText: matchText == null && nullToAbsent
-          ? const Value.absent()
-          : Value(matchText),
-      amountPattern: amountPattern == null && nullToAbsent
-          ? const Value.absent()
-          : Value(amountPattern),
-      direction: Value(direction),
-      kind: Value(kind),
-      accountId: accountId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(accountId),
-      enabled: Value(enabled),
-      createdAt: Value(createdAt),
-    );
-  }
-
-  factory UserRule.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return UserRule(
-      id: serializer.fromJson<int>(json['id']),
-      name: serializer.fromJson<String>(json['name']),
-      packageName: serializer.fromJson<String?>(json['packageName']),
-      matchText: serializer.fromJson<String?>(json['matchText']),
-      amountPattern: serializer.fromJson<String?>(json['amountPattern']),
-      direction: $UserRulesTable.$converterdirection.fromJson(
-        serializer.fromJson<String>(json['direction']),
-      ),
-      kind: $UserRulesTable.$converterkind.fromJson(
-        serializer.fromJson<String>(json['kind']),
-      ),
-      accountId: serializer.fromJson<int?>(json['accountId']),
-      enabled: serializer.fromJson<bool>(json['enabled']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'name': serializer.toJson<String>(name),
-      'packageName': serializer.toJson<String?>(packageName),
-      'matchText': serializer.toJson<String?>(matchText),
-      'amountPattern': serializer.toJson<String?>(amountPattern),
-      'direction': serializer.toJson<String>(
-        $UserRulesTable.$converterdirection.toJson(direction),
-      ),
-      'kind': serializer.toJson<String>(
-        $UserRulesTable.$converterkind.toJson(kind),
-      ),
-      'accountId': serializer.toJson<int?>(accountId),
-      'enabled': serializer.toJson<bool>(enabled),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-    };
-  }
-
-  UserRule copyWith({
-    int? id,
-    String? name,
-    Value<String?> packageName = const Value.absent(),
-    Value<String?> matchText = const Value.absent(),
-    Value<String?> amountPattern = const Value.absent(),
-    UserRuleDirection? direction,
-    TxKind? kind,
-    Value<int?> accountId = const Value.absent(),
-    bool? enabled,
-    DateTime? createdAt,
-  }) => UserRule(
-    id: id ?? this.id,
-    name: name ?? this.name,
-    packageName: packageName.present ? packageName.value : this.packageName,
-    matchText: matchText.present ? matchText.value : this.matchText,
-    amountPattern: amountPattern.present
-        ? amountPattern.value
-        : this.amountPattern,
-    direction: direction ?? this.direction,
-    kind: kind ?? this.kind,
-    accountId: accountId.present ? accountId.value : this.accountId,
-    enabled: enabled ?? this.enabled,
-    createdAt: createdAt ?? this.createdAt,
-  );
-  UserRule copyWithCompanion(UserRulesCompanion data) {
-    return UserRule(
-      id: data.id.present ? data.id.value : this.id,
-      name: data.name.present ? data.name.value : this.name,
-      packageName: data.packageName.present
-          ? data.packageName.value
-          : this.packageName,
-      matchText: data.matchText.present ? data.matchText.value : this.matchText,
-      amountPattern: data.amountPattern.present
-          ? data.amountPattern.value
-          : this.amountPattern,
-      direction: data.direction.present ? data.direction.value : this.direction,
-      kind: data.kind.present ? data.kind.value : this.kind,
-      accountId: data.accountId.present ? data.accountId.value : this.accountId,
-      enabled: data.enabled.present ? data.enabled.value : this.enabled,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('UserRule(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('packageName: $packageName, ')
-          ..write('matchText: $matchText, ')
-          ..write('amountPattern: $amountPattern, ')
-          ..write('direction: $direction, ')
-          ..write('kind: $kind, ')
-          ..write('accountId: $accountId, ')
-          ..write('enabled: $enabled, ')
-          ..write('createdAt: $createdAt')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    name,
-    packageName,
-    matchText,
-    amountPattern,
-    direction,
-    kind,
-    accountId,
-    enabled,
-    createdAt,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is UserRule &&
-          other.id == this.id &&
-          other.name == this.name &&
-          other.packageName == this.packageName &&
-          other.matchText == this.matchText &&
-          other.amountPattern == this.amountPattern &&
-          other.direction == this.direction &&
-          other.kind == this.kind &&
-          other.accountId == this.accountId &&
-          other.enabled == this.enabled &&
-          other.createdAt == this.createdAt);
-}
-
-class UserRulesCompanion extends UpdateCompanion<UserRule> {
-  final Value<int> id;
-  final Value<String> name;
-  final Value<String?> packageName;
-  final Value<String?> matchText;
-  final Value<String?> amountPattern;
-  final Value<UserRuleDirection> direction;
-  final Value<TxKind> kind;
-  final Value<int?> accountId;
-  final Value<bool> enabled;
-  final Value<DateTime> createdAt;
-  const UserRulesCompanion({
-    this.id = const Value.absent(),
-    this.name = const Value.absent(),
-    this.packageName = const Value.absent(),
-    this.matchText = const Value.absent(),
-    this.amountPattern = const Value.absent(),
-    this.direction = const Value.absent(),
-    this.kind = const Value.absent(),
-    this.accountId = const Value.absent(),
-    this.enabled = const Value.absent(),
-    this.createdAt = const Value.absent(),
-  });
-  UserRulesCompanion.insert({
-    this.id = const Value.absent(),
-    required String name,
-    this.packageName = const Value.absent(),
-    this.matchText = const Value.absent(),
-    this.amountPattern = const Value.absent(),
-    required UserRuleDirection direction,
-    required TxKind kind,
-    this.accountId = const Value.absent(),
-    this.enabled = const Value.absent(),
-    this.createdAt = const Value.absent(),
-  }) : name = Value(name),
-       direction = Value(direction),
-       kind = Value(kind);
-  static Insertable<UserRule> custom({
-    Expression<int>? id,
-    Expression<String>? name,
-    Expression<String>? packageName,
-    Expression<String>? matchText,
-    Expression<String>? amountPattern,
-    Expression<String>? direction,
-    Expression<String>? kind,
-    Expression<int>? accountId,
-    Expression<bool>? enabled,
-    Expression<DateTime>? createdAt,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (name != null) 'name': name,
-      if (packageName != null) 'package_name': packageName,
-      if (matchText != null) 'match_text': matchText,
-      if (amountPattern != null) 'amount_pattern': amountPattern,
-      if (direction != null) 'direction': direction,
-      if (kind != null) 'kind': kind,
-      if (accountId != null) 'account_id': accountId,
-      if (enabled != null) 'enabled': enabled,
-      if (createdAt != null) 'created_at': createdAt,
-    });
-  }
-
-  UserRulesCompanion copyWith({
-    Value<int>? id,
-    Value<String>? name,
-    Value<String?>? packageName,
-    Value<String?>? matchText,
-    Value<String?>? amountPattern,
-    Value<UserRuleDirection>? direction,
-    Value<TxKind>? kind,
-    Value<int?>? accountId,
-    Value<bool>? enabled,
-    Value<DateTime>? createdAt,
-  }) {
-    return UserRulesCompanion(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      packageName: packageName ?? this.packageName,
-      matchText: matchText ?? this.matchText,
-      amountPattern: amountPattern ?? this.amountPattern,
-      direction: direction ?? this.direction,
-      kind: kind ?? this.kind,
-      accountId: accountId ?? this.accountId,
-      enabled: enabled ?? this.enabled,
-      createdAt: createdAt ?? this.createdAt,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (name.present) {
-      map['name'] = Variable<String>(name.value);
-    }
-    if (packageName.present) {
-      map['package_name'] = Variable<String>(packageName.value);
-    }
-    if (matchText.present) {
-      map['match_text'] = Variable<String>(matchText.value);
-    }
-    if (amountPattern.present) {
-      map['amount_pattern'] = Variable<String>(amountPattern.value);
-    }
-    if (direction.present) {
-      map['direction'] = Variable<String>(
-        $UserRulesTable.$converterdirection.toSql(direction.value),
-      );
-    }
-    if (kind.present) {
-      map['kind'] = Variable<String>(
-        $UserRulesTable.$converterkind.toSql(kind.value),
-      );
-    }
-    if (accountId.present) {
-      map['account_id'] = Variable<int>(accountId.value);
-    }
-    if (enabled.present) {
-      map['enabled'] = Variable<bool>(enabled.value);
-    }
-    if (createdAt.present) {
-      map['created_at'] = Variable<DateTime>(createdAt.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('UserRulesCompanion(')
-          ..write('id: $id, ')
-          ..write('name: $name, ')
-          ..write('packageName: $packageName, ')
-          ..write('matchText: $matchText, ')
-          ..write('amountPattern: $amountPattern, ')
-          ..write('direction: $direction, ')
-          ..write('kind: $kind, ')
-          ..write('accountId: $accountId, ')
-          ..write('enabled: $enabled, ')
-          ..write('createdAt: $createdAt')
-          ..write(')'))
-        .toString();
-  }
-}
-
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4471,7 +3894,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AppSettingsTable appSettings = $AppSettingsTable(this);
   late final $BudgetsTable budgets = $BudgetsTable(this);
   late final $BonsTable bons = $BonsTable(this);
-  late final $UserRulesTable userRules = $UserRulesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4485,7 +3907,6 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     appSettings,
     budgets,
     bons,
-    userRules,
   ];
 }
 
@@ -4905,24 +4326,6 @@ final class $$AccountsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
-
-  static MultiTypedResultKey<$UserRulesTable, List<UserRule>>
-  _userRulesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
-    db.userRules,
-    aliasName: 'accounts__id__user_rules__account_id',
-  );
-
-  $$UserRulesTableProcessedTableManager get userRulesRefs {
-    final manager = $$UserRulesTableTableManager(
-      $_db,
-      $_db.userRules,
-    ).filter((f) => f.accountId.id.sqlEquals($_itemColumn<int>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_userRulesRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
 }
 
 class $$AccountsTableFilterComposer
@@ -5011,31 +4414,6 @@ class $$AccountsTableFilterComposer
           }) => $$BudgetsTableFilterComposer(
             $db: $db,
             $table: $db.budgets,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<bool> userRulesRefs(
-    Expression<bool> Function($$UserRulesTableFilterComposer f) f,
-  ) {
-    final $$UserRulesTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.userRules,
-      getReferencedColumn: (t) => t.accountId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$UserRulesTableFilterComposer(
-            $db: $db,
-            $table: $db.userRules,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -5174,31 +4552,6 @@ class $$AccountsTableAnnotationComposer
     );
     return f(composer);
   }
-
-  Expression<T> userRulesRefs<T extends Object>(
-    Expression<T> Function($$UserRulesTableAnnotationComposer a) f,
-  ) {
-    final $$UserRulesTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.userRules,
-      getReferencedColumn: (t) => t.accountId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$UserRulesTableAnnotationComposer(
-            $db: $db,
-            $table: $db.userRules,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
 }
 
 class $$AccountsTableTableManager
@@ -5214,11 +4567,7 @@ class $$AccountsTableTableManager
           $$AccountsTableUpdateCompanionBuilder,
           (Account, $$AccountsTableReferences),
           Account,
-          PrefetchHooks Function({
-            bool transactionsRefs,
-            bool budgetsRefs,
-            bool userRulesRefs,
-          })
+          PrefetchHooks Function({bool transactionsRefs, bool budgetsRefs})
         > {
   $$AccountsTableTableManager(_$AppDatabase db, $AccountsTable table)
     : super(
@@ -5276,17 +4625,12 @@ class $$AccountsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({
-                transactionsRefs = false,
-                budgetsRefs = false,
-                userRulesRefs = false,
-              }) {
+              ({transactionsRefs = false, budgetsRefs = false}) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (transactionsRefs) db.transactions,
                     if (budgetsRefs) db.budgets,
-                    if (userRulesRefs) db.userRules,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -5333,27 +4677,6 @@ class $$AccountsTableTableManager
                               ),
                           typedResults: items,
                         ),
-                      if (userRulesRefs)
-                        await $_getPrefetchedData<
-                          Account,
-                          $AccountsTable,
-                          UserRule
-                        >(
-                          currentTable: table,
-                          referencedTable: $$AccountsTableReferences
-                              ._userRulesRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$AccountsTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).userRulesRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.accountId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
                     ];
                   },
                 );
@@ -5374,11 +4697,7 @@ typedef $$AccountsTableProcessedTableManager =
       $$AccountsTableUpdateCompanionBuilder,
       (Account, $$AccountsTableReferences),
       Account,
-      PrefetchHooks Function({
-        bool transactionsRefs,
-        bool budgetsRefs,
-        bool userRulesRefs,
-      })
+      PrefetchHooks Function({bool transactionsRefs, bool budgetsRefs})
     >;
 typedef $$TransactionsTableCreateCompanionBuilder =
     TransactionsCompanion Function({
@@ -6303,6 +5622,7 @@ typedef $$CaptureLogsTableCreateCompanionBuilder =
       required bool parsed,
       Value<int?> transactionId,
       Value<DateTime> createdAt,
+      Value<bool> ignoredDup,
     });
 typedef $$CaptureLogsTableUpdateCompanionBuilder =
     CaptureLogsCompanion Function({
@@ -6314,6 +5634,7 @@ typedef $$CaptureLogsTableUpdateCompanionBuilder =
       Value<bool> parsed,
       Value<int?> transactionId,
       Value<DateTime> createdAt,
+      Value<bool> ignoredDup,
     });
 
 class $$CaptureLogsTableFilterComposer
@@ -6362,6 +5683,11 @@ class $$CaptureLogsTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get ignoredDup => $composableBuilder(
+    column: $table.ignoredDup,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -6414,6 +5740,11 @@ class $$CaptureLogsTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get ignoredDup => $composableBuilder(
+    column: $table.ignoredDup,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$CaptureLogsTableAnnotationComposer
@@ -6452,6 +5783,11 @@ class $$CaptureLogsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get ignoredDup => $composableBuilder(
+    column: $table.ignoredDup,
+    builder: (column) => column,
+  );
 }
 
 class $$CaptureLogsTableTableManager
@@ -6493,6 +5829,7 @@ class $$CaptureLogsTableTableManager
                 Value<bool> parsed = const Value.absent(),
                 Value<int?> transactionId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> ignoredDup = const Value.absent(),
               }) => CaptureLogsCompanion(
                 id: id,
                 packageName: packageName,
@@ -6502,6 +5839,7 @@ class $$CaptureLogsTableTableManager
                 parsed: parsed,
                 transactionId: transactionId,
                 createdAt: createdAt,
+                ignoredDup: ignoredDup,
               ),
           createCompanionCallback:
               ({
@@ -6513,6 +5851,7 @@ class $$CaptureLogsTableTableManager
                 required bool parsed,
                 Value<int?> transactionId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> ignoredDup = const Value.absent(),
               }) => CaptureLogsCompanion.insert(
                 id: id,
                 packageName: packageName,
@@ -6522,6 +5861,7 @@ class $$CaptureLogsTableTableManager
                 parsed: parsed,
                 transactionId: transactionId,
                 createdAt: createdAt,
+                ignoredDup: ignoredDup,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -7359,418 +6699,6 @@ typedef $$BonsTableProcessedTableManager =
       Bon,
       PrefetchHooks Function()
     >;
-typedef $$UserRulesTableCreateCompanionBuilder =
-    UserRulesCompanion Function({
-      Value<int> id,
-      required String name,
-      Value<String?> packageName,
-      Value<String?> matchText,
-      Value<String?> amountPattern,
-      required UserRuleDirection direction,
-      required TxKind kind,
-      Value<int?> accountId,
-      Value<bool> enabled,
-      Value<DateTime> createdAt,
-    });
-typedef $$UserRulesTableUpdateCompanionBuilder =
-    UserRulesCompanion Function({
-      Value<int> id,
-      Value<String> name,
-      Value<String?> packageName,
-      Value<String?> matchText,
-      Value<String?> amountPattern,
-      Value<UserRuleDirection> direction,
-      Value<TxKind> kind,
-      Value<int?> accountId,
-      Value<bool> enabled,
-      Value<DateTime> createdAt,
-    });
-
-final class $$UserRulesTableReferences
-    extends BaseReferences<_$AppDatabase, $UserRulesTable, UserRule> {
-  $$UserRulesTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static $AccountsTable _accountIdTable(_$AppDatabase db) =>
-      db.accounts.createAlias('user_rules__account_id__accounts__id');
-
-  $$AccountsTableProcessedTableManager? get accountId {
-    final $_column = $_itemColumn<int>('account_id');
-    if ($_column == null) return null;
-    final manager = $$AccountsTableTableManager(
-      $_db,
-      $_db.accounts,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_accountIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-}
-
-class $$UserRulesTableFilterComposer
-    extends Composer<_$AppDatabase, $UserRulesTable> {
-  $$UserRulesTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get packageName => $composableBuilder(
-    column: $table.packageName,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get matchText => $composableBuilder(
-    column: $table.matchText,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get amountPattern => $composableBuilder(
-    column: $table.amountPattern,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnWithTypeConverterFilters<UserRuleDirection, UserRuleDirection, String>
-  get direction => $composableBuilder(
-    column: $table.direction,
-    builder: (column) => ColumnWithTypeConverterFilters(column),
-  );
-
-  ColumnWithTypeConverterFilters<TxKind, TxKind, String> get kind =>
-      $composableBuilder(
-        column: $table.kind,
-        builder: (column) => ColumnWithTypeConverterFilters(column),
-      );
-
-  ColumnFilters<bool> get enabled => $composableBuilder(
-    column: $table.enabled,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$AccountsTableFilterComposer get accountId {
-    final $$AccountsTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.accountId,
-      referencedTable: $db.accounts,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$AccountsTableFilterComposer(
-            $db: $db,
-            $table: $db.accounts,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$UserRulesTableOrderingComposer
-    extends Composer<_$AppDatabase, $UserRulesTable> {
-  $$UserRulesTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get name => $composableBuilder(
-    column: $table.name,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get packageName => $composableBuilder(
-    column: $table.packageName,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get matchText => $composableBuilder(
-    column: $table.matchText,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get amountPattern => $composableBuilder(
-    column: $table.amountPattern,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get direction => $composableBuilder(
-    column: $table.direction,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get kind => $composableBuilder(
-    column: $table.kind,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<bool> get enabled => $composableBuilder(
-    column: $table.enabled,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
-    column: $table.createdAt,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$AccountsTableOrderingComposer get accountId {
-    final $$AccountsTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.accountId,
-      referencedTable: $db.accounts,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$AccountsTableOrderingComposer(
-            $db: $db,
-            $table: $db.accounts,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$UserRulesTableAnnotationComposer
-    extends Composer<_$AppDatabase, $UserRulesTable> {
-  $$UserRulesTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get name =>
-      $composableBuilder(column: $table.name, builder: (column) => column);
-
-  GeneratedColumn<String> get packageName => $composableBuilder(
-    column: $table.packageName,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get matchText =>
-      $composableBuilder(column: $table.matchText, builder: (column) => column);
-
-  GeneratedColumn<String> get amountPattern => $composableBuilder(
-    column: $table.amountPattern,
-    builder: (column) => column,
-  );
-
-  GeneratedColumnWithTypeConverter<UserRuleDirection, String> get direction =>
-      $composableBuilder(column: $table.direction, builder: (column) => column);
-
-  GeneratedColumnWithTypeConverter<TxKind, String> get kind =>
-      $composableBuilder(column: $table.kind, builder: (column) => column);
-
-  GeneratedColumn<bool> get enabled =>
-      $composableBuilder(column: $table.enabled, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => column);
-
-  $$AccountsTableAnnotationComposer get accountId {
-    final $$AccountsTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.accountId,
-      referencedTable: $db.accounts,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$AccountsTableAnnotationComposer(
-            $db: $db,
-            $table: $db.accounts,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$UserRulesTableTableManager
-    extends
-        RootTableManager<
-          _$AppDatabase,
-          $UserRulesTable,
-          UserRule,
-          $$UserRulesTableFilterComposer,
-          $$UserRulesTableOrderingComposer,
-          $$UserRulesTableAnnotationComposer,
-          $$UserRulesTableCreateCompanionBuilder,
-          $$UserRulesTableUpdateCompanionBuilder,
-          (UserRule, $$UserRulesTableReferences),
-          UserRule,
-          PrefetchHooks Function({bool accountId})
-        > {
-  $$UserRulesTableTableManager(_$AppDatabase db, $UserRulesTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$UserRulesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$UserRulesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$UserRulesTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<String> name = const Value.absent(),
-                Value<String?> packageName = const Value.absent(),
-                Value<String?> matchText = const Value.absent(),
-                Value<String?> amountPattern = const Value.absent(),
-                Value<UserRuleDirection> direction = const Value.absent(),
-                Value<TxKind> kind = const Value.absent(),
-                Value<int?> accountId = const Value.absent(),
-                Value<bool> enabled = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-              }) => UserRulesCompanion(
-                id: id,
-                name: name,
-                packageName: packageName,
-                matchText: matchText,
-                amountPattern: amountPattern,
-                direction: direction,
-                kind: kind,
-                accountId: accountId,
-                enabled: enabled,
-                createdAt: createdAt,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required String name,
-                Value<String?> packageName = const Value.absent(),
-                Value<String?> matchText = const Value.absent(),
-                Value<String?> amountPattern = const Value.absent(),
-                required UserRuleDirection direction,
-                required TxKind kind,
-                Value<int?> accountId = const Value.absent(),
-                Value<bool> enabled = const Value.absent(),
-                Value<DateTime> createdAt = const Value.absent(),
-              }) => UserRulesCompanion.insert(
-                id: id,
-                name: name,
-                packageName: packageName,
-                matchText: matchText,
-                amountPattern: amountPattern,
-                direction: direction,
-                kind: kind,
-                accountId: accountId,
-                enabled: enabled,
-                createdAt: createdAt,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable<$UserRulesTable, UserRule>(table),
-                  $$UserRulesTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback: ({accountId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (accountId) {
-                      state =
-                          state.withJoin(
-                                currentTable: table,
-                                currentColumn: table.accountId,
-                                referencedTable: $$UserRulesTableReferences
-                                    ._accountIdTable(db),
-                                referencedColumn: $$UserRulesTableReferences
-                                    ._accountIdTable(db)
-                                    .id,
-                              )
-                              as T;
-                    }
-
-                    return state;
-                  },
-              getPrefetchedDataCallback: (items) async {
-                return [];
-              },
-            );
-          },
-        ),
-      );
-}
-
-typedef $$UserRulesTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDatabase,
-      $UserRulesTable,
-      UserRule,
-      $$UserRulesTableFilterComposer,
-      $$UserRulesTableOrderingComposer,
-      $$UserRulesTableAnnotationComposer,
-      $$UserRulesTableCreateCompanionBuilder,
-      $$UserRulesTableUpdateCompanionBuilder,
-      (UserRule, $$UserRulesTableReferences),
-      UserRule,
-      PrefetchHooks Function({bool accountId})
-    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7790,6 +6718,4 @@ class $AppDatabaseManager {
   $$BudgetsTableTableManager get budgets =>
       $$BudgetsTableTableManager(_db, _db.budgets);
   $$BonsTableTableManager get bons => $$BonsTableTableManager(_db, _db.bons);
-  $$UserRulesTableTableManager get userRules =>
-      $$UserRulesTableTableManager(_db, _db.userRules);
 }

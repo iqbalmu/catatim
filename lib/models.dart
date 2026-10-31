@@ -4,12 +4,6 @@ import 'dart:math';
 /// Arah pergerakan uang.
 enum Direction { incoming, outgoing }
 
-/// Cakupan pencocokan aturan buatan pengguna.
-enum UserRuleMatch { package, content }
-
-/// Arah transaksi untuk aturan pengguna (bentuk singkat untuk UI).
-enum UserRuleDirection { in_, out_ }
-
 /// Sumber pencatatan transaksi.
 enum TxSource { notification, manual, import }
 
@@ -37,11 +31,6 @@ extension DirectionLabel on Direction {
         Direction.incoming => 'Masuk',
         Direction.outgoing => 'Keluar',
       };
-}
-
-extension UserRuleDirectionLabel on UserRuleDirection {
-  Direction get direction =>
-      this == UserRuleDirection.in_ ? Direction.incoming : Direction.outgoing;
 }
 
 extension TxSourceLabel on TxSource {
@@ -77,7 +66,6 @@ class ParsedDraft {
     required this.direction,
     required this.amount,
     this.counterparty,
-    this.accountId,
   });
 
   final String bankId;
@@ -88,8 +76,6 @@ class ParsedDraft {
   final int amount;
   final String? counterparty;
 
-  /// Akun eksplisit dari aturan pengguna; null = auto-mapping.
-  final int? accountId;
 }
 
 /// Notifikasi mentah yang ditangkap dari lapisan native.

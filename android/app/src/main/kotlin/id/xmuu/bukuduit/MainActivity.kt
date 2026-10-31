@@ -86,10 +86,21 @@ class NotificationCatcher : NotificationListenerService() {
 
         private const val QUEUE_FILE = "capture_queue.jsonl"
         private val lock = Any()
+        private const val QUEUE_MAX_BYTES = 1_000_000L
+        private const val QUEUE_KEEP_LINES = 1000
 
         fun enqueue(context: Context, line: String) {
             synchronized(lock) {
-                File(context.filesDir, QUEUE_FILE).appendText(line + "\n")
+                val file = File(context.filesDir, QUEUE_FILE)
+                file.appendText(line + "\n")
+                // Antrian hanya jaring pengaman saat app mati — jangan
+                // biarkan tumbuh tanpa batas; simpan bagian terakhir.
+                if (file.length() > QUEUE_MAX_BYTES) {
+                    val keep = file.readLines().takeLast(QUEUE_KEEP_LINES)
+                    file.writeText(
+                        keep.joinToString(separator = "\n", postfix = "\n")
+                    )
+                }
             }
         }
 
@@ -108,6 +119,10 @@ class NotificationCatcher : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         if (sbn.packageName == packageName) return
+
+        // Notifikasi "ongoing" (musik, unduhan, status menetap) bukan
+        // transaksi — dilewati agar tidak menambah ukuran antrian.
+        if (sbn.isOngoing) return
 
         val extras = sbn.notification?.extras ?: return
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()

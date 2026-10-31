@@ -2,6 +2,16 @@
 
 ## Status
 
+**Digantikan (2026-10-31)** oleh model hubungkan-bank (ADR-001/002
+tetap berlaku). Pipeline kini memakai seed rules murni; tabel
+`user_rules`, layar Aturan, dan jalur user-rule di engine dipensiunkan
+(tabel di-drop pada migrasi v10). Dup yang digugurkan dedup kini
+tercatat di `capture_logs.ignored_dup` agar tetap terlihat — peran
+"timpa perilaku bawaan" dialihkan ke loop capture log → perbaiki seed
+→ parse ulang. Teks di bawah dipertahankan sebagai dokumentasi historis.
+
+## Status saat diterima
+
 Diterima (2026-10-11, bersama layar Aturan).
 
 ## Konteks

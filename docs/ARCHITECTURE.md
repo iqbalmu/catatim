@@ -21,13 +21,11 @@ alasan tiap keputusan ada di [`decisions/`](decisions/).
 
 | Lapisan | Isi | Aturan |
 |---|---|---|
-| Native (Kotlin) | `MainActivity.kt`, `NotificationCatcher` | Baca notifikasi → JSON mentah → antrian file + EventChannel. Tidak parse, tidak putuskan apa pun. |
-| Capture | `lib/capture/` | Drain antrian, filter paket sendiri, mode pelajaran, fallback capture log, hook progress. |
-| Rules | `lib/rules/`, `assets/rules/seed_rules.json` | Parse teks notifikasi → draft transaksi. Murni Dart. |
+| Native (Kotlin) | `MainActivity.kt`, `NotificationCatcher` | Baca notifikasi (lewati ongoing) → JSON mentah → antrian file terbatas + EventChannel. Tidak parse, tidak putuskan apa pun. |
+| Capture | `lib/capture/` | Drain antrian (tahan baris korup), filter bank terhubung, antrean pemrosesan berurutan, fallback capture log. |
+| Rules | `lib/rules/`, `assets/rules/seed_rules.json` | Parse teks notifikasi → draf transaksi. Seed rules murni, murni Dart. |
 | Core | `lib/core/` | Money (int rupiah), buckets tren, budget (`LimitLine`/`BudgetSnapshot`), format tanggal ID. Murni Dart, tanpa drift/Flutter. |
-| Storage | `lib/storage/` | Drift schema v8, SQLCipher, `LedgerRepository` satu-satunya akses data. |
-| Game | `lib/game/` | `ProgressService`: streak, mood maskot, alert/pemulihan/milestone. |
-| UI | `lib/ui/`, `lib/theme/` | Shell 4-tab + design system Quest. Konsumsi stream + ChangeNotifier, tanpa library state management. |
+| Storage | `lib/storage/` | Drift schema v10, SQLCipher, `LedgerRepository` satu-satunya akses data. |
 
 ## Alur capture
 
@@ -35,48 +33,66 @@ alasan tiap keputusan ada di [`decisions/`](decisions/).
 flowchart LR
     A[Notifikasi bank] --> B[NotificationCatcher: antrian capture_queue.jsonl]
     B -->|EventChannel JSON| C[CapturePipeline: drain saat start]
-    C --> D{RuleEngine: user > seed > generik}
-    D -->|kenali| E[Dedup ±120 detik]
-    D -->|gagal| F[Capture Log + parse ulang manual]
-    E --> G[(SQLite + SQLCipher)]
-    G --> H[Repository streams]
-    H --> I[UI + ProgressService]
+    C --> D{Bank terhubung?}
+    D -->|tidak| X[diabaikan diam-diam]
+    D -->|ya| E{RuleEngine: seed rules}
+    E -->|kenali + dedup ±120s| F[(drafts — menunggu user)]
+    E -->|gagal| G[(capture_logs)]
+    E -->|dup digugurkan| H[capture_logs.ignored_dup]
+    F -->|konfirmasi user| I[(transactions)]
+    G -.->|baca ulang| E
+    H -.->|catat manual| I
+    I --> J[Repository streams → UI + ProgressService]
 ```
 
-- Antrian file membuat notifikasi tidak hilang saat app mati.
+- Antrian file membuat notifikasi tidak hilang saat app mati; ukurannya
+  dibatasi (±1 MB, disimpan 1000 baris terakhir) dan notifikasi ongoing
+  (musik/unduhan) dilewati.
+- Baris antrian yang korup dilewati — satu baris rusak tidak membuang
+  antrean lainnya.
 - Notifikasi yang gagal parse disimpan mentah di Capture Log; setelah
   rules diperbaiki, entri lama bisa di-parse ulang tanpa transaksi ulang.
-- Setiap transaksi tercatat (capture maupun manual) memicu
+- Duplikat yang digugurkan dedup tidak senyap: tercatat dengan penanda
+  `ignored_dup` dan tampil di Diagnostik (catat manual / hapus);
+  log terbaca/dup >30 hari dipangkas otomatis.
+- Setiap transaksi tercatat (konfirmasi draf maupun manual) memicu
   `ProgressService.onTransactionRecorded()` → deteksi garis batas naik
   level / pulih / milestone streak, realtime.
 
-## Prioritas rules
+## Rules & model hubungkan bank
 
-1. **User rules** (tabel `user_rules`, diedit di layar Aturan) —
-   keputusan user selalu menang; pattern custom bersifat eksklusif.
-2. **Seed rules** (`assets/rules/seed_rules.json`) — template per bank.
-   Dimaterialisasi ke `user_rules` sekali saat bootstrap agar bisa
-   dinonaktifkan/diubah per user.
-3. **Template generik** (`unknown`) — pola in/out umum untuk app tak
-   dikenal.
+Model "hubungkan bank" (menggantikan user rules, ADR-004 digantikan):
 
-## Model data (drift schema v8)
+1. User menghubungkan bank/e-wallet dari katalog (`connected_banks`
+   di `app_settings`); hanya notifikasi bank terhubung yang diproses,
+   selebihnya diabaikan diam-diam.
+2. Seed rules (`assets/rules/seed_rules.json`) — template per bank,
+   dipakai murni tanpa lapisan user rules.
+3. Template generik (`unknown`) — pola in/out umum sebagai fallback
+   bank yang dikenali tapi formatnya belum ada.
+
+Hasil parse selalu menjadi **draf** menunggu keputusan user — tidak
+pernah auto-catat. Timpa perilaku parsing dilakukan lewat loop
+capture log → perbaiki seed → parse ulang, bukan aturan per-user.
+
+## Model data (drift schema v10)
 
 | Tabel | Isi |
 |---|---|
 | `transactions` | Transaksi: uuid, arah, nominal, kategori, akun, jenis, pihak, sumber (manual/capture), waktu |
+| `drafts` | Draf hasil capture bank terhubung — menunggu konfirmasi/dibuang; tak masuk saldo/laporan |
 | `categories` | Kategori + warna; hapus → transaksi pindah ke fallback "Lainnya" |
-| `accounts` | Akun (blu, Nagari, Tunai bawaan + tambahan), jenis, saldo awal |
+| `accounts` | Akun (blu, Nagari, Tunai bawaan + tambahan), jenis, saldo awal, tautan `bank_id` |
 | `budgets` | Alokasi bulanan per kategori, opsional di-scope ke akun |
-| `app_settings` | Batas harian/mingguan/bulanan, marker restore, mode pelajaran |
+| `app_settings` | Batas harian/mingguan/bulanan, marker restore, bank terhubung |
 | `bons` | Utang-piutang: arah, nominal, pihak, status lunas |
-| `capture_logs` | Notifikasi mentah + status parse; bahan tuning rules |
-| `user_rules` | Rules capture milik user (hasil materialisasi seed + buatan sendiri) |
+| `capture_logs` | Notifikasi mentah + status parse + penanda `ignored_dup`; bahan tuning rules |
 
-Migrasi v1→v8 self-heal: tabel/kolom yang hilang dibuat ulang, broken
+Migrasi v1→v10 self-heal: tabel/kolom yang hilang dibuat ulang, broken
 v2 diperbaiki, kategori/akun ter-seed, backfill dijalankan di
-`beforeOpen`. v8 memensiunkan Target/Sisihkan: tabel `targets` dan
-`target_deposits` di-drop (ADR-009).
+`beforeOpen`. v8 memensiunkan Target/Sisihkan (ADR-009); v9 menambah
+draf + tautan akun↔bank; v10 membuang `user_rules` dan menambah
+`capture_logs.ignored_dup`.
 
 ## Konvensi
 
@@ -104,7 +120,7 @@ v2 diperbaiki, kategori/akun ter-seed, backfill dijalankan di
 | [001](decisions/001-native-transport-only.md) | Native hanya transport JSON mentah + antrian file |
 | [002](decisions/002-enkripsi-lokal-tanpa-server.md) | SQLCipher lokal, tanpa server/cloud |
 | [003](decisions/003-engine-murni.md) | Core + rules bebas drift/Flutter |
-| [004](decisions/004-prioritas-rules.md) | User rules > seed > generik |
+| [004](decisions/004-prioritas-rules.md) | ~~User rules > seed > generik~~ — digantikan model hubungkan bank (seed murni) |
 | [005](decisions/005-dedup-120-detik.md) | Dedup push ganda ±120 detik |
 | [006](decisions/006-restore-dua-fase.md) | Restore via staging + marker + restart |
 | [007](decisions/007-gamifikasi-berbasis-kondisi.md) | Gamifikasi = cermin kondisi nyata; XP/level dihapus |
@@ -113,8 +129,9 @@ v2 diperbaiki, kategori/akun ter-seed, backfill dijalankan di
 
 ## Pengujian
 
-115 test, 10 file: rule engine (seed + user + fallback), budget, progress/
-streak/mood, repository (dedup, saldo, migrasi, alokasi), money, buckets,
+133 test, 10 file: rule engine (seed + fallback), budget, progress/
+streak/mood, repository (dedup, saldo, migrasi v1→v10, alokasi, log
+lifecycle), pipeline (draf, dedup, baris korup), money, buckets,
 rekap filter, CSV, history.
 UI sengaja belum punya widget test — logika dipagari di engine murni
 sesuai prinsip 3.
