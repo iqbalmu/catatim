@@ -134,9 +134,10 @@ draf + tautan akun↔bank; v10 membuang `user_rules` dan menambah
 
 ## Pengujian
 
-133 test, 10 file: rule engine (seed + fallback), budget, progress/
+147 test, 15 file: rule engine (seed + fallback), budget, progress/
 streak/mood, repository (dedup, saldo, migrasi v1→v10, alokasi, log
-lifecycle), pipeline (draf, dedup, baris korup), money, buckets,
-rekap filter, CSV, history.
-UI sengaja belum punya widget test — logika dipagari di engine murni
-sesuai prinsip 3.
+lifecycle), pipeline (draf, dedup, baris korup, allowlist paket),
+money, buckets, rekap filter, CSV, history — plus 6 file widget test
+komponen Quest (motion, nav, segmented, tab directional, transisi,
+layout laporan). Alur layar penuh tetap tanpa widget test — logika
+dipagari di engine murni sesuai prinsip 3.

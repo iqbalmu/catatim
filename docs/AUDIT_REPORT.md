@@ -386,3 +386,78 @@ tidak bentrok bila diaktifkan.
 layar terverifikasi render benar (header & konten tidak menempel
 status bar). Tidak ada `dataExtractionRules` — menerima berkat
 `allowBackup=false` (A-01).
+
+## H. UI/UX, Aksesibilitas, Lokalisasi — 2026-10-31
+
+| ID | Temuan | Severity |
+|---|---|---|
+| H-01 | Tombol ikon tanpa label semantik (bell, gear, dsb.) — pembaca layar membaca kosong; hanya 6 Tooltip/Semantics di seluruh UI | Sedang |
+| H-02 | String Indonesia hardcoded di mana-mana — by-design satu bahasa; belum siap multi-bahasa | Catatan |
+| H-03 | Empty state & skeleton baik; error state stream minim (home tanpa penanganan error stream) | Rendah |
+
+**H-01.** Bukti runtime (uiautomator): tombol lonceng & gear di header
+home memiliki `content-desc` kosong; switch koneksi bank justru berlabel
+baik ("Capture blu by BCA"), begitu juga kartu draf. *Rekomendasi:*
+bungkus tombol ikon dengan `Tooltip`/`Semantics` (murah, menyentuh
+QuestIconButton sekali).
+
+**H-02.** `Locale('id')` tunggal + `flutter_localizations` untuk string
+internal Material ✓; `dates_id` konsisten. Bila suatu hari mau
+multi-bahasa, string tersebar di semua layar — biaya migrasi besar,
+tapi bukan masalah hari ini.
+
+**H-03.** Empty state laporan terverifikasi runtime (pesan + instruksi
+benar). Skeleton loading ada (konvensi arsitektur). Stream drift nyaris
+tak pernah error lokal — risiko rendah, cukup sadar.
+
+## I. Kualitas Kode & Maintainability — 2026-10-31
+
+| ID | Temuan | Severity |
+|---|---|---|
+| I-01 | 5 file UI >900 baris (laporan 2.471, quest 1.280, home_cards 1.230, rencana_batas 1.160, transaksi 981) | Sedang |
+| I-02 | Dead code: `buildCsv()` (A-09), dependensi `dynamic_color` (G-02) | Rendah |
+| I-03 | Lints: set dasar `flutter_lints` tanpa aturan tambahan | Rendah |
+
+**I-01.** File raksasa memperlambat navigasi editor & review. Laporan
+sudah memakai pola bagus di dalamnya (stream field + `_streamKey`).
+*Rekomendasi:* pecah per-seksi jadi widget privat per file — refaktor
+mekanis, tanpa ubah perilaku, satu layar per PR.
+
+**I-02.** `seed_dummy.dart` di `lib/` tapi dijaga `kDebugMode` —
+ter-tree-shake dari build release (terverifikasi: rilis fresh-install
+kosong) — bukan masalah.
+
+**I-03.** *Rekomendasi:* tambah `prefer_const_constructors`,
+`unawaited_futures`, `avoid_redundant_argument_values` — jalankan
+sekali dengan `--fix`.
+
+## J. Testing & CI — 2026-10-31
+
+| ID | Temuan | Severity |
+|---|---|---|
+| J-01 | Tidak ada CI — 147 test hanya jalan lokal penulis | Sedang |
+| J-02 | Tidak ada integration test device (notif → draf → konfirmasi → saldo) | Rendah |
+
+**J-01.** Tanpa CI, regresi seperti A-11 (rekey senyap gagal berbulan)
+tak terdeteksi. *Rekomendasi minimal:* GitHub Actions —
+`flutter analyze` + `flutter test` per push (±3 menit). Test backup
+E2E (buat backup → buka ulang dengan PIN) layak jadi test integrasi
+pertama karena pernah patah.
+
+**J-02.** Jalur kritis paling berisiko justru lintas proses (listener
+→ antrean → drain) — tak bisa diuji murni Dart. Integration test
+`flutter drive` + `cmd notification post` di emulator CI adalah
+jawabannya, tapi investasi besar; alternatif murah: skrip audit seperti
+hari ini didokumentasikan sebagai prosedur manual rutin.
+
+## K. Dokumentasi & Kepatuhan — 2026-10-31
+
+| ID | Temuan | Severity |
+|---|---|---|
+| K-01 | Klaim usang di ARCHITECTURE: "133 test/10 file", "UI belum punya widget test" (nyatanya 147/15, 6 file widget test) | Rendah — **diperbaiki saat audit** |
+
+**K-01.** Bagian Pengujian ARCHITECTURE diperbarui saat audit ini.
+ADR lengkap & akurat (001 diamendemen allowlist). Untuk rilis Play
+Store kelak: form data safety wajib mendeklarasikan Notification
+Listener access; klaim "data tak keluar device" sudah terbukti audit
+A-05 (nol izin jaringan).
