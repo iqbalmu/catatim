@@ -112,6 +112,13 @@ class NotificationCatcher : NotificationListenerService() {
         /// dari Dart, di sini hanya disimpan dan dicocokkan.
         fun setAllowedPackages(context: Context, packages: List<String>) {
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            if (packages.isEmpty()) {
+                // Tidak ada bank terhubung → jangan antrikan apa pun,
+                // termasuk paket belajar (audit C-05): memutus semua
+                // bank harus benar-benar menghentikan tulisan ke disk.
+                prefs.edit().putStringSet(KEY_ALLOWED, emptySet()).apply()
+                return
+            }
             val learned = prefs.getStringSet(KEY_LEARNED, emptySet()) ?: emptySet()
             prefs.edit()
                 .putStringSet(KEY_ALLOWED, packages.toSet() + learned)

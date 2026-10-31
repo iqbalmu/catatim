@@ -182,7 +182,7 @@ dan reboot), didukung unit test.
 | C-02 | Tidak ada dobel lintas restart — jendela dedup di-jangkar ke `postedAt` | ✓ Lolos |
 | C-03 | Listener hidup lagi pasca-reboot & pasca-force-stop tanpa app dibuka | ✓ Lolos |
 | C-04 | Notifikasi tertangkap **teredaksi** ("Sensitive notification content hidden") pada kondisi tertentu — tersimpan sebagai sampah yang tak bisa di-parse ulang | Sedang — **perlu verifikasi device fisik** |
-| C-05 | Paket yang sudah "dipelajari" tetap diantrikan ke disk meski semua bank diputus | Rendah |
+| C-05 | Paket yang sudah "dipelajari" tetap diantrikan ke disk meski semua bank diputus | Rendah — **diperbaiki** |
 
 **C-01/C-02/C-03 bukti runtime.** Antrean disuntik 4 baris (1 korup +
 2 identik berjarak 1 dtk + 1 unik): baris korup dilewati diam-diam;
@@ -206,11 +206,13 @@ NotificationCatcher mendeteksi marker redaksi → jangan tulis sampah,
 simpan kunci notifikasi dan tarik ulang via `getActiveNotifications()`
 saat `onListenerConnected`/user-unlock.
 
-**C-05 paket belajar vs bank diputus.** Allowlist native = katalog
-bank terhubung ∪ paket belajar. Saat SEMUA bank diputus, paket
-belajar tetap diantrikan ke disk (lalu dibuang Dart) — jejak
-plaintext kecil yang tidak perlu. *Rekomendasi:* saat
-`connected.isEmpty`, kirim allowlist kosong TANPA union paket belajar.
+**C-05 paket belajar vs bank diputus.** *Diperbaiki 2026-10-31:*
+`setAllowedPackages` dengan daftar kosong kini menulis allowlist kosong
+(tanpa union paket belajar) — putus semua bank benar-benar menghentikan
+tulisan ke disk. Terverifikasi runtime: notifikasi saat tak ada bank
+terhubung → antrean tetap kosong. (Jalur belajar-paket tak diuji ulang
+pasca-fix karena notifikasi shell emulator teredaksi, C-04 —
+perilakunya sendiri tidak berubah.)
 
 **Lampu sehat (disetujui user 2026-10-31, usulan implementasi).**
 Indikator kesehatan penangkap di layar Pengaturan Capture: (a) izin
@@ -252,7 +254,7 @@ terkonfirmasi.
 | ID | Temuan | Severity |
 |---|---|---|
 | B-01 | Money: parsing & batas nominal aman | ✓ Lolos |
-| B-02 | Konvensi periode `[start, end)` terdokumentasi, implementasi `BETWEEN` inklusif — transaksi tepat 00:00:00.000 tanggal 1 masuk dua bulan | Rendah |
+| B-02 | Konvensi periode `[start, end)` terdokumentasi, implementasi `BETWEEN` inklusif — transaksi tepat 00:00:00.000 tanggal 1 masuk dua bulan | Rendah — **diperbaiki** |
 | B-03 | Draf terisolasi dari saldo/laporan; fallback hapus kategori benar | ✓ Lolos |
 | B-04 | Dedup ±120 dtk — terverifikasi runtime (lihat C-01) | ✓ Lolos |
 | B-05 | Streak & mood dihitung ulang murni dari data | ✓ Lolos |
@@ -273,6 +275,9 @@ rentang kustom sudah dinormalisasi benar (`end = hari terakhir + 1`,
 *Rekomendasi:* ganti ke `isBiggerOrEqualValue(start) &
 isSmallerThanValue(end)` agar sesuai konvensi, atau perbaiki
 dokumentasinya.
+*Diperbaiki 2026-10-31:* `_withCategoryQuery` kini eksklusif ujung atas
+(konsisten dengan query agregat yang memang sudah benar) + test batas
+periode permanen.
 
 **B-03.** Saldo = `openingBalance` + transaksi (`repository.dart:747`);
 query laporan (`_withCategoryQuery`) hanya membaca tabel transactions —
@@ -288,7 +293,7 @@ drift. Mood = fungsi kondisi murni.
 | ID | Temuan | Severity |
 |---|---|---|
 | E-01 | Tangga migrasi solid & self-heal, tapi transisi v3→v5, v6→v7, dan lompatan v1→v10 langsung tak ada fixture test | Rendah |
-| E-02 | Nol index pada tabel transaksi — `EXPLAIN QUERY PLAN`: `SCAN transactions` | Rendah |
+| E-02 | Nol index pada tabel transaksi — `EXPLAIN QUERY PLAN`: `SCAN transactions` | Rendah — **diperbaiki** |
 | E-03 | `LedgerRepository` satu-satunya pintu data | ✓ Lolos |
 
 **E-01.** Tangga migrasi pakai guard `_hasColumn` + `beforeOpen`
@@ -306,6 +311,10 @@ personal (ribu-tahun baris) masih mikro-detik — tidak terasa — tapi
 murah untuk dicegah. *Rekomendasi:* `@TableIndex` pada
 `transactions.occurredAt` (plus `accountId` bila audit F menunjukkan
 jank), migrasi v11.
+*Diperbaiki 2026-10-31:* migrasi v11 + self-heal `beforeOpen`
+`CREATE INDEX IF NOT EXISTS idx_transactions_occurred_at` — jalur
+migrasi lama→v11 tereksekusi di semua fixture test migration (suite
+hijau).
 
 **E-03.** Import drift hanya di `lib/storage/`; tiga file UI
 mengimpor `class Value` semata (companion builder — bukan akses DB).
@@ -319,7 +328,7 @@ verifikasi di device nyata).
 
 | ID | Temuan | Severity |
 |---|---|---|
-| F-01 | Startup dingin 2,6–3,2 dtk (emulator); `main()` membuka DB 2× + seed + muat asset sebelum frame pertama | Sedang |
+| F-01 | Startup dingin 2,6–3,2 dtk (emulator); `main()` membuka DB 2× + seed + muat asset sebelum frame pertama | Sedang — **diperbaiki** |
 | F-02 | Konvensi stream-disematkan dijaga; daftar panas `ListView.builder` | ✓ Lolos |
 | F-03 | 12 stream `watch()` di repository — re-run selektif per tabel, ok di skala personal | ✓ Lolos (catatan E-02) |
 | F-04 | APK release 73,5 MB (fat APK 3 ABI); `libsqlcipher.so` 5,1 MB per ABI | Rendah |
@@ -334,7 +343,11 @@ Catatan baik: data demo terpasang **hanya di debug**
 (`seed_dummy.dart:23 if (!kDebugMode)`); layar kosong release benar.
 *Rekomendasi:* `runApp` lebih dulu (splash) lalu init async, atau
 probe lock memakai koneksi yang sama dengan DB utama, dan tunda
-prune/refresh pasca-frame.
+*Diperbaiki 2026-10-31:* `main()` kini `runApp` langsung (splash) —
+init berat jalan async di `BukuduitBootstrap`, DB dibuka SEKALI (probe
+kunci pakai koneksi yang sama), `isDatabaseLocked()` dipensiunkan.
+Hasil ukur ulang: rata-rata 2.941 → 2.135 dtk (**−28%**) di emulator;
+jalur layar terkunci tetap terverifikasi runtime.
 
 **F-02.** Laporan menyematkan stream di field + kunci `_streamKey`
 (tidak re-subscribe tiap build); home memakai stream di
@@ -423,7 +436,10 @@ sudah memakai pola bagus di dalamnya (stream field + `_streamKey`).
 *Rekomendasi:* pecah per-seksi jadi widget privat per file — refaktor
 mekanis, tanpa ubah perilaku, satu layar per PR.
 
-**I-02.** `seed_dummy.dart` di `lib/` tapi dijaga `kDebugMode` —
+**I-02.** *Diperbaiki 2026-10-31:* `buildCsv()` + test-nya dihapus
+(ekspor plaintext memang tak pernah diekspos, A-09); `dynamic_color`
+dan `cupertino_icons` (nol pemakaian juga) dikeluarkan dari pubspec.
+`seed_dummy.dart` tetap di `lib/` tapi dijaga `kDebugMode` —
 ter-tree-shake dari build release (terverifikasi: rilis fresh-install
 kosong) — bukan masalah.
 

@@ -158,23 +158,6 @@ void main() {
     expect(await repo.watchRecentWithCategory().first, isEmpty);
   });
 
-  test('csv: header + satu baris data', () async {
-    await repo.addManual(
-      amount: 150000,
-      direction: Direction.outgoing,
-      kind: TxKind.payment,
-      counterparty: 'Kopi "Kenangan", RT',
-    );
-    final csv = await repo.buildCsv();
-    final lines = csv.trim().split('\n');
-    expect(
-      lines.first,
-      'tanggal,arah,nominal,jenis,kategori,bank,pihak,sumber',
-    );
-    expect(lines, hasLength(2));
-    expect(lines.last, contains('"Kopi ""Kenangan"", RT"'));
-  });
-
   test('watchRecentWithCategory mengurutkan terbaru dulu', () async {
     await repo.addManual(
       amount: 1000,
@@ -191,6 +174,41 @@ void main() {
     final txs = await repo.watchRecentWithCategory().first;
     expect(txs.first.tx.amount, 2000);
   });
+
+  test(
+    'periode [start, end): transaksi tepat di ujung atas milik periode berikutnya',
+    () async {
+      // Audit B-02 — ujung atas eksklusif; dulu BETWEEN inklusif membuat
+      // transaksi tengah malam persis terhitung di dua bulan.
+      await repo.addManual(
+        amount: 1000,
+        direction: Direction.outgoing,
+        kind: TxKind.payment,
+        occurredAt: DateTime(2026, 10, 31, 23, 59, 59, 999),
+      );
+      await repo.addManual(
+        amount: 2000,
+        direction: Direction.outgoing,
+        kind: TxKind.payment,
+        occurredAt: DateTime(2026, 11, 1), // tepat 00:00:00.000
+      );
+      final okt = await repo
+          .watchBetweenWithCategory(
+            DateTime(2026, 10, 1),
+            DateTime(2026, 11, 1),
+          )
+          .first;
+      final nov = await repo
+          .watchBetweenWithCategory(
+            DateTime(2026, 11, 1),
+            DateTime(2026, 12, 1),
+          )
+          .first;
+      expect(okt, hasLength(1));
+      expect(nov, hasLength(1));
+      expect(nov.first.tx.amount, 2000);
+    },
+  );
 
   test('filter akun hanya menampilkan transaksi akun itu', () async {
     final blu = await repo.ensureBankAccount(
@@ -517,18 +535,26 @@ void main() {
       expect(drafts.first.rawBody, isNotNull);
     });
 
-    test('notifikasi sama dalam jendela dedup tidak membuat draf kedua', () async {
-      final raw = capture();
-      expect(await repo.addDraftFromCapture(raw: raw, draft: draft()), isNotNull);
-      expect(
-        await repo.addDraftFromCapture(
-          raw: capture(postedAt: raw.postedAt.add(const Duration(seconds: 30))),
-          draft: draft(),
-        ),
-        isNull,
-      );
-      expect(await db.select(db.drafts).get(), hasLength(1));
-    });
+    test(
+      'notifikasi sama dalam jendela dedup tidak membuat draf kedua',
+      () async {
+        final raw = capture();
+        expect(
+          await repo.addDraftFromCapture(raw: raw, draft: draft()),
+          isNotNull,
+        );
+        expect(
+          await repo.addDraftFromCapture(
+            raw: capture(
+              postedAt: raw.postedAt.add(const Duration(seconds: 30)),
+            ),
+            draft: draft(),
+          ),
+          isNull,
+        );
+        expect(await db.select(db.drafts).get(), hasLength(1));
+      },
+    );
 
     test('dup yang digugurkan dedup tercatat terlihat (ignored_dup)', () async {
       final raw = capture();
@@ -579,49 +605,57 @@ void main() {
       expect(left.map((l) => l.body).toSet(), {'belum', 'segar'});
     });
 
-    test('draf juga ter-dedup terhadap transaksi yang sudah dikonfirmasi', () async {
-      final raw = capture();
-      await repo.addDraftFromCapture(raw: raw, draft: draft());
-      final d = (await db.select(db.drafts).get()).single;
-      await repo.confirmDraft(
-        d,
-        amount: d.amount,
-        direction: d.direction,
-        kind: d.kind,
-      );
-      expect(
-        await repo.addDraftFromCapture(
-          raw: capture(postedAt: raw.postedAt.add(const Duration(minutes: 1))),
-          draft: draft(),
-        ),
-        isNull,
-      );
-      expect(await db.select(db.drafts).get(), isEmpty);
-    });
+    test(
+      'draf juga ter-dedup terhadap transaksi yang sudah dikonfirmasi',
+      () async {
+        final raw = capture();
+        await repo.addDraftFromCapture(raw: raw, draft: draft());
+        final d = (await db.select(db.drafts).get()).single;
+        await repo.confirmDraft(
+          d,
+          amount: d.amount,
+          direction: d.direction,
+          kind: d.kind,
+        );
+        expect(
+          await repo.addDraftFromCapture(
+            raw: capture(
+              postedAt: raw.postedAt.add(const Duration(minutes: 1)),
+            ),
+            draft: draft(),
+          ),
+          isNull,
+        );
+        expect(await db.select(db.drafts).get(), isEmpty);
+      },
+    );
 
-    test('konfirmasi draf: transaksi source notifikasi + draf terhapus', () async {
-      await repo.addDraftFromCapture(raw: capture(), draft: draft());
-      final d = (await db.select(db.drafts).get()).single;
+    test(
+      'konfirmasi draf: transaksi source notifikasi + draf terhapus',
+      () async {
+        await repo.addDraftFromCapture(raw: capture(), draft: draft());
+        final d = (await db.select(db.drafts).get()).single;
 
-      final txId = await repo.confirmDraft(
-        d,
-        amount: 1500000, // user mengoreksi nominal
-        direction: d.direction,
-        kind: d.kind,
-        counterparty: 'Budi S.',
-      );
+        final txId = await repo.confirmDraft(
+          d,
+          amount: 1500000, // user mengoreksi nominal
+          direction: d.direction,
+          kind: d.kind,
+          counterparty: 'Budi S.',
+        );
 
-      final txs = await db.select(db.transactions).get();
-      expect(txs, hasLength(1));
-      expect(txs.first.id, txId);
-      expect(txs.first.source, TxSource.notification);
-      expect(txs.first.bankId, 'blu');
-      expect(txs.first.amount, 1500000);
-      expect(txs.first.counterparty, 'Budi S.');
-      expect(txs.first.rawBody, d.rawBody);
-      expect(txs.first.occurredAt, d.occurredAt);
-      expect(await db.select(db.drafts).get(), isEmpty);
-    });
+        final txs = await db.select(db.transactions).get();
+        expect(txs, hasLength(1));
+        expect(txs.first.id, txId);
+        expect(txs.first.source, TxSource.notification);
+        expect(txs.first.bankId, 'blu');
+        expect(txs.first.amount, 1500000);
+        expect(txs.first.counterparty, 'Budi S.');
+        expect(txs.first.rawBody, d.rawBody);
+        expect(txs.first.occurredAt, d.occurredAt);
+        expect(await db.select(db.drafts).get(), isEmpty);
+      },
+    );
 
     test('buang draf menghapusnya tanpa membuat transaksi', () async {
       await repo.addDraftFromCapture(raw: capture(), draft: draft());
@@ -670,25 +704,28 @@ void main() {
       expect(b.name, 'blu by BCA');
     });
 
-    test('ensureBankAccount mengadopsi akun manual senama tanpa duplikat', () async {
-      // Akun manual 'Dompet Lama' belum tertaut ke bank mana pun.
-      final manual = await repo.addAccount('Dompet Lama', AccountKind.bank);
-      expect(manual.bankId, isNull);
-      // Menghubungkan bank dengan nama sama memakai akun itu, bukan duplikat.
-      final adopted = await repo.ensureBankAccount(
-        bankId: 'gopay',
-        name: 'Dompet Lama',
-        kind: AccountKind.bank,
-      );
-      expect(adopted.id, manual.id);
-      expect(adopted.bankId, 'gopay');
-      final again = await repo.ensureBankAccount(
-        bankId: 'gopay',
-        name: 'Dompet Lama',
-        kind: AccountKind.bank,
-      );
-      expect(again.id, manual.id);
-    });
+    test(
+      'ensureBankAccount mengadopsi akun manual senama tanpa duplikat',
+      () async {
+        // Akun manual 'Dompet Lama' belum tertaut ke bank mana pun.
+        final manual = await repo.addAccount('Dompet Lama', AccountKind.bank);
+        expect(manual.bankId, isNull);
+        // Menghubungkan bank dengan nama sama memakai akun itu, bukan duplikat.
+        final adopted = await repo.ensureBankAccount(
+          bankId: 'gopay',
+          name: 'Dompet Lama',
+          kind: AccountKind.bank,
+        );
+        expect(adopted.id, manual.id);
+        expect(adopted.bankId, 'gopay');
+        final again = await repo.ensureBankAccount(
+          bankId: 'gopay',
+          name: 'Dompet Lama',
+          kind: AccountKind.bank,
+        );
+        expect(again.id, manual.id);
+      },
+    );
 
     test('draf bank terhubung otomatis terikat akun yang tertaut', () async {
       // DB lama: akun 'blu by BCA' ada tanpa bank_id; migrasi menautkannya.

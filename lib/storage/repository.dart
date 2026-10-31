@@ -33,7 +33,6 @@ class LedgerRepository {
 
   // --- capture ------------------------------------------------------------
 
-
   /// Catat notifikasi yang tidak berhasil diparse (untuk Diagnostik).
   ///
   /// Log mentah yang identik (paket+judul+isi dalam jendela dedup) hanya
@@ -71,12 +70,11 @@ class LedgerRepository {
   /// yang lebih tua dari 30 hari. Mengembalikan jumlah baris terhapus.
   Future<int> pruneCaptureLogs() async {
     final cutoff = DateTime.now().subtract(const Duration(days: 30));
-    return (_db.delete(_db.captureLogs)
-          ..where(
-            (c) =>
-                (c.parsed.equals(true) | c.ignoredDup.equals(true)) &
-                c.postedAt.isSmallerThanValue(cutoff),
-          ))
+    return (_db.delete(_db.captureLogs)..where(
+          (c) =>
+              (c.parsed.equals(true) | c.ignoredDup.equals(true)) &
+              c.postedAt.isSmallerThanValue(cutoff),
+        ))
         .go();
   }
 
@@ -116,11 +114,8 @@ class LedgerRepository {
       final id = await addDraftFromCapture(raw: raw, draft: draft);
       // Dikenali → tandai terbaca; duplikat yang digugurkan sudah
       // tercatat sebagai baris ignored_dup, tak perlu dicoba ulang.
-      await (_db.update(
-        _db.captureLogs,
-      )..where((c) => c.id.equals(log.id))).write(
-        const CaptureLogsCompanion(parsed: Value(true)),
-      );
+      await (_db.update(_db.captureLogs)..where((c) => c.id.equals(log.id)))
+          .write(const CaptureLogsCompanion(parsed: Value(true)));
       if (id != null) created++;
     }
     return created;
@@ -299,14 +294,14 @@ class LedgerRepository {
               rawTitle: Value(draft.rawTitle),
               rawBody: Value(draft.rawBody),
               categoryId: Value(
-                categoryId ?? draft.categoryId ?? await _defaultCategoryId(kind),
+                categoryId ??
+                    draft.categoryId ??
+                    await _defaultCategoryId(kind),
               ),
               accountId: Value(accountId ?? draft.accountId),
             ),
           );
-      await (_db.delete(
-        _db.drafts,
-      )..where((d) => d.id.equals(draft.id))).go();
+      await (_db.delete(_db.drafts)..where((d) => d.id.equals(draft.id))).go();
       return id;
     });
   }
@@ -325,24 +320,27 @@ class LedgerRepository {
   Future<Set<String>> connectedBankIds() async {
     final raw = await getSetting(connectedBanksKey);
     if (raw == null || raw.trim().isEmpty) return {};
-    return raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toSet();
+    return raw
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toSet();
   }
 
   /// Versi hidup dari [connectedBankIds].
   Stream<Set<String>> watchConnectedBanks() {
-    return (_db.select(
-      _db.appSettings,
-    )..where((s) => s.key.equals(connectedBanksKey))).watchSingleOrNull().map((
-      row,
-    ) {
-      final raw = row?.valueText;
-      if (raw == null || raw.trim().isEmpty) return {};
-      return raw
-          .split(',')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toSet();
-    });
+    return (_db.select(_db.appSettings)
+          ..where((s) => s.key.equals(connectedBanksKey)))
+        .watchSingleOrNull()
+        .map((row) {
+          final raw = row?.valueText;
+          if (raw == null || raw.trim().isEmpty) return {};
+          return raw
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toSet();
+        });
   }
 
   /// Hubungkan / putuskan satu bank. Urutan koneksi dipertahankan.
@@ -371,11 +369,8 @@ class LedgerRepository {
       _db.accounts,
     )..where((a) => a.name.equals(name))).getSingleOrNull();
     if (sameName != null) {
-      await (_db.update(
-        _db.accounts,
-      )..where((a) => a.id.equals(sameName.id))).write(
-        AccountsCompanion(bankId: Value(bankId)),
-      );
+      await (_db.update(_db.accounts)..where((a) => a.id.equals(sameName.id)))
+          .write(AccountsCompanion(bankId: Value(bankId)));
       return sameName.copyWith(bankId: Value(bankId));
     }
     final all = await getAccounts();
@@ -409,7 +404,12 @@ class LedgerRepository {
       ),
     ]);
     if (start != null && end != null) {
-      query.where(_db.transactions.occurredAt.isBetweenValues(start, end));
+      // Periode [start, end) — ujung atas eksklusif (audit B-02);
+      // transaksi tepat 00:00 bulan berikutnya milik bulan itu sendiri.
+      query.where(
+        _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
+            _db.transactions.occurredAt.isSmallerThanValue(end),
+      );
     }
     if (accountId != null) {
       query.where(_db.transactions.accountId.equals(accountId));
@@ -475,9 +475,12 @@ class LedgerRepository {
   /// Total keluar per hari lokal sejak [since] (inklusif) — bahan
   /// sparkline insight beranda. Re-emit tiap tabel transaksi berubah.
   Stream<Map<DateTime, int>> watchOutSumByDaySince(DateTime since) {
-    final query = (_db.select(_db.transactions)..where((t) =>
-        t.direction.equalsValue(Direction.outgoing) &
-        t.occurredAt.isBiggerOrEqualValue(since)));
+    final query = (_db.select(_db.transactions)
+      ..where(
+        (t) =>
+            t.direction.equalsValue(Direction.outgoing) &
+            t.occurredAt.isBiggerOrEqualValue(since),
+      ));
     return query.watch().map((rows) {
       final map = <DateTime, int>{};
       for (final t in rows) {
@@ -496,14 +499,14 @@ class LedgerRepository {
   /// kunci tengah-malam lokal seperti [txCountByDaySince]. Transfer
   /// tidak ikut.
   Future<Map<DateTime, int>> outSpendByDaySince(DateTime since) async {
-    final rows = await (_db.select(
-      _db.transactions,
-    )..where(
-        (t) =>
-            t.direction.equalsValue(Direction.outgoing) &
-            t.kind.equalsValue(TxKind.transfer).not() &
-            t.occurredAt.isBiggerOrEqualValue(since),
-      )).get();
+    final rows =
+        await (_db.select(_db.transactions)..where(
+              (t) =>
+                  t.direction.equalsValue(Direction.outgoing) &
+                  t.kind.equalsValue(TxKind.transfer).not() &
+                  t.occurredAt.isBiggerOrEqualValue(since),
+            ))
+            .get();
     final map = <DateTime, int>{};
     for (final t in rows) {
       final d = DateTime(
@@ -536,8 +539,8 @@ class LedgerRepository {
   // --- anggaran ---------------------------------------------------------------
 
   Stream<List<Budget>> watchBudgets() => (_db.select(
-        _db.budgets,
-      )..orderBy([(b) => OrderingTerm.asc(b.id)])).watch();
+    _db.budgets,
+  )..orderBy([(b) => OrderingTerm.asc(b.id)])).watch();
 
   /// Set (atau timpa) alokasi bulanan satu kategori. [accountId] null =
   /// berlaku di semua akun; beda akun = baris alokasi yang berbeda.
@@ -546,23 +549,22 @@ class LedgerRepository {
     int monthlyLimit, {
     int? accountId,
   }) async {
-    final existing = await (_db.select(
-      _db.budgets,
-    )..where(
-        (b) =>
-            b.categoryId.equals(categoryId) &
-            (accountId == null
-                ? b.accountId.isNull()
-                : b.accountId.equals(accountId)),
-      )).getSingleOrNull();
+    final existing =
+        await (_db.select(_db.budgets)..where(
+              (b) =>
+                  b.categoryId.equals(categoryId) &
+                  (accountId == null
+                      ? b.accountId.isNull()
+                      : b.accountId.equals(accountId)),
+            ))
+            .getSingleOrNull();
     if (existing != null) {
-      await (_db.update(
-        _db.budgets,
-      )..where((b) => b.id.equals(existing.id))).write(
-        BudgetsCompanion(monthlyLimit: Value(monthlyLimit)),
-      );
+      await (_db.update(_db.budgets)..where((b) => b.id.equals(existing.id)))
+          .write(BudgetsCompanion(monthlyLimit: Value(monthlyLimit)));
     } else {
-      await _db.into(_db.budgets).insert(
+      await _db
+          .into(_db.budgets)
+          .insert(
             BudgetsCompanion.insert(
               categoryId: categoryId,
               monthlyLimit: monthlyLimit,
@@ -575,12 +577,13 @@ class LedgerRepository {
   /// Hapus alokasi satu kategori (seluruh scope, atau akun tertentu).
   Future<void> removeBudget(int categoryId, {int? accountId}) {
     return (_db.delete(_db.budgets)..where(
-        (b) =>
-            b.categoryId.equals(categoryId) &
-            (accountId == null
-                ? b.accountId.isNull()
-                : b.accountId.equals(accountId)),
-      )).go();
+          (b) =>
+              b.categoryId.equals(categoryId) &
+              (accountId == null
+                  ? b.accountId.isNull()
+                  : b.accountId.equals(accountId)),
+        ))
+        .go();
   }
 
   /// Keluar bulan dikelompokkan per pasangan (kategori, akun) dalam
@@ -603,15 +606,14 @@ class LedgerRepository {
       )
       ..groupBy([_db.transactions.categoryId, _db.transactions.accountId]);
     return query.watch().map(
-          (rows) => {
-            for (final row in rows)
-              (
-                category: row.read(_db.transactions.categoryId),
-                account: row.read(_db.transactions.accountId),
-              ):
-                  row.read(amountSum) ?? 0,
-          },
-        );
+      (rows) => {
+        for (final row in rows)
+          (
+            category: row.read(_db.transactions.categoryId),
+            account: row.read(_db.transactions.accountId),
+          ): row.read(amountSum) ?? 0,
+      },
+    );
   }
 
   /// Versi one-shot dari [watchOutPairsBetween].
@@ -638,8 +640,7 @@ class LedgerRepository {
         (
           category: row.read(_db.transactions.categoryId),
           account: row.read(_db.transactions.accountId),
-        ):
-            row.read(amountSum) ?? 0,
+        ): row.read(amountSum) ?? 0,
     };
   }
 
@@ -721,8 +722,7 @@ class LedgerRepository {
         (
           category: row.read(_db.transactions.categoryId),
           account: row.read(_db.transactions.accountId),
-        ):
-            row.read(amountSum) ?? 0,
+        ): row.read(amountSum) ?? 0,
     };
   }
 
@@ -750,14 +750,14 @@ class LedgerRepository {
     ]);
     query.groupBy([_db.accounts.id]);
     return query.watch().map(
-          (rows) => {
-            for (final row in rows)
-              row.read(_db.accounts.id)!:
-                  _intOf(row.read(_db.accounts.openingBalance)) +
-                      _intOf(row.read(inSum)) -
-                      _intOf(row.read(outSum)),
-          },
-        );
+      (rows) => {
+        for (final row in rows)
+          row.read(_db.accounts.id)!:
+              _intOf(row.read(_db.accounts.openingBalance)) +
+              _intOf(row.read(inSum)) -
+              _intOf(row.read(outSum)),
+      },
+    );
   }
 
   static int _intOf(Object? value) => (value as num?)?.toInt() ?? 0;
@@ -766,9 +766,7 @@ class LedgerRepository {
 
   /// Ubah nama kategori; melempar bila nama sudah dipakai (unique).
   Future<void> renameCategory(int id, String name) {
-    return (_db.update(
-      _db.categories,
-    )..where((c) => c.id.equals(id))).write(
+    return (_db.update(_db.categories)..where((c) => c.id.equals(id))).write(
       CategoriesCompanion(name: Value(name.trim())),
     );
   }
@@ -777,11 +775,8 @@ class LedgerRepository {
   /// (biasanya "Lainnya"), alokasinya ikut terhapus.
   Future<void> deleteCategory(int id, {required int fallbackId}) async {
     if (id == fallbackId) throw ArgumentError('tidak boleh hapus fallback');
-    await (_db.update(
-      _db.transactions,
-    )..where((t) => t.categoryId.equals(id))).write(
-      TransactionsCompanion(categoryId: Value(fallbackId)),
-    );
+    await (_db.update(_db.transactions)..where((t) => t.categoryId.equals(id)))
+        .write(TransactionsCompanion(categoryId: Value(fallbackId)));
     await (_db.delete(_db.budgets)..where((b) => b.categoryId.equals(id))).go();
     await (_db.delete(_db.categories)..where((c) => c.id.equals(id))).go();
   }
@@ -791,30 +786,6 @@ class LedgerRepository {
   /// Flush WAL ke file utama sebelum file DB dicopy untuk backup.
   Future<void> checkpoint() =>
       _db.customStatement('PRAGMA wal_checkpoint(FULL)');
-
-  // --- CSV ------------------------------------------------------------------------
-
-  Future<String> buildCsv() async {
-    final rows = await _withCategoryQuery().get().then((r) => _mapRows(r));
-    String esc(String s) => '"${s.replaceAll('"', '""')}"';
-    final buf = StringBuffer(
-      'tanggal,arah,nominal,jenis,kategori,bank,pihak,sumber\n',
-    );
-    for (final r in rows) {
-      final t = r.tx;
-      buf.write(
-        '${t.occurredAt.toIso8601String()},'
-        '${t.direction == Direction.incoming ? 'masuk' : 'keluar'},'
-        '${t.amount},'
-        '${esc(t.kind.label)},'
-        '${esc(r.category?.name ?? '')},'
-        '${esc(t.bankId)},'
-        '${esc(t.counterparty ?? '')},'
-        '${esc(t.source.label)}\n',
-      );
-    }
-    return buf.toString();
-  }
 
   // --- akun ------------------------------------------------------------------
 

@@ -32,8 +32,10 @@ class Accounts extends Table {
   TextColumn get name => text().unique()();
   TextColumn get kind => textEnum<AccountKind>()();
   IntColumn get colorIndex => integer()();
+
   /// Saldo awal saat akun didaftarkan — dasar perhitungan saldo berjalan.
   IntColumn get openingBalance => integer().withDefault(const Constant(0))();
+
   /// ID bank/e-wallet di katalog (seed_rules) bila akun lahir dari koneksi;
   /// null = akun manual (mis. Tunai).
   TextColumn get bankId => text().nullable()();
@@ -84,14 +86,13 @@ class Drafts extends Table {
 class Budgets extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get categoryId => integer().references(Categories, #id)();
-  IntColumn get accountId =>
-      integer().nullable().references(Accounts, #id)();
+  IntColumn get accountId => integer().nullable().references(Accounts, #id)();
   IntColumn get monthlyLimit => integer()();
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {categoryId, accountId},
-      ];
+    {categoryId, accountId},
+  ];
 }
 
 /// Bon pribadi: utang-piutang dengan seseorang.
@@ -143,79 +144,92 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onUpgrade: (m, from, to) async {
-          if (from < 2) {
-            await m.createTable(categories);
-            await m.createTable(appSettings);
-            // Device yang gagal migrasi lama bisa jadi sudah punya kolom
-            // ini (DDL ter-apply tapi user_version tak terangkat) — jangan
-            // tambah dua kali.
-            if (!await _hasColumn(m, 'transactions', 'category_id')) {
-              await m.addColumn(transactions, transactions.categoryId);
-            }
-          }
-          if (from < 3) {
-            await m.createTable(accounts);
-            await m.createTable(bons);
-            if (!await _hasColumn(m, 'transactions', 'account_id')) {
-              await m.addColumn(transactions, transactions.accountId);
-            }
-          }
-          if (from < 5) {
-            await m.createTable(budgets);
-          }
-          if (from < 6) {
-            // budgets dibangun ulang: unique(kategori) lama dilepas,
-            // diganti unique(kategori, akun); accountId ikut ditambah.
-            // DB yang lompat jauh (mis. v2→v6) sudah membuat budgets
-            // bentuk baru di langkah from<5 — jangan tambah dua kali.
-            if (!await _hasColumn(m, 'budgets', 'account_id')) {
-              await m.alterTable(
-                TableMigration(budgets, newColumns: [budgets.accountId]),
-              );
-            }
-            if (!await _hasColumn(m, 'accounts', 'opening_balance')) {
-              await m.addColumn(accounts, accounts.openingBalance);
-            }
-          }
-          if (from < 8) {
-            // Fitur Target/Sisihkan dipensiunkan: tabel pos dibuang. Riwayat
-            // setoran tetap ada sebagai transaksi transfer (bankId 'target').
-            await customStatement('DROP TABLE IF EXISTS target_deposits');
-            await customStatement('DROP TABLE IF EXISTS targets');
-          }
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(categories);
+        await m.createTable(appSettings);
+        // Device yang gagal migrasi lama bisa jadi sudah punya kolom
+        // ini (DDL ter-apply tapi user_version tak terangkat) — jangan
+        // tambah dua kali.
+        if (!await _hasColumn(m, 'transactions', 'category_id')) {
+          await m.addColumn(transactions, transactions.categoryId);
+        }
+      }
+      if (from < 3) {
+        await m.createTable(accounts);
+        await m.createTable(bons);
+        if (!await _hasColumn(m, 'transactions', 'account_id')) {
+          await m.addColumn(transactions, transactions.accountId);
+        }
+      }
+      if (from < 5) {
+        await m.createTable(budgets);
+      }
+      if (from < 6) {
+        // budgets dibangun ulang: unique(kategori) lama dilepas,
+        // diganti unique(kategori, akun); accountId ikut ditambah.
+        // DB yang lompat jauh (mis. v2→v6) sudah membuat budgets
+        // bentuk baru di langkah from<5 — jangan tambah dua kali.
+        if (!await _hasColumn(m, 'budgets', 'account_id')) {
+          await m.alterTable(
+            TableMigration(budgets, newColumns: [budgets.accountId]),
+          );
+        }
+        if (!await _hasColumn(m, 'accounts', 'opening_balance')) {
+          await m.addColumn(accounts, accounts.openingBalance);
+        }
+      }
+      if (from < 8) {
+        // Fitur Target/Sisihkan dipensiunkan: tabel pos dibuang. Riwayat
+        // setoran tetap ada sebagai transaksi transfer (bankId 'target').
+        await customStatement('DROP TABLE IF EXISTS target_deposits');
+        await customStatement('DROP TABLE IF EXISTS targets');
+      }
 
-          if (from < 9) {
-            // Model "hubungkan bank": antrean draf menunggu keputusan user
-            // + tautan akun↔bank katalog.
-            await m.createTable(drafts);
-            if (!await _hasColumn(m, 'accounts', 'bank_id')) {
-              await m.addColumn(accounts, accounts.bankId);
-            }
-            // Tautkan akun lama ke bank katalog via nama — idempoten.
-            for (final entry in <String, String>{
-              'blu': 'blu by BCA',
-              'nagari': 'Bank Nagari',
-            }.entries) {
-              await customStatement(
-                'UPDATE accounts SET bank_id = ? '
-                'WHERE bank_id IS NULL AND name = ?',
-                [entry.key, entry.value],
-              );
-            }
-          }
-          if (from < 10) {
-            // Aturan buatan pengguna dipensiunkan bersama model
-            // hubungkan bank; tabelnya dibuang. Notifikasi yang digugurkan
-            // dedup kini dicatat (ignored_dup) agar tetap terlihat.
-            await customStatement('DROP TABLE IF EXISTS user_rules');
-            if (!await _hasColumn(m, 'capture_logs', 'ignored_dup')) {
-              await m.addColumn(captureLogs, captureLogs.ignoredDup);
-            }
-          }
-        },
+      if (from < 9) {
+        // Model "hubungkan bank": antrean draf menunggu keputusan user
+        // + tautan akun↔bank katalog.
+        await m.createTable(drafts);
+        if (!await _hasColumn(m, 'accounts', 'bank_id')) {
+          await m.addColumn(accounts, accounts.bankId);
+        }
+        // Tautkan akun lama ke bank katalog via nama — idempoten.
+        for (final entry in <String, String>{
+          'blu': 'blu by BCA',
+          'nagari': 'Bank Nagari',
+        }.entries) {
+          await customStatement(
+            'UPDATE accounts SET bank_id = ? '
+            'WHERE bank_id IS NULL AND name = ?',
+            [entry.key, entry.value],
+          );
+        }
+      }
+      if (from < 10) {
+        // Aturan buatan pengguna dipensiunkan bersama model
+        // hubungkan bank; tabelnya dibuang. Notifikasi yang digugurkan
+        // dedup kini dicatat (ignored_dup) agar tetap terlihat.
+        await customStatement('DROP TABLE IF EXISTS user_rules');
+        if (!await _hasColumn(m, 'capture_logs', 'ignored_dup')) {
+          await m.addColumn(captureLogs, captureLogs.ignoredDup);
+        }
+      }
+      if (from < 11) {
+        // Index kolom panas: query periode/watch tidak lagi full
+        // scan (audit E-02).
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_transactions_occurred_at '
+          'ON transactions (occurred_at)',
+        );
+      }
+    },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
+      // Self-heal index v11 (audit E-02) untuk DB baru maupun lama.
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_transactions_occurred_at '
+        'ON transactions (occurred_at)',
+      );
       final m = createMigrator();
       // Self-heal idempoten: buat ulang tabel yang hilang (IF NOT
       // EXISTS) — menyembuhkan device yang gagal migrasi di tengah jalan.
@@ -338,23 +352,6 @@ Future<bool> _hasColumn(Migrator m, String table, String column) async {
       )
       .get();
   return rows.any((r) => r.data['name'] == column);
-}
-/// Apakah DB aktif ada tapi tak terbaca dengan passphrase perangkat
-/// ini — mis. data dipulihkan/pindah ke perangkat lain tanpa kunci
-/// Keystore-nya. True → app menampilkan layar pemulihan (audit A-06),
-/// bukan gagal start dengan error generik.
-Future<bool> isDatabaseLocked() async {
-  final file = await currentDatabaseFile();
-  if (!file.existsSync()) return false;
-  final db = AppDatabase(await openAppDatabase());
-  try {
-    await db.customSelect('SELECT count(*) AS c FROM sqlite_master').get();
-    return false;
-  } catch (_) {
-    return true;
-  } finally {
-    await db.close();
-  }
 }
 
 /// Executor terenkripsi untuk file DB tertentu — helper top-level
