@@ -3,6 +3,8 @@ package id.xmuu.bukuduit
 import android.app.Notification
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -14,14 +16,48 @@ import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
 
 class MainActivity : FlutterActivity() {
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        handleSharedIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleSharedIntent(intent)
+    }
+
+    private fun handleSharedIntent(intent: Intent?) {
+        if (intent == null || intent.action != Intent.ACTION_SEND) return
+        val type = intent.type ?: return
+        if (type.startsWith("text/")) {
+            val text = intent.getStringExtra(Intent.EXTRA_TEXT)
+                ?: intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()
+            if (!text.isNullOrBlank()) {
+                pendingSharedPayload = mapOf("type" to "text", "text" to text)
+            }
+        } else if (type.startsWith("image/")) {
+            @Suppress("DEPRECATION")
+            val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM) ?: return
+            try {
+                contentResolver.openInputStream(uri)?.use { input ->
+                    val file = File(cacheDir, "shared_ocr_${System.currentTimeMillis()}.jpg")
+                    FileOutputStream(file).use { output ->
+                        input.copyTo(output)
+                    }
+                    pendingSharedPayload = mapOf("type" to "image", "path" to file.absolutePath)
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, METHOD_CHANNEL)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -68,6 +104,14 @@ class MainActivity : FlutterActivity() {
                             .sortedBy { (it["label"] as String).lowercase() }
                         result.success(apps)
                     }
+                    "getActiveNotifications" -> {
+                        result.success(NotificationCatcher.getActiveNotificationLines(this))
+                    }
+                    "consumeSharedPayload" -> {
+                        val p = pendingSharedPayload
+                        pendingSharedPayload = null
+                        result.success(p)
+                    }
                     else -> result.notImplemented()
                 }
             }
@@ -97,6 +141,9 @@ class MainActivity : FlutterActivity() {
     companion object {
         const val METHOD_CHANNEL = "bukuduit/capture"
         const val EVENT_CHANNEL = "bukuduit/capture_events"
+
+        @Volatile
+        var pendingSharedPayload: Map<String, Any?>? = null
     }
 }
 
@@ -113,6 +160,8 @@ class NotificationCatcher : NotificationListenerService() {
         @Volatile
         var sink: EventChannel.EventSink? = null
 
+        @Volatile
+        var instance: NotificationCatcher? = null
         private const val QUEUE_FILE = "capture_queue.jsonl"
         private val lock = Any()
         private const val QUEUE_MAX_BYTES = 1_000_000L
@@ -186,30 +235,60 @@ class NotificationCatcher : NotificationListenerService() {
                 return lines
             }
         }
+
+        fun lineFromSbn(context: Context, sbn: StatusBarNotification, checkAllowed: Boolean = false): String? {
+            if (sbn.packageName == context.packageName) return null
+            if (sbn.isOngoing) return null
+
+            if (checkAllowed && !isAllowed(context, sbn.packageName)) {
+                return null
+            }
+
+            val extras = sbn.notification?.extras ?: return null
+            val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
+            val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
+            val big = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString().orEmpty()
+            val body = if (big.length > text.length) big else text
+            if (title.isBlank() && body.isBlank()) return null
+            if (body.contains("Sensitive notification content hidden")) return null
+
+            return JSONObject()
+                .put("packageName", sbn.packageName)
+                .put("title", title)
+                .put("body", body)
+                .put("postedAt", sbn.postTime)
+                .toString()
+        }
+
+        fun getActiveNotificationLines(context: Context): List<String> {
+            val catcher = instance ?: return emptyList()
+            val active = try {
+                catcher.activeNotifications ?: emptyArray()
+            } catch (_: Exception) {
+                emptyArray()
+            }
+            return active.mapNotNull { sbn ->
+                lineFromSbn(context, sbn, checkAllowed = true)
+            }
+        }
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        instance = this
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (instance == this) {
+            instance = null
+        }
+    }
+
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        if (sbn.packageName == packageName) return
-
-        // Notifikasi "ongoing" (musik, unduhan, status menetap) bukan
-        // transaksi — dilewati agar tidak menambah ukuran antrian.
-        if (sbn.isOngoing) return
-
-        val extras = sbn.notification?.extras ?: return
-        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
-        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
-        val big = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString().orEmpty()
-        val body = if (big.length > text.length) big else text
-        if (title.isBlank() && body.isBlank()) return
-
-        val line = JSONObject()
-            .put("packageName", sbn.packageName)
-            .put("title", title)
-            .put("body", body)
-            .put("postedAt", sbn.postTime)
-            .toString()
+        val line = lineFromSbn(applicationContext, sbn, checkAllowed = false) ?: return
 
         // Hanya paket bank terhubung/pelajaran yang boleh menebar ke
         // disk; sink live tetap menerima semuanya agar Dart bisa

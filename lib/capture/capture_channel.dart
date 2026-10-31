@@ -16,7 +16,7 @@ class CaptureChannel {
   Future<bool> isListenerEnabled() async {
     try {
       return await _method.invokeMethod<bool>('isListenerEnabled') ?? false;
-    } on PlatformException {
+    } catch (_) {
       return false;
     }
   }
@@ -29,8 +29,9 @@ class CaptureChannel {
   /// menghubungkan app apa pun di Mode Belajar.
   Future<List<({String package, String label})>> listLaunchableApps() async {
     try {
-      final rows =
-          await _method.invokeMethod<List<dynamic>>('listLaunchableApps');
+      final rows = await _method.invokeMethod<List<dynamic>>(
+        'listLaunchableApps',
+      );
       return [
         for (final row in rows ?? const <dynamic>[])
           if (row is Map && row['package'] is String)
@@ -39,20 +40,52 @@ class CaptureChannel {
               label: (row['label'] ?? '') as String,
             ),
       ];
-    } on PlatformException {
+    } catch (_) {
       return const [];
     }
   }
+
+  /// Ambil notifikasi yang saat ini masih aktif/tayang di status bar Android.
+  Future<List<RawCapture>> getActiveNotifications() async {
+    try {
+      final lines = await _method.invokeMethod<List<dynamic>>(
+        'getActiveNotifications',
+      );
+      return parseCaptureLines([
+        for (final line in lines ?? const <dynamic>[]) line as String,
+      ]);
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// Ambil data teks atau file gambar yang dibagikan dari app lain (jika ada).
+  Future<({String type, String? text, String? path})?>
+  consumeSharedPayload() async {
+    try {
+      final map = await _method.invokeMapMethod<String, dynamic>(
+        'consumeSharedPayload',
+      );
+      if (map == null) return null;
+      final type = map['type'] as String?;
+      if (type == null) return null;
+      return (
+        type: type,
+        text: map['text'] as String?,
+        path: map['path'] as String?,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Kirim daftar paket bank terhubung — native hanya menulis notifikasi
   /// dari paket ini (plus paket yang sudah dipelajari) ke antrean disk.
   /// Gagal senyap: antrean kosong lebih aman daripada antrean bocor.
   Future<void> setAllowedPackages(Set<String> packages) async {
     try {
-      await _method.invokeMethod<void>(
-        'setAllowedPackages',
-        packages.toList(),
-      );
-    } on PlatformException {
+      await _method.invokeMethod<void>('setAllowedPackages', packages.toList());
+    } catch (_) {
       // diabaikan — bukan platform yang didukung
     }
   }
@@ -62,7 +95,7 @@ class CaptureChannel {
   Future<void> learnBankPackage(String packageName) async {
     try {
       await _method.invokeMethod<void>('learnBankPackage', packageName);
-    } on PlatformException {
+    } catch (_) {
       // diabaikan — bukan platform yang didukung
     }
   }
@@ -82,7 +115,7 @@ class CaptureChannel {
       return parseCaptureLines([
         for (final line in lines ?? const <dynamic>[]) line as String,
       ]);
-    } on PlatformException {
+    } catch (_) {
       return const [];
     }
   }
@@ -115,5 +148,5 @@ RawCapture? tryParseCaptureLine(String line) {
 
 /// Parse semua baris antrean; baris korup dilewati, sisanya diproses.
 List<RawCapture> parseCaptureLines(List<String> lines) => [
-      for (final line in lines) ?tryParseCaptureLine(line),
-    ];
+  for (final line in lines) ?tryParseCaptureLine(line),
+];

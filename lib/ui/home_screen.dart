@@ -13,11 +13,13 @@ import '../theme/tokens.dart';
 import 'bon_screen.dart';
 import 'home_cards.dart';
 import 'laporan_screen.dart';
+import 'ocr_screen.dart';
 import 'quest.dart';
 import 'rencana_batas.dart';
 import 'rencana_screen.dart';
 import 'transaction_sheet.dart';
 import 'transaksi_screen.dart';
+
 /// Shell utama: Beranda | Rekap | Rencana | Bon.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -44,25 +46,67 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// Jeda refresh setelah pindah tab: sedikit lebih lama dari durasi
   /// slide agar rebuild data terjadi setelah animasi mendarat.
   static const _refreshSettle = Duration(milliseconds: 300);
 
   /// Badge bon disematkan sekali agar rebuild tak subscribe ulang (anti-kedip).
   late final Stream<List<Bon>> _bonsWatch;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _bonsWatch = widget.repository.watchBons();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkSharedPayload();
+    });
   }
-  Timer? _refreshTimer;
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _refreshTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkSharedPayload();
+    }
+  }
+
+  Future<void> _checkSharedPayload() async {
+    final payload = await widget.pipeline.channel.consumeSharedPayload();
+    if (payload == null || !mounted) return;
+
+    if (payload.type == 'text' &&
+        payload.text != null &&
+        payload.text!.trim().isNotEmpty) {
+      final ok = await widget.pipeline.submitPastedText(
+        payload.text!,
+        sourceLabel: 'Dibagikan',
+      );
+      if (!mounted) return;
+      questSnack(
+        context,
+        ok
+            ? 'Teks dibagikan berhasil diproses menjadi draf!'
+            : 'Gagal memproses teks dibagikan.',
+        icon: ok
+            ? Icons.check_circle_outline_rounded
+            : Icons.info_outline_rounded,
+      );
+    } else if (payload.type == 'image' && payload.path != null) {
+      await OcrScreen.start(
+        context,
+        pipeline: widget.pipeline,
+        imagePath: payload.path,
+      );
+    }
   }
 
   int _tab = 0;
@@ -114,6 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _openTransaksi() => _switchTab(1);
   void _openAnggaran() => _switchTab(2);
   void _openBon() => _switchTab(1, openBon: true);
+
   /// Aksi tombol + tengah navbar: Langsung catat transaksi 1-tap.
   void _primaryAction() {
     HapticFeedback.lightImpact();
@@ -242,7 +287,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-
 /// Beranda: panggung maskot & saldo hero, belanja hari ini, streak,
 /// dan transaksi terbaru. Pencatatan via tombol + tengah navbar.
 class _BerandaTab extends StatefulWidget {
@@ -311,7 +355,7 @@ class _BerandaTabState extends State<_BerandaTab> {
       backgroundColor: context.q.bg,
       body: SafeArea(
         bottom: false,
-      child: ListView(
+        child: ListView(
           padding: EdgeInsets.only(
             bottom: Spacing.m + MediaQuery.paddingOf(context).bottom,
           ),

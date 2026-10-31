@@ -51,10 +51,7 @@ class CapturePipeline extends ChangeNotifier {
     } catch (_) {
       // drain gagal (channel belum siap) — live stream tetap dipasang.
     }
-    _subscription = channel.stream().listen(
-      _submit,
-      onError: (Object _) {},
-    );
+    _subscription = channel.stream().listen(_submit, onError: (Object _) {});
   }
 
   /// Antrekan pemrosesan satu notifikasi — bergiliran, agar cek dedup
@@ -142,6 +139,88 @@ class CapturePipeline extends ChangeNotifier {
       ...engine.packageNamesFor(connected),
       for (final c in customs) c.package,
     });
+  }
+
+  /// Memproses teks manual (tempel notifikasi/SMS/email/OCR) menjadi draf.
+  /// Mencoba parsing dengan engine; bila format tak dikenal, menjadi draf mentah.
+  Future<bool> submitPastedText(String text, {String? sourceLabel}) async {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return false;
+
+    final lines = trimmed.split('\n');
+    final title = lines.first.trim();
+    final body = lines.length > 1 ? lines.skip(1).join(' ').trim() : title;
+
+    final raw = RawCapture(
+      packageName: 'manual.paste',
+      title: title.isEmpty ? (sourceLabel ?? 'Tempelan') : title,
+      body: body.isEmpty ? title : body,
+      postedAt: DateTime.now(),
+    );
+
+    final draft = engine.parse(
+      packageName: '',
+      title: raw.title,
+      body: raw.body,
+    );
+
+    if (draft != null) {
+      await repository.addDraftFromCapture(raw: raw, draft: draft);
+    } else {
+      final guess = engine.guess(raw.title, raw.body);
+      await repository.addRawDraftFromCapture(
+        raw: raw,
+        bankId: 'paste',
+        bankName: sourceLabel ?? 'Tempelan / Struk',
+        amount: guess.amount ?? 0,
+        direction: guess.direction,
+      );
+    }
+    handledCount++;
+    notifyListeners();
+    return true;
+  }
+
+  /// Tambahkan draf manual (mis. hasil konfirmasi OCR) dengan nominal & arah yang ditentukan.
+  Future<bool> submitManualDraft({
+    required String title,
+    required String body,
+    required int amount,
+    required Direction direction,
+    String? bankId,
+    String? bankName,
+  }) async {
+    final raw = RawCapture(
+      packageName: 'manual.ocr',
+      title: title.isEmpty ? 'Struk / Bukti' : title,
+      body: body.isEmpty ? title : body,
+      postedAt: DateTime.now(),
+    );
+    await repository.addRawDraftFromCapture(
+      raw: raw,
+      bankId: bankId ?? 'paste',
+      bankName: bankName ?? title,
+      amount: amount,
+      direction: direction,
+    );
+    handledCount++;
+    notifyListeners();
+    return true;
+  }
+
+  /// Tarik notifikasi yang saat ini masih aktif di status bar sistem Android.
+  Future<int> pullActiveNotifications() async {
+    try {
+      final active = await channel.getActiveNotifications();
+      if (active.isEmpty) return 0;
+      for (final raw in active) {
+        _submit(raw);
+      }
+      await _tail;
+      return active.length;
+    } catch (_) {
+      return 0;
+    }
   }
 
   @override

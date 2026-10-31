@@ -80,13 +80,12 @@ Hasil parse selalu menjadi **draf** menunggu keputusan user — tidak
 pernah auto-catat. Timpa perilaku parsing dilakukan lewat loop
 capture log → perbaiki seed → parse ulang, bukan aturan per-user.
 
-**Mode Belajar** (2026-10-31): app bank/e-wallet apa pun bisa
-dihubungkan dari daftar app terpasang (disimpan `app:<paket>` di
-`custom_banks`). Notifikasi yang formatnya belum dikenal rule TIDAK
-dibuang — menjadi **draf mentah**: nominal ditebak pola umum
-(`RuleEngine.guess`), arah dari kata umum, tanpa nominal → user isi;
-dedup draf mentah berbasis isi (paket+judul+isi). Semua tetap
-menunggu keputusan user.
+**Mode Belajar & Multi-Kanal** (2026-10-31):
+1. **App Apa Pun**: App bank/e-wallet apa pun bisa dihubungkan dari daftar app terpasang (disimpan `app:<paket>` di `custom_banks`). Notifikasi tak dikenal menjadi draf mentah dengan tebakan pola umum (`RuleEngine.guess`).
+2. **Tempel Teks**: Notifikasi, SMS, atau email disalin-tempel manual di layar Notifikasi → draf instan.
+3. **Tarik Notifikasi Aktif**: Tombol di Diagnostik menarik notifikasi status bar yang masih tayang (`getActiveNotifications`).
+4. **Tujuan Share**: Android `ACTION_SEND` (teks & gambar) dari WhatsApp/email/galeri langsung masuk ke alur tempel teks atau OCR.
+5. **OCR Struk On-Device**: ML Kit Latin recognizer on-device (100% offline) membaca foto kamera / galeri struk belanja / bukti transfer dengan koreksi teks & nominal interaktif.
 
 ## Model data (drift schema v11)
 
@@ -142,10 +141,10 @@ draf + tautan akun↔bank; v10 membuang `user_rules` dan menambah
 
 ## Pengujian
 
-147 test, 15 file: rule engine (seed + fallback), budget, progress/
+159 test, 16 file: rule engine (seed + fallback), budget, progress/
 streak/mood, repository (dedup, saldo, migrasi v1→v11, alokasi, log
-lifecycle), pipeline (draf, dedup, baris korup, allowlist paket),
-money, buckets, rekap filter, CSV, history — plus 6 file widget test
-komponen Quest (motion, nav, segmented, tab directional, transisi,
-layout laporan). Alur layar penuh tetap tanpa widget test — logika
+lifecycle), pipeline (draf, dedup, baris korup, allowlist paket, tempel teks,
+notifikasi aktif), OCR struk/nota, money, buckets, rekap filter, history —
+plus 6 file widget test komponen Quest (motion, nav, segmented, tab directional,
+transisi, layout laporan). Alur layar penuh tetap tanpa widget test — logika
 dipagari di engine murni sesuai prinsip 3.

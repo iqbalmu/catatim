@@ -15,6 +15,10 @@ class _FakeChannel extends CaptureChannel {
   List<RawCapture> items;
   final allowedPushes = <Set<String>>[];
   final learnedPackages = <String>[];
+  List<RawCapture> activeItems = [];
+
+  @override
+  Future<List<RawCapture>> getActiveNotifications() async => activeItems;
 
   @override
   Future<void> setAllowedPackages(Set<String> packages) async {
@@ -255,4 +259,62 @@ void main() {
     expect(parsed.single.body, _blu().body);
     expect(tryParseCaptureLine('{"packageName":'), isNull);
   });
+
+  test('submitPastedText: format dikenal menjadi draf terisi penuh', () async {
+    final pipeline = CapturePipeline(
+      channel: _FakeChannel([]),
+      engine: RuleEngine(_rules()),
+      repository: repo,
+    );
+    final ok = await pipeline.submitPastedText(
+      'Blu\nKamu menerima transfer masuk Rp350.000 dari SITI',
+    );
+    expect(ok, isTrue);
+    final drafts = await db.select(db.drafts).get();
+    expect(drafts, hasLength(1));
+    expect(drafts.single.bankId, 'blu');
+    expect(drafts.single.amount, 350000);
+    expect(drafts.single.direction, Direction.incoming);
+  });
+
+  test(
+    'submitPastedText: format tak dikenal menjadi draf mentah dengan tebakan',
+    () async {
+      final pipeline = CapturePipeline(
+        channel: _FakeChannel([]),
+        engine: RuleEngine(_rules()),
+        repository: repo,
+      );
+      final ok = await pipeline.submitPastedText(
+        'Pembayaran QRIS sebesar Rp45.000 di Kopi Kenangan berhasil',
+      );
+      expect(ok, isTrue);
+      final drafts = await db.select(db.drafts).get();
+      expect(drafts, hasLength(1));
+      expect(drafts.single.bankId, 'paste');
+      expect(drafts.single.amount, 45000);
+      expect(drafts.single.direction, Direction.outgoing);
+    },
+  );
+
+  test(
+    'pullActiveNotifications: menarik notifikasi aktif menjadi draf',
+    () async {
+      await repo.setBankConnected('blu', true);
+      final channel = _FakeChannel([]);
+      channel.activeItems = [_blu()];
+      final pipeline = CapturePipeline(
+        channel: channel,
+        engine: RuleEngine(_rules()),
+        repository: repo,
+      );
+      await pipeline.start();
+
+      final count = await pipeline.pullActiveNotifications();
+      expect(count, 1);
+      final drafts = await db.select(db.drafts).get();
+      expect(drafts, hasLength(1));
+      expect(drafts.single.amount, 2000000);
+    },
+  );
 }

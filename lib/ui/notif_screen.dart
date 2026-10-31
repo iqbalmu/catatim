@@ -12,8 +12,10 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'bank_accounts_screen.dart';
 import 'bon_screen.dart';
+import 'ocr_screen.dart';
 import 'quest.dart';
 import 'transaction_sheet.dart';
+import 'package:image_picker/image_picker.dart';
 
 /// Satu item perhatian di layar Notifikasi.
 class _NotifItem {
@@ -61,27 +63,25 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
-  late final Future<bool> _listenerEnabled =
-      widget.pipeline.channel.isListenerEnabled();
+  late final Future<bool> _listenerEnabled = widget.pipeline.channel
+      .isListenerEnabled();
 
   /// Nama bank custom mode belajar — bankId `app:<paket>` → label.
   late final Future<Map<String, String>> _customNames = widget.repository
       .customBanks()
-      .then(
-        (list) => {
-          for (final c in list) 'app:${c.package}': c.label,
-        },
-      );
+      .then((list) => {for (final c in list) 'app:${c.package}': c.label});
 
   LedgerRepository get _repo => widget.repository;
 
   Future<String> _bankName(String bankId) async {
+    if (bankId == 'paste') return 'Tempelan / Struk';
     if (bankId.startsWith('app:')) {
       final customs = await _customNames;
       return customs[bankId] ?? bankId.substring(4);
     }
     return widget.ruleSet.bank(bankId)?.displayName ?? bankId;
   }
+
   void _openBankAccounts() {
     Navigator.push(
       context,
@@ -153,15 +153,130 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
+  Future<void> _showPasteDialog() async {
+    final controller = TextEditingController();
+    final text = await showQuestDialog<String>(
+      context,
+      title: 'Tempel Teks',
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Tempel pesan notifikasi, SMS, atau email transaksi di sini. '
+            'Bukuduit akan membacanya menjadi draf.',
+            style: context.qBody(13),
+          ),
+          const SizedBox(height: Spacing.m),
+          TextField(
+            controller: controller,
+            autofocus: true,
+            maxLines: 5,
+            decoration: const InputDecoration(
+              hintText: 'Contoh:\nTransfer masuk Rp150.000 dari BUDI...',
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.all(Spacing.s),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        QuestButton(
+          label: 'Batal',
+          tone: QuestTone.secondary,
+          onPressed: () => Navigator.pop(context),
+        ),
+        QuestButton(
+          label: 'Proses',
+          icon: Icons.check_rounded,
+          onPressed: () => Navigator.pop(context, controller.text),
+        ),
+      ],
+    );
+
+    if (text == null || text.trim().isEmpty || !mounted) return;
+    final ok = await widget.pipeline.submitPastedText(text);
+    if (!mounted) return;
+    questSnack(
+      context,
+      ok ? 'Teks berhasil diproses menjadi draf!' : 'Gagal memproses teks.',
+      icon: ok
+          ? Icons.check_circle_outline_rounded
+          : Icons.error_outline_rounded,
+    );
+  }
+
+  Future<void> _showOcrOptions() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        padding: const EdgeInsets.all(Spacing.m),
+        decoration: BoxDecoration(
+          color: context.q.bg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const QuestGrabber(),
+              const SizedBox(height: Spacing.s),
+              Text('Pindai Struk / Bukti Transaksi', style: context.qTitle(16)),
+              const SizedBox(height: Spacing.xs),
+              Text(
+                'Teks struk akan dipindai secara offline di perangkat.',
+                style: context.qSmall(12).copyWith(color: context.q.muted),
+              ),
+              const SizedBox(height: Spacing.m),
+              QuestListTile(
+                leading: const Icon(Icons.camera_alt_rounded),
+                title: const Text('Ambil Foto Kamera'),
+                subtitle: const Text('Arahkan kamera ke struk/nota pembayaran'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              QuestListTile(
+                leading: const Icon(Icons.photo_library_rounded),
+                title: const Text('Pilih dari Galeri'),
+                subtitle: const Text(
+                  'Gunakan foto struk atau screenshot bukti transfer',
+                ),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (source == null || !mounted) return;
+    await OcrScreen.start(
+      context,
+      pipeline: widget.pipeline,
+      pickSource: source,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final q = context.q;
     return Scaffold(
       backgroundColor: q.bg,
-      appBar: const QuestHeader(
+      appBar: QuestHeader(
         title: 'Notifikasi',
         subtitle: 'Yang perlu perhatianmu',
         showBack: true,
+        actions: [
+          QuestIconButton(
+            icon: Icons.document_scanner_rounded,
+            tooltip: 'Foto Struk (OCR)',
+            onPressed: _showOcrOptions,
+          ),
+          QuestIconButton(
+            icon: Icons.content_paste_rounded,
+            tooltip: 'Tempel Teks',
+            onPressed: _showPasteDialog,
+          ),
+        ],
       ),
       body: FutureBuilder<bool>(
         future: _listenerEnabled,
@@ -210,10 +325,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 icon: Icons.mark_as_unread_rounded,
                                 color: q.warn,
                                 title: '$unread belum terbaca',
-                                subtitle:
-                                    'Coba baca lagi atau catat manual',
-                                onTap: () =>
-                                    _handleUnread(unread, connected),
+                                subtitle: 'Coba baca lagi atau catat manual',
+                                onTap: () => _handleUnread(unread, connected),
                               ),
                             if (level == BudgetLevel.over)
                               _NotifItem(
@@ -221,7 +334,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 color: q.bad,
                                 title:
                                     'Batas ${critical?.label ?? 'harian'} terlampaui',
-                                subtitle: 'Yuk cek batas pengeluaranmu di Anggaran',
+                                subtitle:
+                                    'Yuk cek batas pengeluaranmu di Anggaran',
                                 onTap: () => _goTo(widget.onOpenAnggaran),
                               )
                             else if (level == BudgetLevel.warning)
@@ -231,17 +345,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 title:
                                     'Batas ${critical?.label ?? 'harian'} '
                                     'mendekati plafon',
-                                subtitle: 'Yuk cek batas pengeluaranmu di Anggaran',
+                                subtitle:
+                                    'Yuk cek batas pengeluaranmu di Anggaran',
                                 onTap: () => _goTo(widget.onOpenAnggaran),
                               ),
-                              _NotifItem(
-                                icon: Icons.handshake_outlined,
-                                color: q.bad,
-                                title: '$aging bon lebih dari 30 hari '
-                                    'belum lunas',
-                                subtitle: 'Ingatkan dirimu atau tandai lunas',
-                                onTap: () => _goTo(widget.onOpenBon),
-                              ),
+                            _NotifItem(
+                              icon: Icons.handshake_outlined,
+                              color: q.bad,
+                              title:
+                                  '$aging bon lebih dari 30 hari '
+                                  'belum lunas',
+                              subtitle: 'Ingatkan dirimu atau tandai lunas',
+                              onTap: () => _goTo(widget.onOpenBon),
+                            ),
                           ];
                           if (drafts.isEmpty && items.isEmpty) {
                             return ListView(
@@ -250,7 +366,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 QuestEmpty(
                                   title: 'Tidak ada notifikasi',
                                   hint:
-                                      'Semua aman — lanjutkan aktivitasmu.',
+                                      'Semua aman — atau tempel teks transaksi manual.',
+                                  actionLabel: 'Tempel Teks',
+                                  onAction: _showPasteDialog,
                                 ),
                               ],
                             );
@@ -275,12 +393,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                     index: 1 + i,
                                     child: FutureBuilder<String>(
                                       future: _bankName(drafts[i].bankId),
-                                      builder: (context, nameSnap) => _DraftTile(
-                                        draft: drafts[i],
-                                        bankName:
-                                            nameSnap.data ?? drafts[i].bankId,
-                                        onTap: () => _openDraft(drafts[i]),
-                                      ),
+                                      builder: (context, nameSnap) =>
+                                          _DraftTile(
+                                            draft: drafts[i],
+                                            bankName:
+                                                nameSnap.data ??
+                                                drafts[i].bankId,
+                                            onTap: () => _openDraft(drafts[i]),
+                                          ),
                                     ),
                                   ),
                                 const SizedBox(height: Spacing.s),
@@ -294,7 +414,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 ),
                                 for (var i = 0; i < items.length; i++)
                                   QuestEnter(
-                                    index: (drafts.isEmpty
+                                    index:
+                                        (drafts.isEmpty
                                             ? 1
                                             : 2 + drafts.length) +
                                         i,
@@ -477,11 +598,7 @@ class _AttentionTile extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 18,
-              color: q.muted,
-            ),
+            Icon(Icons.chevron_right_rounded, size: 18, color: q.muted),
           ],
         ),
       ),

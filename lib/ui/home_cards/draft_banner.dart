@@ -20,8 +20,12 @@ class DraftAttentionBanner extends StatelessWidget {
   final VoidCallback onOpenAnggaran;
   final VoidCallback onOpenBon;
 
-  String _bankName(String bankId) =>
-      ruleSet.bank(bankId)?.displayName ?? bankId;
+  String _bankName(String bankId) {
+    if (bankId == 'paste') return 'Tempelan / Struk';
+    final known = ruleSet.bank(bankId)?.displayName;
+    if (known != null) return known;
+    return bankId.startsWith('app:') ? bankId.substring(4) : bankId;
+  }
 
   @override
   Widget build(BuildContext context) {
