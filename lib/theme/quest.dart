@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/money.dart';
 import 'tokens.dart';
 
 /// Palet identitas "Mainan Hangat" v2.1 — hangat, empuk, dari piksel
@@ -509,6 +510,175 @@ class _QuestProgressBarState extends State<QuestProgressBar>
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Menghitung naik/turun nilai bilangan bulat secara halus dari 0 saat pertama
+/// tampil atau saat panggung ([QuestStage]) / [replayKey] berganti, serta
+/// meluncur dari nilai lama ke nilai baru ketika data berubah secara live.
+/// Selaras otomatis dengan jeda masuk [QuestEnterScope].
+class QuestCountUp extends StatefulWidget {
+  const QuestCountUp({
+    super.key,
+    required this.value,
+    required this.builder,
+    this.replayKey,
+    this.duration,
+  });
+
+  final int value;
+  final Widget Function(BuildContext context, int current) builder;
+  final Object? replayKey;
+  final Duration? duration;
+
+  @override
+  State<QuestCountUp> createState() => _QuestCountUpState();
+}
+
+class _QuestCountUpState extends State<QuestCountUp>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this);
+  int _begin = 0;
+  int _end = 0;
+  int _leadInMs = 0;
+  int _runMs = QuestMotion.grow.inMilliseconds;
+  int _seenToken = -1;
+  bool _initialized = false;
+
+  int get _currentInt {
+    final totalMs = _leadInMs + _runMs;
+    if (totalMs <= 0 || _controller.value >= 1.0) return _end;
+    final raw = ((_controller.value * totalMs - _leadInMs) / _runMs).clamp(
+      0.0,
+      1.0,
+    );
+    final eased = QuestMotion.progressCurve.transform(raw);
+    return (_begin + (_end - _begin) * eased).round();
+  }
+
+  void _startFromZero(int enterDelayMs) {
+    _begin = 0;
+    _end = widget.value;
+    _leadInMs = enterDelayMs > 0 ? enterDelayMs + 90 : 24;
+    _runMs = (widget.duration ?? QuestMotion.grow).inMilliseconds;
+    _controller.duration = Duration(milliseconds: _leadInMs + _runMs);
+    _controller.forward(from: 0);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final stage = QuestStage.ofOrNull(context);
+    final enterDelay = QuestEnterScope.delayOf(context);
+    if (!_initialized) {
+      _initialized = true;
+      _seenToken = stage?.token ?? -1;
+      _startFromZero(enterDelay);
+      return;
+    }
+    if (stage != null && _seenToken != stage.token) {
+      _seenToken = stage.token;
+      _startFromZero(enterDelay);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant QuestCountUp oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.replayKey != oldWidget.replayKey) {
+      _startFromZero(0);
+      return;
+    }
+    if (widget.value != _end) {
+      if (_begin == 0 && _end == 0 && _controller.isAnimating) {
+        _end = widget.value;
+        final elapsedMs = _controller.value * (_leadInMs + _runMs);
+        if (elapsedMs > _leadInMs) {
+          _startFromZero(0);
+        }
+      } else {
+        _begin = _currentInt;
+        _end = widget.value;
+        _leadInMs = 0;
+        _runMs = (widget.duration ?? QuestMotion.grow).inMilliseconds;
+        _controller.duration = Duration(milliseconds: _runMs);
+        _controller.forward(from: 0);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
+      return widget.builder(context, widget.value);
+    }
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) => widget.builder(context, _currentInt),
+    );
+  }
+}
+
+/// Tampilan nominal Rupiah yang menghitung naik dari 0 ke [amount] dengan
+/// angka tabular dan lebar kotak stabil (bebas lompatan skala pada FittedBox).
+class QuestMoney extends StatelessWidget {
+  const QuestMoney({
+    super.key,
+    required this.amount,
+    this.style,
+    this.prefix = '',
+    this.suffix = '',
+    this.alignment = Alignment.centerLeft,
+    this.replayKey,
+    this.duration,
+  });
+
+  final int amount;
+  final TextStyle? style;
+  final String prefix;
+  final String suffix;
+  final AlignmentGeometry alignment;
+  final Object? replayKey;
+  final Duration? duration;
+
+  @override
+  Widget build(BuildContext context) {
+    final baseStyle = DefaultTextStyle.of(context).style.merge(style);
+    final effectiveStyle = baseStyle.copyWith(
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+    final finalText = '$prefix${Money.format(amount)}$suffix';
+    final tp = TextPainter(
+      text: TextSpan(text: finalText, style: effectiveStyle),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(minWidth: tp.width),
+      child: QuestCountUp(
+        value: amount,
+        replayKey: replayKey,
+        duration: duration,
+        builder: (context, current) => Align(
+          alignment: alignment,
+          widthFactor: 1.0,
+          heightFactor: 1.0,
+          child: Text(
+            '$prefix${Money.format(current)}$suffix',
+            maxLines: 1,
+            style: effectiveStyle,
+          ),
+        ),
       ),
     );
   }

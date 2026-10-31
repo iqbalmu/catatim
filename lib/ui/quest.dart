@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../core/money.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 
@@ -899,8 +898,10 @@ class QuestAmount extends StatelessWidget {
   Widget build(BuildContext context) {
     return FittedBox(
       fit: BoxFit.scaleDown,
-      child: Text(
-        '${incoming ? '+' : '−'}${Money.format(amount)}',
+      child: QuestMoney(
+        amount: amount,
+        prefix: incoming ? '+' : '−',
+        alignment: Alignment.centerRight,
         style: context.qAmount(size, incoming: incoming),
       ),
     );

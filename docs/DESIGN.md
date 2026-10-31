@@ -128,19 +128,23 @@ kebenaran visual aplikasi; widget-kit terpusat di `lib/ui/quest.dart` + `lib/the
 - Pindah tab navbar: berganti di tempat via `IndexedStack` tanpa efek
   slide dari samping; setiap tab memiliki `QuestStage` mandiri sehingga
   hanya tab tujuan yang memutar animasi masuk tanpa me-reset state tab lain.
-- Nilai yang berubah karena aksi user (toggle saldo, bulan/periode, nilai
-  chip akun, inspector grafik): ganti tipis via `QuestSwap` — fade + geser
-  18% tinggi, 220ms easeOut; bagian yang tumbuh/runtuh memakai `AnimatedSize`
-  220ms. Keduanya mati otomatis saat reduced motion.
+- Nilai yang berubah karena aksi user (bulan/periode, jumlah draf,
+  inspector grafik): ganti tipis via `QuestSwap` — fade + geser 18% tinggi,
+  220ms easeOut; bagian yang tumbuh/runtuh memakai `AnimatedSize` 220ms.
+- Show/hide saldo (`TotalBalanceCard` & chip akun): transisi privasi kaca
+  buram (*frosted blur* `ImageFiltered` + pegas skala + sapuan kilau pada
+  titik privasi, serta riak bertahap antar chip akun); saat dibuka kembali,
+  nominal menghitung naik dari 0 ke saldo aktual.
 - Isi TAB menetas satu-per-satu via `QuestTabEnter` (jeda 65ms per `index`,
   320ms easeOut), dipicu `QuestStage` dengan `AnimationController` tanpa
   menghancurkan `State` atau `StreamBuilder` anak.
 - Isi halaman yang di-push / sheet menetas bertahap satu-per-satu via
   `QuestEnter` (jeda 65ms per `index`, fade + geser 6% tinggi).
-- Bar/chart/progress menampilkan prosesnya dari 0 ke nilai akhir: bar progres
-  (`QuestProgressBar` / `QuestBar`, 620ms `easeOutCubic`), grafik batang tren
-  (bergelombang kiri-ke-kanan), dan bar komposisi kategori diselaraskan lewat
-  `QuestEnterScope` agar baru tumbuh setelah kartunya tampil di layar.
+- Nominal, persentase, dan bar/chart menampilkan prosesnya dari 0 ke nilai
+  akhir: `QuestMoney` / `QuestCountUp` menghitung naik dari 0 dengan lebar
+  tabular stabil, selaras dengan `QuestProgressBar` / `QuestBar` (620ms
+  `easeOutCubic`), grafik batang tren (bergelombang kiri-ke-kanan), dan bar
+  komposisi kategori melalui `QuestEnterScope`.
 - Bob maskot: sine 2400ms amplitudo 2% (aset raster: translate murni).
 - Milestone/berubah level: perayaan singkat (stempel/konfeti) + haptic.
 - Hormati `MediaQuery.disableAnimations` (reduced motion).

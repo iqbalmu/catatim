@@ -268,12 +268,18 @@ class GamificationSheet extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            Text(
-                              '${stats.currentXp} dari ${stats.nextLevelXp} poin',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: context.q.primary,
+                            QuestCountUp(
+                              value: stats.currentXp,
+                              builder: (context, xp) => Text(
+                                '$xp dari ${stats.nextLevelXp} poin',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: context.q.primary,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
+                                ),
                               ),
                             ),
                           ],

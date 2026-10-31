@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../core/dates_id.dart';
-import '../core/money.dart';
 import '../game/progress.dart';
 import '../models.dart';
 import '../storage/repository.dart';
@@ -40,8 +39,10 @@ class TransactionDayHeader extends StatelessWidget {
           if (totalOut != null && totalOut! > 0)
             FittedBox(
               fit: BoxFit.scaleDown,
-              child: Text(
-                '-${Money.format(totalOut!)}',
+              child: QuestMoney(
+                amount: totalOut!,
+                prefix: '-',
+                alignment: Alignment.centerRight,
                 style: context.qSmall(11).copyWith(color: context.q.bad),
               ),
             ),

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../capture/pipeline.dart';
 import '../core/budget.dart';
 import '../core/dates_id.dart';
-import '../core/money.dart';
 import '../game/progress.dart';
 import '../models.dart';
 import '../rules/rule_set.dart';
@@ -385,8 +384,10 @@ class _DraftTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: Spacing.s),
-            Text(
-              '${incoming ? '+' : '−'}${Money.format(draft.amount)}',
+            QuestMoney(
+              amount: draft.amount,
+              prefix: incoming ? '+' : '−',
+              alignment: Alignment.centerRight,
               style: context.qAmount(15, incoming: incoming),
             ),
           ],

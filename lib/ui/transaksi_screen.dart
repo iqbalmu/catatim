@@ -641,16 +641,13 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
-                            child: QuestSwap(
-                              child: Text(
-                                Money.format(piutangTotal),
-                                key: ValueKey('piutang-$piutangTotal'),
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
-                                  color: context.q.good,
-                                  fontFeatures: const [FontFeature.tabularFigures()],
-                                ),
+                            child: QuestMoney(
+                              amount: piutangTotal,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                color: context.q.good,
+                                fontFeatures: const [FontFeature.tabularFigures()],
                               ),
                             ),
                           ),
@@ -705,16 +702,13 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
-                            child: QuestSwap(
-                              child: Text(
-                                Money.format(utangTotal),
-                                key: ValueKey('utang-$utangTotal'),
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900,
-                                  color: context.q.bad,
-                                  fontFeatures: const [FontFeature.tabularFigures()],
-                                ),
+                            child: QuestMoney(
+                              amount: utangTotal,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                color: context.q.bad,
+                                fontFeatures: const [FontFeature.tabularFigures()],
                               ),
                             ),
                           ),
@@ -878,8 +872,9 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerRight,
-                          child: Text(
-                            Money.format(bon.amount),
+                          child: QuestMoney(
+                            amount: bon.amount,
+                            alignment: Alignment.centerRight,
                             style: TextStyle(
                               fontSize: 14.5,
                               fontWeight: FontWeight.w900,

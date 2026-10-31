@@ -832,15 +832,28 @@ class _LimitMiniCard extends StatelessWidget {
             FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
-              child: Text(
-                line == null ? 'Belum diatur' : _ringkasRp(used),
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: line == null ? q.muted : (over ? q.bad : q.text),
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                ),
-              ),
+              child: line == null
+                  ? Text(
+                      'Belum diatur',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: q.muted,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    )
+                  : QuestCountUp(
+                      value: used,
+                      builder: (context, currentUsed) => Text(
+                        _ringkasRp(currentUsed),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: over ? q.bad : q.text,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
             ),
             const SizedBox(height: Spacing.xs),
             if (line != null) ...[
@@ -936,20 +949,41 @@ class _AllocationRow extends StatelessWidget {
                   Icon(Icons.edit_rounded, size: 14, color: q.muted),
                 ],
               ),
-              Text(
-                line == null
-                    ? (used > 0 ? 'Terpakai ${_ringkasRp(used)} · belum ada batas' : 'Belum dialokasikan')
-                    : '${_ringkasRp(used)} / ${_ringkasRp(limit!)}'
-                          ' · ${line.usedPercent}%${over ? ' over' : ''}',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: over ? FontWeight.w700 : FontWeight.w400,
-                  color: over ? q.bad : q.muted,
-                  fontFeatures: const [FontFeature.tabularFigures()],
+              if (line == null && used <= 0)
+                Text(
+                  'Belum dialokasikan',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                    color: q.muted,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                )
+              else
+                QuestCountUp(
+                  value: used,
+                  builder: (context, currentUsed) {
+                    final currentPct = limit != null && limit! > 0
+                        ? ((currentUsed * 100) / limit!).round()
+                        : 0;
+                    return Text(
+                      line == null
+                          ? 'Terpakai ${_ringkasRp(currentUsed)} · belum ada batas'
+                          : '${_ringkasRp(currentUsed)} / ${_ringkasRp(limit!)}'
+                                ' · $currentPct%${over ? ' over' : ''}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: over ? FontWeight.w700 : FontWeight.w400,
+                        color: over ? q.bad : q.muted,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    );
+                  },
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
               QuestBar(
                 value: line?.fraction ?? 0,
                 height: 6,
@@ -1045,18 +1079,24 @@ class _BatasBulananCard extends StatelessWidget {
                       : q.surface2,
                   borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
-                child: Text(
-                  hasLimit
-                      ? (isOver ? 'Over ${Money.format(used - limit!)}' : 'Sisa ${Money.format(sisa)}')
-                      : 'Belum diatur',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: hasLimit
-                        ? (isOver ? q.bad : q.good)
-                        : q.muted,
-                  ),
-                ),
+                child: hasLimit
+                    ? QuestMoney(
+                        amount: isOver ? used - limit! : sisa,
+                        prefix: isOver ? 'Over ' : 'Sisa ',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: isOver ? q.bad : q.good,
+                        ),
+                      )
+                    : Text(
+                        'Belum diatur',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: q.muted,
+                        ),
+                      ),
               ),
             ],
           ),
@@ -1070,17 +1110,25 @@ class _BatasBulananCard extends StatelessWidget {
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    hasLimit
-                        ? '${Money.format(used)} / ${Money.format(limit!)}'
-                        : 'Tap untuk mengatur batas bulanan',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: hasLimit ? q.text : q.muted,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
+                  child: hasLimit
+                      ? QuestMoney(
+                          amount: used,
+                          suffix: ' / ${Money.format(limit!)}',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: q.text,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        )
+                      : Text(
+                          'Tap untuk mengatur batas bulanan',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: q.muted,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(width: Spacing.s),

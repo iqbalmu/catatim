@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import '../core/buckets.dart' show AmountPoint, TrendBucket;
 import '../core/buckets.dart' as bkt;
 import '../core/dates_id.dart';
-import '../core/money.dart';
 import '../game/progress.dart';
 import '../models.dart';
 import '../storage/database.dart';
@@ -348,8 +347,9 @@ class LaporanScreenState extends State<LaporanScreen> {
                         constraints: const BoxConstraints(maxWidth: 130),
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
-                          child: Text(
-                            Money.format(stat.amount),
+                          child: QuestMoney(
+                            amount: stat.amount,
+                            alignment: Alignment.centerRight,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w900,
@@ -1087,19 +1087,17 @@ class _ExecutiveSummaryCard extends StatelessWidget {
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
-                  child: QuestSwap(
-                    child: Text(
-                      metrics.net == 0
-                          ? Money.format(0)
-                          : '${isSurplus ? '+' : '−'}${Money.format(metrics.net.abs())}',
-                      key: ValueKey('net-${metrics.net}'),
-                      style: context.qDisplay(28).copyWith(
-                        color: metrics.net == 0
-                            ? context.q.text
-                            : isSurplus
-                                ? context.q.good
-                                : context.q.bad,
-                      ),
+                  child: QuestMoney(
+                    amount: metrics.net.abs(),
+                    prefix: metrics.net == 0
+                        ? ''
+                        : (isSurplus ? '+' : '−'),
+                    style: context.qDisplay(28).copyWith(
+                      color: metrics.net == 0
+                          ? context.q.text
+                          : isSurplus
+                              ? context.q.good
+                              : context.q.bad,
                     ),
                   ),
                 ),
@@ -1188,8 +1186,8 @@ class _ExecutiveSummaryCard extends StatelessWidget {
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
-                            child: Text(
-                              Money.format(metrics.avgDailyOut),
+                            child: QuestMoney(
+                              amount: metrics.avgDailyOut,
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
@@ -1222,8 +1220,8 @@ class _ExecutiveSummaryCard extends StatelessWidget {
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
-                            child: Text(
-                              Money.format(metrics.avgPerOutTx),
+                            child: QuestMoney(
+                              amount: metrics.avgPerOutTx,
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
@@ -1303,8 +1301,8 @@ class _FlowHalfCell extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(
-              Money.format(amount),
+            child: QuestMoney(
+              amount: amount,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w900,
@@ -1447,35 +1445,33 @@ class _InteractiveTrendCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                QuestSwap(
-                  slide: false,
-                  child: Wrap(
-                    key: ValueKey(
-                      'vals-$activeIdx-${activeBucket.incoming}-${activeBucket.outgoing}',
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 4,
+                  children: [
+                    QuestMoney(
+                      amount: activeBucket.incoming,
+                      prefix: '+',
+                      duration: QuestMotion.medium,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: context.q.good,
+                        fontFeatures: _tabular,
+                      ),
                     ),
-                    spacing: 10,
-                    runSpacing: 4,
-                    children: [
-                      Text(
-                        '+${Money.format(activeBucket.incoming)}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: context.q.good,
-                          fontFeatures: _tabular,
-                        ),
+                    QuestMoney(
+                      amount: activeBucket.outgoing,
+                      prefix: '−',
+                      duration: QuestMotion.medium,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: context.q.bad,
+                        fontFeatures: _tabular,
                       ),
-                      Text(
-                        '−${Money.format(activeBucket.outgoing)}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: context.q.bad,
-                          fontFeatures: _tabular,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1843,8 +1839,10 @@ class _CategoryStructureCard extends StatelessWidget {
                         constraints: const BoxConstraints(maxWidth: 140),
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
-                          child: Text(
-                            Money.format(activeTotal),
+                          child: QuestMoney(
+                            amount: activeTotal,
+                            alignment: Alignment.centerRight,
+                            replayKey: showIncoming,
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w900,
@@ -1964,8 +1962,10 @@ class _CategoryTableRow extends StatelessWidget {
                         constraints: const BoxConstraints(maxWidth: 125),
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
-                          child: Text(
-                            Money.format(stat.amount),
+                          child: QuestMoney(
+                            amount: stat.amount,
+                            alignment: Alignment.centerRight,
+                            replayKey: replayKey,
                             style: TextStyle(
                               fontSize: 13.5,
                               fontWeight: FontWeight.w800,
@@ -1993,13 +1993,17 @@ class _CategoryTableRow extends StatelessWidget {
                         constraints: const BoxConstraints(maxWidth: 96),
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
-                          child: Text(
-                            '$pct% · ${stat.items.length} trx',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: context.q.muted,
-                              fontFeatures: _tabular,
+                          child: QuestCountUp(
+                            value: pct,
+                            replayKey: replayKey,
+                            builder: (context, currentPct) => Text(
+                              '$currentPct% · ${stat.items.length} trx',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: context.q.muted,
+                                fontFeatures: _tabular,
+                              ),
                             ),
                           ),
                         ),
@@ -2152,8 +2156,10 @@ class _TopExpenseRow extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 120),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(
-                  '−${Money.format(tx.amount)}',
+                child: QuestMoney(
+                  amount: tx.amount,
+                  prefix: '−',
+                  alignment: Alignment.centerRight,
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w800,

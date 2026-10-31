@@ -594,6 +594,123 @@ void main() {
       });
     },
   );
+
+  testWidgets(
+    'QuestMoney: nilai nominal meningkat dari 0 ke target dan berputar ulang tiap ganti tab',
+    (tester) async {
+      var token = 0;
+      var amount = 1500000;
+      late void Function(void Function()) setOuter;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: QuestSchemes.light(),
+          home: StatefulBuilder(
+            builder: (context, setState) {
+              setOuter = setState;
+              return Scaffold(
+                body: QuestStage(
+                  token: token,
+                  child: QuestMoney(amount: amount),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+
+      // Awal animasi: masih Rp0, belum langsung nilai akhir.
+      await tester.pump();
+      expect(find.text('Rp0'), findsOneWidget);
+      expect(find.text('Rp1.500.000'), findsNothing);
+
+      // Di tengah animasi: nilai sedang meningkat di antara 0 dan 1.500.000.
+      await tester.pump(const Duration(milliseconds: 220));
+      expect(find.text('Rp0'), findsNothing);
+      expect(find.text('Rp1.500.000'), findsNothing);
+
+      // Selesai: tepat di nominal akhir.
+      await tester.pumpAndSettle();
+      expect(find.text('Rp1.500.000'), findsOneWidget);
+
+      // Ganti tab (token naik) → menghitung ulang dari Rp0.
+      setOuter(() => token++);
+      await tester.pump();
+      expect(find.text('Rp0'), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(find.text('Rp1.500.000'), findsOneWidget);
+
+      // Perubahan nilai live → meluncur dari 1.500.000 ke 2.000.000 (bukan reset ke Rp0).
+      setOuter(() => amount = 2000000);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(find.text('Rp0'), findsNothing);
+      await tester.pumpAndSettle();
+      expect(find.text('Rp2.000.000'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'TotalBalanceCard show/hide: efek frosted blur aktif saat transisi dan bersih saat diam',
+    (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final repo = LedgerRepository(db);
+      await tester.runAsync(() async {
+        final acc = await repo.addAccount('BCA Utama', AccountKind.bank);
+        await repo.setOpeningBalance(acc.id, 2500000);
+      });
+      final ruleSet = RuleSet.fromJson({'version': 1, 'banks': []});
+      final pipeline = CapturePipeline(
+        channel: const CaptureChannel(),
+        engine: RuleEngine(ruleSet),
+        repository: repo,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: QuestSchemes.light(),
+          home: Scaffold(
+            body: TotalBalanceCard(
+              repository: repo,
+              pipeline: pipeline,
+              ruleSet: ruleSet,
+            ),
+          ),
+        ),
+      );
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 80)),
+      );
+      await tester.pumpAndSettle();
+
+      // Saat diam: tanpa layer ImageFiltered aktif, nominal penuh tampil.
+      expect(find.byType(ImageFiltered), findsNothing);
+      expect(find.text('Rp2.500.000'), findsWidgets);
+
+      // Tap sembunyikan → tengah transisi efek blur aktif.
+      await tester.tap(find.byType(IconButton));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(find.byType(ImageFiltered), findsWidgets);
+
+      // Selesai sembunyi → layer blur dilepas, ikon kunci & teks tampil.
+      await tester.pumpAndSettle();
+      expect(find.byType(ImageFiltered), findsNothing);
+      expect(find.text('••••••••'), findsOneWidget);
+
+      // Tap tampilkan kembali → nominal menghitung naik dari Rp0 ke Rp2.500.000.
+      await tester.tap(find.byType(IconButton));
+      await tester.pump();
+      expect(find.text('Rp0'), findsWidgets);
+      await tester.pumpAndSettle();
+      expect(find.text('Rp2.500.000'), findsWidgets);
+      expect(find.byType(ImageFiltered), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      await db.close();
+    },
+  );
 }
 
 class _StatefulProbe extends StatefulWidget {

@@ -381,8 +381,8 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                                 children: [
                                   Text('SALDO SEKARANG', style: context.qEyebrow(10)),
                                   const SizedBox(height: 2),
-                                  Text(
-                                    Money.format(balance),
+                                  QuestMoney(
+                                    amount: balance,
                                     style: TextStyle(
                                       fontSize: 19,
                                       fontWeight: FontWeight.w800,

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../capture/pipeline.dart';
-import '../core/money.dart';
 import '../models.dart';
 import '../rules/rule_set.dart';
 import '../storage/database.dart';
@@ -320,8 +319,9 @@ class _AccountTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: Spacing.s),
-            Text(
-              Money.format(balance),
+            QuestMoney(
+              amount: balance,
+              alignment: Alignment.centerRight,
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 14,

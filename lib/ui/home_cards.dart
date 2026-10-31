@@ -1,4 +1,7 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../capture/pipeline.dart';
 import '../core/budget.dart';
@@ -392,8 +395,10 @@ class DraftAttentionBanner extends StatelessWidget {
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerRight,
-                          child: Text(
-                            '${isIncoming ? '+' : '−'}${Money.format(draft.amount)}',
+                          child: QuestMoney(
+                            amount: draft.amount,
+                            prefix: isIncoming ? '+' : '−',
+                            alignment: Alignment.centerRight,
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w900,
@@ -505,55 +510,127 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                           'TOTAL SALDO',
                           style: context.qEyebrow(10.5).copyWith(color: q.muted),
                         ),
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          icon: QuestSwap(
-                            slide: false,
-                            child: Icon(
-                              _obscured
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              key: ValueKey(_obscured),
-                              size: 20,
-                              color: q.muted,
+                        AnimatedContainer(
+                          duration: QuestMotion.medium,
+                          curve: QuestMotion.easeOut,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _obscured
+                                ? q.primaryLight
+                                : q.surface2.withValues(alpha: 0.75),
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                            border: Border.all(
+                              color: _obscured
+                                  ? q.primary.withValues(alpha: 0.3)
+                                  : q.line,
                             ),
                           ),
-                          onPressed: () => setState(() => _obscured = !_obscured),
+                          child: IconButton(
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 22,
+                              minHeight: 22,
+                            ),
+                            tooltip: _obscured
+                                ? 'Tampilkan saldo'
+                                : 'Sembunyikan saldo',
+                            icon: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 280),
+                              switchInCurve: QuestMotion.spring,
+                              switchOutCurve: QuestMotion.easeOut,
+                              transitionBuilder: (child, anim) =>
+                                  ScaleTransition(
+                                    scale: Tween<double>(
+                                      begin: 0.45,
+                                      end: 1.0,
+                                    ).animate(anim),
+                                    child: RotationTransition(
+                                      turns: Tween<double>(
+                                        begin: -0.1,
+                                        end: 0.0,
+                                      ).animate(anim),
+                                      child: FadeTransition(
+                                        opacity: anim,
+                                        child: child,
+                                      ),
+                                    ),
+                                  ),
+                              child: Icon(
+                                _obscured
+                                    ? Icons.visibility_off_rounded
+                                    : Icons.visibility_outlined,
+                                key: ValueKey(_obscured),
+                                size: 18,
+                                color: _obscured ? q.primary : q.muted,
+                              ),
+                            ),
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              setState(() => _obscured = !_obscured);
+                            },
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: Spacing.xxs),
 
-                    // Big Hero Balance Display (Skala 34 prominent)
+                    // Big Hero Balance Display (Frosted Blur + Shimmer Wave + Count-Up)
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
-                      child: QuestSwap(
-                        child: Text(
-                          _obscured ? '••••••••' : Money.format(total),
-                          key: ValueKey(
-                            _obscured ? 'saldo-hidden' : Money.format(total),
-                          ),
+                      child: _PrivacyBalanceReveal(
+                        obscured: _obscured,
+                        visibleChild: QuestMoney(
+                          key: const ValueKey('saldo-visible'),
+                          amount: total,
+                          replayKey: _obscured,
+                          duration: const Duration(milliseconds: 520),
                           style: context.qDisplay(34),
+                        ),
+                        hiddenChild: Text(
+                          '••••••••',
+                          key: const ValueKey('saldo-hidden'),
+                          style: context.qDisplay(34).copyWith(
+                            letterSpacing: 3,
+                            color: q.primaryDeep,
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(height: Spacing.xxs),
                     QuestSwap(
                       slide: false,
-                      child: Text(
-                        _obscured
-                            ? 'Saldo disembunyikan'
-                            : '${accounts.length} akun terdaftar',
-                        key: ValueKey(
-                          _obscured
-                              ? 'subtitle-hidden'
-                              : 'subtitle-${accounts.length}',
-                        ),
-                        style: context.qSmall(12).copyWith(color: q.muted),
-                      ),
+                      child: _obscured
+                          ? Row(
+                              key: const ValueKey('subtitle-hidden'),
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.lock_rounded,
+                                  size: 12,
+                                  color: q.primary,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Saldo disembunyikan',
+                                  style: context
+                                      .qSmall(12)
+                                      .copyWith(
+                                        color: q.primary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              '${accounts.length} akun terdaftar',
+                              key: ValueKey('subtitle-${accounts.length}'),
+                              style: context.qSmall(12).copyWith(color: q.muted),
+                            ),
                     ),
 
                     const SizedBox(height: Spacing.m),
@@ -566,20 +643,22 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                       physics: const BouncingScrollPhysics(),
                       child: Row(
                         children: [
-                          for (final acc in accounts)
+                          for (var i = 0; i < accounts.length; i++)
                             _AccountChip(
-                              account: acc,
-                              balance: balances[acc.id] ?? acc.openingBalance,
+                              account: accounts[i],
+                              balance:
+                                  balances[accounts[i].id] ??
+                                  accounts[i].openingBalance,
                               obscured: _obscured,
+                              staggerIndex: i,
                               onTap: () => AccountDetailSheet.show(
                                 context,
                                 repository: widget.repository,
                                 pipeline: widget.pipeline,
                                 ruleSet: widget.ruleSet,
-                                accountId: acc.id,
+                                accountId: accounts[i].id,
                               ),
                             ),
-                          // "+ Tambah" Chip
                           QuestPress(
                             onTap: () => AddAccountSheet.show(
                               context,
@@ -642,13 +721,14 @@ class _AccountChip extends StatelessWidget {
     required this.balance,
     required this.obscured,
     required this.onTap,
+    this.staggerIndex = 0,
   });
 
   final Account account;
   final int balance;
   final bool obscured;
   final VoidCallback onTap;
-
+  final int staggerIndex;
   @override
   Widget build(BuildContext context) {
     final q = context.q;
@@ -688,17 +768,30 @@ class _AccountChip extends StatelessWidget {
                       color: q.text,
                     ),
                   ),
-                  QuestSwap(
-                    slide: false,
-                    child: Text(
-                      obscured ? '••••••' : Money.format(balance),
-                      key: ValueKey(
-                        obscured ? 'chip-hidden' : Money.format(balance),
-                      ),
+                  _PrivacyBalanceReveal(
+                    obscured: obscured,
+                    compact: true,
+                    staggerMs: staggerIndex.clamp(0, 5) * 40,
+                    visibleChild: QuestMoney(
+                      key: const ValueKey('chip-visible'),
+                      amount: balance,
+                      replayKey: obscured,
+                      duration: const Duration(milliseconds: 460),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: q.muted,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                    hiddenChild: Text(
+                      '••••••',
+                      key: const ValueKey('chip-hidden'),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.5,
+                        color: q.primary,
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
@@ -709,6 +802,115 @@ class _AccountChip extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Transisi privasi saldo (Show/Hide): efek kabur kaca (frosted blur) +
+/// skala pegas + sapuan kilau bertahap dari kiri ke kanan pada titik privasi.
+class _PrivacyBalanceReveal extends StatelessWidget {
+  const _PrivacyBalanceReveal({
+    required this.obscured,
+    required this.visibleChild,
+    required this.hiddenChild,
+    this.compact = false,
+    this.staggerMs = 0,
+  });
+
+  final bool obscured;
+  final Widget visibleChild;
+  final Widget hiddenChild;
+  final bool compact;
+  final int staggerMs;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = obscured ? hiddenChild : visibleChild;
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
+      return active;
+    }
+    final baseMs = compact ? 300 : 380;
+    final totalMs = baseMs + staggerMs;
+    final startFrac = totalMs > 0 ? (staggerMs / totalMs).clamp(0.0, 0.45) : 0.0;
+    final primary = context.q.primary;
+
+    return AnimatedSwitcher(
+      duration: Duration(milliseconds: totalMs),
+      layoutBuilder: (currentChild, previousChildren) => Stack(
+        alignment: Alignment.centerLeft,
+        children: [
+          ...previousChildren,
+          ?currentChild,
+        ],
+      ),
+      transitionBuilder: (child, anim) {
+        final isHiddenNode =
+            child.key == const ValueKey('saldo-hidden') ||
+            child.key == const ValueKey('chip-hidden');
+        return AnimatedBuilder(
+          animation: anim,
+          child: child,
+          builder: (context, cachedChild) {
+            final raw = ((anim.value - startFrac) / (1.0 - startFrac)).clamp(
+              0.0,
+              1.0,
+            );
+            final t = QuestMotion.easeOut.transform(raw);
+            if (t >= 0.995) return cachedChild!;
+
+            final maxSigma = compact ? 5.5 : 10.0;
+            final sigma = (1.0 - t) * maxSigma;
+            final scale = (compact ? 0.94 : 0.90) + (compact ? 0.06 : 0.10) * t;
+            final dy = (1.0 - t) * (compact ? 4.0 : 8.0) * (isHiddenNode ? -1 : 1);
+
+            Widget content = cachedChild!;
+            if (isHiddenNode && !compact) {
+              final sweep = (t * 1.35).clamp(0.0, 1.0);
+              content = ShaderMask(
+                blendMode: BlendMode.srcATop,
+                shaderCallback: (bounds) => LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    context.q.primaryDeep,
+                    primary,
+                    primary.withValues(alpha: 0.25),
+                  ],
+                  stops: [
+                    (sweep - 0.35).clamp(0.0, 1.0),
+                    sweep,
+                    (sweep + 0.2).clamp(0.0, 1.0),
+                  ],
+                ).createShader(bounds),
+                child: content,
+              );
+            }
+
+            if (sigma > 0.05) {
+              content = ImageFiltered(
+                imageFilter: ImageFilter.blur(
+                  sigmaX: sigma,
+                  sigmaY: sigma * 0.55,
+                ),
+                child: content,
+              );
+            }
+
+            return Opacity(
+              opacity: t.clamp(0.0, 1.0),
+              child: Transform.translate(
+                offset: Offset(0, dy),
+                child: Transform.scale(
+                  scale: scale,
+                  alignment: Alignment.centerLeft,
+                  child: content,
+                ),
+              ),
+            );
+          },
+        );
+      },
+      child: active,
     );
   }
 }
@@ -828,29 +1030,32 @@ class BudgetSummaryCard extends StatelessWidget {
                                   child: FittedBox(
                                     fit: BoxFit.scaleDown,
                                     alignment: Alignment.centerLeft,
-                                    child: RichText(
-                                      text: TextSpan(
-                                        children: [
-                                          TextSpan(
-                                            text: 'Terpakai ',
-                                            style: context.qSmall(12),
-                                          ),
-                                          TextSpan(
-                                            text: Money.format(used),
-                                            style: TextStyle(
-                                              fontSize: 14.5,
-                                              fontWeight: FontWeight.w800,
-                                              color: q.text,
-                                              fontFeatures: const [
-                                                FontFeature.tabularFigures(),
-                                              ],
+                                    child: QuestCountUp(
+                                      value: used,
+                                      builder: (context, currentUsed) => RichText(
+                                        text: TextSpan(
+                                          children: [
+                                            TextSpan(
+                                              text: 'Terpakai ',
+                                              style: context.qSmall(12),
                                             ),
-                                          ),
-                                          TextSpan(
-                                            text: ' dari ${Money.format(limit)}',
-                                            style: context.qSmall(12),
-                                          ),
-                                        ],
+                                            TextSpan(
+                                              text: Money.format(currentUsed),
+                                              style: TextStyle(
+                                                fontSize: 14.5,
+                                                fontWeight: FontWeight.w800,
+                                                color: q.text,
+                                                fontFeatures: const [
+                                                  FontFeature.tabularFigures(),
+                                                ],
+                                              ),
+                                            ),
+                                            TextSpan(
+                                              text: ' dari ${Money.format(limit)}',
+                                              style: context.qSmall(12),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -897,10 +1102,9 @@ class BudgetSummaryCard extends StatelessWidget {
                                       AppRadius.pill,
                                     ),
                                   ),
-                                  child: Text(
-                                    isOver
-                                        ? 'Over ${Money.format(used - limit)}'
-                                        : 'Sisa ${Money.format(limit - used)}',
+                                  child: QuestMoney(
+                                    amount: isOver ? used - limit : limit - used,
+                                    prefix: isOver ? 'Over ' : 'Sisa ',
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w800,
