@@ -310,3 +310,51 @@ jank), migrasi v11.
 **E-03.** Import drift hanya di `lib/storage/`; tiga file UI
 mengimpor `class Value` semata (companion builder — bukan akses DB).
 `PRAGMA foreign_keys = ON` dijalankan tiap `beforeOpen`.
+
+## F. Performa — 2026-10-31
+
+Pengukuran pakai build **release** (APK terpasang di emulator
+SwiftShader — angka absolut membesar; pakai sebagai indikator relatif,
+verifikasi di device nyata).
+
+| ID | Temuan | Severity |
+|---|---|---|
+| F-01 | Startup dingin 2,6–3,2 dtk (emulator); `main()` membuka DB 2× + seed + muat asset sebelum frame pertama | Sedang |
+| F-02 | Konvensi stream-disematkan dijaga; daftar panas `ListView.builder` | ✓ Lolos |
+| F-03 | 12 stream `watch()` di repository — re-run selektif per tabel, ok di skala personal | ✓ Lolos (catatan E-02) |
+| F-04 | APK release 73,5 MB (fat APK 3 ABI); `libsqlcipher.so` 5,1 MB per ABI | Rendah |
+| F-05 | Statistik frame tak terukur via `gfxinfo` (Impeller tak terlacak) | Catatan |
+
+**F-01.** `am start -W` ×3: TotalTime 3094/3158/2572 ms. Urutan
+`main()`: `applyPendingRestore` (I/O) → `isDatabaseLocked` (buka DB
+penuh + SELECT + **close**) → `openAppDatabase` (buka **lagi**) →
+seed (debug) → `loadSeedRuleSet` (asset) → baru `runApp`. Semua itu
+menahan frame pertama; di device lambat/penyimpanan padat akan terasa.
+Catatan baik: data demo terpasang **hanya di debug**
+(`seed_dummy.dart:23 if (!kDebugMode)`); layar kosong release benar.
+*Rekomendasi:* `runApp` lebih dulu (splash) lalu init async, atau
+probe lock memakai koneksi yang sama dengan DB utama, dan tunda
+prune/refresh pasca-frame.
+
+**F-02.** Laporan menyematkan stream di field + kunci `_streamKey`
+(tidak re-subscribe tiap build); home memakai stream di
+`initState`; daftar transaksi/laporan `ListView.builder` (lazy);
+"transaksi terbaru" di home dibatasi 5 baris — Column wajar. `const`
+dipakai sehat (126/74/47/64 di empat layar besar).
+
+**F-03.** Drift hanya menjalankan ulang stream yang tabelnya berubah;
+12 stream aktif tak masalah di skala personal — tetapi tanpa index
+(E-02) tiap re-run query transaksi = full scan. Perbaikan E-02
+sekalian mengurus ini.
+
+**F-04.** Fat APK berisi arm64 (23,2 MB) + armeabi-v7a (20,0 MB) +
+x86_64 (25,4 MB). *Rekomendasi:* `flutter build apk --split-per-abi`
+atau App Bundle saat rilis → ~24 MB per device. `libsqlcipher.so`
+5,1 MB/arm64 — patut dicek stripping simbolnya. Icon tree-shake
+efektif (1,6 MB → 15 KB) ✓; font Nunito 496 KB & maskot 260 KB wajar.
+
+**F-05.** `dumpsys gfxinfo` melaporkan 0 frame (Impeller melewati
+pipeline hwui yang dilacak) — jank harus diukur lewat
+`flutter run --profile` + timeline di device nyata. Di-emulator,
+scroll laporan & navigasi terasa lancar secara kualitatif; layar
+laporan release terverifikasi render benar (empty state konsisten).
