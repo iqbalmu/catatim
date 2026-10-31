@@ -76,7 +76,6 @@ class ProgressSummary {
     required this.recordedToday,
     required this.mood,
     required this.moodLine,
-    required this.moodCaption,
     required this.snapshot,
     required this.monthIn,
     required this.monthOut,
@@ -96,8 +95,6 @@ class ProgressSummary {
   final MascotMood mood;
   final String moodLine;
 
-  /// Kalimat pendek si Duit — dipakai di bawah panggung maskot.
-  final String moodCaption;
   final BudgetSnapshot snapshot;
   final int monthIn;
   final int monthOut;
@@ -325,7 +322,7 @@ class ProgressService extends ChangeNotifier {
       nextLevelXp = 2000;
     } else {
       level = 5;
-      levelTitle = 'Sultan Disiplin';
+      levelTitle = 'Sultan Hemat';
       levelFloorXp = 2000;
       nextLevelXp = 5000;
     }
@@ -335,15 +332,15 @@ class ProgressService extends ChangeNotifier {
     final badges = [
       SaverBadge(
         id: 'shield_7d',
-        title: 'Perisai Disiplin',
-        description: '7 hari belanja sesuai batas target',
+        title: 'Perisai Hemat',
+        description: '7 hari belanja dalam batas',
         icon: Icons.shield_rounded,
         unlocked: streak >= 7,
       ),
       SaverBadge(
         id: 'streak_30d',
-        title: 'Streak Master',
-        description: '30 hari konsisten tanpa overbudget',
+        title: 'Api 30 Hari',
+        description: '30 hari berturut-turut dalam batas',
         icon: Icons.local_fire_department_rounded,
         unlocked: streak >= 30,
       ),
@@ -357,7 +354,7 @@ class ProgressService extends ChangeNotifier {
       SaverBadge(
         id: 'active_logger',
         title: 'Pencatat Tangkas',
-        description: 'Mencatat pengeluaran lebih dari 10 hari',
+        description: 'Sudah mencatat pengeluaran di 10 hari berbeda',
         icon: Icons.edit_note_rounded,
         unlocked: activeDays.length >= 10,
       ),
@@ -378,7 +375,6 @@ class ProgressService extends ChangeNotifier {
       recordedToday: recordedToday,
       mood: _moodFor(snapshot, recordedToday, streak, wasCelebrating),
       moodLine: _moodLineFor(snapshot, recordedToday, streak, streakPaused),
-      moodCaption: _moodCaptionFor(snapshot, streakPaused),
       snapshot: snapshot,
       monthIn: monthIn,
       monthOut: monthOut,
@@ -485,30 +481,6 @@ class ProgressService extends ChangeNotifier {
     };
   }
 
-  /// Kalimat pendek si Duit untuk panggung maskot: satu baris, menyebut
-  /// masalahnya kalau ada, tenang kalau tidak.
-  String _moodCaptionFor(BudgetSnapshot snap, bool streakPaused) {
-    final critical = snap.criticalLine;
-    if (critical != null && critical.level == BudgetLevel.over) {
-      return 'Duit khawatir — ${critical.label} terlampaui '
-          '(${critical.usedPercent}%)';
-    }
-    if (critical != null) {
-      return 'Duit waspada — ${critical.label} ${critical.usedPercent}% '
-          'terpakai';
-    }
-    if (streakPaused) {
-      return 'Duit menunggu — atur batas harian dulu';
-    }
-    if (!snap.hasData) {
-      return 'Duit mengantuk — belum ada catatan bulan ini';
-    }
-    if (snap.outTrend == TrendDirection.worse) {
-      return 'Duit memperhatikan — keluaran naik bulan ini';
-    }
-    return 'Duit tenang — masih dalam batas hari ini';
-  }
-
   String _moodLineFor(
     BudgetSnapshot snap,
     bool recordedToday,
@@ -517,29 +489,29 @@ class ProgressService extends ChangeNotifier {
   ) {
     final critical = snap.criticalLine;
     if (critical != null && critical.level == BudgetLevel.over) {
-      return 'Duit khawatir — ${critical.label} terlampaui '
-          '(${critical.usedPercent}%)';
+      return 'Yah, ${critical.label} lewat batas (${critical.usedPercent}%) — '
+          'tarik napas, rapikan pelan-pelan ya';
     }
     if (critical != null) {
-      return 'Duit waspada — ${critical.label} ${critical.usedPercent}% '
-          'terpakai';
+      return '${critical.label} sudah ${critical.usedPercent}% terpakai — '
+          'masih sempat dijaga kok';
     }
     if (streakPaused) {
-      return 'Duit menunggu… atur batas harian untuk menyalakan '
-          'streak disiplin';
+      return 'Atur batas harian dulu yuk, biar semangatmu nyala lagi';
     }
     if (!snap.hasData) {
-      return 'Duit mengantuk… belum ada catatan bulan ini';
+      return 'Bulan ini masih sepi — ayo catat transaksi pertamamu';
     }
     if (snap.outTrend == TrendDirection.worse) {
-      return 'Duit memperhatikan — keluaran naik dibanding bulan lalu';
+      return 'Keluaran naik dibanding bulan lalu — yuk kita rapikan '
+          'pelan-pelan';
     }
     if (recordedToday) {
       final praise = snap.outTrend == TrendDirection.better
-          ? 'Duit bangga — dalam anggaran dan keluaran turun! '
-          : 'Duit senang — masih dalam batas anggaran! ';
-      return '$praise$streak hari disiplin';
+          ? 'Hebat! Anggaran aman, keluaran turun — '
+          : 'Keren! Masih dalam batas — ';
+      return '$praise$streak hari berturut-turut';
     }
-    return 'Duit tenang — dalam batas; jaga jatah harianmu hari ini';
+    return 'Tenang, semua masih dalam batas — jaga jatah harianmu ya';
   }
 }

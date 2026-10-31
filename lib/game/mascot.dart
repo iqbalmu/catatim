@@ -20,14 +20,6 @@ const Map<MascotMood, String> _assetFor = {
   MascotMood.sleepy: 'assets/mascot/mascot_happy.webp',
 };
 
-/// Kalimat pendek si Duit — dipakai di bawah panggung maskot.
-String mascotCaption(MascotMood mood) => switch (mood) {
-  MascotMood.celebrate => 'Duit merayakan!',
-  MascotMood.happy => 'Duit senang',
-  MascotMood.sleepy => 'Duit mengantuk',
-  MascotMood.worried => 'Duit khawatir',
-  MascotMood.idle => 'Duit tenang',
-};
 
 /// Maskot "Duit" — Pochy, karung uang.
 ///

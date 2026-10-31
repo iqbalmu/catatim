@@ -267,7 +267,7 @@ void main() {
       await progress.refresh();
       expect(progress.latest!.snapshot.worstLevel, BudgetLevel.warning);
       expect(progress.latest!.mood, MascotMood.idle);
-      expect(progress.latest!.moodLine, contains('waspada'));
+      expect(progress.latest!.moodLine, contains('terpakai'));
     });
 
     test('alokasi ber-scope akun hanya menghitung akun itu', () async {

@@ -80,11 +80,11 @@ class GamificationSheet extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Pochy & Gamifikasi Disiplin',
+                            'Pochy, Sahabat Hematmu',
                             style: context.qTitle(16),
                           ),
                           Text(
-                            'Koleksi streak dan lencana hematmu',
+                            'Nemenin kamu ngatur uang tiap hari',
                             style: context.qSmall(),
                           ),
                         ],
@@ -106,54 +106,31 @@ class GamificationSheet extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.all(Spacing.m),
               children: [
-                // 1. Panggung Maskot & Mood Card
+                // 1. Panggung Maskot & Mood
+                MascotStage(
+                  mood: mood,
+                  size: 150,
+                  glow: SeedColors.honeyBright.withValues(alpha: 0.4),
+                  glowStrength: 0.7,
+                ),
+                const SizedBox(height: Spacing.s),
                 Container(
-                  padding: const EdgeInsets.all(Spacing.m),
-                  decoration: BoxDecoration(
-                    color: context.q.surface,
-                    borderRadius: BorderRadius.circular(AppRadius.card),
-                    border: Border.all(color: context.q.line),
-                    boxShadow: AppShadows.card,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Spacing.m,
+                    vertical: Spacing.s,
                   ),
-                  child: Column(
-                    children: [
-                      Center(
-                        child: MascotStage(
-                          mood: mood,
-                          size: 110,
-                          glow: SeedColors.honeyBright.withValues(alpha: 0.4),
-                          glowStrength: 0.7,
-                        ),
-                      ),
-                      const SizedBox(height: Spacing.s),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: Spacing.m,
-                          vertical: Spacing.s,
-                        ),
-                        decoration: BoxDecoration(
-                          color: SeedColors.primaryLight,
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
-                        ),
-                        child: Text(
-                          summary?.moodLine ?? 'Pochy memantau keuanganmu',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: context.q.primary,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      if (summary?.moodCaption != null && summary!.moodCaption.isNotEmpty) ...[
-                        const SizedBox(height: Spacing.xs),
-                        Text(
-                          summary.moodCaption,
-                          style: context.qSmall(12),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ],
+                  decoration: BoxDecoration(
+                    color: SeedColors.primaryLight,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Text(
+                    summary?.moodLine ?? 'Pochy memantau keuanganmu',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: context.q.primary,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
                 const SizedBox(height: Spacing.m),
@@ -198,7 +175,7 @@ class GamificationSheet extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              isPaused ? 'Streak Dijeda' : '$streakDays Hari Streak Disiplin',
+                              isPaused ? 'Belum Mulai' : '$streakDays Hari Berturut-turut',
                               style: TextStyle(
                                 fontSize: 16.5,
                                 fontWeight: FontWeight.w900,
@@ -209,7 +186,7 @@ class GamificationSheet extends StatelessWidget {
                             const SizedBox(height: 2),
                             Text(
                               isPaused
-                                  ? 'Atur batas harian/bulanan agar streak mulai berjalan.'
+                                  ? 'Atur batas harian dulu yuk, biar hitungannya jalan lagi.'
                                   : 'Pengeluaran harianmu terjaga rapi dalam batas aman.',
                               style: const TextStyle(
                                 fontSize: 12,
@@ -274,7 +251,7 @@ class GamificationSheet extends StatelessWidget {
                               ],
                             ),
                             Text(
-                              '${stats.currentXp} / ${stats.nextLevelXp} XP',
+                              '${stats.currentXp} dari ${stats.nextLevelXp} poin',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
@@ -295,7 +272,7 @@ class GamificationSheet extends StatelessWidget {
                         ),
                         const SizedBox(height: Spacing.xs),
                         Text(
-                          'Kumpulkan XP setiap hari dengan mencatat transaksi dan disiplin anggaran.',
+                          'Catat pengeluaran & jaga batas harianmu — poinnya jalan sendiri.',
                           style: context.qSmall(11.5),
                         ),
                       ],
@@ -308,7 +285,7 @@ class GamificationSheet extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Lencana Disiplin',
+                        'Lencanamu',
                         style: context.qTitle(15),
                       ),
                       Text(
@@ -325,7 +302,7 @@ class GamificationSheet extends StatelessWidget {
                 // 5. Jejak Disiplin Bulan Ini
                 if (summary?.disciplineMonth != null && summary!.disciplineMonth.isNotEmpty) ...[
                   Text(
-                    'Disiplin Bulan Ini (${idMonthsShort[DateTime.now().month - 1]})',
+                    'Bulan Ini (${idMonthsShort[DateTime.now().month - 1]})',
                     style: context.qTitle(15),
                   ),
                   const SizedBox(height: Spacing.s),
@@ -350,7 +327,7 @@ class GamificationSheet extends StatelessWidget {
                           dotColor = context.q.bad;
                         }
                         return Tooltip(
-                          message: 'Tgl ${d.day.day}: ${d.future ? "Belum lewat" : d.within ? "Aman" : "Over"}',
+                          message: 'Tgl ${d.day.day}: ${d.future ? "Belum lewat" : d.within ? "Aman" : "Lewat batas"}',
                           child: Container(
                             width: 28,
                             height: 28,
