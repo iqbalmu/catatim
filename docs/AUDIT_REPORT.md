@@ -432,7 +432,7 @@ tak pernah error lokal — risiko rendah, cukup sadar.
 
 | ID | Temuan | Severity |
 |---|---|---|
-| I-01 | 5 file UI >900 baris (laporan 2.471, quest 1.280, home_cards 1.230, rencana_batas 1.160, transaksi 981) | Sedang — **sebagian diperbaiki** |
+| I-01 | 5 file UI >900 baris (laporan 2.471, quest 1.280, home_cards 1.230, rencana_batas 1.160, transaksi 981) | Sedang — **diperbaiki 4/5** |
 | I-02 | Dead code: `buildCsv()` (A-09), dependensi `dynamic_color` (G-02) | Rendah |
 | I-03 | Lints: set dasar `flutter_lints` tanpa aturan tambahan | Rendah |
 
@@ -440,9 +440,13 @@ tak pernah error lokal — risiko rendah, cukup sadar.
 sudah memakai pola bagus di dalamnya (stream field + `_streamKey`).
 *Rekomendasi:* pecah per-seksi jadi widget privat per file — refaktor
 mekanis, tanpa ubah perilaku, satu layar per PR.
-*Diperbaiki sebagian 2026-10-31:* laporan_screen 2.471 → 765 baris,
-pecahan 6 part files di `lib/ui/laporan/` (satu library, nama privat
-utuh). Empat file besar lain menyusul dengan pola yang sama.
+*Diperbaiki 2026-10-31:* laporan_screen 2.471 → 765 (6 part),
+quest.dart 1.280 → 18 (8 part), home_cards 1.230 → 239 (4 part),
+rencana_batas 1.160 → 542 (2 part) — semua via part files: satu
+library, nama privat utuh, perilaku identik. transaksi_screen
+sengaja tidak dipecah: State-nya 890 baris, butuh refaktor
+per-metode — pemecahan mekanis tak memberi nilai. Verifikasi:
+analyze bersih, 149/149 test, render runtime per layar di emulator.
 
 **I-02.** *Diperbaiki 2026-10-31:* `buildCsv()` + test-nya dihapus
 (ekspor plaintext memang tak pernah diekspos, A-09); `dynamic_color`
