@@ -252,23 +252,38 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             ),
                             children: [
                               if (drafts.isNotEmpty) ...[
-                                const QuestSectionHeader(
-                                  title: 'Menunggu keputusanmu',
+                                const QuestEnter(
+                                  index: 0,
+                                  child: QuestSectionHeader(
+                                    title: 'Menunggu keputusanmu',
+                                  ),
                                 ),
-                                for (final d in drafts)
-                                  _DraftTile(
-                                    draft: d,
-                                    bankName: _bankName(d.bankId),
-                                    onTap: () => _openDraft(d),
+                                for (var i = 0; i < drafts.length; i++)
+                                  QuestEnter(
+                                    index: 1 + i,
+                                    child: _DraftTile(
+                                      draft: drafts[i],
+                                      bankName: _bankName(drafts[i].bankId),
+                                      onTap: () => _openDraft(drafts[i]),
+                                    ),
                                   ),
                                 const SizedBox(height: Spacing.s),
                               ],
                               if (items.isNotEmpty) ...[
-                                const QuestSectionHeader(
-                                  title: 'Perlu perhatian',
+                                QuestEnter(
+                                  index: drafts.isEmpty ? 0 : 1 + drafts.length,
+                                  child: const QuestSectionHeader(
+                                    title: 'Perlu perhatian',
+                                  ),
                                 ),
-                                for (final item in items)
-                                  _AttentionTile(item: item),
+                                for (var i = 0; i < items.length; i++)
+                                  QuestEnter(
+                                    index: (drafts.isEmpty
+                                            ? 1
+                                            : 2 + drafts.length) +
+                                        i,
+                                    child: _AttentionTile(item: items[i]),
+                                  ),
                               ],
                             ],
                           );

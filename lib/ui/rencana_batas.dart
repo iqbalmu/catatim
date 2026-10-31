@@ -159,49 +159,58 @@ class _RencanaBatasState extends State<RencanaBatas> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Kartu batas bulanan utama
-                _BatasBulananCard(
-                  used: usage?.month ?? 0,
-                  limit: _monthlyTotal,
-                  onTap: () => _editLimit(
-                    title: 'Total bulanan',
-                    current: _monthlyTotal,
-                    save: (v) async {
-                      await _saveLimit(kKeyMonthlyTotal, v);
-                      setState(() => _monthlyTotal = v);
-                    },
+                QuestTabEnter(
+                  index: 1,
+                  child: _BatasBulananCard(
+                    used: usage?.month ?? 0,
+                    limit: _monthlyTotal,
+                    onTap: () => _editLimit(
+                      title: 'Total bulanan',
+                      current: _monthlyTotal,
+                      save: (v) async {
+                        await _saveLimit(kKeyMonthlyTotal, v);
+                        setState(() => _monthlyTotal = v);
+                      },
+                    ),
                   ),
                 ),
                 const SizedBox(height: Spacing.s),
                 Row(
                   children: [
                     Expanded(
-                      child: _LimitMiniCard(
-                        label: 'Mingguan',
-                        used: usage?.week ?? 0,
-                        limit: _weeklyLimit,
-                        onTap: () => _editLimit(
-                          title: 'Batas mingguan',
-                          current: _weeklyLimit,
-                          save: (v) async {
-                            await _saveLimit(kKeyWeeklyLimit, v);
-                            setState(() => _weeklyLimit = v);
-                          },
+                      child: QuestTabEnter(
+                        index: 2,
+                        child: _LimitMiniCard(
+                          label: 'Mingguan',
+                          used: usage?.week ?? 0,
+                          limit: _weeklyLimit,
+                          onTap: () => _editLimit(
+                            title: 'Batas mingguan',
+                            current: _weeklyLimit,
+                            save: (v) async {
+                              await _saveLimit(kKeyWeeklyLimit, v);
+                              setState(() => _weeklyLimit = v);
+                            },
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(width: Spacing.s),
                     Expanded(
-                      child: _LimitMiniCard(
-                        label: 'Harian',
-                        used: usage?.day ?? 0,
-                        limit: _dailyLimit,
-                        onTap: () => _editLimit(
-                          title: 'Batas harian',
-                          current: _dailyLimit,
-                          save: (v) async {
-                            await _saveLimit(kKeyDailyLimit, v);
-                            setState(() => _dailyLimit = v);
-                          },
+                      child: QuestTabEnter(
+                        index: 3,
+                        child: _LimitMiniCard(
+                          label: 'Harian',
+                          used: usage?.day ?? 0,
+                          limit: _dailyLimit,
+                          onTap: () => _editLimit(
+                            title: 'Batas harian',
+                            current: _dailyLimit,
+                            save: (v) async {
+                              await _saveLimit(kKeyDailyLimit, v);
+                              setState(() => _dailyLimit = v);
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -212,98 +221,122 @@ class _RencanaBatasState extends State<RencanaBatas> {
           },
         ),
         const SizedBox(height: Spacing.m),
-        Padding(
-          padding: const EdgeInsets.only(top: Spacing.s),
-          child: Text(
-            'KATEGORI & ALOKASI ANGGARAN',
-            style: context.qEyebrow(11),
-          ),
-        ),
-        const SizedBox(height: Spacing.s),
-        StreamBuilder<List<Category>>(
-          stream: _categories,
-          builder: (context, catSnap) {
-            return StreamBuilder<List<Budget>>(
-              stream: _budgets,
-              builder: (context, budgetSnap) {
-              return StreamBuilder<List<Account>>(
-                stream: _accounts,
-                  builder: (context, accSnap) {
-                    return StreamBuilder<
-                      Map<({int? category, int? account}), int>
-                    >(
-                      // Pemicu reaktif: watch semua keluar; datanya
-                      // belanja-murni supaya transfer tidak menggerogoti
-                      // alokasi Jenis.
-                      stream: _outPairs,
-                      builder: (context, usedSnap) {
-                        final categories = catSnap.data ?? const <Category>[];
-                        final budgets = budgetSnap.data ?? const <Budget>[];
-                        final accounts = accSnap.data ?? const <Account>[];
-                        final used =
-                            usedSnap.data ??
-                            const <({int? category, int? account}), int>{};
-                        if (categories.isEmpty) {
-                          return QuestEmpty(
-                            title: 'Belum ada kategori',
-                            hint: 'Tambah kategori pertama untuk mulai mengalokasikan anggaran.',
-                            actionLabel: 'Tambah Kategori',
-                            onAction: () => showAddCategoryFlow(context, widget.repository),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            QuestTabEnter(
+              index: 4,
+              child: Padding(
+                padding: const EdgeInsets.only(top: Spacing.s),
+                child: Text(
+                  'KATEGORI & ALOKASI ANGGARAN',
+                  style: context.qEyebrow(11),
+                ),
+              ),
+            ),
+            const SizedBox(height: Spacing.s),
+              StreamBuilder<List<Category>>(
+                stream: _categories,
+                builder: (context, catSnap) {
+                  return StreamBuilder<List<Budget>>(
+                    stream: _budgets,
+                    builder: (context, budgetSnap) {
+                      return StreamBuilder<List<Account>>(
+                        stream: _accounts,
+                        builder: (context, accSnap) {
+                          return StreamBuilder<
+                            Map<({int? category, int? account}), int>
+                          >(
+                            // Pemicu reaktif: watch semua keluar; datanya
+                            // belanja-murni supaya transfer tidak
+                            // menggerogoti alokasi Jenis.
+                            stream: _outPairs,
+                            builder: (context, usedSnap) {
+                              final categories =
+                                  catSnap.data ?? const <Category>[];
+                              final budgets =
+                                  budgetSnap.data ?? const <Budget>[];
+                              final accounts =
+                                  accSnap.data ?? const <Account>[];
+                              final used =
+                                  usedSnap.data ??
+                                  const <({int? category, int? account}), int>{};
+                              if (categories.isEmpty) {
+                                return QuestTabEnter(
+                                  index: 5,
+                                  child: QuestEmpty(
+                                    title: 'Belum ada kategori',
+                                    hint:
+                                        'Tambah kategori pertama untuk mulai '
+                                        'mengalokasikan anggaran.',
+                                    actionLabel: 'Tambah Kategori',
+                                    onAction: () => showAddCategoryFlow(
+                                      context,
+                                      widget.repository,
+                                    ),
+                                  ),
+                                );
+                              }
+                              final accountNames = {
+                                for (final a in accounts) a.id: a.name,
+                              };
+                              final cards = <Widget>[
+                                for (final c in categories) ...[
+                                  // Alokasi yang sudah ada (global + per akun).
+                                  for (final b in budgets.where(
+                                    (b) => b.categoryId == c.id,
+                                  ))
+                                    _AllocationRow(
+                                      name: c.name,
+                                      scopeLabel: b.accountId == null
+                                          ? null
+                                          : accountNames[b.accountId],
+                                      used: _usedFor(used, b),
+                                      limit: b.monthlyLimit,
+                                      onTap: () => _manageCategoryAndBudget(
+                                        c,
+                                        existing: b,
+                                        accounts: accounts,
+                                      ),
+                                    ),
+                                  // Kategori tanpa alokasi sama sekali.
+                                  if (!budgets.any(
+                                    (b) => b.categoryId == c.id,
+                                  ))
+                                    _AllocationRow(
+                                      name: c.name,
+                                      used: _usedForCategory(used, c.id),
+                                      limit: null,
+                                      onTap: () => _manageCategoryAndBudget(
+                                        c,
+                                        existing: null,
+                                        accounts: accounts,
+                                      ),
+                                    ),
+                                ],
+                              ];
+                              // Daftar baris penuh (mockup v2.1): nama + bar
+                              // progres + "pakai/plafon" — bukan grid.
+                              return Column(
+                                children: [
+                                  for (var i = 0; i < cards.length; i++) ...[
+                                    QuestTabEnter(
+                                      index: 5 + i,
+                                      child: cards[i],
+                                    ),
+                                    const SizedBox(height: Spacing.s),
+                                  ],
+                                ],
+                              );
+                            },
                           );
-                        }
-                        final accountNames = {
-                          for (final a in accounts) a.id: a.name,
-                        };
-                        final cards = <Widget>[
-                          for (final c in categories) ...[
-                            // Alokasi yang sudah ada (global + per akun).
-                            for (final b in budgets.where(
-                              (b) => b.categoryId == c.id,
-                            ))
-                              _AllocationRow(
-                                name: c.name,
-                                scopeLabel: b.accountId == null
-                                    ? null
-                                    : accountNames[b.accountId],
-                                used: _usedFor(used, b),
-                                limit: b.monthlyLimit,
-                                onTap: () => _manageCategoryAndBudget(
-                                  c,
-                                  existing: b,
-                                  accounts: accounts,
-                                ),
-                              ),
-                            // Kategori tanpa alokasi sama sekali.
-                            if (!budgets.any((b) => b.categoryId == c.id))
-                              _AllocationRow(
-                                name: c.name,
-                                used: _usedForCategory(used, c.id),
-                                limit: null,
-                                onTap: () => _manageCategoryAndBudget(
-                                  c,
-                                  existing: null,
-                                  accounts: accounts,
-                                ),
-                              ),
-                          ],
-                        ];
-                        // Daftar baris penuh (mockup v2.1): nama + bar
-                        // progres + "pakai/plafon" — bukan grid.
-                        return Column(
-                          children: [
-                            for (final card in cards) ...[
-                              card,
-                              const SizedBox(height: Spacing.s),
-                            ],
-                          ],
-                        );
-                      },
-                    );
-                  },
-                );
-              },
-            );
-          },
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
+          ],
         ),
       ],
     );
@@ -1052,26 +1085,24 @@ class _BatasBulananCard extends StatelessWidget {
               ),
               const SizedBox(width: Spacing.s),
               if (hasLimit)
-                Text(
-                  '${(used * 100 / limit!).round()}%',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    color: progressColor,
-                    fontFeatures: const [FontFeature.tabularFigures()],
+                QuestReplay(
+                  builder: (context, t) => Text(
+                    '${((used * 100 / limit!) * t).round()}%',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      color: progressColor,
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
                   ),
                 ),
             ],
           ),
           const SizedBox(height: Spacing.s),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            child: LinearProgressIndicator(
-              value: fraction,
-              minHeight: 8,
-              backgroundColor: q.surface2,
-              valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-            ),
+          QuestProgressBar(
+            value: fraction,
+            color: progressColor,
+            backgroundColor: q.surface2,
           ),
         ],
       ),

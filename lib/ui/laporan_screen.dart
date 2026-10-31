@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/buckets.dart' show AmountPoint, TrendBucket;
 import '../core/buckets.dart' as bkt;
@@ -60,6 +61,7 @@ class LaporanScreenState extends State<LaporanScreen> {
   bool _showIncomingCategories = false;
   int? _selectedBucketIndex;
 
+  int _reportRevision = 0;
   String _streamKey = '';
   late Stream<List<TxWithCategory>> _currentStream;
   late Stream<List<TxWithCategory>> _prevStream;
@@ -162,6 +164,7 @@ class LaporanScreenState extends State<LaporanScreen> {
   }
 
   void _shiftMonth(int delta) {
+    HapticFeedback.selectionClick();
     setState(() {
       final base = _customRange != null
           ? DateTime(_customRange!.start.year, _customRange!.start.month)
@@ -169,6 +172,7 @@ class LaporanScreenState extends State<LaporanScreen> {
       _customRange = null;
       _month = DateTime(base.year, base.month + delta);
       _selectedBucketIndex = null;
+      _reportRevision++;
       _syncStreams();
     });
   }
@@ -187,6 +191,7 @@ class LaporanScreenState extends State<LaporanScreen> {
       ),
     );
     if (picked == null || !mounted) return;
+    HapticFeedback.selectionClick();
     setState(() {
       if (picked.range != null) {
         _customRange = picked.range;
@@ -195,6 +200,7 @@ class LaporanScreenState extends State<LaporanScreen> {
         _month = picked.month!;
       }
       _selectedBucketIndex = null;
+      _reportRevision++;
       _syncStreams();
     });
   }
@@ -270,8 +276,10 @@ class LaporanScreenState extends State<LaporanScreen> {
       ),
     );
     if (selected == null || !mounted) return;
+    HapticFeedback.selectionClick();
     setState(() {
       _accountId = selected.id;
+      _reportRevision++;
       _syncStreams();
     });
   }
@@ -379,6 +387,8 @@ class LaporanScreenState extends State<LaporanScreen> {
   Widget build(BuildContext context) {
     _syncStreams();
     final win = _window;
+    final parentToken = QuestStage.ofOrNull(context)?.token ?? 0;
+    final reportStageToken = parentToken * 1000 + _reportRevision;
 
     return Scaffold(
       backgroundColor: context.q.bg,
@@ -422,6 +432,9 @@ class LaporanScreenState extends State<LaporanScreen> {
                       ),
                       children: [
                         // ── Top Bar: Title + Account Filter ────────────────
+                        QuestTabEnter(
+                          index: 0,
+                          child:
                         Row(
                           children: [
                             Expanded(
@@ -499,9 +512,13 @@ class LaporanScreenState extends State<LaporanScreen> {
                             ),
                           ],
                         ),
+                        ),
                         const SizedBox(height: Spacing.s + 4),
 
                         // ── Dedicated Full-Width Period Navigator Bar ──────
+                        QuestTabEnter(
+                          index: 1,
+                          child:
                         Container(
                           height: 44,
                           decoration: BoxDecoration(
@@ -539,14 +556,17 @@ class LaporanScreenState extends State<LaporanScreen> {
                                           ),
                                           const SizedBox(width: 7),
                                           Flexible(
-                                            child: Text(
-                                              _periodLabel,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                fontSize: 13.5,
-                                                fontWeight: FontWeight.w800,
-                                                color: context.q.text,
+                                            child: QuestSwap(
+                                              child: Text(
+                                                _periodLabel,
+                                                key: ValueKey(_periodLabel),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontSize: 13.5,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: context.q.text,
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -575,6 +595,7 @@ class LaporanScreenState extends State<LaporanScreen> {
                             ],
                           ),
                         ),
+                        ),
                         const SizedBox(height: Spacing.l),
 
                         if (waiting)
@@ -585,70 +606,136 @@ class LaporanScreenState extends State<LaporanScreen> {
                             ),
                           )
                         else ...[
-                          // ── 01 · RINGKASAN ARUS KAS ──────────────────────
-                          const _ReportSectionHeader(
-                            step: '01',
-                            title: 'RINGKASAN ARUS KAS',
+                          QuestStage(
+                            token: reportStageToken,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // ── 01 · RINGKASAN ARUS KAS ────────────────
+                                QuestTabEnter(
+                                  index: 2,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      const _ReportSectionHeader(
+                                        step: '01',
+                                        title: 'RINGKASAN ARUS KAS',
+                                      ),
+                                      const SizedBox(height: Spacing.xs + 2),
+                                      _ExecutiveSummaryCard(metrics: report),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: Spacing.l),
+
+                                if (!report.hasAnyActivity)
+                                  QuestTabEnter(
+                                    index: 3,
+                                    child: _EmptyPeriodCard(
+                                      periodLabel: _periodLabel,
+                                    ),
+                                  )
+                                else ...[
+                                  // ── 02 · TREN ARUS KAS ───────────────────
+                                  QuestTabEnter(
+                                    index: 3,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        const _ReportSectionHeader(
+                                          step: '02',
+                                          title: 'TREN ARUS KAS',
+                                        ),
+                                        const SizedBox(height: Spacing.xs + 2),
+                                        _InteractiveTrendCard(
+                                          buckets: report.trendBuckets,
+                                          isMonthlyGranularity:
+                                              report.isMonthlyTrend,
+                                          selectedIndex: _selectedBucketIndex,
+                                          onSelectIndex: (idx) {
+                                            if (_selectedBucketIndex == idx) {
+                                              return;
+                                            }
+                                            HapticFeedback.selectionClick();
+                                            setState(
+                                              () => _selectedBucketIndex = idx,
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: Spacing.l),
+
+                                  // ── 03 · KOMPOSISI KATEGORI ──────────────
+                                  QuestTabEnter(
+                                    index: 4,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        const _ReportSectionHeader(
+                                          step: '03',
+                                          title: 'KOMPOSISI KATEGORI',
+                                        ),
+                                        const SizedBox(height: Spacing.xs + 2),
+                                        _CategoryStructureCard(
+                                          showIncoming: _showIncomingCategories,
+                                          onToggleMode: (val) {
+                                            if (_showIncomingCategories ==
+                                                val) {
+                                              return;
+                                            }
+                                            HapticFeedback.selectionClick();
+                                            setState(
+                                              () => _showIncomingCategories =
+                                                  val,
+                                            );
+                                          },
+                                          outStats: report.outCategories,
+                                          inStats: report.inCategories,
+                                          totalOut: report.totalOut,
+                                          totalIn: report.totalIn,
+                                          outTxCount: report.outCount,
+                                          inTxCount: report.inCount,
+                                          onCategoryTap: _openCategorySheet,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // ── 04 · PENGELUARAN TERBESAR ────────────
+                                  if (report.topExpenses.isNotEmpty) ...[
+                                    const SizedBox(height: Spacing.l),
+                                    QuestTabEnter(
+                                      index: 5,
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: [
+                                          const _ReportSectionHeader(
+                                            step: '04',
+                                            title: 'PENGELUARAN TERBESAR',
+                                          ),
+                                          const SizedBox(
+                                            height: Spacing.xs + 2,
+                                          ),
+                                          _TopExpensesTableCard(
+                                            items: report.topExpenses,
+                                            totalOut: report.totalOut,
+                                            repository: widget.repository,
+                                            progress: widget.progress,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: Spacing.xs + 2),
-                          _ExecutiveSummaryCard(metrics: report),
-                          const SizedBox(height: Spacing.l),
-
-                          if (!report.hasAnyActivity)
-                            _EmptyPeriodCard(periodLabel: _periodLabel)
-                          else ...[
-                            // ── 02 · TREN ARUS KAS ─────────────────────────
-                            const _ReportSectionHeader(
-                              step: '02',
-                              title: 'TREN ARUS KAS',
-                            ),
-                            const SizedBox(height: Spacing.xs + 2),
-                            _InteractiveTrendCard(
-                              buckets: report.trendBuckets,
-                              isMonthlyGranularity: report.isMonthlyTrend,
-                              selectedIndex: _selectedBucketIndex,
-                              onSelectIndex: (idx) => setState(
-                                () => _selectedBucketIndex = idx,
-                              ),
-                            ),
-                            const SizedBox(height: Spacing.l),
-
-                            // ── 03 · KOMPOSISI KATEGORI ────────────────────
-                            const _ReportSectionHeader(
-                              step: '03',
-                              title: 'KOMPOSISI KATEGORI',
-                            ),
-                            const SizedBox(height: Spacing.xs + 2),
-                            _CategoryStructureCard(
-                              showIncoming: _showIncomingCategories,
-                              onToggleMode: (val) => setState(
-                                () => _showIncomingCategories = val,
-                              ),
-                              outStats: report.outCategories,
-                              inStats: report.inCategories,
-                              totalOut: report.totalOut,
-                              totalIn: report.totalIn,
-                              outTxCount: report.outCount,
-                              inTxCount: report.inCount,
-                              onCategoryTap: _openCategorySheet,
-                            ),
-
-                            // ── 04 · PENGELUARAN TERBESAR ──────────────────
-                            if (report.topExpenses.isNotEmpty) ...[
-                              const SizedBox(height: Spacing.l),
-                              const _ReportSectionHeader(
-                                step: '04',
-                                title: 'PENGELUARAN TERBESAR',
-                              ),
-                              const SizedBox(height: Spacing.xs + 2),
-                              _TopExpensesTableCard(
-                                items: report.topExpenses,
-                                totalOut: report.totalOut,
-                                repository: widget.repository,
-                                progress: widget.progress,
-                              ),
-                            ],
-                          ],
                         ],
                       ],
                     );
@@ -1000,16 +1087,19 @@ class _ExecutiveSummaryCard extends StatelessWidget {
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    metrics.net == 0
-                        ? Money.format(0)
-                        : '${isSurplus ? '+' : '−'}${Money.format(metrics.net.abs())}',
-                    style: context.qDisplay(28).copyWith(
-                      color: metrics.net == 0
-                          ? context.q.text
-                          : isSurplus
-                              ? context.q.good
-                              : context.q.bad,
+                  child: QuestSwap(
+                    child: Text(
+                      metrics.net == 0
+                          ? Money.format(0)
+                          : '${isSurplus ? '+' : '−'}${Money.format(metrics.net.abs())}',
+                      key: ValueKey('net-${metrics.net}'),
+                      style: context.qDisplay(28).copyWith(
+                        color: metrics.net == 0
+                            ? context.q.text
+                            : isSurplus
+                                ? context.q.good
+                                : context.q.bad,
+                      ),
                     ),
                   ),
                 ),
@@ -1343,39 +1433,49 @@ class _InteractiveTrendCard extends StatelessWidget {
               alignment: WrapAlignment.spaceBetween,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Text(
-                  isMonthlyGranularity
-                      ? 'Bulan ${activeBucket.label}'
-                      : 'Mulai ${activeBucket.label}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: context.q.text,
+                QuestSwap(
+                  slide: false,
+                  child: Text(
+                    isMonthlyGranularity
+                        ? 'Bulan ${activeBucket.label}'
+                        : 'Mulai ${activeBucket.label}',
+                    key: ValueKey('lbl-$activeIdx-${activeBucket.label}'),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: context.q.text,
+                    ),
                   ),
                 ),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 4,
-                  children: [
-                    Text(
-                      '+${Money.format(activeBucket.incoming)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: context.q.good,
-                        fontFeatures: _tabular,
-                      ),
+                QuestSwap(
+                  slide: false,
+                  child: Wrap(
+                    key: ValueKey(
+                      'vals-$activeIdx-${activeBucket.incoming}-${activeBucket.outgoing}',
                     ),
-                    Text(
-                      '−${Money.format(activeBucket.outgoing)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: context.q.bad,
-                        fontFeatures: _tabular,
+                    spacing: 10,
+                    runSpacing: 4,
+                    children: [
+                      Text(
+                        '+${Money.format(activeBucket.incoming)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: context.q.good,
+                          fontFeatures: _tabular,
+                        ),
                       ),
-                    ),
-                  ],
+                      Text(
+                        '−${Money.format(activeBucket.outgoing)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: context.q.bad,
+                          fontFeatures: _tabular,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -1400,19 +1500,28 @@ class _InteractiveTrendCard extends StatelessWidget {
                         .clamp(0, buckets.length - 1);
                     onSelectIndex(idx);
                   },
-                  child: CustomPaint(
-                    size: Size(constraints.maxWidth, 176),
-                    painter: _StructuredTrendPainter(
-                      buckets: buckets,
-                      maxValue: maxVal,
-                      selectedIndex: activeIdx,
-                      yAxisWidth: yAxisWidth,
-                      inColor: context.q.good,
-                      outColor: context.q.bad,
-                      gridColor: context.q.line,
-                      highlightColor: SeedColors.primaryLight.withValues(alpha: 0.7),
-                      labelColor: context.q.muted,
-                      activeLabelColor: context.q.primary,
+                  child: QuestReplay(
+                    duration:
+                        (MediaQuery.maybeDisableAnimationsOf(context) ?? false)
+                        ? Duration.zero
+                        : const Duration(milliseconds: 720),
+                    curve: Curves.linear,
+                    builder: (context, chartProgress) => CustomPaint(
+                      size: Size(constraints.maxWidth, 176),
+                      painter: _StructuredTrendPainter(
+                        buckets: buckets,
+                        maxValue: maxVal,
+                        selectedIndex: activeIdx,
+                        progress: chartProgress,
+                        yAxisWidth: yAxisWidth,
+                        inColor: context.q.good,
+                        outColor: context.q.bad,
+                        gridColor: context.q.line,
+                        highlightColor:
+                            SeedColors.primaryLight.withValues(alpha: 0.7),
+                        labelColor: context.q.muted,
+                        activeLabelColor: context.q.primary,
+                      ),
                     ),
                   ),
                 );
@@ -1456,6 +1565,7 @@ class _StructuredTrendPainter extends CustomPainter {
     required this.buckets,
     required this.maxValue,
     required this.selectedIndex,
+    required this.progress,
     required this.yAxisWidth,
     required this.inColor,
     required this.outColor,
@@ -1468,6 +1578,7 @@ class _StructuredTrendPainter extends CustomPainter {
   final List<TrendBucket> buckets;
   final int maxValue;
   final int selectedIndex;
+  final double progress;
   final double yAxisWidth;
   final Color inColor;
   final Color outColor;
@@ -1558,10 +1669,15 @@ class _StructuredTrendPainter extends CustomPainter {
       }
 
       final baseY = topPad + chartH;
+      final spread =
+          buckets.length > 1 ? (i / (buckets.length - 1)) * 0.34 : 0.0;
+      final localRaw = ((progress - spread) / (1.0 - spread)).clamp(0.0, 1.0);
+      final barProgress = Curves.easeOutCubic.transform(localRaw);
 
       // Incoming bar
-      if (b.incoming > 0 && maxValue > 0) {
-        final h = math.max(4.0, (b.incoming / maxValue) * chartH);
+      if (b.incoming > 0 && maxValue > 0 && barProgress > 0) {
+        final h =
+            math.max(4.0, (b.incoming / maxValue) * chartH) * barProgress;
         canvas.drawRRect(
           RRect.fromRectAndCorners(
             Rect.fromLTWH(centerX - barGap / 2 - barW, baseY - h, barW, h),
@@ -1573,8 +1689,9 @@ class _StructuredTrendPainter extends CustomPainter {
       }
 
       // Outgoing bar
-      if (b.outgoing > 0 && maxValue > 0) {
-        final h = math.max(4.0, (b.outgoing / maxValue) * chartH);
+      if (b.outgoing > 0 && maxValue > 0 && barProgress > 0) {
+        final h =
+            math.max(4.0, (b.outgoing / maxValue) * chartH) * barProgress;
         canvas.drawRRect(
           RRect.fromRectAndCorners(
             Rect.fromLTWH(centerX + barGap / 2, baseY - h, barW, h),
@@ -1618,6 +1735,7 @@ class _StructuredTrendPainter extends CustomPainter {
   bool shouldRepaint(covariant _StructuredTrendPainter oldDelegate) =>
       oldDelegate.maxValue != maxValue ||
       oldDelegate.selectedIndex != selectedIndex ||
+      oldDelegate.progress != progress ||
       oldDelegate.buckets.length != buckets.length;
 }
 
@@ -1744,6 +1862,7 @@ class _CategoryStructureCard extends StatelessWidget {
                   _SegmentedBar(
                     height: 12,
                     emptyColor: context.q.surface2,
+                    replayKey: showIncoming,
                     segments: [
                       for (final s in activeStats)
                         (weight: s.amount, color: s.color),
@@ -1754,23 +1873,35 @@ class _CategoryStructureCard extends StatelessWidget {
             ),
           ),
 
-          if (activeStats.isNotEmpty && activeTotal > 0) ...[
-            Divider(height: 1, thickness: 1, color: context.q.line),
-            for (var i = 0; i < activeStats.length; i++) ...[
-              _CategoryTableRow(
-                stat: activeStats[i],
-                grandTotal: activeTotal,
-                onTap: () => onCategoryTap(activeStats[i]),
-              ),
-              if (i < activeStats.length - 1)
-                Divider(
-                  height: 1,
-                  thickness: 1,
-                  indent: 66,
-                  color: context.q.line,
-                ),
-            ],
-          ],
+          AnimatedSize(
+            duration: (MediaQuery.maybeDisableAnimationsOf(context) ?? false)
+                ? Duration.zero
+                : QuestMotion.medium,
+            curve: QuestMotion.easeOut,
+            alignment: Alignment.topCenter,
+            child: (activeStats.isNotEmpty && activeTotal > 0)
+                ? Column(
+                    children: [
+                      Divider(height: 1, thickness: 1, color: context.q.line),
+                      for (var i = 0; i < activeStats.length; i++) ...[
+                        _CategoryTableRow(
+                          stat: activeStats[i],
+                          grandTotal: activeTotal,
+                          replayKey: showIncoming,
+                          onTap: () => onCategoryTap(activeStats[i]),
+                        ),
+                        if (i < activeStats.length - 1)
+                          Divider(
+                            height: 1,
+                            thickness: 1,
+                            indent: 66,
+                            color: context.q.line,
+                          ),
+                      ],
+                    ],
+                  )
+                : const SizedBox(width: double.infinity),
+          ),
         ],
       ),
     );
@@ -1782,12 +1913,13 @@ class _CategoryTableRow extends StatelessWidget {
     required this.stat,
     required this.grandTotal,
     required this.onTap,
+    this.replayKey,
   });
 
   final _CategoryStat stat;
   final int grandTotal;
   final VoidCallback onTap;
-
+  final Object? replayKey;
   @override
   Widget build(BuildContext context) {
     final share = grandTotal > 0 ? (stat.amount / grandTotal).clamp(0.0, 1.0) : 0.0;
@@ -1849,14 +1981,11 @@ class _CategoryTableRow extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
-                          child: LinearProgressIndicator(
-                            value: share,
-                            minHeight: 5,
-                            backgroundColor: context.q.surface2,
-                            valueColor: AlwaysStoppedAnimation<Color>(stat.color),
-                          ),
+                        child: QuestProgressBar(
+                          value: share,
+                          color: stat.color,
+                          minHeight: 5,
+                          replayKey: replayKey,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -2249,23 +2378,31 @@ class _SegmentedBar extends StatelessWidget {
     required this.height,
     required this.emptyColor,
     required this.segments,
+    this.replayKey,
   });
 
   final double height;
   final Color emptyColor;
   final List<({int weight, Color color})> segments;
+  final Object? replayKey;
 
   @override
   Widget build(BuildContext context) {
+    final reduced = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppRadius.pill),
       child: SizedBox(
         height: height,
         width: double.infinity,
-        child: CustomPaint(
-          painter: _SegmentedBarPainter(
-            emptyColor: emptyColor,
-            segments: segments,
+        child: QuestReplay(
+          duration: reduced ? Duration.zero : QuestMotion.grow,
+          replayKey: replayKey,
+          builder: (context, progress) => CustomPaint(
+            painter: _SegmentedBarPainter(
+              emptyColor: emptyColor,
+              segments: segments,
+              progress: progress,
+            ),
           ),
         ),
       ),
@@ -2277,20 +2414,22 @@ class _SegmentedBarPainter extends CustomPainter {
   const _SegmentedBarPainter({
     required this.emptyColor,
     required this.segments,
+    required this.progress,
   });
 
   final Color emptyColor;
   final List<({int weight, Color color})> segments;
-
+  final double progress;
   @override
   void paint(Canvas canvas, Size size) {
+    // Selalu gambar track latar terlebih dahulu agar progres 0→target terlihat jelas.
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = emptyColor,
+    );
     final nonZero = segments.where((s) => s.weight > 0).toList();
     final total = nonZero.fold<int>(0, (sum, s) => sum + s.weight);
-    if (nonZero.isEmpty || total <= 0) {
-      canvas.drawRect(
-        Offset.zero & size,
-        Paint()..color = emptyColor,
-      );
+    if (nonZero.isEmpty || total <= 0 || progress <= 0) {
       return;
     }
     const gap = 2.5;
@@ -2300,8 +2439,11 @@ class _SegmentedBarPainter extends CustomPainter {
     for (var i = 0; i < nonZero.length; i++) {
       final seg = nonZero[i];
       final w = i == nonZero.length - 1
-          ? math.max(0.0, size.width - x)
-          : avail * (seg.weight / total);
+          ? math.min(
+              math.max(0.0, size.width - x),
+              avail * (seg.weight / total) * progress,
+            )
+          : avail * (seg.weight / total) * progress;
       canvas.drawRect(
         Rect.fromLTWH(x, 0, w, size.height),
         Paint()..color = seg.color,
@@ -2312,6 +2454,7 @@ class _SegmentedBarPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SegmentedBarPainter oldDelegate) =>
+      oldDelegate.progress != progress ||
       oldDelegate.emptyColor != emptyColor ||
       oldDelegate.segments.length != segments.length ||
       [

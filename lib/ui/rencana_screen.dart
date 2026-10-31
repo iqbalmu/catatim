@@ -16,9 +16,12 @@ class RencanaScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: context.q.bg,
       appBar: AppBar(
-        title: Text(
-          'Anggaran',
-          style: context.qTitle(20),
+        title: QuestTabEnter(
+          index: 0,
+          child: Text(
+            'Anggaran',
+            style: context.qTitle(20),
+          ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,

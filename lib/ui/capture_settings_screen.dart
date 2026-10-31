@@ -155,6 +155,11 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
             ),
             children: [
               // ── 1. Status Izin Notifikasi Sistem ──
+              QuestEnter(
+                index: 0,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
               const QuestSectionHeader(title: 'Izin Sistem Android'),
               QuestCard(
                 child: Column(
@@ -231,9 +236,17 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                   ],
                 ),
               ),
+                  ],
+                ),
+              ),
               const SizedBox(height: Spacing.m),
 
               // ── 2. Bank & E-Wallet yang Dicatat Otomatis ──
+              QuestEnter(
+                index: 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
               const QuestSectionHeader(title: 'Bank & E-Wallet Didukung'),
               Text(
                 'Nyalakan bank yang kamu gunakan. Notifikasi dari bank yang aktif akan diproses menjadi draf konfirmasi di Beranda.',
@@ -294,9 +307,17 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                   ],
                 ),
               ),
+                  ],
+                ),
+              ),
               const SizedBox(height: Spacing.m),
 
               // ── 3. Ketahanan Latar Belakang (Baterai) ──
+              QuestEnter(
+                index: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
               const QuestSectionHeader(title: 'Ketahanan Latar Belakang'),
               QuestCard(
                 child: Column(
@@ -341,9 +362,17 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                   ],
                 ),
               ),
+                  ],
+                ),
+              ),
               const SizedBox(height: Spacing.m),
 
               // ── 4. Diagnostik / Baca Ulang ──
+              QuestEnter(
+                index: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
               const QuestSectionHeader(title: 'Diagnostik & Pemulihan'),
               QuestCard(
                 child: Column(
@@ -388,7 +417,13 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                   ],
                 ),
               ),
+                  ],
+                ),
+              ),
 
+              QuestEnter(
+                index: 4,
+                child:
               // ── 4b. Duplikat yang diabaikan dedup ──
               StreamBuilder<List<CaptureLog>>(
                 stream: widget.repository.watchIgnoredDuplicates(),
@@ -478,8 +513,12 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                   );
                 },
               ),
+              ),
               const SizedBox(height: Spacing.m),
 
+              QuestEnter(
+                index: 5,
+                child:
               // ── 5. Jaminan Privasi ──
               Container(
                 padding: const EdgeInsets.all(Spacing.m),
@@ -500,6 +539,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                     ),
                   ],
                 ),
+              ),
               ),
             ],
           );

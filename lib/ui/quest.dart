@@ -268,19 +268,24 @@ class QuestChip extends StatelessWidget {
       child: QuestPress(
         onTap: onTap,
         onLongPress: onLongPress,
-        child: Container(
+        child: AnimatedContainer(
+          duration: QuestMotion.fast,
+          curve: QuestMotion.easeOut,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: selected ? q.primary : q.surface2,
             borderRadius: BorderRadius.circular(AppRadius.pill),
           ),
-          child: Text(
-            label,
+          child: AnimatedDefaultTextStyle(
+            duration: QuestMotion.fast,
+            curve: QuestMotion.easeOut,
             style: TextStyle(
+              fontFamily: 'Nunito',
               fontWeight: FontWeight.w800,
               fontSize: 13,
               color: selected ? Colors.white : q.text,
             ),
+            child: Text(label),
           ),
         ),
       ),
@@ -652,16 +657,26 @@ class QuestBottomNav extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Badge(
-                  isLabelVisible: badges.contains(i),
-                  backgroundColor: context.q.bad,
-                  smallSize: 8,
-                  child: Icon(
-                    dest.icon,
-                    size: 21,
-                    color: selected
-                        ? context.q.primary
-                        : context.q.muted,
+                AnimatedSlide(
+                  duration: QuestMotion.medium,
+                  curve: QuestMotion.spring,
+                  offset: selected ? const Offset(0, -0.08) : Offset.zero,
+                  child: AnimatedScale(
+                    duration: QuestMotion.medium,
+                    curve: QuestMotion.spring,
+                    scale: selected ? 1.1 : 1.0,
+                    child: Badge(
+                      isLabelVisible: badges.contains(i),
+                      backgroundColor: context.q.bad,
+                      smallSize: 8,
+                      child: Icon(
+                        dest.icon,
+                        size: 21,
+                        color: selected
+                            ? context.q.primary
+                            : context.q.muted,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -711,10 +726,20 @@ class QuestBottomNav extends StatelessWidget {
               ),
             ],
           ),
-          child: Icon(
-            action.icon ?? Icons.add_rounded,
-            color: Colors.white,
-            size: 30,
+          child: AnimatedSwitcher(
+            duration: QuestMotion.medium,
+            switchInCurve: QuestMotion.spring,
+            switchOutCurve: QuestMotion.easeOut,
+            transitionBuilder: (child, anim) => ScaleTransition(
+              scale: anim,
+              child: FadeTransition(opacity: anim, child: child),
+            ),
+            child: Icon(
+              action.icon ?? Icons.add_rounded,
+              key: ValueKey(action.icon ?? Icons.add_rounded),
+              color: Colors.white,
+              size: 30,
+            ),
           ),
         ),
       ),
@@ -882,43 +907,31 @@ class QuestAmount extends StatelessWidget {
   }
 }
 
-/// Bar progres berbingkai; isi madu default, warna opsional.
+/// Bar progres berbingkai; tumbuh mulus dari 0 ke nilai akhir saat tampil
+/// maupun saat nilai berubah, selaras dengan [QuestProgressBar].
 class QuestBar extends StatelessWidget {
-  const QuestBar({super.key, required this.value, this.height = 12, this.color});
+  const QuestBar({
+    super.key,
+    required this.value,
+    this.height = 12,
+    this.color,
+    this.replayKey,
+  });
 
   final double value;
   final double height;
   final Color? color;
+  final Object? replayKey;
 
   @override
   Widget build(BuildContext context) {
     final q = context.q;
-    return Container(
-      height: height,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: q.surface2,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final w = constraints.maxWidth * value.clamp(0.0, 1.0);
-            if (w <= 1) return const SizedBox.shrink();
-            return Align(
-              alignment: Alignment.centerLeft,
-              child: AnimatedContainer(
-                duration: QuestMotion.medium,
-                curve: QuestMotion.easeOut,
-                width: w,
-                height: double.infinity,
-                color: color ?? q.primary,
-              ),
-            );
-          },
-        ),
-      ),
+    return QuestProgressBar(
+      value: value,
+      minHeight: height,
+      color: color ?? q.primary,
+      backgroundColor: q.surface2,
+      replayKey: replayKey,
     );
   }
 }
@@ -1044,6 +1057,12 @@ Future<T?> showQuestSheet<T>(
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: Colors.transparent,
+    sheetAnimationStyle: AnimationStyle(
+      duration: QuestMotion.sheet,
+      reverseDuration: QuestMotion.medium,
+      curve: QuestMotion.drawer,
+      reverseCurve: QuestMotion.easeOut,
+    ),
     builder: (context) => Container(
       decoration: BoxDecoration(
         color: context.q.surface,
@@ -1077,6 +1096,12 @@ Future<T?> showQuestDialog<T>(
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: Colors.transparent,
+    sheetAnimationStyle: AnimationStyle(
+      duration: QuestMotion.sheet,
+      reverseDuration: QuestMotion.medium,
+      curve: QuestMotion.drawer,
+      reverseCurve: QuestMotion.easeOut,
+    ),
     builder: (context) {
       final q = context.q;
       return Padding(

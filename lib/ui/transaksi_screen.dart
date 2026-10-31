@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../capture/pipeline.dart';
 import '../core/dates_id.dart';
@@ -51,9 +52,16 @@ class TransaksiScreen extends StatefulWidget {
 }
 
 class TransaksiScreenState extends State<TransaksiScreen> {
+  int _subViewRevision = 0;
+  int _filterRevision = 0;
+
   void _setBonView(bool show) {
     if (_showBonView != show) {
-      setState(() => _showBonView = show);
+      HapticFeedback.selectionClick();
+      setState(() {
+        _showBonView = show;
+        _subViewRevision++;
+      });
       widget.onBonViewChanged?.call(show);
     }
   }
@@ -93,11 +101,13 @@ class TransaksiScreenState extends State<TransaksiScreen> {
   }
 
   void _shiftMonth(int delta) {
+    HapticFeedback.selectionClick();
     setState(() {
       _selectedMonth = DateTime(
         _selectedMonth.year,
         _selectedMonth.month + delta,
       );
+      _filterRevision++;
     });
   }
 
@@ -145,7 +155,10 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                 initialMonth: _selectedMonth,
                 onChanged: (m) {
                   Navigator.pop(ctx);
-                  setState(() => _selectedMonth = m);
+                  setState(() {
+                    _selectedMonth = m;
+                    _filterRevision++;
+                  });
                 },
               ),
             ],
@@ -157,17 +170,23 @@ class TransaksiScreenState extends State<TransaksiScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final parentToken = QuestStage.ofOrNull(context)?.token ?? 0;
+    final effectiveToken = parentToken * 1000 + _subViewRevision;
+
     return Scaffold(
       backgroundColor: context.q.bg,
       body: SafeArea(
         bottom: false,
-        child: AnimatedSwitcher(
-          duration: QuestMotion.fast,
-          switchInCurve: QuestMotion.easeOut,
-          switchOutCurve: QuestMotion.easeOut,
-          child: KeyedSubtree(
-            key: ValueKey<bool>(_showBonView),
-            child: _showBonView ? _buildBonView() : _buildTransactionsView(),
+        child: QuestStage(
+          token: effectiveToken,
+          child: AnimatedSwitcher(
+            duration: QuestMotion.medium,
+            switchInCurve: QuestMotion.easeOut,
+            switchOutCurve: QuestMotion.easeOut,
+            child: KeyedSubtree(
+              key: ValueKey<bool>(_showBonView),
+              child: _showBonView ? _buildBonView() : _buildTransactionsView(),
+            ),
           ),
         ),
       ),
@@ -181,10 +200,12 @@ class TransaksiScreenState extends State<TransaksiScreen> {
     return Column(
       children: [
         // Top Header: Title (Kiri) + Month Selector (Tengah) + Bon Shortcut (Kanan)
-        Padding(
-          padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.m, Spacing.m, Spacing.xs),
-          child: Row(
-            children: [
+        QuestTabEnter(
+          index: 0,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.m, Spacing.m, Spacing.xs),
+            child: Row(
+              children: [
               Expanded(
                 child: Align(
                   alignment: Alignment.centerLeft,
@@ -213,12 +234,15 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                       onTap: _openMonthPicker,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-                        child: Text(
-                          idMonthYear(_selectedMonth),
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: context.q.text,
+                        child: QuestSwap(
+                          child: Text(
+                            idMonthYear(_selectedMonth),
+                            key: ValueKey(idMonthYear(_selectedMonth)),
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: context.q.text,
+                            ),
                           ),
                         ),
                       ),
@@ -303,10 +327,13 @@ class TransaksiScreenState extends State<TransaksiScreen> {
             ],
           ),
         ),
+        ),
         // Search Input
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: Spacing.xs),
-          child: Container(
+        QuestTabEnter(
+          index: 1,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: Spacing.xs),
+            child: Container(
             height: 42,
             decoration: BoxDecoration(
               color: context.q.surface,
@@ -338,33 +365,56 @@ class TransaksiScreenState extends State<TransaksiScreen> {
             ),
           ),
         ),
+        ),
 
         // Filter Pills Row
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: Spacing.xs),
-          physics: const BouncingScrollPhysics(),
-          child: Row(
-            children: [
-              // Direction Filter
-              _FilterChip(
-                label: 'Semua Arah',
-                selected: _selectedDirection == null,
-                onSelected: () => setState(() => _selectedDirection = null),
-              ),
-              const SizedBox(width: Spacing.xs),
-              _FilterChip(
-                label: 'Keluar (-)',
-                selected: _selectedDirection == Direction.outgoing,
-                onSelected: () => setState(() => _selectedDirection = Direction.outgoing),
-              ),
-              const SizedBox(width: Spacing.xs),
-              _FilterChip(
-                label: 'Masuk (+)',
-                selected: _selectedDirection == Direction.incoming,
-                onSelected: () => setState(() => _selectedDirection = Direction.incoming),
-              ),
-              const SizedBox(width: Spacing.s),
+        QuestTabEnter(
+          index: 2,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: Spacing.xs),
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: [
+                // Direction Filter
+                _FilterChip(
+                  label: 'Semua Arah',
+                  selected: _selectedDirection == null,
+                  onSelected: () {
+                    if (_selectedDirection == null) return;
+                    HapticFeedback.selectionClick();
+                    setState(() {
+                      _selectedDirection = null;
+                      _filterRevision++;
+                    });
+                  },
+                ),
+                const SizedBox(width: Spacing.xs),
+                _FilterChip(
+                  label: 'Keluar (-)',
+                  selected: _selectedDirection == Direction.outgoing,
+                  onSelected: () {
+                    if (_selectedDirection == Direction.outgoing) return;
+                    HapticFeedback.selectionClick();
+                    setState(() {
+                      _selectedDirection = Direction.outgoing;
+                      _filterRevision++;
+                    });
+                  },
+                ),
+                const SizedBox(width: Spacing.xs),
+                _FilterChip(
+                  label: 'Masuk (+)',
+                  selected: _selectedDirection == Direction.incoming,
+                  onSelected: () {
+                    if (_selectedDirection == Direction.incoming) return;
+                    HapticFeedback.selectionClick();
+                    setState(() {
+                      _selectedDirection = Direction.incoming;
+                      _filterRevision++;
+                    });
+                  },
+                ),
               Container(width: 1, height: 20, color: context.q.line),
               const SizedBox(width: Spacing.s),
 
@@ -379,14 +429,28 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                       _FilterChip(
                         label: 'Semua Akun',
                         selected: _selectedAccountId == null,
-                        onSelected: () => setState(() => _selectedAccountId = null),
+                        onSelected: () {
+                          if (_selectedAccountId == null) return;
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            _selectedAccountId = null;
+                            _filterRevision++;
+                          });
+                        },
                       ),
                       for (final acc in accounts) ...[
                         const SizedBox(width: Spacing.xs),
                         _FilterChip(
                           label: acc.name,
                           selected: _selectedAccountId == acc.id,
-                          onSelected: () => setState(() => _selectedAccountId = acc.id),
+                          onSelected: () {
+                            if (_selectedAccountId == acc.id) return;
+                            HapticFeedback.selectionClick();
+                            setState(() {
+                              _selectedAccountId = acc.id;
+                              _filterRevision++;
+                            });
+                          },
                         ),
                       ],
                     ],
@@ -395,6 +459,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
               ),
             ],
           ),
+        ),
         ),
         const SizedBox(height: Spacing.xs),
 
@@ -426,11 +491,15 @@ class TransaksiScreenState extends State<TransaksiScreen> {
               }).toList();
 
               if (filtered.isEmpty) {
-                return QuestEmpty(
-                  title: 'Tidak ada transaksi',
-                  hint: _searchQuery.isNotEmpty
-                      ? 'Coba kata kunci pencarian yang lain.'
-                      : 'Belum ada transaksi di bulan ${idMonthYear(_selectedMonth)}.',
+                return QuestTabEnter(
+                  index: 3,
+                  replayKey: _filterRevision,
+                  child: QuestEmpty(
+                    title: 'Tidak ada transaksi',
+                    hint: _searchQuery.isNotEmpty
+                        ? 'Coba kata kunci pencarian yang lain.'
+                        : 'Belum ada transaksi di bulan ${idMonthYear(_selectedMonth)}.',
+                  ),
                 );
               }
 
@@ -452,7 +521,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                       .where((item) => item.tx.direction == Direction.outgoing)
                       .fold<int>(0, (sum, item) => sum + item.tx.amount);
 
-                  return Column(
+                  final group = Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       TransactionDayHeader(
@@ -468,6 +537,12 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                         ),
                     ],
                   );
+                  if (i >= 8) return group;
+                  return QuestTabEnter(
+                    index: 3 + i,
+                    replayKey: _filterRevision,
+                    child: group,
+                  );
                 },
               );
             },
@@ -482,29 +557,32 @@ class TransaksiScreenState extends State<TransaksiScreen> {
     return Column(
       children: [
         // Sub-view Header
-        Padding(
-          padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.m, Spacing.m, Spacing.s),
-          child: Row(
-            children: [
-              IconButton(
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.arrow_back_rounded),
-                onPressed: () => _setBonView(false),
-              ),
-              const SizedBox(width: Spacing.xs),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Bon & Utang-Piutang', style: context.qTitle(18)),
-                    Text(
-                      'Pencatatan pinjam-meminjam dengan orang lain',
-                      style: context.qSmall(11.5),
-                    ),
-                  ],
+        QuestTabEnter(
+          index: 0,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.m, Spacing.m, Spacing.s),
+            child: Row(
+              children: [
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  onPressed: () => _setBonView(false),
                 ),
-              ),
-            ],
+                const SizedBox(width: Spacing.xs),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Bon & Utang-Piutang', style: context.qTitle(18)),
+                      Text(
+                        'Pencatatan pinjam-meminjam dengan orang lain',
+                        style: context.qSmall(11.5),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
 
@@ -525,8 +603,10 @@ class TransaksiScreenState extends State<TransaksiScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                    child: QuestTabEnter(
+                      index: 1,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                       decoration: BoxDecoration(
                         color: context.q.surface,
                         borderRadius: BorderRadius.circular(AppRadius.card),
@@ -561,13 +641,16 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
-                            child: Text(
-                              Money.format(piutangTotal),
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                                color: context.q.good,
-                                fontFeatures: const [FontFeature.tabularFigures()],
+                            child: QuestSwap(
+                              child: Text(
+                                Money.format(piutangTotal),
+                                key: ValueKey('piutang-$piutangTotal'),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  color: context.q.good,
+                                  fontFeatures: const [FontFeature.tabularFigures()],
+                                ),
                               ),
                             ),
                           ),
@@ -581,11 +664,14 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                       ),
                     ),
                   ),
+                  ),
                   const SizedBox(width: Spacing.s),
                   Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                      decoration: BoxDecoration(
+                    child: QuestTabEnter(
+                      index: 2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                        decoration: BoxDecoration(
                         color: context.q.surface,
                         borderRadius: BorderRadius.circular(AppRadius.card),
                         border: Border.all(color: context.q.line),
@@ -619,13 +705,16 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
-                            child: Text(
-                              Money.format(utangTotal),
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                                color: context.q.bad,
-                                fontFeatures: const [FontFeature.tabularFigures()],
+                            child: QuestSwap(
+                              child: Text(
+                                Money.format(utangTotal),
+                                key: ValueKey('utang-$utangTotal'),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  color: context.q.bad,
+                                  fontFeatures: const [FontFeature.tabularFigures()],
+                                ),
                               ),
                             ),
                           ),
@@ -639,6 +728,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                       ),
                     ),
                   ),
+                  ),
                 ],
               ),
             );
@@ -647,24 +737,28 @@ class TransaksiScreenState extends State<TransaksiScreen> {
         const SizedBox(height: Spacing.s),
 
         // Sub Tabs: [Belum Lunas] vs [Lunas] via QuestSegmented
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: Spacing.m),
-          child: QuestSegmented<int>(
-            selected: _bonSubTab,
-            onChanged: (val) {
-              setState(() => _bonSubTab = val);
-              if (_bonPageCtrl.hasClients) {
-                _bonPageCtrl.animateToPage(
-                  val,
-                  duration: QuestMotion.medium,
-                  curve: QuestMotion.easeOut,
-                );
-              }
-            },
-            options: const [
-              (value: 0, label: 'Belum Lunas', icon: null),
-              (value: 1, label: 'Lunas', icon: null),
-            ],
+        QuestTabEnter(
+          index: 3,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.m),
+            child: QuestSegmented<int>(
+              selected: _bonSubTab,
+              onChanged: (val) {
+                HapticFeedback.selectionClick();
+                setState(() => _bonSubTab = val);
+                if (_bonPageCtrl.hasClients) {
+                  _bonPageCtrl.animateToPage(
+                    val,
+                    duration: QuestMotion.medium,
+                    curve: QuestMotion.easeOut,
+                  );
+                }
+              },
+              options: const [
+                (value: 0, label: 'Belum Lunas', icon: null),
+                (value: 1, label: 'Lunas', icon: null),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: Spacing.s),
@@ -695,14 +789,16 @@ class TransaksiScreenState extends State<TransaksiScreen> {
 
   Widget _buildBonList(List<Bon> bons, {required bool isLunas, Key? key}) {
     if (bons.isEmpty) {
-      return QuestEmpty(
-        title: isLunas ? 'Belum ada riwayat bon lunas.' : 'Semua bon sudah lunas!',
-        hint: isLunas
-            ? 'Bon yang sudah dilunasi akan tercatat di sini.'
-            : 'Catat bon baru jika ada pinjam-meminjam uang.',
+      return QuestTabEnter(
+        index: 4,
+        child: QuestEmpty(
+          title: isLunas ? 'Belum ada riwayat bon lunas.' : 'Semua bon sudah lunas!',
+          hint: isLunas
+              ? 'Bon yang sudah dilunasi akan tercatat di sini.'
+              : 'Catat bon baru jika ada pinjam-meminjam uang.',
+        ),
       );
     }
-
     return ListView.builder(
       key: key,
       padding: EdgeInsets.fromLTRB(
@@ -715,7 +811,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
       itemBuilder: (context, i) {
         final bon = bons[i];
         final isPiutang = bon.direction == BonDirection.lent;
-        return Container(
+        final card = Container(
           margin: const EdgeInsets.only(bottom: Spacing.s),
           decoration: BoxDecoration(
             color: context.q.surface,
@@ -837,6 +933,11 @@ class TransaksiScreenState extends State<TransaksiScreen> {
             ),
           ),
         );
+        if (i >= 8) return card;
+        return QuestTabEnter(
+          index: 4 + i,
+          child: card,
+        );
       },
     );
   }
@@ -855,10 +956,11 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return QuestPress(
       onTap: onSelected,
-      borderRadius: BorderRadius.circular(AppRadius.pill),
-      child: Container(
+      child: AnimatedContainer(
+        duration: QuestMotion.fast,
+        curve: QuestMotion.easeOut,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: selected ? context.q.primary : context.q.surface,
@@ -867,13 +969,16 @@ class _FilterChip extends StatelessWidget {
             color: selected ? context.q.primary : context.q.line,
           ),
         ),
-        child: Text(
-          label,
+        child: AnimatedDefaultTextStyle(
+          duration: QuestMotion.fast,
+          curve: QuestMotion.easeOut,
           style: TextStyle(
+            fontFamily: 'Nunito',
             fontSize: 12,
             fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
             color: selected ? Colors.white : context.q.text,
           ),
+          child: Text(label),
         ),
       ),
     );

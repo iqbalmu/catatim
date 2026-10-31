@@ -80,35 +80,53 @@ class BankAccountsScreen extends StatelessWidget {
                       Spacing.m,
                     ),
                     children: [
-                      const QuestSectionHeader(title: 'Akunmu'),
+                      const QuestEnter(
+                        index: 0,
+                        child: QuestSectionHeader(title: 'Akunmu'),
+                      ),
                       if (accounts.isEmpty)
-                        QuestEmpty(
-                          title: 'Belum ada akun',
-                          hint: 'Yuk mulai — tambahkan dompet tunai, '
-                              'atau hubungkan bank dan e-walletmu.',
-                          actionLabel: 'Tambah akun',
-                          onAction: () => _openAddSheet(context),
+                        QuestEnter(
+                          index: 1,
+                          child: QuestEmpty(
+                            title: 'Belum ada akun',
+                            hint: 'Yuk mulai — tambahkan dompet tunai, '
+                                'atau hubungkan bank dan e-walletmu.',
+                            actionLabel: 'Tambah akun',
+                            onAction: () => _openAddSheet(context),
+                          ),
                         )
                       else
-                        for (final a in accounts) ...[
-                          _AccountTile(
-                            account: a,
-                            balance: balances[a.id] ?? a.openingBalance,
-                            connected: a.bankId != null &&
-                                connected.contains(a.bankId),
-                            onTap: () => _openDetail(context, a),
+                        for (var i = 0; i < accounts.length; i++) ...[
+                          QuestEnter(
+                            index: 1 + i,
+                            child: _AccountTile(
+                              account: accounts[i],
+                              balance: balances[accounts[i].id] ??
+                                  accounts[i].openingBalance,
+                              connected: accounts[i].bankId != null &&
+                                  connected.contains(accounts[i].bankId),
+                              onTap: () => _openDetail(context, accounts[i]),
+                            ),
                           ),
                           const SizedBox(height: Spacing.s),
                         ],
                       if (accounts.isNotEmpty) ...[
                         const SizedBox(height: Spacing.l),
-                        QuestButton(
-                          label: 'Tambah akun',
-                          icon: Icons.add_rounded,
-                          onPressed: () => _openAddSheet(context),
+                        QuestEnter(
+                          index: 1 + accounts.length,
+                          child: QuestButton(
+                            label: 'Tambah akun',
+                            icon: Icons.add_rounded,
+                            onPressed: () => _openAddSheet(context),
+                          ),
                         ),
                       ],
                       const SizedBox(height: Spacing.l),
+                      QuestEnter(
+                        index: 2 + accounts.length,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
                       const QuestSectionHeader(title: 'Kalau ada kendala'),
                       QuestCard(
                         padding: EdgeInsets.zero,
@@ -123,6 +141,9 @@ class BankAccountsScreen extends StatelessWidget {
                                   'di belakang',
                               onTap: pipeline.channel.openBatterySettings,
                             ),
+                          ],
+                        ),
+                      ),
                           ],
                         ),
                       ),

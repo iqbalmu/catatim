@@ -138,16 +138,21 @@ extension QuestTheme on BuildContext {
   }
 }
 
-/// Durasi + kurva baku. Interaksi sering (< tens/day) tanpa animasi;
-/// sisanya < 300ms, keluar selalu ease-out.
+/// Durasi + kurva baku. Interaksi sering: hanya umpan balik tipis
+/// (press scale, QuestSwap) — tanpa animasi penuh; sisanya < 300ms,
+/// keluar selalu ease-out.
 class QuestMotion {
   QuestMotion._();
 
   static const fast = Duration(milliseconds: 160);
   static const medium = Duration(milliseconds: 220);
   static const sheet = Duration(milliseconds: 320);
+  static const enter = Duration(milliseconds: 320);
+  static const staggerStep = Duration(milliseconds: 65);
+  static const grow = Duration(milliseconds: 620);
 
   static const easeOut = Cubic(0.23, 1, 0.32, 1);
+  static const progressCurve = Curves.easeOutCubic;
   static const drawer = Cubic(0.32, 0.72, 0, 1);
 
   /// Skala umpan-balik tekan, khas tombol game.
@@ -159,7 +164,7 @@ class QuestMotion {
 }
 
 /// Transisi pindah screen khas Quest: slide penuh dari kanan dengan
-/// parallax mundur pada screen di bawahnya — feel navigasi maju berdimensi;
+/// parallax mundur pada screen di bawahnya + bayangan tepi berdimensi;
 /// saat pop kembali meluncur keluar ke kanan.
 class QuestPageTransitionsBuilder extends PageTransitionsBuilder {
   const QuestPageTransitionsBuilder();
@@ -182,11 +187,538 @@ class QuestPageTransitionsBuilder extends PageTransitionsBuilder {
       end: const Offset(-0.25, 0),
     ).chain(CurveTween(curve: QuestMotion.easeOut));
 
+    final edgeShadow = DecoratedBoxTransition(
+      decoration: DecorationTween(
+        begin: const BoxDecoration(),
+        end: const BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x180F172A),
+              blurRadius: 24,
+              offset: Offset(-6, 0),
+            ),
+          ],
+        ),
+      ).animate(
+        CurvedAnimation(parent: animation, curve: QuestMotion.easeOut),
+      ),
+      child: child,
+    );
+
     return SlideTransition(
       position: secondaryAnimation.drive(parallaxOut),
       child: SlideTransition(
         position: animation.drive(slideIn),
-        child: child,
+        child: edgeShadow,
+      ),
+    );
+  }
+}
+
+/// Ganti nilai yang berubah karena aksi user (saldo, jumlah draf) dengan
+/// transisi tipis: fade + geser kecil naik, kurva dan durasi QuestMotion.
+/// Anak wajib berganti key agar animasi terpicu.
+class QuestSwap extends StatelessWidget {
+  const QuestSwap({super.key, required this.child, this.slide = true});
+
+  final Widget child;
+
+  /// False = fade saja (untuk elemen kecil agar layout tak bergoyang).
+  final bool slide;
+
+  @override
+  Widget build(BuildContext context) {
+    // Reduced motion: ganti langsung tanpa transisi (DESIGN.md Motion).
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
+      return child;
+    }
+    return AnimatedSwitcher(
+      duration: QuestMotion.medium,
+      switchInCurve: QuestMotion.easeOut,
+      switchOutCurve: QuestMotion.easeOut,
+      transitionBuilder: (child, anim) => FadeTransition(
+        opacity: anim,
+        child: slide
+            ? SlideTransition(
+                position: anim.drive(
+                  Tween(begin: const Offset(0, 0.18), end: Offset.zero),
+                ),
+                child: child,
+              )
+            : child,
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Konteks jeda bertingkat dari [QuestEnter] / [QuestTabEnter] agar bar progres
+/// dan grafik di dalam kartu baru mulai tumbuh dari 0 tepat saat kartunya
+/// tampil di layar, bukan selesai diam-diam ketika kartu masih transparan.
+class QuestEnterScope extends InheritedWidget {
+  const QuestEnterScope({
+    super.key,
+    required this.delayMs,
+    required super.child,
+  });
+
+  final int delayMs;
+
+  static int delayOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<QuestEnterScope>()?.delayMs ?? 0;
+
+  @override
+  bool updateShouldNotify(QuestEnterScope oldWidget) =>
+      delayMs != oldWidget.delayMs;
+}
+
+/// Isi halaman route / sheet yang menetas satu-per-satu secara bertingkat
+/// mengikuti urutan [index]: fade + geser naik halus setelah transisi layar
+/// mulai mendarat, termasuk untuk komponen yang dimuat lewat StreamBuilder.
+class QuestEnter extends StatefulWidget {
+  const QuestEnter({
+    super.key,
+    required this.child,
+    this.index = 0,
+    this.replayKey,
+  });
+
+  final Widget child;
+  final int index;
+  final Object? replayKey;
+
+  @override
+  State<QuestEnter> createState() => _QuestEnterState();
+}
+
+class _QuestEnterState extends State<QuestEnter>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this);
+  late Animation<double> _opacity;
+  late Animation<Offset> _slide;
+  int _delayMs = 0;
+
+  void _configureAndRun() {
+    _delayMs = 110 + (widget.index.clamp(0, 10) * QuestMotion.staggerStep.inMilliseconds);
+    final animMs = QuestMotion.enter.inMilliseconds;
+    final totalMs = _delayMs + animMs;
+    _controller.duration = Duration(milliseconds: totalMs);
+    _opacity = _controller.drive(
+      CurveTween(
+        curve: Interval(
+          (_delayMs / totalMs).clamp(0.0, 0.92),
+          1.0,
+          curve: QuestMotion.easeOut,
+        ),
+      ),
+    );
+    _slide = _opacity.drive(
+      Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero),
+    );
+    _controller.forward(from: 0);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _configureAndRun();
+  }
+
+  @override
+  void didUpdateWidget(covariant QuestEnter oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.replayKey != oldWidget.replayKey) {
+      _configureAndRun();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
+      return widget.child;
+    }
+    return QuestEnterScope(
+      delayMs: _delayMs,
+      child: FadeTransition(
+        opacity: _opacity,
+        child: SlideTransition(
+          position: _slide,
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+
+/// Bar progres yang TUMBUH mulus dari nol ke state terakhir saat tampil di
+/// panggung, terkoordinasi dengan kemunculan kartu induknya ([QuestEnterScope]).
+/// Saat nilai berubah karena aksi user, bar meluncur dari posisi terakhirnya;
+/// saat pindah tab / periode ([QuestStage] atau [replayKey]), tumbuh ulang dari 0.
+class QuestProgressBar extends StatefulWidget {
+  const QuestProgressBar({
+    super.key,
+    required this.value,
+    required this.color,
+    this.backgroundColor,
+    this.minHeight = 8,
+    this.replayKey,
+  });
+
+  final double value;
+  final Color color;
+  final Color? backgroundColor;
+  final double minHeight;
+  final Object? replayKey;
+
+  @override
+  State<QuestProgressBar> createState() => _QuestProgressBarState();
+}
+
+class _QuestProgressBarState extends State<QuestProgressBar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this);
+  double _begin = 0.0;
+  double _end = 0.0;
+  int _leadInMs = 0;
+  int _growMs = QuestMotion.grow.inMilliseconds;
+  int _seenToken = -1;
+  bool _initialized = false;
+
+  double get _currentValue {
+    final totalMs = _leadInMs + _growMs;
+    if (totalMs <= 0) return _end;
+    final raw = ((_controller.value * totalMs - _leadInMs) / _growMs).clamp(
+      0.0,
+      1.0,
+    );
+    final eased = QuestMotion.progressCurve.transform(raw);
+    return _begin + (_end - _begin) * eased;
+  }
+
+  void _startFromZero(int enterDelayMs) {
+    _begin = 0.0;
+    _end = widget.value.clamp(0.0, 1.0);
+    _leadInMs = enterDelayMs > 0 ? enterDelayMs + 110 : 36;
+    _growMs = QuestMotion.grow.inMilliseconds;
+    _controller.duration = Duration(milliseconds: _leadInMs + _growMs);
+    _controller.forward(from: 0);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final stage = QuestStage.ofOrNull(context);
+    final enterDelay = QuestEnterScope.delayOf(context);
+    if (!_initialized) {
+      _initialized = true;
+      _seenToken = stage?.token ?? -1;
+      _startFromZero(enterDelay);
+      return;
+    }
+    if (stage != null && _seenToken != stage.token) {
+      _seenToken = stage.token;
+      _startFromZero(enterDelay);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant QuestProgressBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final newTarget = widget.value.clamp(0.0, 1.0);
+    if (widget.replayKey != oldWidget.replayKey) {
+      _startFromZero(0);
+      return;
+    }
+    if ((newTarget - _end).abs() > 0.0001) {
+      if (_begin == 0.0 && _end == 0.0 && _controller.isAnimating) {
+        _end = newTarget;
+        final elapsedMs = _controller.value * (_leadInMs + _growMs);
+        if (elapsedMs > _leadInMs) {
+          _startFromZero(0);
+        }
+      } else {
+        _begin = _currentValue;
+        _end = newTarget;
+        _leadInMs = 0;
+        _growMs = QuestMotion.grow.inMilliseconds;
+        _controller.duration = Duration(milliseconds: _growMs);
+        _controller.forward(from: 0);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = widget.backgroundColor ?? context.q.surface2;
+    final reduced = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (reduced) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        child: Container(
+          height: widget.minHeight,
+          color: bg,
+          alignment: Alignment.centerLeft,
+          child: FractionallySizedBox(
+            widthFactor: widget.value.clamp(0.0, 1.0),
+            child: SizedBox(
+              height: widget.minHeight,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: widget.color,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final v = _currentValue.clamp(0.0, 1.0);
+          return Container(
+            height: widget.minHeight,
+            color: bg,
+            alignment: Alignment.centerLeft,
+            child: FractionallySizedBox(
+              widthFactor: v,
+              child: AnimatedContainer(
+                duration: QuestMotion.fast,
+                curve: QuestMotion.easeOut,
+                height: widget.minHeight,
+                decoration: BoxDecoration(
+                  color: widget.color,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Pengumuman panggung aktif per-tab / per-filter: [token] naik setiap kali
+/// panggung menjadi aktif atau filter periode berubah.
+class QuestStage extends InheritedWidget {
+  const QuestStage({super.key, required this.token, required super.child});
+
+  final int token;
+
+  /// Null bila di luar shell (route biasa / sheet).
+  static QuestStage? ofOrNull(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<QuestStage>();
+
+  @override
+  bool updateShouldNotify(QuestStage oldWidget) => token != oldWidget.token;
+}
+
+/// Menjalankan ulang animasi 0→1 setiap kali panggung ([QuestStage]) atau
+/// [replayKey] berganti TANPA menghancurkan State anak (tanpa remount ValueKey),
+/// serta menyelaraskan waktu mulai dengan [QuestEnterScope] induknya.
+class QuestReplay extends StatefulWidget {
+  const QuestReplay({
+    super.key,
+    required this.builder,
+    this.duration,
+    this.curve = QuestMotion.progressCurve,
+    this.replayKey,
+    this.syncWithEnter = true,
+  });
+
+  final Widget Function(BuildContext context, double t) builder;
+  final Duration? duration;
+  final Curve curve;
+  final Object? replayKey;
+  final bool syncWithEnter;
+
+  @override
+  State<QuestReplay> createState() => _QuestReplayState();
+}
+
+class _QuestReplayState extends State<QuestReplay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this);
+  int _seenToken = -1;
+  bool _initialized = false;
+  int _leadInMs = 0;
+  int _runMs = QuestMotion.grow.inMilliseconds;
+
+  void _restart({required int enterDelayMs}) {
+    final baseMs = (widget.duration ?? QuestMotion.grow).inMilliseconds;
+    if (baseMs <= 0) {
+      _leadInMs = 0;
+      _runMs = 0;
+      _controller.duration = Duration.zero;
+      _controller.value = 1.0;
+      return;
+    }
+    _leadInMs = widget.syncWithEnter && enterDelayMs > 0
+        ? enterDelayMs + 110
+        : (widget.syncWithEnter ? 36 : 0);
+    _runMs = baseMs;
+    _controller.duration = Duration(milliseconds: _leadInMs + _runMs);
+    _controller.forward(from: 0);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final stage = QuestStage.ofOrNull(context);
+    final enterDelay = QuestEnterScope.delayOf(context);
+    if (!_initialized) {
+      _initialized = true;
+      _seenToken = stage?.token ?? -1;
+      _restart(enterDelayMs: enterDelay);
+      return;
+    }
+    if (stage != null && _seenToken != stage.token) {
+      _seenToken = stage.token;
+      _restart(enterDelayMs: enterDelay);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant QuestReplay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.replayKey != oldWidget.replayKey) {
+      _restart(enterDelayMs: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduced = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final baseDuration = widget.duration ?? QuestMotion.grow;
+    if (reduced || baseDuration == Duration.zero) {
+      return widget.builder(context, 1.0);
+    }
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final totalMs = _leadInMs + _runMs;
+        if (totalMs <= 0) return widget.builder(context, 1.0);
+        final raw = ((_controller.value * totalMs - _leadInMs) / _runMs).clamp(
+          0.0,
+          1.0,
+        );
+        final t = widget.curve.transform(raw);
+        return widget.builder(context, t);
+      },
+    );
+  }
+}
+
+/// Isi tab yang menetas satu-per-satu secara bertingkat ([index]) setiap kali
+/// tab menjadi aktif: fade + geser naik halus tanpa me-reset State / Stream
+/// komponen di dalamnya, serta meneruskan [QuestEnterScope] ke bar/grafik anak.
+class QuestTabEnter extends StatefulWidget {
+  const QuestTabEnter({
+    super.key,
+    required this.child,
+    this.index = 0,
+    this.replayKey,
+  });
+
+  final Widget child;
+  final int index;
+  final Object? replayKey;
+
+  @override
+  State<QuestTabEnter> createState() => _QuestTabEnterState();
+}
+
+class _QuestTabEnterState extends State<QuestTabEnter>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this);
+  int _seenToken = -1;
+  bool _initialized = false;
+  int _delayMs = 0;
+  int _animMs = QuestMotion.enter.inMilliseconds;
+
+  void _restart() {
+    _delayMs =
+        widget.index.clamp(0, 10) * QuestMotion.staggerStep.inMilliseconds;
+    _animMs = QuestMotion.enter.inMilliseconds;
+    _controller.duration = Duration(milliseconds: _delayMs + _animMs);
+    _controller.forward(from: 0);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final stage = QuestStage.ofOrNull(context);
+    if (!_initialized) {
+      _initialized = true;
+      _seenToken = stage?.token ?? -1;
+      _restart();
+      return;
+    }
+    if (stage != null && _seenToken != stage.token) {
+      _seenToken = stage.token;
+      _restart();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant QuestTabEnter oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.replayKey != oldWidget.replayKey) {
+      _restart();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
+      return widget.child;
+    }
+    return QuestEnterScope(
+      delayMs: _delayMs,
+      child: AnimatedBuilder(
+        animation: _controller,
+        child: widget.child,
+        builder: (context, child) {
+          final totalMs = _delayMs + _animMs;
+          final raw = ((_controller.value * totalMs - _delayMs) / _animMs)
+              .clamp(0.0, 1.0);
+          final eased = QuestMotion.easeOut.transform(raw);
+          return Opacity(
+            opacity: eased,
+            child: Transform.translate(
+              offset: Offset(0, 16 * (1 - eased)),
+              child: child,
+            ),
+          );
+        },
       ),
     );
   }
@@ -225,6 +757,7 @@ class QuestSchemes {
         builders: {
           TargetPlatform.android: QuestPageTransitionsBuilder(),
           TargetPlatform.iOS: QuestPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: QuestPageTransitionsBuilder(),
           TargetPlatform.linux: QuestPageTransitionsBuilder(),
           TargetPlatform.macOS: QuestPageTransitionsBuilder(),
           TargetPlatform.windows: QuestPageTransitionsBuilder(),

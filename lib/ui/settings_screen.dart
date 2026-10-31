@@ -48,6 +48,11 @@ class SettingsScreen extends StatelessWidget {
         ),
         children: [
           // ── Seksi 1: Data & Rekening ──
+          QuestEnter(
+            index: 0,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
           const QuestSectionHeader(title: 'Data & Rekening'),
           QuestCard(
             padding: EdgeInsets.zero,
@@ -103,9 +108,17 @@ class SettingsScreen extends StatelessWidget {
               ],
             ),
           ),
+              ],
+            ),
+          ),
           const SizedBox(height: Spacing.m),
 
           // ── Seksi 2: Otomatisasi & Capture ──
+          QuestEnter(
+            index: 1,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
           const QuestSectionHeader(title: 'Otomatisasi & Capture'),
           QuestCard(
             padding: EdgeInsets.zero,
@@ -149,9 +162,17 @@ class SettingsScreen extends StatelessWidget {
               ],
             ),
           ),
+              ],
+            ),
+          ),
           const SizedBox(height: Spacing.m),
 
           // ── Seksi 3: Tentang Aplikasi ──
+          QuestEnter(
+            index: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
           const QuestSectionHeader(title: 'Tentang Bukuduit'),
           QuestCard(
             child: Column(
@@ -223,6 +244,9 @@ class SettingsScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+              ],
+            ),
+          ),
               ],
             ),
           ),

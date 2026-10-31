@@ -19,6 +19,12 @@ class GamificationSheet extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      sheetAnimationStyle: AnimationStyle(
+        duration: QuestMotion.sheet,
+        reverseDuration: QuestMotion.medium,
+        curve: QuestMotion.drawer,
+        reverseCurve: QuestMotion.easeOut,
+      ),
       builder: (_) => GamificationSheet(progress: progress),
     );
   }
@@ -107,37 +113,46 @@ class GamificationSheet extends StatelessWidget {
               padding: const EdgeInsets.all(Spacing.m),
               children: [
                 // 1. Panggung Maskot & Mood
-                MascotStage(
-                  mood: mood,
-                  size: 150,
-                  glow: SeedColors.honeyBright.withValues(alpha: 0.4),
-                  glowStrength: 0.7,
-                ),
-                const SizedBox(height: Spacing.s),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: Spacing.m,
-                    vertical: Spacing.s,
-                  ),
-                  decoration: BoxDecoration(
-                    color: SeedColors.primaryLight,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  child: Text(
-                    summary?.moodLine ?? 'Pochy memantau keuanganmu',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: context.q.primary,
-                    ),
-                    textAlign: TextAlign.center,
+                QuestEnter(
+                  index: 0,
+                  child: Column(
+                    children: [
+                      MascotStage(
+                        mood: mood,
+                        size: 150,
+                        glow: SeedColors.honeyBright.withValues(alpha: 0.4),
+                        glowStrength: 0.7,
+                      ),
+                      const SizedBox(height: Spacing.s),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: Spacing.m,
+                          vertical: Spacing.s,
+                        ),
+                        decoration: BoxDecoration(
+                          color: SeedColors.primaryLight,
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                        ),
+                        child: Text(
+                          summary?.moodLine ?? 'Pochy memantau keuanganmu',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: context.q.primary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: Spacing.m),
 
                 // 2. Disiplin Streak Card
-                Container(
-                  padding: const EdgeInsets.all(Spacing.m),
+                QuestEnter(
+                  index: 1,
+                  child: Container(
+                    padding: const EdgeInsets.all(Spacing.m),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [SeedColors.honey50, SeedColors.honey100],
@@ -200,12 +215,15 @@ class GamificationSheet extends StatelessWidget {
                     ],
                   ),
                 ),
+                ),
                 const SizedBox(height: Spacing.m),
 
                 // 3. Level & XP Saver Card
                 if (stats != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(Spacing.m),
+                  QuestEnter(
+                    index: 2,
+                    child: Container(
+                      padding: const EdgeInsets.all(Spacing.m),
                     decoration: BoxDecoration(
                       color: context.q.surface,
                       borderRadius: BorderRadius.circular(AppRadius.card),
@@ -261,14 +279,10 @@ class GamificationSheet extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: Spacing.s),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
-                          child: LinearProgressIndicator(
-                            value: stats.progress.clamp(0.0, 1.0),
-                            minHeight: 8,
-                            backgroundColor: context.q.surface2,
-                            valueColor: AlwaysStoppedAnimation<Color>(context.q.primary),
-                          ),
+                        QuestProgressBar(
+                          value: stats.progress.clamp(0.0, 1.0),
+                          color: context.q.primary,
+                          backgroundColor: context.q.surface2,
                         ),
                         const SizedBox(height: Spacing.xs),
                         Text(
@@ -278,35 +292,48 @@ class GamificationSheet extends StatelessWidget {
                       ],
                     ),
                   ),
+                  ),
                   const SizedBox(height: Spacing.m),
 
                   // 4. Lencana Disiplin Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Lencanamu',
-                        style: context.qTitle(15),
-                      ),
-                      Text(
-                        '${stats.badges.where((b) => b.unlocked).length} dari ${stats.badges.length} Terbuka',
-                        style: context.qSmall(12),
-                      ),
-                    ],
+                  QuestEnter(
+                    index: 3,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Lencanamu',
+                          style: context.qTitle(15),
+                        ),
+                        Text(
+                          '${stats.badges.where((b) => b.unlocked).length} dari ${stats.badges.length} Terbuka',
+                          style: context.qSmall(12),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: Spacing.s),
-                  ...stats.badges.map((badge) => _BadgeTile(badge: badge)),
+                  for (var i = 0; i < stats.badges.length; i++)
+                    QuestEnter(
+                      index: 4 + i,
+                      child: _BadgeTile(badge: stats.badges[i]),
+                    ),
                   const SizedBox(height: Spacing.m),
                 ],
 
                 // 5. Jejak Disiplin Bulan Ini
                 if (summary?.disciplineMonth != null && summary!.disciplineMonth.isNotEmpty) ...[
-                  Text(
-                    'Bulan Ini (${idMonthsShort[DateTime.now().month - 1]})',
-                    style: context.qTitle(15),
-                  ),
-                  const SizedBox(height: Spacing.s),
-                  Container(
+                  QuestEnter(
+                    index: stats != null ? 4 + stats.badges.length : 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Bulan Ini (${idMonthsShort[DateTime.now().month - 1]})',
+                          style: context.qTitle(15),
+                        ),
+                        const SizedBox(height: Spacing.s),
+                        Container(
                     padding: const EdgeInsets.all(Spacing.m),
                     decoration: BoxDecoration(
                       color: context.q.surface,
@@ -351,6 +378,9 @@ class GamificationSheet extends StatelessWidget {
                           ),
                         );
                       }).toList(),
+                    ),
+                  ),
+                      ],
                     ),
                   ),
                 ],

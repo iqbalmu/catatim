@@ -66,21 +66,54 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   int _tab = 0;
+
+  /// Token panggung per-tab: hanya tab TUJUAN yang dinaikkan saat berpindah
+  /// agar komponen di tab aktif menetas satu-per-satu & bar tumbuh dari 0.
+  final List<int> _tabTokens = [0, 0, 0, 0];
   bool _inBonView = false;
 
   /// Kunci layar Transaksi untuk mengelola sub-tampilan Bon & tombol Back.
   final _transaksiKey = GlobalKey<TransaksiScreenState>();
-  void _openTransaksi() => setState(() => _tab = 1);
-  void _openAnggaran() => setState(() => _tab = 2);
-  void _openBon() {
+
+  void _switchTab(int target, {bool openBon = false}) {
+    if (target == _tab) {
+      if (target == 1 && !openBon && _inBonView) {
+        _transaksiKey.currentState?.handleBack();
+      } else if (target == 1 && openBon && !_inBonView) {
+        setState(() => _inBonView = true);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _transaksiKey.currentState?.showBon();
+        });
+      }
+      return;
+    }
+    HapticFeedback.selectionClick();
     setState(() {
-      _tab = 1;
-      _inBonView = true;
+      _tab = target;
+      _tabTokens[target]++;
+      if (target == 1 && openBon) {
+        _inBonView = true;
+      } else if (target != 1 && _inBonView) {
+        _inBonView = false;
+        _transaksiKey.currentState?.handleBack();
+      }
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _transaksiKey.currentState?.showBon();
-    });
+    if (target == 1 && openBon) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _transaksiKey.currentState?.showBon();
+      });
+    }
+    if (target == 0) {
+      _refreshTimer?.cancel();
+      _refreshTimer = Timer(_refreshSettle, () {
+        if (mounted) widget.progress.refresh();
+      });
+    }
   }
+
+  void _openTransaksi() => _switchTab(1);
+  void _openAnggaran() => _switchTab(2);
+  void _openBon() => _switchTab(1, openBon: true);
   /// Aksi tombol + tengah navbar: Langsung catat transaksi 1-tap.
   void _primaryAction() {
     HapticFeedback.lightImpact();
@@ -119,28 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _onTabChanged(int i) {
-    if (i == _tab) {
-      // Tap pada tab aktif: bila di sub-tampilan Bon, kembali ke Transaksi.
-      if (i == 1 && _inBonView) {
-        _transaksiKey.currentState?.handleBack();
-      }
-      return;
-    }
-    setState(() {
-      _tab = i;
-      if (i != 1 && _inBonView) {
-        _inBonView = false;
-        _transaksiKey.currentState?.handleBack();
-      }
-    });
-    if (i == 0) {
-      _refreshTimer?.cancel();
-      _refreshTimer = Timer(_refreshSettle, () {
-        if (mounted) widget.progress.refresh();
-      });
-    }
-  }
+  void _onTabChanged(int i) => _switchTab(i);
 
   @override
   Widget build(BuildContext context) {
@@ -152,47 +164,60 @@ class _HomeScreenState extends State<HomeScreen> {
           final handled = _transaksiKey.currentState?.handleBack() ?? false;
           if (handled) return;
         }
-        if (_tab != 0) setState(() => _tab = 0);
+        if (_tab != 0) _switchTab(0);
       },
       child: Scaffold(
         backgroundColor: context.q.bg,
         extendBody: true,
-        body: _DirectionalTabView(
+        body: IndexedStack(
           index: _tab,
           children: [
-            TickerMode(
-              enabled: _tab == 0,
-              child: _BerandaTab(
-                repository: widget.repository,
-                pipeline: widget.pipeline,
-                progress: widget.progress,
-                ruleSet: widget.ruleSet,
-                onOpenTransaksi: _openTransaksi,
-                onOpenAnggaran: _openAnggaran,
-                onOpenBon: _openBon,
+            QuestStage(
+              token: _tabTokens[0],
+              child: TickerMode(
+                enabled: _tab == 0,
+                child: _BerandaTab(
+                  repository: widget.repository,
+                  pipeline: widget.pipeline,
+                  progress: widget.progress,
+                  ruleSet: widget.ruleSet,
+                  onOpenTransaksi: _openTransaksi,
+                  onOpenAnggaran: _openAnggaran,
+                  onOpenBon: _openBon,
+                ),
               ),
             ),
-            TickerMode(
-              enabled: _tab == 1,
-              child: TransaksiScreen(
-                key: _transaksiKey,
-                repository: widget.repository,
-                progress: widget.progress,
-                onBonViewChanged: (inBon) => setState(() => _inBonView = inBon),
+            QuestStage(
+              token: _tabTokens[1],
+              child: TickerMode(
+                enabled: _tab == 1,
+                child: TransaksiScreen(
+                  key: _transaksiKey,
+                  repository: widget.repository,
+                  progress: widget.progress,
+                  onBonViewChanged: (inBon) =>
+                      setState(() => _inBonView = inBon),
+                ),
               ),
             ),
-            TickerMode(
-              enabled: _tab == 2,
-              child: RencanaScreen(
-                repository: widget.repository,
-                progress: widget.progress,
+            QuestStage(
+              token: _tabTokens[2],
+              child: TickerMode(
+                enabled: _tab == 2,
+                child: RencanaScreen(
+                  repository: widget.repository,
+                  progress: widget.progress,
+                ),
               ),
             ),
-            TickerMode(
-              enabled: _tab == 3,
-              child: LaporanScreen(
-                repository: widget.repository,
-                progress: widget.progress,
+            QuestStage(
+              token: _tabTokens[3],
+              child: TickerMode(
+                enabled: _tab == 3,
+                child: LaporanScreen(
+                  repository: widget.repository,
+                  progress: widget.progress,
+                ),
               ),
             ),
           ],
@@ -213,158 +238,6 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
       ),
-    );
-  }
-}
-
-/// Isi tab dengan slide berarah mengikuti urutan menu di navbar: pindah
-/// ke tab di kanan (indeks lebih besar) meluncur masuk dari kanan, ke
-/// tab di kiri masuk dari kiri. Berlaku untuk semua tab, termasuk
-/// deep-link dan tombol back — karena semua lewat indeks tab yang sama.
-///
-/// Semua anak tetap hidup seperti IndexedStack (scroll dan state tidak
-/// hilang): tab lama diam di bawah, tab baru yang hidup meluncur masuk
-/// di atasnya. Tanpa bekuan citra — halaman dipindah hidup-hidup lewat
-/// GlobalKey sehingga tidak tergantung baca piksel GPU.
-class _DirectionalTabView extends StatefulWidget {
-  const _DirectionalTabView({required this.index, required this.children});
-
-  /// Indeks tab yang harus tampil.
-  final int index;
-
-  /// Keempat tab.
-  final List<Widget> children;
-
-  @override
-  State<_DirectionalTabView> createState() => _DirectionalTabViewState();
-}
-
-class _DirectionalTabViewState extends State<_DirectionalTabView>
-    with SingleTickerProviderStateMixin {
-  static const _rest = AlwaysStoppedAnimation<Offset>(Offset.zero);
-
-  /// Kunci stabil per posisi: state tiap tab bertahan utuh di pohon widget
-  /// baik saat diam maupun saat terbang transisi.
-  late final List<GlobalKey> _pageKeys = List<GlobalKey>.generate(
-    widget.children.length,
-    (_) => GlobalKey(),
-  );
-
-  late final _slideController = AnimationController(
-    vsync: this,
-    duration: QuestMotion.medium,
-  );
-
-  late final _curvedAnimation = CurvedAnimation(
-    parent: _slideController,
-    curve: QuestMotion.easeOut,
-  );
-
-  /// Indeks yang tampil saat diam.
-  var _shown = 0;
-
-  /// Penerbangan berjalan (dari → ke); null saat diam.
-  ({int from, int to})? _flight;
-
-  Animation<Offset> _outgoingSlide = _rest;
-  Animation<Offset> _incomingSlide = _rest;
-
-  @override
-  void initState() {
-    super.initState();
-    _shown = widget.index;
-    _slideController.addStatusListener(_onSlideStatus);
-  }
-
-  @override
-  void dispose() {
-    _curvedAnimation.dispose();
-    _slideController.dispose();
-    super.dispose();
-  }
-
-  void _onSlideStatus(AnimationStatus status) {
-    // Mendarat: kembali ke IndexedStack semua-anak-tetap-hidup.
-    if (status == AnimationStatus.completed && mounted) {
-      setState(() {
-        final flight = _flight;
-        if (flight != null) _shown = flight.to;
-        _flight = null;
-        _outgoingSlide = _rest;
-        _incomingSlide = _rest;
-      });
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _DirectionalTabView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.index != oldWidget.index) {
-      final target = widget.index;
-      final from = _flight?.to ?? _shown;
-      if (target != from && target >= 0 && target < widget.children.length) {
-        _startFlight(from: from, to: target);
-      }
-    }
-  }
-
-  void _startFlight({required int from, required int to}) {
-    if (to == from || to < 0 || to >= widget.children.length) return;
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _shown = to;
-      _outgoingSlide = _rest;
-      _incomingSlide = _rest;
-      return;
-    }
-    final isForward = to > from;
-    _flight = (from: from, to: to);
-    _outgoingSlide = Tween<Offset>(
-      begin: Offset.zero,
-      end: Offset(isForward ? -1.0 : 1.0, 0),
-    ).animate(_curvedAnimation);
-    _incomingSlide = Tween<Offset>(
-      begin: Offset(isForward ? 1.0 : -1.0, 0),
-      end: Offset.zero,
-    ).animate(_curvedAnimation);
-    _slideController.forward(from: 0);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final pages = [
-      for (var i = 0; i < widget.children.length; i++)
-        KeyedSubtree(key: _pageKeys[i], child: widget.children[i]),
-    ];
-    final flight = _flight;
-    if (flight == null) {
-      return IndexedStack(index: _shown, children: pages);
-    }
-    // Tab lama diam di bawah (TickerMode dari parent mematikannya),
-    // tab baru yang hidup meluncur masuk di atasnya dengan bayangan tepi lembut.
-    // Tab tidak aktif lainnya tetap di pohon widget lewat Offstage agar state/scroll
-    // tidak pernah di-dispose.
-    return Stack(
-      clipBehavior: Clip.hardEdge,
-      children: [
-        for (var i = 0; i < widget.children.length; i++)
-          if (i != flight.from && i != flight.to)
-            Offstage(
-              offstage: true,
-              child: pages[i],
-            ),
-        RepaintBoundary(
-          child: SlideTransition(
-            position: _outgoingSlide,
-            child: pages[flight.from],
-          ),
-        ),
-        RepaintBoundary(
-          child: SlideTransition(
-            position: _incomingSlide,
-            child: pages[flight.to],
-          ),
-        ),
-      ],
     );
   }
 }
@@ -443,31 +316,43 @@ class _BerandaTabState extends State<_BerandaTab> {
             bottom: Spacing.m + MediaQuery.paddingOf(context).bottom,
           ),
           children: [
-            HomeTopBar(
-              progress: widget.progress,
-              repository: widget.repository,
-              pipeline: widget.pipeline,
-              ruleSet: widget.ruleSet,
-              onOpenAnggaran: widget.onOpenAnggaran,
-              onOpenBon: widget.onOpenBon,
+            QuestTabEnter(
+              index: 0,
+              child: HomeTopBar(
+                progress: widget.progress,
+                repository: widget.repository,
+                pipeline: widget.pipeline,
+                ruleSet: widget.ruleSet,
+                onOpenAnggaran: widget.onOpenAnggaran,
+                onOpenBon: widget.onOpenBon,
+              ),
             ),
-            DraftAttentionBanner(
-              repository: widget.repository,
-              ruleSet: widget.ruleSet,
-              progress: widget.progress,
-              pipeline: widget.pipeline,
-              onOpenAnggaran: widget.onOpenAnggaran,
-              onOpenBon: widget.onOpenBon,
+            QuestTabEnter(
+              index: 1,
+              child: DraftAttentionBanner(
+                repository: widget.repository,
+                ruleSet: widget.ruleSet,
+                progress: widget.progress,
+                pipeline: widget.pipeline,
+                onOpenAnggaran: widget.onOpenAnggaran,
+                onOpenBon: widget.onOpenBon,
+              ),
             ),
-            TotalBalanceCard(
-              repository: widget.repository,
-              pipeline: widget.pipeline,
-              ruleSet: widget.ruleSet,
-              progress: widget.progress,
+            QuestTabEnter(
+              index: 1,
+              child: TotalBalanceCard(
+                repository: widget.repository,
+                pipeline: widget.pipeline,
+                ruleSet: widget.ruleSet,
+                progress: widget.progress,
+              ),
             ),
-            BudgetSummaryCard(
-              progress: widget.progress,
-              onTap: widget.onOpenAnggaran,
+            QuestTabEnter(
+              index: 2,
+              child: BudgetSummaryCard(
+                progress: widget.progress,
+                onTap: widget.onOpenAnggaran,
+              ),
             ),
             RecentTransactionsCard(
               repository: widget.repository,

@@ -242,18 +242,37 @@ class DraftAttentionBanner extends StatelessWidget {
       stream: repository.watchDrafts(),
       builder: (context, snapshot) {
         final drafts = snapshot.data ?? const [];
-        if (drafts.isEmpty) return const SizedBox.shrink();
-
-        final draft = drafts.first;
-        final isIncoming = draft.direction == Direction.incoming;
-        final bank = _bankName(draft.bankId);
-        final party = (draft.counterparty != null && draft.counterparty!.trim().isNotEmpty)
-            ? draft.counterparty!.trim()
-            : null;
-
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.s, Spacing.m, 0),
-          child: QuestCard(
+        return AnimatedSize(
+          duration: (MediaQuery.maybeDisableAnimationsOf(context) ?? false)
+              ? Duration.zero
+              : QuestMotion.medium,
+          curve: QuestMotion.easeOut,
+          alignment: Alignment.topCenter,
+          child: QuestSwap(
+            child: drafts.isEmpty
+                ? const SizedBox(
+                    key: ValueKey('draft-banner-empty'),
+                    width: double.infinity,
+                  )
+                : Builder(
+                    builder: (context) {
+                      final draft = drafts.first;
+                      final isIncoming = draft.direction == Direction.incoming;
+                      final bank = _bankName(draft.bankId);
+                      final party =
+                          (draft.counterparty != null &&
+                              draft.counterparty!.trim().isNotEmpty)
+                          ? draft.counterparty!.trim()
+                          : null;
+                      return Padding(
+                    key: const ValueKey('draft-banner-on'),
+                    padding: const EdgeInsets.fromLTRB(
+                      Spacing.m,
+                      Spacing.s,
+                      Spacing.m,
+                      0,
+                    ),
+                    child: QuestCard(
             color: q.primaryLight,
             border: Border.all(color: q.primary.withValues(alpha: 0.2)),
             shadow: null,
@@ -424,6 +443,10 @@ class DraftAttentionBanner extends StatelessWidget {
               ],
             ),
           ),
+                      );
+                    },
+                  ),
+                  ),
         );
       },
     );
@@ -486,12 +509,16 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                           visualDensity: VisualDensity.compact,
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
-                          icon: Icon(
-                            _obscured
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            size: 20,
-                            color: q.muted,
+                          icon: QuestSwap(
+                            slide: false,
+                            child: Icon(
+                              _obscured
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                              key: ValueKey(_obscured),
+                              size: 20,
+                              color: q.muted,
+                            ),
                           ),
                           onPressed: () => setState(() => _obscured = !_obscured),
                         ),
@@ -503,17 +530,30 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
-                      child: Text(
-                        _obscured ? '••••••••' : Money.format(total),
-                        style: context.qDisplay(34),
+                      child: QuestSwap(
+                        child: Text(
+                          _obscured ? '••••••••' : Money.format(total),
+                          key: ValueKey(
+                            _obscured ? 'saldo-hidden' : Money.format(total),
+                          ),
+                          style: context.qDisplay(34),
+                        ),
                       ),
                     ),
                     const SizedBox(height: Spacing.xxs),
-                    Text(
-                      _obscured
-                          ? 'Saldo disembunyikan'
-                          : '${accounts.length} akun terdaftar',
-                      style: context.qSmall(12).copyWith(color: q.muted),
+                    QuestSwap(
+                      slide: false,
+                      child: Text(
+                        _obscured
+                            ? 'Saldo disembunyikan'
+                            : '${accounts.length} akun terdaftar',
+                        key: ValueKey(
+                          _obscured
+                              ? 'subtitle-hidden'
+                              : 'subtitle-${accounts.length}',
+                        ),
+                        style: context.qSmall(12).copyWith(color: q.muted),
+                      ),
                     ),
 
                     const SizedBox(height: Spacing.m),
@@ -648,13 +688,19 @@ class _AccountChip extends StatelessWidget {
                       color: q.text,
                     ),
                   ),
-                  Text(
-                    obscured ? '••••••' : Money.format(balance),
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: q.muted,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                  QuestSwap(
+                    slide: false,
+                    child: Text(
+                      obscured ? '••••••' : Money.format(balance),
+                      key: ValueKey(
+                        obscured ? 'chip-hidden' : Money.format(balance),
+                      ),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: q.muted,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
                     ),
                   ),
                 ],
@@ -747,112 +793,140 @@ class BudgetSummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: Spacing.m),
 
-                if (!hasBudget) ...[
-                  Text(
-                    'Batas anggaran bulanan belum diatur.',
-                    style: context.qBody(13),
-                  ),
-                  const SizedBox(height: Spacing.xxs),
-                  Text(
-                    'Tap untuk mengatur batas pengeluaran agar keuangan terkontrol.',
-                    style: context.qSmall(11.5).copyWith(color: q.muted),
-                  ),
-                ] else ...[
-                  // Numbers & Percentage
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Expanded(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: RichText(
-                            text: TextSpan(
+                AnimatedSize(
+                  duration:
+                      (MediaQuery.maybeDisableAnimationsOf(context) ?? false)
+                      ? Duration.zero
+                      : QuestMotion.medium,
+                  curve: QuestMotion.easeOut,
+                  alignment: Alignment.topCenter,
+                  child: !hasBudget
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Batas anggaran bulanan belum diatur.',
+                              style: context.qBody(13),
+                            ),
+                            const SizedBox(height: Spacing.xxs),
+                            Text(
+                              'Tap untuk mengatur batas pengeluaran agar keuangan terkontrol.',
+                              style: context.qSmall(11.5).copyWith(color: q.muted),
+                            ),
+                          ],
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Numbers & Percentage
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
                               children: [
-                                TextSpan(
-                                  text: 'Terpakai ',
-                                  style: context.qSmall(12),
-                                ),
-                                TextSpan(
-                                  text: Money.format(used),
-                                  style: TextStyle(
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.w800,
-                                    color: q.text,
-                                    fontFeatures: const [FontFeature.tabularFigures()],
+                                Expanded(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: RichText(
+                                      text: TextSpan(
+                                        children: [
+                                          TextSpan(
+                                            text: 'Terpakai ',
+                                            style: context.qSmall(12),
+                                          ),
+                                          TextSpan(
+                                            text: Money.format(used),
+                                            style: TextStyle(
+                                              fontSize: 14.5,
+                                              fontWeight: FontWeight.w800,
+                                              color: q.text,
+                                              fontFeatures: const [
+                                                FontFeature.tabularFigures(),
+                                              ],
+                                            ),
+                                          ),
+                                          TextSpan(
+                                            text: ' dari ${Money.format(limit)}',
+                                            style: context.qSmall(12),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                TextSpan(
-                                  text: ' dari ${Money.format(limit)}',
-                                  style: context.qSmall(12),
+                                const SizedBox(width: Spacing.s),
+                                QuestReplay(
+                                  builder: (context, t) => Text(
+                                    '${((used * 100 / limit) * t).round()}%',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w900,
+                                      color: progressColor,
+                                      fontFeatures: const [
+                                        FontFeature.tabularFigures(),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: Spacing.s),
-                      Text(
-                        '${(used * 100 / limit).round()}%',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                          color: progressColor,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: Spacing.s),
+                            const SizedBox(height: Spacing.s),
 
-                  // Progress Bar
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                    child: LinearProgressIndicator(
-                      value: fraction,
-                      minHeight: 8,
-                      backgroundColor: q.surface2,
-                      valueColor: AlwaysStoppedAnimation<Color>(progressColor),
-                    ),
-                  ),
-                  const SizedBox(height: Spacing.s),
+                            // Progress Bar — tumbuh dari nol saat tampil.
+                            QuestProgressBar(
+                              value: fraction,
+                              color: progressColor,
+                              backgroundColor: q.surface2,
+                            ),
+                            const SizedBox(height: Spacing.s),
 
-                  // Single Clean Summary Line
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: isOver ? SeedColors.outgoingTint : SeedColors.incomingTint,
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                            // Single Clean Summary Line
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isOver
+                                        ? SeedColors.outgoingTint
+                                        : SeedColors.incomingTint,
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.pill,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    isOver
+                                        ? 'Over ${Money.format(used - limit)}'
+                                        : 'Sisa ${Money.format(limit - used)}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: isOver ? q.bad : q.good,
+                                    ),
+                                  ),
+                                ),
+                                if (pace?.safeToSpend != null &&
+                                    pace!.safeToSpend! > 0) ...[
+                                  const SizedBox(width: Spacing.s),
+                                  Expanded(
+                                    child: Text(
+                                      '· Aman ~${Money.format(pace.safeToSpend!)} / hari',
+                                      style: context
+                                          .qSmall(11.5)
+                                          .copyWith(color: q.muted),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
                         ),
-                        child: Text(
-                          isOver
-                              ? 'Over ${Money.format(used - limit)}'
-                              : 'Sisa ${Money.format(limit - used)}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: isOver ? q.bad : q.good,
-                          ),
-                        ),
-                      ),
-                      if (pace?.safeToSpend != null && pace!.safeToSpend! > 0) ...[
-                        const SizedBox(width: Spacing.s),
-                        Expanded(
-                          child: Text(
-                            '· Aman ~${Money.format(pace.safeToSpend!)} / hari',
-                            style: context.qSmall(11.5).copyWith(color: q.muted),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
+                ),
               ],
             ),
           );
@@ -884,29 +958,35 @@ class RecentTransactionsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Transaksi Terbaru',
-                  style: context.qTitle(16),
-                ),
-              ),
-              QuestPress(
-                onTap: onSeeAll,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          QuestTabEnter(
+            index: 3,
+            child: Row(
+              children: [
+                Expanded(
                   child: Text(
-                    'Lihat Semua →',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: q.primary,
+                    'Transaksi Terbaru',
+                    style: context.qTitle(16),
+                  ),
+                ),
+                QuestPress(
+                  onTap: onSeeAll,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 4,
+                    ),
+                    child: Text(
+                      'Lihat Semua →',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: q.primary,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: Spacing.s),
 
@@ -915,19 +995,25 @@ class RecentTransactionsCard extends StatelessWidget {
             builder: (context, snapshot) {
               final items = snapshot.data ?? const [];
               if (items.isEmpty) {
-                return QuestEmpty(
-                  title: 'Belum ada transaksi',
-                  hint: 'Tap tombol (+) di bawah untuk mulai mencatat.',
+                return QuestTabEnter(
+                  index: 4,
+                  child: QuestEmpty(
+                    title: 'Belum ada transaksi',
+                    hint: 'Tap tombol (+) di bawah untuk mulai mencatat.',
+                  ),
                 );
               }
 
               return Column(
                 children: [
-                  for (final item in items)
-                    TransactionTile(
-                      item: item,
-                      repository: repository,
-                      progress: progress,
+                  for (var i = 0; i < items.length; i++)
+                    QuestTabEnter(
+                      index: 4 + i,
+                      child: TransactionTile(
+                        item: items[i],
+                        repository: repository,
+                        progress: progress,
+                      ),
                     ),
                 ],
               );

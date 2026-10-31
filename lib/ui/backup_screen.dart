@@ -264,6 +264,9 @@ class _BackupScreenState extends State<BackupScreen> {
               padding: EdgeInsets.only(bottom: Spacing.m),
               child: LinearProgressIndicator(),
             ),
+          QuestEnter(
+            index: 0,
+            child:
           QuestCard(
             padding: EdgeInsets.zero,
             child: Column(
@@ -288,11 +291,15 @@ class _BackupScreenState extends State<BackupScreen> {
               ],
             ),
           ),
+          ),
           const SizedBox(height: Spacing.m),
-          Text(
-            'Backup berisi seluruh catatanmu. Simpan file-nya di tempat aman '
-            'dan ingat PIN-nya — tanpa PIN backup tidak bisa dibuka.',
-            style: context.qSmall(),
+          QuestEnter(
+            index: 1,
+            child: Text(
+              'Backup berisi seluruh catatanmu. Simpan file-nya di tempat aman '
+              'dan ingat PIN-nya — tanpa PIN backup tidak bisa dibuka.',
+              style: context.qSmall(),
+            ),
           ),
         ],
       ),
