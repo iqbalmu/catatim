@@ -292,7 +292,7 @@ drift. Mood = fungsi kondisi murni.
 
 | ID | Temuan | Severity |
 |---|---|---|
-| E-01 | Tangga migrasi solid & self-heal, tapi transisi v3→v5, v6→v7, dan lompatan v1→v10 langsung tak ada fixture test | Rendah |
+| E-01 | Tangga migrasi solid & self-heal, tapi transisi v3→v5, v6→v7, dan lompatan v1→v10 langsung tak ada fixture test | Rendah — **diperbaiki** |
 | E-02 | Nol index pada tabel transaksi — `EXPLAIN QUERY PLAN`: `SCAN transactions` | Rendah — **diperbaiki** |
 | E-03 | `LedgerRepository` satu-satunya pintu data | ✓ Lolos |
 
@@ -303,6 +303,11 @@ v1→v2, v2→v3, v5→v6, v7→v8, v8→v9, v9→v10. Yang belum: DB v3 & v6
 langsung ke v10, dan v1→v10 sekali jalan. *Rekomendasi:* tambah
 fixture untuk jalur lompatan (paling realistis: user lama tidak update
 app berbulan-bulan).
+*Diperbaiki 2026-10-31:* fixture lompatan v3→v11 & v6→v11 ditambahkan
+(lompatan v1→terbaru memang sudah teruji oleh test v1 yang membuka DB
+dengan schemaVersion terkini). Bonus temuan saat menulis fixture: DDL
+legacy harus memuat DEFAULT kolom timestamp — seed akun bergantung
+padanya sebelum migrasi lengkap terpasang.
 
 **E-02.** Tidak ada satu pun `CREATE INDEX`/`@TableIndex`. Query panas
 (periode+akun pada transactions) melakukan full scan; semua stream
@@ -427,7 +432,7 @@ tak pernah error lokal — risiko rendah, cukup sadar.
 
 | ID | Temuan | Severity |
 |---|---|---|
-| I-01 | 5 file UI >900 baris (laporan 2.471, quest 1.280, home_cards 1.230, rencana_batas 1.160, transaksi 981) | Sedang |
+| I-01 | 5 file UI >900 baris (laporan 2.471, quest 1.280, home_cards 1.230, rencana_batas 1.160, transaksi 981) | Sedang — **sebagian diperbaiki** |
 | I-02 | Dead code: `buildCsv()` (A-09), dependensi `dynamic_color` (G-02) | Rendah |
 | I-03 | Lints: set dasar `flutter_lints` tanpa aturan tambahan | Rendah |
 
@@ -435,6 +440,9 @@ tak pernah error lokal — risiko rendah, cukup sadar.
 sudah memakai pola bagus di dalamnya (stream field + `_streamKey`).
 *Rekomendasi:* pecah per-seksi jadi widget privat per file — refaktor
 mekanis, tanpa ubah perilaku, satu layar per PR.
+*Diperbaiki sebagian 2026-10-31:* laporan_screen 2.471 → 765 baris,
+pecahan 6 part files di `lib/ui/laporan/` (satu library, nama privat
+utuh). Empat file besar lain menyusul dengan pola yang sama.
 
 **I-02.** *Diperbaiki 2026-10-31:* `buildCsv()` + test-nya dihapus
 (ekspor plaintext memang tak pernah diekspos, A-09); `dynamic_color`
