@@ -8,9 +8,9 @@ import 'rule_set.dart';
 
 /// Mesin pencocokan notifikasi → draf transaksi berbasis template JSON.
 class RuleEngine {
-  RuleEngine(this._ruleSet);
+  RuleEngine(this.ruleSet);
 
-  final RuleSet _ruleSet;
+  RuleSet ruleSet;
 
   /// Pola nominal default, dicoba berurutan:
   /// 1. "Rp" atau "Rp." diikuti angka bebas (paling spesifik).
@@ -26,7 +26,7 @@ class RuleEngine {
   static const int _minSaneAmount = 1;
 
   /// Bank generik sebagai fallback bila bank tidak dikenali.
-  BankRules? get _generic => _ruleSet.bank('unknown');
+  BankRules? get _generic => ruleSet.bank('unknown');
 
   /// Mengembalikan null bila notifikasi bukan transaksi yang dikenali.
   ParsedDraft? parse({
@@ -76,11 +76,11 @@ class RuleEngine {
     required String lowerText,
     Set<String>? onlyIds,
   }) {
-    for (final b in _ruleSet.banks) {
+    for (final b in ruleSet.banks) {
       if (onlyIds != null && !onlyIds.contains(b.id)) continue;
       if (b.packageNames.contains(packageName)) return b;
     }
-    for (final b in _ruleSet.banks) {
+    for (final b in ruleSet.banks) {
       if (onlyIds != null && !onlyIds.contains(b.id)) continue;
       if (b.keywords.any(lowerText.contains)) return b;
     }
@@ -90,9 +90,9 @@ class RuleEngine {
   /// Package names katalog milik bank-bank ini — dipakai pipeline untuk
   /// menyusun allowlist antrean native. Tidak termasuk paket belajaran.
   Set<String> packageNamesFor(Set<String> bankIds) => {
-        for (final b in _ruleSet.banks)
-          if (bankIds.contains(b.id)) ...b.packageNames,
-      };
+    for (final b in ruleSet.banks)
+      if (bankIds.contains(b.id)) ...b.packageNames,
+  };
 
   int? _extractAmount(String? customPattern, String text) {
     // Pola custom dari aturan pengguna bersifat eksklusif: bila gagal
@@ -122,10 +122,20 @@ class RuleEngine {
     final amount = _extractAmount(null, text);
     final lower = text.toLowerCase();
     const inWords = [
-      'masuk', 'kredit', 'menerima', 'diterima', 'ditambahkan', 'top up',
+      'masuk',
+      'kredit',
+      'menerima',
+      'diterima',
+      'ditambahkan',
+      'top up',
     ];
     const outWords = [
-      'keluar', 'debit', 'pembayaran', 'membayar', 'belanja', 'tarik',
+      'keluar',
+      'debit',
+      'pembayaran',
+      'membayar',
+      'belanja',
+      'tarik',
       'transfer ke',
     ];
     final isIn = inWords.any(lower.contains);

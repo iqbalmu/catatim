@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bukuduit/models.dart';
+import 'package:bukuduit/rules/rule_set.dart';
 import 'package:bukuduit/storage/database.dart';
 import 'package:bukuduit/storage/repository.dart';
 
@@ -802,6 +803,47 @@ void main() {
       expect(dup, isNull); // identik → digugurkan
       expect(other, isNotNull); // beda isi → tetap
       expect(await db.select(db.drafts).get(), hasLength(2));
+    });
+  });
+
+  group('custom templates persistence', () {
+    test('CRUD custom templates via repository', () async {
+      expect(await repo.customTemplates(), isEmpty);
+
+      final t1 = CustomTemplate(
+        id: 't1',
+        bankId: 'nagari',
+        template: const TemplateRule(
+          name: 'Nagari QRIS Khusus',
+          kind: TxKind.payment,
+          direction: Direction.outgoing,
+          matchAll: ['qris', 'nagari'],
+        ),
+      );
+
+      await repo.saveCustomTemplate(t1);
+      var templates = await repo.customTemplates();
+      expect(templates, hasLength(1));
+      expect(templates.single.template.name, 'Nagari QRIS Khusus');
+      expect(templates.single.bankId, 'nagari');
+
+      // Update existing
+      final t1Updated = t1.copyWith(
+        template: const TemplateRule(
+          name: 'Nagari QRIS Update',
+          kind: TxKind.payment,
+          direction: Direction.outgoing,
+          matchAll: ['qris', 'nagari'],
+        ),
+      );
+      await repo.saveCustomTemplate(t1Updated);
+      templates = await repo.customTemplates();
+      expect(templates, hasLength(1));
+      expect(templates.single.template.name, 'Nagari QRIS Update');
+
+      // Delete
+      await repo.deleteCustomTemplate('t1');
+      expect(await repo.customTemplates(), isEmpty);
     });
   });
 }

@@ -12,6 +12,7 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'quest.dart';
 import 'transaction_sheet.dart';
+import 'unparsed_logs_sheet.dart';
 
 /// Halaman Pengaturan Capture Notifikasi Bank & E-Wallet Offline
 class CaptureSettingsScreen extends StatefulWidget {
@@ -589,11 +590,135 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                             tone: QuestTone.secondary,
                             onPressed: _pullActiveNotifications,
                           ),
+                          const SizedBox(height: Spacing.s),
+                          QuestButton(
+                            label: 'Buka Notifikasi Belum Terbaca',
+                            icon: Icons.mark_email_unread_rounded,
+                            tone: QuestTone.secondary,
+                            onPressed: () => UnparsedLogsSheet.show(
+                              context,
+                              repository: widget.repository,
+                              pipeline: widget.pipeline,
+                              ruleSet: widget.ruleSet,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ],
                 ),
+              ),
+
+              // ── 4c. Aturan & Template Kustom ──
+              StreamBuilder<List<CustomTemplate>>(
+                stream: widget.repository.watchCustomTemplates(),
+                builder: (context, snap) {
+                  final customTemplates = snap.data ?? const <CustomTemplate>[];
+                  if (customTemplates.isEmpty) return const SizedBox.shrink();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const QuestSectionHeader(
+                        title: 'Aturan & Template Kustom',
+                      ),
+                      Text(
+                        'Template yang kamu buat dari notifikasi mentah. Pola ini diprioritaskan saat memproses notifikasi bank.',
+                        style: context.qSmall(12).copyWith(color: q.muted),
+                      ),
+                      const SizedBox(height: Spacing.xs),
+                      QuestCard(
+                        padding: EdgeInsets.zero,
+                        child: Column(
+                          children: [
+                            for (
+                              var i = 0;
+                              i < customTemplates.length;
+                              i++
+                            ) ...[
+                              QuestListTile(
+                                leading: Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: q.surface2,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    Icons.tune_rounded,
+                                    color: q.primary,
+                                    size: 19,
+                                  ),
+                                ),
+                                title: Text(
+                                  customTemplates[i].template.name,
+                                  style: context.qTitle(14),
+                                ),
+                                subtitle: Text(
+                                  '${widget.ruleSet.bank(customTemplates[i].bankId)?.displayName ?? customTemplates[i].bankId} · '
+                                  '${customTemplates[i].template.direction == Direction.incoming ? 'Masuk' : 'Keluar'} · '
+                                  'Kata kunci: ${[...customTemplates[i].template.matchAll, ...customTemplates[i].template.matchAny].join(', ')}',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: q.muted,
+                                  ),
+                                ),
+                                trailing: IconButton(
+                                  icon: Icon(
+                                    Icons.delete_outline_rounded,
+                                    color: q.bad,
+                                    size: 20,
+                                  ),
+                                  tooltip: 'Hapus Aturan',
+                                  onPressed: () async {
+                                    final confirmed = await showQuestDialog<bool>(
+                                      context,
+                                      title: 'Hapus Template Aturan?',
+                                      content: Text(
+                                        'Aturan "${customTemplates[i].template.name}" akan dihapus. Notifikasi selanjutnya tidak akan dicocokkan dengan aturan ini.',
+                                        style: context.qBody(13),
+                                      ),
+                                      actions: [
+                                        QuestButton(
+                                          label: 'Batal',
+                                          tone: QuestTone.secondary,
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                        ),
+                                        QuestButton(
+                                          label: 'Hapus',
+                                          tone: QuestTone.danger,
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                        ),
+                                      ],
+                                    );
+                                    if (confirmed == true) {
+                                      await widget.repository
+                                          .deleteCustomTemplate(
+                                            customTemplates[i].id,
+                                          );
+                                      await widget.pipeline.refreshRules();
+                                      if (context.mounted) {
+                                        questSnack(
+                                          context,
+                                          'Template aturan dihapus',
+                                          icon: Icons.delete_outline_rounded,
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
+                              ),
+                              if (i < customTemplates.length - 1)
+                                Divider(height: 1, thickness: 1, color: q.line),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.m),
+                    ],
+                  );
+                },
               ),
 
               QuestEnter(

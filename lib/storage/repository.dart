@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 
 import '../models.dart';
 import '../rules/engine.dart' show RuleEngine;
+import '../rules/rule_set.dart' show CustomTemplate;
 import 'database.dart';
 
 /// Transaksi + kategori ter-join (kategori null bila belum disetel).
@@ -373,9 +376,7 @@ class LedgerRepository {
         .map((row) => _parseCustomBanks(row?.valueText));
   }
 
-  static List<({String package, String label})> _parseCustomBanks(
-    String? raw,
-  ) {
+  static List<({String package, String label})> _parseCustomBanks(String? raw) {
     if (raw == null || raw.trim().isEmpty) return const [];
     return [
       for (final line in raw.split('\n'))
@@ -405,6 +406,58 @@ class LedgerRepository {
     );
   }
 
+  // --- template aturan kustom (tuning capture) -------------------------------
+
+  static const customTemplatesKey = 'custom_templates_json';
+
+  Future<List<CustomTemplate>> customTemplates() async {
+    final raw = await getSetting(customTemplatesKey);
+    return _parseCustomTemplates(raw);
+  }
+
+  Stream<List<CustomTemplate>> watchCustomTemplates() {
+    return (_db.select(_db.appSettings)
+          ..where((s) => s.key.equals(customTemplatesKey)))
+        .watchSingleOrNull()
+        .map((row) => _parseCustomTemplates(row?.valueText));
+  }
+
+  static List<CustomTemplate> _parseCustomTemplates(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return const [];
+    try {
+      final list = jsonDecode(raw) as List<dynamic>? ?? const [];
+      return [
+        for (final item in list)
+          if (item is Map<String, dynamic>) CustomTemplate.fromJson(item),
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> saveCustomTemplate(CustomTemplate template) async {
+    final current = [...await customTemplates()];
+    final idx = current.indexWhere((t) => t.id == template.id);
+    if (idx >= 0) {
+      current[idx] = template;
+    } else {
+      current.add(template);
+    }
+    await setSetting(
+      customTemplatesKey,
+      jsonEncode([for (final t in current) t.toJson()]),
+    );
+  }
+
+  Future<void> deleteCustomTemplate(String id) async {
+    final current = [...await customTemplates()];
+    current.removeWhere((t) => t.id == id);
+    await setSetting(
+      customTemplatesKey,
+      jsonEncode([for (final t in current) t.toJson()]),
+    );
+  }
+
   /// Draf "mentah" dari app custom (mode belajar): format notifikasinya
   /// belum dikenal rule — user yang melengkapi nominal/kategori saat
   /// konfirmasi. Dedup khusus: isi mentah identik (paket+judul+isi) dalam
@@ -416,23 +469,28 @@ class LedgerRepository {
     required String bankName,
     required int amount,
     required Direction direction,
+    int? categoryId,
+    int? accountId,
   }) {
     return _db.transaction(() async {
       final from = raw.postedAt.subtract(dedupWindow);
       final to = raw.postedAt.add(dedupWindow);
       final title = raw.title.trim();
       final body = raw.body.trim();
-      final dup = await (_db.select(_db.drafts)
-            ..where(
-              (d) =>
-                  d.bankId.equals(bankId) &
-                  d.rawTitle.equals(title) &
-                  d.rawBody.equals(body) &
-                  d.occurredAt.isBetweenValues(from, to),
-            )
-            ..limit(1))
-          .getSingleOrNull();
+      final dup =
+          await (_db.select(_db.drafts)
+                ..where(
+                  (d) =>
+                      d.bankId.equals(bankId) &
+                      d.rawTitle.equals(title) &
+                      d.rawBody.equals(body) &
+                      d.occurredAt.isBetweenValues(from, to),
+                )
+                ..limit(1))
+              .getSingleOrNull();
       if (dup != null) return null;
+      final resolvedCatId = categoryId ?? await _defaultCategoryId(TxKind.other);
+      final resolvedAccId = accountId ?? await _accountIdForBank(bankId);
       return _db
           .into(_db.drafts)
           .insert(
@@ -444,8 +502,8 @@ class LedgerRepository {
               occurredAt: raw.postedAt,
               rawTitle: Value(title),
               rawBody: Value(body),
-              categoryId: Value(await _defaultCategoryId(TxKind.other)),
-              accountId: Value(await _accountIdForBank(bankId)),
+              categoryId: Value(resolvedCatId),
+              accountId: Value(resolvedAccId),
             ),
           );
     });
@@ -549,6 +607,12 @@ class LedgerRepository {
           ..orderBy([(t) => OrderingTerm.desc(t.postedAt)])
           ..limit(limit))
         .watch();
+  }
+
+  Future<void> markCaptureLogParsed(int logId) async {
+    await (_db.update(_db.captureLogs)..where((c) => c.id.equals(logId))).write(
+      const CaptureLogsCompanion(parsed: Value(true)),
+    );
   }
 
   /// Jumlah transaksi per hari lokal, sejak [since] — sumber kebenaran

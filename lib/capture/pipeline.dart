@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 
 import '../models.dart';
 import '../rules/engine.dart';
-import '../rules/rule_set.dart' show BankRules;
+import '../rules/rule_set.dart'
+    show BankRules, BankRulesAccountKind, CustomTemplate, RuleSet;
+import '../storage/database.dart' show CaptureLog;
 import '../storage/repository.dart';
 import 'capture_channel.dart';
 
@@ -20,11 +22,13 @@ class CapturePipeline extends ChangeNotifier {
     required this.channel,
     required this.engine,
     required this.repository,
-  });
+    RuleSet? baseRuleSet,
+  }) : _baseRuleSet = baseRuleSet ?? engine.ruleSet;
 
   final CaptureChannel channel;
   final RuleEngine engine;
   final LedgerRepository repository;
+  final RuleSet _baseRuleSet;
 
   StreamSubscription<RawCapture>? _subscription;
   bool _started = false;
@@ -36,12 +40,81 @@ class CapturePipeline extends ChangeNotifier {
   /// Jumlah notifikasi yang ditangani sejak app berjalan (untuk indikator).
   int handledCount = 0;
 
+  /// Muat ulang aturan: gabungkan template bawaan dengan template kustom dari DB.
+  Future<void> refreshRules() async {
+    final customs = await repository.customTemplates();
+    engine.ruleSet = _baseRuleSet.withCustomTemplates(customs);
+    await syncAllowedPackages();
+    notifyListeners();
+  }
+
+  /// Simpan template kustom, segarkan aturan, buat draf dari targetLog (jika ada),
+  /// dan pindai ulang notifikasi lampau yang belum terbaca.
+  Future<int> applyCustomTemplate(
+    CustomTemplate customTemplate, {
+    CaptureLog? targetLog,
+  }) async {
+    await repository.saveCustomTemplate(customTemplate);
+
+    // Pastikan bank terhubung bila target adalah bank katalog
+    final connected = await repository.connectedBankIds();
+    if (!connected.contains(customTemplate.bankId) &&
+        customTemplate.bankId != 'unknown' &&
+        !customTemplate.bankId.startsWith('app:')) {
+      await repository.setBankConnected(customTemplate.bankId, true);
+      final b = engine.ruleSet.bank(customTemplate.bankId);
+      if (b != null) {
+        await repository.ensureBankAccount(
+          bankId: b.id,
+          name: b.displayName,
+          kind: b.accountKind,
+        );
+      }
+    }
+
+    await refreshRules();
+
+    var created = 0;
+    final allConnected = await repository.connectedBankIds();
+    final customList = await repository.customBanks();
+    final activeIds = {
+      ...allConnected,
+      for (final c in customList) 'app:${c.package}',
+      if (customTemplate.bankId == 'unknown') 'unknown',
+    };
+
+    if (targetLog != null && !targetLog.parsed) {
+      final raw = RawCapture(
+        packageName: targetLog.packageName,
+        title: targetLog.title,
+        body: targetLog.body,
+        postedAt: targetLog.postedAt,
+      );
+      final draft = engine.parse(
+        packageName: raw.packageName,
+        title: raw.title,
+        body: raw.body,
+      );
+      if (draft != null) {
+        final id = await repository.addDraftFromCapture(raw: raw, draft: draft);
+        await repository.markCaptureLogParsed(targetLog.id);
+        if (id != null) created++;
+      }
+    }
+
+    final reparseCreated = await repository.reparseUnparsed(
+      engine,
+      connectedBankIds: activeIds,
+    );
+    return created + reparseCreated;
+  }
+
   Future<void> start() async {
     if (_started) return;
     _started = true;
-    // Allowlist didorong lebih dulu: notifikasi non-bank yang tiba
+    // Allowlist didorong via refreshRules: notifikasi non-bank yang tiba
     // setelah ini tidak lagi disimpan native ke disk.
-    await syncAllowedPackages();
+    await refreshRules();
     // Notifikasi yang tertangkap saat app mati tersimpan di antrian native.
     try {
       for (final raw in await channel.drainQueue()) {
@@ -189,12 +262,15 @@ class CapturePipeline extends ChangeNotifier {
     required Direction direction,
     String? bankId,
     String? bankName,
+    DateTime? occurredAt,
+    int? categoryId,
+    int? accountId,
   }) async {
     final raw = RawCapture(
       packageName: 'manual.ocr',
       title: title.isEmpty ? 'Struk / Bukti' : title,
       body: body.isEmpty ? title : body,
-      postedAt: DateTime.now(),
+      postedAt: occurredAt ?? DateTime.now(),
     );
     await repository.addRawDraftFromCapture(
       raw: raw,
@@ -202,6 +278,8 @@ class CapturePipeline extends ChangeNotifier {
       bankName: bankName ?? title,
       amount: amount,
       direction: direction,
+      categoryId: categoryId,
+      accountId: accountId,
     );
     handledCount++;
     notifyListeners();

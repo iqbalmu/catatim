@@ -52,22 +52,34 @@
     {
       "id": "nagari",
       "displayName": "Bank Nagari",
-      "packageNames": [],
-      "keywords": ["bank nagari", "banknagari", "nagari"],
+      "packageNames": ["id.co.banknagari.ollin", "com.nagari.mb"],
+      "keywords": ["bank nagari", "banknagari", "nagari", "ollin"],
       "templates": [
         {
           "name": "kredit masuk",
           "kind": "transfer",
           "direction": "in",
-          "matchAny": ["kredit", "transfer masuk", "menerima"],
+          "matchAny": ["kredit", "transfer masuk", "dana masuk", "menerima"],
           "counterparty": "dari\\s+(.+?)(?:\\.|,|$)"
         },
         {
           "name": "debit keluar",
           "kind": "transfer",
           "direction": "out",
-          "matchAny": ["debit", "transfer ke", "pembayaran", "belanja", "tarik"],
+          "matchAny": ["debit", "transfer ke", "tarik tunai", "tarik"],
           "counterparty": "a\\.n\\.\\s*(.+?)(?:\\.|,|$)"
+        },
+        {
+          "name": "pembayaran / qris",
+          "kind": "payment",
+          "direction": "out",
+          "matchAny": ["pembayaran", "qris", "belanja", "pembelian"]
+        },
+        {
+          "name": "top up",
+          "kind": "topup",
+          "direction": "out",
+          "matchAny": ["top up", "topup", "isi ulang"]
         }
       ]
     },

@@ -14,12 +14,20 @@ class OcrReceiptData {
     required this.merchant,
     required this.amount,
     required this.direction,
+    this.occurredAt,
+    this.candidateAmounts = const [],
+    this.suggestedCategory,
+    this.suggestedPaymentMethod,
   });
 
   final String rawText;
   final String merchant;
   final int? amount;
   final Direction direction;
+  final DateTime? occurredAt;
+  final List<int> candidateAmounts;
+  final String? suggestedCategory;
+  final String? suggestedPaymentMethod;
 }
 
 /// Service OCR on-device (tanpa internet) untuk mengenali teks dari struk/bukti transaksi.
@@ -51,7 +59,7 @@ class OcrService {
     }
   }
 
-  /// Ekstraksi cerdas data struk: nama toko/merchant, nominal total, arah transaksi.
+  /// Ekstraksi cerdas data struk: nama toko/merchant, nominal total, tanggal, arah, dan kategori.
   static OcrReceiptData parseReceiptText(String rawText, {RuleEngine? engine}) {
     final lines = rawText
         .split('\n')
@@ -60,14 +68,21 @@ class OcrService {
         .toList();
 
     final merchant = _extractMerchant(lines);
-    final amount = _extractTotalAmount(lines, rawText, engine);
+    final (amount, candidates) = _extractAmountsAndCandidates(lines, rawText, engine);
     final direction = _extractDirection(rawText);
+    final occurredAt = _extractDate(lines, rawText);
+    final suggestedCategory = _suggestCategory(merchant, rawText);
+    final suggestedPaymentMethod = _suggestPaymentMethod(rawText);
 
     return OcrReceiptData(
       rawText: rawText,
       merchant: merchant,
       amount: amount,
       direction: direction,
+      occurredAt: occurredAt,
+      candidateAmounts: candidates,
+      suggestedCategory: suggestedCategory,
+      suggestedPaymentMethod: suggestedPaymentMethod,
     );
   }
 
@@ -88,12 +103,14 @@ class OcrService {
       'customer',
       'pelanggan',
       'bill',
+      'pos',
+      'order',
     ];
 
-    for (final line in lines.take(5)) {
+    for (final line in lines.take(6)) {
       final lower = line.toLowerCase();
       // Lewati baris berisi tanggal/waktu saja atau kata umum nota
-      if (RegExp(r'^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}').hasMatch(line)) {
+      if (RegExp(r'^\d{1,2}[./\-]\d{1,2}[./\-]\d{2,4}').hasMatch(line)) {
         continue;
       }
       if (RegExp(r'^\d{2}:\d{2}').hasMatch(line)) {
@@ -103,90 +120,156 @@ class OcrService {
         continue;
       }
       // Ambil baris pertama yang bermakna sebagai nama toko
-      if (line.length >= 3) {
+      if (line.length >= 3 && !RegExp(r'^\d+$').hasMatch(line)) {
         return line;
       }
     }
     return lines.isNotEmpty ? lines.first : 'Struk / Nota';
   }
 
-  static int? _extractTotalAmount(
+  static (int?, List<int>) _extractAmountsAndCandidates(
     List<String> lines,
     String fullText,
     RuleEngine? engine,
   ) {
-    // 1. Prioritas: baris yang memuat kata kunci total/jumlah
+    final candidates = <int>{};
+
+    // Kumpulkan semua angka rupiah yang valid dari seluruh baris
+    for (final line in lines) {
+      final amounts = _findAllAmountsInLine(line);
+      for (final a in amounts) {
+        if (a >= 100 && a <= 1000000000) {
+          candidates.add(a);
+        }
+      }
+    }
+
+    // Prioritas kata kunci total
     const totalKeywords = [
       'grand total',
       'total akhir',
+      'total tagihan',
       'total bayar',
       'total belanja',
-      'total tagihan',
       'total',
+      'subtotal',
+      'jumlah bayar',
+      'jumlah akhir',
       'jumlah',
       'netto',
-      'subtotal',
     ];
 
+    // Kata kunci non-total (pembayaran tunai & kembalian)
+    const excludeKeywords = [
+      'kembali',
+      'kembalian',
+      'change',
+      'tunai',
+      'cash',
+      'bayar tunai',
+      'uang muka',
+      'dp',
+      'diskon',
+      'potongan',
+      'ppn',
+      'pajak',
+    ];
+
+    int? totalAmount;
+
+    // 1. Cari baris yang memuat total tanpa kata kunci kembalian/tunai
     for (var i = 0; i < lines.length; i++) {
       final lineLower = lines[i].toLowerCase();
-      for (final kw in totalKeywords) {
-        if (lineLower.contains(kw)) {
-          // Cek nominal di baris yang sama
-          final parsed = _findAmountInLine(lines[i]);
-          if (parsed != null && parsed > 0) return parsed;
 
-          // Atau di baris tepat setelahnya (sering format "TOTAL \n Rp 50.000")
-          if (i + 1 < lines.length) {
-            final nextParsed = _findAmountInLine(lines[i + 1]);
-            if (nextParsed != null && nextParsed > 0) return nextParsed;
+      final isTotal = totalKeywords.any(lineLower.contains);
+      if (!isTotal) continue;
+
+      final isExcluded = excludeKeywords.any((kw) {
+        // Pengecualian khusus: 'total bayar tunai' tetap dihitung jika tidak ada kata 'kembali'
+        if (kw == 'tunai' || kw == 'cash') {
+          return lineLower.contains('kembali') || lineLower.contains('change');
+        }
+        return lineLower.contains(kw);
+      });
+
+      if (!isExcluded) {
+        // Ambil nominal di baris yang sama
+        final parsed = _findAmountInLine(lines[i]);
+        if (parsed != null && parsed > 0) {
+          totalAmount = parsed;
+          break;
+        }
+
+        // Atau di baris tepat setelahnya
+        if (i + 1 < lines.length) {
+          final nextParsed = _findAmountInLine(lines[i + 1]);
+          if (nextParsed != null && nextParsed > 0) {
+            totalAmount = nextParsed;
+            break;
           }
         }
       }
     }
 
-    // 2. Fallback: coba engine.guess
-    if (engine != null) {
+    // 2. Fallback: engine.guess jika belum ketemu
+    if (totalAmount == null && engine != null) {
       final guess = engine.guess('Struk', fullText);
-      if (guess.amount != null && guess.amount! > 0) return guess.amount;
-    }
-
-    // 3. Fallback: ambil angka nominal rupiah terbesar yang masuk akal
-    int? maxAmount;
-    for (final line in lines) {
-      final amt = _findAmountInLine(line);
-      if (amt != null && amt >= 100 && amt <= 1000000000) {
-        if (maxAmount == null || amt > maxAmount) {
-          maxAmount = amt;
-        }
+      if (guess.amount != null && guess.amount! > 0) {
+        totalAmount = guess.amount;
       }
     }
-    return maxAmount;
+
+    // 3. Fallback: cari nominal terbesar di baris yang BUKAN tunai/kembali
+    if (totalAmount == null) {
+      int? maxSafeAmount;
+      for (final line in lines) {
+        final lower = line.toLowerCase();
+        if (excludeKeywords.any(lower.contains)) continue;
+        final amt = _findAmountInLine(line);
+        if (amt != null && amt >= 100 && amt <= 1000000000) {
+          if (maxSafeAmount == null || amt > maxSafeAmount) {
+            maxSafeAmount = amt;
+          }
+        }
+      }
+      totalAmount = maxSafeAmount;
+    }
+
+    // Urutkan kandidat angka (nominal total diletakkan di depan)
+    final candidateList = candidates.toList();
+    if (totalAmount != null && candidateList.contains(totalAmount)) {
+      candidateList.remove(totalAmount);
+      candidateList.insert(0, totalAmount);
+    }
+
+    return (totalAmount, candidateList);
+  }
+
+  static List<int> _findAllAmountsInLine(String line) {
+    final result = <int>[];
+    final rpMatches = RegExp(r'[Rr][Pp]\.?\s*([\d][\d.,]*)').allMatches(line);
+    for (final m in rpMatches) {
+      final g = m.group(1);
+      final val = Money.tryParseGroup(g);
+      if (val != null && val > 0) result.add(val);
+    }
+
+    final numMatches = RegExp(r'\b(\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?)\b').allMatches(line);
+    for (final m in numMatches) {
+      final g = m.group(1);
+      final val = Money.tryParseGroup(g);
+      if (val != null && val > 0) result.add(val);
+    }
+    return result;
   }
 
   static int? _findAmountInLine(String line) {
-    // Cari pola "Rp 50.000", "50.000", "50000"
-    final rpMatch = RegExp(r'[Rr][Pp]\.?\s*([\d][\d.,]*)').firstMatch(line);
-    if (rpMatch != null) {
-      final g = rpMatch.group(1);
-      final val = Money.tryParseGroup(g);
-      if (val != null && val > 0) return val;
-    }
-
-    final numMatch = RegExp(
-      r'\b(\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?)\b',
-    ).firstMatch(line);
-    if (numMatch != null) {
-      final g = numMatch.group(1);
-      final val = Money.tryParseGroup(g);
-      if (val != null && val > 0) return val;
-    }
-    return null;
+    final list = _findAllAmountsInLine(line);
+    return list.isNotEmpty ? list.last : null;
   }
 
   static Direction _extractDirection(String text) {
     final lower = text.toLowerCase();
-    // Bukti transfer masuk / penerimaan
     const inWords = [
       'transfer masuk',
       'dana masuk',
@@ -199,7 +282,198 @@ class OcrService {
     if (inWords.any(lower.contains)) {
       return Direction.incoming;
     }
-    // Struk belanja / pembayaran selalu pengeluaran
     return Direction.outgoing;
+  }
+
+  static DateTime? _extractDate(List<String> lines, String fullText) {
+    // 1. Format tanggal standar: DD/MM/YYYY, DD.MM.YYYY, DD-MM-YYYY, DD/MM/YY
+    final dateReg = RegExp(
+      r'\b(\d{1,2})[./\-](\d{1,2})[./\-](\d{2,4})\b',
+    );
+    final timeReg = RegExp(r'\b(\d{1,2}):(\d{2})(?::(\d{2}))?\b');
+
+    DateTime? parsedDate;
+    int hour = 0;
+    int minute = 0;
+
+    for (final line in lines) {
+      if (parsedDate == null) {
+        final dMatch = dateReg.firstMatch(line);
+        if (dMatch != null) {
+          final day = int.tryParse(dMatch.group(1) ?? '') ?? 1;
+          final month = int.tryParse(dMatch.group(2) ?? '') ?? 1;
+          var year = int.tryParse(dMatch.group(3) ?? '') ?? 2026;
+          if (year < 100) year += 2000;
+
+          if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+            parsedDate = DateTime(year, month, day);
+          }
+        }
+      }
+
+      final tMatch = timeReg.firstMatch(line);
+      if (tMatch != null) {
+        hour = int.tryParse(tMatch.group(1) ?? '') ?? 0;
+        minute = int.tryParse(tMatch.group(2) ?? '') ?? 0;
+      }
+
+      if (parsedDate != null && tMatch != null) break;
+    }
+
+    if (parsedDate != null) {
+      return DateTime(
+        parsedDate.year,
+        parsedDate.month,
+        parsedDate.day,
+        hour.clamp(0, 23),
+        minute.clamp(0, 59),
+      );
+    }
+    return null;
+  }
+
+  static String? _suggestCategory(String merchant, String fullText) {
+    // 1. Prioritas: Cocokkan dari nama merchant/toko
+    final mCat = _matchCategory(merchant.toLowerCase());
+    if (mCat != null) return mCat;
+
+    // 2. Fallback: Cocokkan dari seluruh teks struk
+    return _matchCategory(fullText.toLowerCase());
+  }
+
+  static String? _matchCategory(String text) {
+    // Belanja / Minimarket
+    if ([
+      'indomaret',
+      'indomar',
+      'alfamart',
+      'alfamidi',
+      'supermarket',
+      'hypermart',
+      'transmart',
+      'yogya',
+      'minimarket',
+      'swalayan',
+      'mart',
+      'toko',
+      'grocery',
+      'pasar',
+    ].any(text.contains)) {
+      return 'Belanja';
+    }
+
+    // Makanan & Minuman
+    if ([
+      'kopi',
+      'coffee',
+      'cafe',
+      'kafe',
+      'resto',
+      'restaurant',
+      'bakso',
+      'mie',
+      'geprek',
+      'warung',
+      'mcd',
+      'kfc',
+      'burger',
+      'rotio',
+      'roti',
+      'jco',
+      'dapur',
+      'kitchen',
+      'food',
+      'makan',
+      'bento',
+      'sushi',
+      'pizza',
+      'es teh',
+      'haus',
+      'janji jiwa',
+      'kenangan',
+    ].any(text.contains)) {
+      return 'Makanan';
+    }
+
+    // Transportasi & Bensin
+    if ([
+      'spbu',
+      'pertamina',
+      'shell',
+      'bp ',
+      'bensin',
+      'solar',
+      'parkir',
+      'parking',
+      'grab',
+      'gojek',
+      'toll',
+      'tol',
+      'tiket',
+      'kereta',
+      'kai',
+      'flight',
+    ].any(text.contains)) {
+      return 'Transportasi';
+    }
+
+    // Kesehatan & Obat
+    if ([
+      'apotek',
+      'pharmacy',
+      'kimia farma',
+      'k-24',
+      'klinik',
+      'clinic',
+      'rs',
+      'rumah sakit',
+      'guardian',
+      'watsons',
+      'obat',
+      'dokter',
+      'optik',
+    ].any(text.contains)) {
+      return 'Kesehatan';
+    }
+
+    // Tagihan & Utilitas
+    if ([
+      'pln',
+      'pdam',
+      'telkom',
+      'indihome',
+      'wifi',
+      'pulsa',
+      'bpjs',
+      'listrik',
+      'air',
+    ].any(text.contains)) {
+      return 'Tagihan';
+    }
+
+    // Hiburan
+    if ([
+      'bioskop',
+      'cinema',
+      'xxi',
+      'cgv',
+      'cinepolis',
+      'timezone',
+      'game',
+      'karaoke',
+    ].any(text.contains)) {
+      return 'Hiburan';
+    }
+
+    return null;
+  }
+
+  static String? _suggestPaymentMethod(String fullText) {
+    final lower = fullText.toLowerCase();
+    if (lower.contains('qris')) return 'QRIS';
+    if (lower.contains('blu') || lower.contains('bca')) return 'blu by BCA';
+    if (lower.contains('nagari') || lower.contains('ollin')) return 'Bank Nagari';
+    if (lower.contains('tunai') || lower.contains('cash')) return 'Tunai';
+    return null;
   }
 }

@@ -15,6 +15,7 @@ import 'bon_screen.dart';
 import 'ocr_screen.dart';
 import 'quest.dart';
 import 'transaction_sheet.dart';
+import 'unparsed_logs_sheet.dart';
 import 'package:image_picker/image_picker.dart';
 
 /// Satu item perhatian di layar Notifikasi.
@@ -110,46 +111,11 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Future<void> _handleUnread(int count, Set<String> connected) async {
-    final action = await showQuestDialog<String>(
+    await UnparsedLogsSheet.show(
       context,
-      title: '$count belum terbaca',
-      content: Text(
-        'Notifikasi dari bankmu ini belum bisa dibaca otomatis. '
-        'Coba baca lagi, atau catat sendiri secara manual.',
-        style: context.qBody(13),
-      ),
-      actions: [
-        QuestButton(
-          label: 'Catat manual',
-          icon: Icons.edit_rounded,
-          tone: QuestTone.secondary,
-          onPressed: () => Navigator.pop(context, 'manual'),
-        ),
-        QuestButton(
-          label: 'Coba baca lagi',
-          icon: Icons.refresh_rounded,
-          onPressed: () => Navigator.pop(context, 'retry'),
-        ),
-      ],
-    );
-    if (action == null || !mounted) return;
-    if (action == 'manual') {
-      TransactionSheet.show(context, _repo, progress: widget.progress);
-      return;
-    }
-    final created = await _repo.reparseUnparsed(
-      widget.pipeline.engine,
-      connectedBankIds: connected,
-    );
-    if (!mounted) return;
-    questSnack(
-      context,
-      created > 0
-          ? '$created draf baru menunggu keputusanmu.'
-          : 'Masih belum terbaca — coba catat manual.',
-      icon: created > 0
-          ? Icons.mark_as_unread_rounded
-          : Icons.info_outline_rounded,
+      repository: _repo,
+      pipeline: widget.pipeline,
+      ruleSet: widget.ruleSet,
     );
   }
 

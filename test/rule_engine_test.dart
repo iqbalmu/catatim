@@ -70,6 +70,32 @@ void main() {
   });
 
   group('Bank Nagari', () {
+    test('terdeteksi lewat nama paket resmi Ollin (id.co.banknagari.ollin)', () {
+      final draft = engine.parse(
+        packageName: 'id.co.banknagari.ollin',
+        title: 'Ollin by Bank Nagari',
+        body:
+            'Transaksi Debit Rekening 1234567890 Sebesar Rp 150.000 Berhasil.',
+      );
+      expect(draft, isNotNull);
+      expect(draft!.bankId, 'nagari');
+      expect(draft.direction, Direction.outgoing);
+      expect(draft.amount, 150000);
+    });
+
+    test('pembayaran QRIS Ollin', () {
+      final draft = engine.parse(
+        packageName: 'id.co.banknagari.ollin',
+        title: 'Ollin by Bank Nagari',
+        body: 'Pembayaran QRIS Sebesar Rp 45.000 Berhasil.',
+      );
+      expect(draft, isNotNull);
+      expect(draft!.bankId, 'nagari');
+      expect(draft.direction, Direction.outgoing);
+      expect(draft.kind, TxKind.payment);
+      expect(draft.amount, 45000);
+    });
+
     test('terdeteksi lewat kata kunci meski packageName tidak dikenal', () {
       final draft = engine.parse(
         packageName: 'com.vendor.smsrelay',
@@ -96,6 +122,66 @@ void main() {
       expect(draft.amount, 750000);
       expect(draft.counterparty, 'SITI AMINAH');
     });
+  });
+
+  group('CustomTemplate & Dynamic Merging', () {
+    test('template kustom diprioritaskan di atas template bawaan', () {
+      final baseRuleSet = _loadSeed();
+      final custom = CustomTemplate(
+        id: 'cust_1',
+        bankId: 'nagari',
+        template: const TemplateRule(
+          name: 'Custom Spesial Nagari',
+          kind: TxKind.payment,
+          direction: Direction.outgoing,
+          matchAll: ['spesial', 'diskon'],
+        ),
+      );
+
+      final merged = baseRuleSet.withCustomTemplates([custom]);
+      final customEngine = RuleEngine(merged);
+
+      final draft = customEngine.parse(
+        packageName: 'id.co.banknagari.ollin',
+        title: 'Ollin',
+        body: 'Transaksi Spesial Diskon Sebesar Rp 20.000 Berhasil',
+      );
+
+      expect(draft, isNotNull);
+      expect(draft!.ruleName, 'Custom Spesial Nagari');
+      expect(draft.amount, 20000);
+      expect(draft.kind, TxKind.payment);
+    });
+
+    test(
+      'template kustom untuk paket baru (app:<paket>) didaftarkan dinamis',
+      () {
+        final baseRuleSet = _loadSeed();
+        final custom = CustomTemplate(
+          id: 'cust_2',
+          bankId: 'app:com.custom.fintech',
+          template: const TemplateRule(
+            name: 'Fintech Keluar',
+            kind: TxKind.payment,
+            direction: Direction.outgoing,
+            matchAll: ['bayar'],
+          ),
+        );
+
+        final merged = baseRuleSet.withCustomTemplates([custom]);
+        final customEngine = RuleEngine(merged);
+
+        final draft = customEngine.parse(
+          packageName: 'com.custom.fintech',
+          title: 'Fintech App',
+          body: 'Kamu bayar tagihan Rp 99.000 sukses',
+        );
+
+        expect(draft, isNotNull);
+        expect(draft!.bankId, 'app:com.custom.fintech');
+        expect(draft.amount, 99000);
+      },
+    );
   });
 
   group('fallback generik', () {
@@ -135,10 +221,7 @@ void main() {
 
   test('bankFor: paket blu dikenal, chat tidak', () {
     expect(
-      engine.bankFor(
-        packageName: 'com.bcadigital.blu',
-        lowerText: 'apa saja',
-      ),
+      engine.bankFor(packageName: 'com.bcadigital.blu', lowerText: 'apa saja'),
       isNotNull,
     );
     expect(
@@ -150,10 +233,12 @@ void main() {
     );
     // kata kunci konten tetap dikenali meski paket tidak terdaftar
     expect(
-      engine.bankFor(
-        packageName: 'com.vendor.smsrelay',
-        lowerText: 'banknagari: kredit rp750.000',
-      )?.id,
+      engine
+          .bankFor(
+            packageName: 'com.vendor.smsrelay',
+            lowerText: 'banknagari: kredit rp750.000',
+          )
+          ?.id,
       'nagari',
     );
     // filter koneksi membatasi hasil

@@ -11,6 +11,51 @@ class RuleSet {
 
   BankRules? bank(String id) => _byId[id];
 
+  /// Mengembalikan RuleSet baru hasil penggabungan template bawaan dengan
+  /// template kustom buatan pengguna. Template kustom diletakkan di depan
+  /// agar diprioritaskan saat pencocokan.
+  RuleSet withCustomTemplates(List<CustomTemplate> customTemplates) {
+    if (customTemplates.isEmpty) return this;
+    final additions = <String, List<TemplateRule>>{};
+    for (final ct in customTemplates) {
+      additions.putIfAbsent(ct.bankId, () => []).add(ct.template);
+    }
+    final newBanks = <BankRules>[];
+    final seenBankIds = <String>{};
+    for (final b in banks) {
+      seenBankIds.add(b.id);
+      final customForBank = additions[b.id] ?? const [];
+      if (customForBank.isEmpty) {
+        newBanks.add(b);
+      } else {
+        newBanks.add(
+          BankRules(
+            id: b.id,
+            displayName: b.displayName,
+            packageNames: b.packageNames,
+            keywords: b.keywords,
+            templates: [...customForBank, ...b.templates],
+          ),
+        );
+      }
+    }
+    for (final entry in additions.entries) {
+      if (!seenBankIds.contains(entry.key)) {
+        final pkg = entry.key.startsWith('app:') ? entry.key.substring(4) : '';
+        newBanks.add(
+          BankRules(
+            id: entry.key,
+            displayName: entry.key,
+            packageNames: pkg.isNotEmpty ? [pkg] : [],
+            keywords: [],
+            templates: entry.value,
+          ),
+        );
+      }
+    }
+    return RuleSet(version: version, banks: newBanks);
+  }
+
   factory RuleSet.fromJson(Map<String, dynamic> json) => RuleSet(
     version: (json['version'] as num?)?.toInt() ?? 1,
     banks: [
@@ -60,7 +105,8 @@ class BankRules {
 /// Jenis akun bank/e-wallet ini menurut kata kunci katalognya — dipakai
 /// untuk ikon, pengelompokan, dan pembuatan akun saat terhubung.
 extension BankRulesAccountKind on BankRules {
-  AccountKind get accountKind => keywords.any(
+  AccountKind get accountKind =>
+      keywords.any(
         (k) =>
             k.contains('pay') ||
             k.contains('ovo') ||
@@ -120,6 +166,18 @@ class TemplateRule {
     return true;
   }
 
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'kind': kind.name,
+    'direction': direction == Direction.incoming ? 'in' : 'out',
+    if (matchAll.isNotEmpty) 'matchAll': matchAll,
+    if (matchAny.isNotEmpty) 'matchAny': matchAny,
+    if (notMatch.isNotEmpty) 'notMatch': notMatch,
+    if (amountPattern != null) 'amount': amountPattern,
+    if (counterpartyPattern != null) 'counterparty': counterpartyPattern,
+    if (balancePattern != null) 'balance': balancePattern,
+  };
+
   factory TemplateRule.fromJson(Map<String, dynamic> json) => TemplateRule(
     name: json['name'] as String,
     kind: txKindFromString(json['kind'] as String),
@@ -153,3 +211,48 @@ TxKind txKindFromString(String value) => switch (value) {
   'other' => TxKind.other,
   _ => throw ArgumentError('kind tidak dikenal: $value'),
 };
+
+/// Template aturan kustom yang dibuat atau disetel pengguna dari Capture Log / Tuning.
+class CustomTemplate {
+  const CustomTemplate({
+    required this.id,
+    required this.bankId,
+    required this.template,
+    this.createdAt,
+  });
+
+  final String id;
+  final String bankId;
+  final TemplateRule template;
+  final DateTime? createdAt;
+
+  CustomTemplate copyWith({
+    String? id,
+    String? bankId,
+    TemplateRule? template,
+    DateTime? createdAt,
+  }) {
+    return CustomTemplate(
+      id: id ?? this.id,
+      bankId: bankId ?? this.bankId,
+      template: template ?? this.template,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'bankId': bankId,
+    'template': template.toJson(),
+    if (createdAt != null) 'createdAt': createdAt!.toIso8601String(),
+  };
+
+  factory CustomTemplate.fromJson(Map<String, dynamic> json) => CustomTemplate(
+    id: json['id'] as String,
+    bankId: json['bankId'] as String? ?? 'unknown',
+    template: TemplateRule.fromJson(json['template'] as Map<String, dynamic>),
+    createdAt: json['createdAt'] != null
+        ? DateTime.tryParse(json['createdAt'] as String)
+        : null,
+  );
+}
