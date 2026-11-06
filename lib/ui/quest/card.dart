@@ -93,12 +93,16 @@ class QuestChip extends StatelessWidget {
     required this.selected,
     required this.onTap,
     this.onLongPress,
+    this.leading,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
+
+  /// Widget kecil di depan label (mis. dot warna kategori).
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +131,13 @@ class QuestChip extends StatelessWidget {
               fontSize: 13,
               color: selected ? Colors.white : q.text,
             ),
-            child: Text(label),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (leading != null) ...[leading!, const SizedBox(width: 6)],
+                Text(label),
+              ],
+            ),
           ),
         ),
       ),
