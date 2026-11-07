@@ -727,7 +727,11 @@ class _TransactionSheetState extends State<TransactionSheet> {
                             : (_accounts.isNotEmpty ? _accounts.first.id : null),
                         isExpanded: true,
                         decoration: InputDecoration(
-                          labelText: _kind == TxKind.transfer ? 'Dari Akun' : 'Akun Pembayaran',
+                          labelText: _kind == TxKind.transfer
+                              ? 'Dari Akun'
+                              : (_direction == Direction.outgoing
+                                  ? 'Sumber Dana'
+                                  : 'Masuk ke Akun'),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(AppRadius.tile),
@@ -742,10 +746,33 @@ class _TransactionSheetState extends State<TransactionSheet> {
                           for (final a in _accounts)
                             DropdownMenuItem(
                               value: a.id,
-                              child: Text(
-                                '${a.name} · ${a.kind.label}',
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontSize: 13),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    switch (a.kind) {
+                                      AccountKind.bank =>
+                                        Icons.account_balance_rounded,
+                                      AccountKind.ewallet =>
+                                        Icons.phone_android_rounded,
+                                      AccountKind.cash =>
+                                        Icons.payments_outlined,
+                                    },
+                                    size: 16,
+                                    color: q.muted,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      a.name,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                         ],
@@ -832,10 +859,32 @@ class _TransactionSheetState extends State<TransactionSheet> {
                       for (final a in _accounts)
                         DropdownMenuItem(
                           value: a.id,
-                          child: Text(
-                            '${a.name} · ${a.kind.label}',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 13),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                switch (a.kind) {
+                                  AccountKind.bank =>
+                                    Icons.account_balance_rounded,
+                                  AccountKind.ewallet =>
+                                    Icons.phone_android_rounded,
+                                  AccountKind.cash => Icons.payments_outlined,
+                                },
+                                size: 16,
+                                color: q.muted,
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  a.name,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                     ],
