@@ -977,7 +977,7 @@ void main() {
       await repo.setOpeningBalance(accGopay.id, 50000);
 
       final now = DateTime(2026, 11, 1, 10, 0);
-      final idOut = await repo.addDraftFromCapture(
+      await repo.addDraftFromCapture(
         raw: capture(
           packageName: 'com.bca',
           title: 'm-BCA',
@@ -993,7 +993,7 @@ void main() {
           amount: 100000,
         ),
       );
-      final idIn = await repo.addDraftFromCapture(
+      await repo.addDraftFromCapture(
         raw: capture(
           packageName: 'com.gojek.app',
           title: 'GoPay',
@@ -1036,6 +1036,92 @@ void main() {
         DateTime(2026, 11, 2),
       );
       expect(spend.values.fold<int>(0, (a, b) => a + b), 0);
+    });
+
+    test('addManualTransfer: transfer manual dua kaki memotong saldo asal & menambah saldo tujuan', () async {
+      final accBca = await repo.addAccount('BCA', AccountKind.bank);
+      final accCash = await repo.addAccount('Dompet', AccountKind.cash);
+      await repo.setOpeningBalance(accBca.id, 1000000);
+      await repo.setOpeningBalance(accCash.id, 100000);
+
+      final now = DateTime(2026, 11, 2, 14, 0);
+      await repo.addManualTransfer(
+        fromAccountId: accBca.id,
+        toAccountId: accCash.id,
+        amount: 250000,
+        occurredAt: now,
+        note: 'Tarik tunai ATM',
+      );
+
+      final txs = await db.select(db.transactions).get();
+      expect(txs, hasLength(2));
+      final outTx = txs.firstWhere((t) => t.direction == Direction.outgoing);
+      final inTx = txs.firstWhere((t) => t.direction == Direction.incoming);
+
+      expect(outTx.accountId, accBca.id);
+      expect(outTx.amount, 250000);
+      expect(outTx.kind, TxKind.transfer);
+      expect(outTx.counterparty, 'Tarik tunai ATM (ke Dompet)');
+
+      expect(inTx.accountId, accCash.id);
+      expect(inTx.amount, 250000);
+      expect(inTx.kind, TxKind.transfer);
+      expect(inTx.counterparty, 'Tarik tunai ATM (dari BCA)');
+
+      final balances = await repo.watchAccountBalances().first;
+      expect(balances[accBca.id], 750000);
+      expect(balances[accCash.id], 350000);
+
+      // Pemasukan murni dan belanja murni tidak boleh terpengaruh transfer
+      final income = await repo.sumIncomeBetween(
+        DateTime(2026, 11, 1),
+        DateTime(2026, 11, 3),
+      );
+      final spend = await repo.sumSpendBetween(
+        DateTime(2026, 11, 1),
+        DateTime(2026, 11, 3),
+      );
+      expect(income, 0);
+      expect(spend, 0);
+    });
+
+    test('sumIncomeBetween: transfer masuk tidak dihitung sebagai pendapatan', () async {
+      final acc = await repo.addAccount('BCA', AccountKind.bank);
+      final now = DateTime(2026, 11, 2, 10, 0);
+
+      // 1. Gaji (masuk, bukan transfer) -> harus dihitung
+      await repo.addManual(
+        amount: 5000000,
+        direction: Direction.incoming,
+        kind: TxKind.payment,
+        counterparty: 'Gaji Kantor',
+        accountId: acc.id,
+        occurredAt: now,
+      );
+
+      // 2. Transfer masuk -> tidak boleh dihitung
+      await repo.addManual(
+        amount: 1000000,
+        direction: Direction.incoming,
+        kind: TxKind.transfer,
+        counterparty: 'Transfer Masuk Antar Rekening',
+        accountId: acc.id,
+        occurredAt: now,
+      );
+
+      final totalIncome = await repo.sumIncomeBetween(
+        DateTime(2026, 11, 1),
+        DateTime(2026, 11, 3),
+      );
+      expect(totalIncome, 5000000);
+
+      // sumBetween biasa tetap menghitung semua arah incoming
+      final rawIncoming = await repo.sumBetween(
+        DateTime(2026, 11, 1),
+        DateTime(2026, 11, 3),
+        Direction.incoming,
+      );
+      expect(rawIncoming, 6000000);
     });
   });
 }

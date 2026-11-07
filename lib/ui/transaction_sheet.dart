@@ -2,15 +2,19 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../capture/pipeline.dart';
+import '../core/dates_id.dart';
 import '../core/money.dart';
 import '../game/progress.dart';
 import '../models.dart';
+import '../rules/rule_set.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
+import 'add_account_sheet.dart';
+import 'ocr_screen.dart';
 import 'quest.dart';
-import '../core/dates_id.dart';
 
 class TransactionSheet extends StatefulWidget {
   const TransactionSheet({
@@ -19,6 +23,8 @@ class TransactionSheet extends StatefulWidget {
     this.existing,
     this.draft,
     this.progress,
+    this.pipeline,
+    this.ruleSet,
   });
 
   final LedgerRepository repository;
@@ -28,6 +34,8 @@ class TransactionSheet extends StatefulWidget {
   /// (atau dibuang). Tak pernah dipakai bersamaan dengan [existing].
   final Draft? draft;
   final ProgressService? progress;
+  final CapturePipeline? pipeline;
+  final RuleSet? ruleSet;
 
   static Future<void> show(
     BuildContext context,
@@ -35,6 +43,8 @@ class TransactionSheet extends StatefulWidget {
     TxWithCategory? existing,
     Draft? draft,
     ProgressService? progress,
+    CapturePipeline? pipeline,
+    RuleSet? ruleSet,
   }) {
     return showQuestSheet<void>(
       context,
@@ -50,6 +60,8 @@ class TransactionSheet extends StatefulWidget {
           existing: existing,
           draft: draft,
           progress: progress,
+          pipeline: pipeline,
+          ruleSet: ruleSet,
         ),
       ),
     );
@@ -72,6 +84,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
   int? _categoryId;
   List<Category> _categories = const [];
   int? _accountId;
+  int? _toAccountId;
   List<Account> _accounts = const [];
   bool _userExplicitlySelectedCategory = false;
 
@@ -126,7 +139,108 @@ class _TransactionSheetState extends State<TransactionSheet> {
   Future<void> _loadAccounts() async {
     final accs = await widget.repository.getAccounts();
     if (!mounted) return;
-    setState(() => _accounts = accs);
+    setState(() {
+      _accounts = accs;
+      if (_accountId == null && accs.isNotEmpty) {
+        _accountId = accs.first.id;
+      }
+      if (_toAccountId == null && accs.length > 1) {
+        _toAccountId = accs
+            .firstWhere((a) => a.id != _accountId, orElse: () => accs.last)
+            .id;
+      }
+    });
+  }
+
+  Future<void> _addAccount() async {
+    if (widget.pipeline != null && widget.ruleSet != null) {
+      await AddAccountSheet.show(
+        context,
+        repository: widget.repository,
+        pipeline: widget.pipeline!,
+        ruleSet: widget.ruleSet!,
+      );
+    } else {
+      final ctrl = TextEditingController();
+      final name = await showQuestDialog<String>(
+        context,
+        title: 'Akun baru',
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration:
+              const InputDecoration(labelText: 'Nama akun (mis. Dompet)'),
+        ),
+        actions: [
+          QuestButton(
+            label: 'Batal',
+            tone: QuestTone.secondary,
+            onPressed: () => Navigator.pop(context),
+          ),
+          QuestButton(
+            label: 'Tambah',
+            icon: Icons.add_rounded,
+            onPressed: () => Navigator.pop(context, ctrl.text),
+          ),
+        ],
+      );
+      if (name != null && name.trim().isNotEmpty) {
+        try {
+          await widget.repository.addAccount(name.trim(), AccountKind.cash);
+        } catch (_) {}
+      }
+    }
+    await _loadAccounts();
+  }
+
+  Future<void> _openOcr() async {
+    final p = widget.pipeline;
+    if (p == null) return;
+    Navigator.pop(context);
+    await OcrScreen.start(context, pipeline: p);
+  }
+
+  Future<void> _showPasteDialog() async {
+    final p = widget.pipeline;
+    if (p == null) return;
+    final controller = TextEditingController();
+    final text = await showQuestDialog<String>(
+      context,
+      title: 'Tempel Teks Transaksi',
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        maxLines: 4,
+        decoration: const InputDecoration(
+          hintText: 'Tempel pesan SMS atau notifikasi transfer di sini...',
+          border: OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        QuestButton(
+          label: 'Batal',
+          tone: QuestTone.secondary,
+          onPressed: () => Navigator.pop(context),
+        ),
+        QuestButton(
+          label: 'Proses',
+          icon: Icons.check_rounded,
+          onPressed: () => Navigator.pop(context, controller.text),
+        ),
+      ],
+    );
+    if (text == null || text.trim().isEmpty || !mounted) return;
+    final ok = await p.submitPastedText(text);
+    if (!mounted) return;
+    Navigator.pop(context);
+    questSnack(
+      context,
+      ok ? 'Teks berhasil diproses menjadi draf!' : 'Gagal memproses teks.',
+      icon: ok
+          ? Icons.check_circle_outline_rounded
+          : Icons.info_outline_rounded,
+    );
   }
 
   @override
@@ -201,6 +315,27 @@ class _TransactionSheetState extends State<TransactionSheet> {
     final counterparty = _counterpartyCtrl.text.trim();
     await HapticFeedback.lightImpact();
 
+    final resolvedAccountId =
+        _accountId ?? (_accounts.isNotEmpty ? _accounts.first.id : null);
+
+    if (!_isDraft &&
+        !_isEdit &&
+        _kind == TxKind.transfer &&
+        _toAccountId != null &&
+        resolvedAccountId != null &&
+        _toAccountId != resolvedAccountId) {
+      await widget.repository.addManualTransfer(
+        fromAccountId: resolvedAccountId,
+        toAccountId: _toAccountId!,
+        amount: _amount,
+        occurredAt: _occurredAt,
+        note: counterparty.isEmpty ? null : counterparty,
+      );
+      await widget.progress?.onTransactionRecorded();
+      if (mounted) Navigator.pop(context);
+      return;
+    }
+
     if (_isDraft) {
       await widget.repository.confirmDraft(
         widget.draft!,
@@ -209,7 +344,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
         kind: _kind,
         counterparty: counterparty.isEmpty ? null : counterparty,
         categoryId: _categoryId,
-        accountId: _accountId,
+        accountId: resolvedAccountId,
         occurredAt: _occurredAt,
       );
       await widget.progress?.onTransactionRecorded();
@@ -223,7 +358,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
           counterparty: Value(counterparty.isEmpty ? null : counterparty),
           occurredAt: Value(_occurredAt),
           categoryId: Value(_categoryId),
-          accountId: Value(_accountId),
+          accountId: Value(resolvedAccountId),
         ),
       );
       final categoryChanged = widget.existing!.tx.categoryId != _categoryId;
@@ -237,7 +372,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
         kind: _kind,
         counterparty: counterparty.isEmpty ? null : counterparty,
         categoryId: _categoryId,
-        accountId: _accountId,
+        accountId: resolvedAccountId,
         occurredAt: _occurredAt,
       );
       await widget.progress?.onTransactionRecorded();
@@ -338,6 +473,18 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 style: context.qTitle(20),
               ),
             ),
+            if (!_isDraft && !_isEdit && widget.pipeline != null) ...[
+              QuestIconButton(
+                icon: Icons.document_scanner_rounded,
+                tooltip: 'Foto Struk (OCR)',
+                onPressed: _openOcr,
+              ),
+              QuestIconButton(
+                icon: Icons.content_paste_rounded,
+                tooltip: 'Tempel Teks',
+                onPressed: _showPasteDialog,
+              ),
+            ],
             if (_isEdit || _isDraft)
               QuestIconButton(
                 icon: Icons.delete_outline_rounded,
@@ -384,9 +531,14 @@ class _TransactionSheetState extends State<TransactionSheet> {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<int>(
-                        initialValue: _accountId,
+                        key: ValueKey('account_$_accountId'),
+                        initialValue: _accounts.any((a) => a.id == _accountId)
+                            ? _accountId
+                            : (_accounts.isNotEmpty ? _accounts.first.id : null),
                         isExpanded: true,
-                        decoration: const InputDecoration(labelText: 'Akun'),
+                        decoration: InputDecoration(
+                          labelText: _kind == TxKind.transfer ? 'Dari Akun' : 'Akun',
+                        ),
                         items: [
                           for (final a in _accounts)
                             DropdownMenuItem(
@@ -400,7 +552,13 @@ class _TransactionSheetState extends State<TransactionSheet> {
                         onChanged: (v) => setState(() => _accountId = v),
                       ),
                     ),
-                    const SizedBox(width: Spacing.s),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline_rounded, size: 22),
+                      tooltip: 'Tambah akun baru',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: _addAccount,
+                    ),
+                    const SizedBox(width: Spacing.xs),
                     Expanded(
                       child: DropdownButtonFormField<TxKind>(
                         initialValue: _kind,
@@ -416,12 +574,54 @@ class _TransactionSheetState extends State<TransactionSheet> {
                               ),
                             ),
                         ],
-                        onChanged: (k) =>
-                            setState(() => _kind = k ?? TxKind.payment),
+                        onChanged: (k) {
+                          final newKind = k ?? TxKind.payment;
+                          setState(() {
+                            _kind = newKind;
+                            if (newKind == TxKind.transfer &&
+                                _toAccountId == null &&
+                                _accounts.length > 1) {
+                              _toAccountId = _accounts
+                                  .firstWhere((a) => a.id != _accountId,
+                                      orElse: () => _accounts.last)
+                                  .id;
+                            }
+                          });
+                        },
                       ),
                     ),
                   ],
                 ),
+                if (_kind == TxKind.transfer) ...[
+                  const SizedBox(height: Spacing.s),
+                  DropdownButtonFormField<int>(
+                    key: ValueKey('to_account_$_toAccountId'),
+                    initialValue: _accounts.any((a) => a.id == _toAccountId)
+                        ? _toAccountId
+                        : (_accounts.length > 1
+                            ? _accounts
+                                .firstWhere((a) => a.id != _accountId,
+                                    orElse: () => _accounts.last)
+                                .id
+                            : null),
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Ke Akun (Tujuan Transfer)',
+                      prefixIcon: Icon(Icons.arrow_forward_rounded, size: 18),
+                    ),
+                    items: [
+                      for (final a in _accounts)
+                        DropdownMenuItem(
+                          value: a.id,
+                          child: Text(
+                            '${a.name} · ${a.kind.label}',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                    ],
+                    onChanged: (v) => setState(() => _toAccountId = v),
+                  ),
+                ],
                 const SizedBox(height: Spacing.m),
                 QuestButton(
                   label: _dateLabel(_occurredAt),

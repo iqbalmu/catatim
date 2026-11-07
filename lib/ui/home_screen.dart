@@ -166,6 +166,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       context,
       widget.repository,
       progress: widget.progress,
+      pipeline: widget.pipeline,
+      ruleSet: widget.ruleSet,
     );
   }
 
@@ -240,6 +242,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   key: _transaksiKey,
                   repository: widget.repository,
                   progress: widget.progress,
+                  pipeline: widget.pipeline,
+                  ruleSet: widget.ruleSet,
                   onBonViewChanged: (inBon) =>
                       setState(() => _inBonView = inBon),
                 ),

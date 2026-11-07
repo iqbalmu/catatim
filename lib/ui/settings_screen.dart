@@ -105,6 +105,29 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ),
                 ),
+                Divider(height: 1, thickness: 1, color: q.line),
+                StreamBuilder<List<Category>>(
+                  stream: repository.watchCategories(),
+                  builder: (context, snapshot) {
+                    final categories = snapshot.data ?? const [];
+                    return QuestListTile(
+                      leading: _SettingIcon(
+                        icon: Icons.category_rounded,
+                        color: q.violet,
+                        bgColor: q.violet.withValues(alpha: 0.12),
+                      ),
+                      title: Text('Kategori & Anggaran', style: context.qTitle(15)),
+                      subtitle: Text(
+                        '${categories.length} kategori · Atur batas & alokasi',
+                        style: context.qSmall(12),
+                      ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        onOpenAnggaran?.call();
+                      },
+                    );
+                  },
+                ),
               ],
             ),
           ),

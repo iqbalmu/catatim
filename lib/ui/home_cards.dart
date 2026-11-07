@@ -101,33 +101,38 @@ class HomeTopBar extends StatelessWidget {
           ),
 
           // Streak Chip Button (Netral, tidak menyaingi saldo)
-          QuestPress(
-            onTap: () => GamificationSheet.show(context, progress),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: q.surface2,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-                border: Border.all(color: q.line),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.local_fire_department_rounded,
-                    color: streakDays > 0 ? q.warn : q.muted,
-                    size: 17,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '$streakDays h',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: q.text,
+          Tooltip(
+            message: summary?.streakPaused == true
+                ? 'Streak disiplin dijeda (atur batas di Anggaran untuk aktifkan)'
+                : '$streakDays hari disiplin hemat',
+            child: QuestPress(
+              onTap: () => GamificationSheet.show(context, progress),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: q.surface2,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  border: Border.all(color: q.line),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.local_fire_department_rounded,
+                      color: streakDays > 0 ? q.warn : q.muted,
+                      size: 17,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Text(
+                      '$streakDays h',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: q.text,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

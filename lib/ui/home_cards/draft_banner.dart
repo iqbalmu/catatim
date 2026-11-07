@@ -223,7 +223,7 @@ class DraftAttentionBanner extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: Spacing.s),
-                              if (amountWidget != null) amountWidget,
+                              amountWidget,
                               const SizedBox(width: 2),
                               Icon(
                                 Icons.chevron_right_rounded,

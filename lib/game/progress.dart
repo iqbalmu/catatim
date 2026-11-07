@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../core/budget.dart';
 import '../core/money.dart';
 import '../game/mascot.dart';
-import '../models.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
 
@@ -170,19 +169,14 @@ class ProgressService extends ChangeNotifier {
     final dayOut = await _repo.sumSpendBetween(today, dayEnd);
     final weekOut = await _repo.sumSpendBetween(weekStart, dayEnd);
     final monthOut = await _repo.sumSpendBetween(monthStart, monthEnd);
-    final monthIn = await _repo.sumBetween(
-      monthStart,
-      monthEnd,
-      Direction.incoming,
-    );
+    final monthIn = await _repo.sumIncomeBetween(monthStart, monthEnd);
     final lastMonthOut = await _repo.sumSpendBetween(
       lastMonthStart,
       lastMonthEnd,
     );
-    final lastMonthIn = await _repo.sumBetween(
+    final lastMonthIn = await _repo.sumIncomeBetween(
       lastMonthStart,
       lastMonthEnd,
-      Direction.incoming,
     );
     final catAccountUsed = await _repo.outPairsBetween(monthStart, monthEnd);
     final budgets = await _repo.watchBudgets().first;

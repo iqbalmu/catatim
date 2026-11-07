@@ -182,16 +182,21 @@ class _AddAccountSheetState extends State<AddAccountSheet>
     await widget.pipeline.channel.openListenerSettings();
   }
 
-  Future<void> _saveCash() async {
+  Future<void> _saveManual(AccountKind kind) async {
     final name = _cashNameCtrl.text.trim();
     if (name.isEmpty) {
-      setState(() => _cashError = 'Beri nama dulu, ya — misalnya Dompet.');
+      final hint = switch (kind) {
+        AccountKind.bank => 'Beri nama bank, ya — misalnya BCA.',
+        AccountKind.ewallet => 'Beri nama e-wallet, ya — misalnya GoPay.',
+        AccountKind.cash => 'Beri nama dulu, ya — misalnya Dompet.',
+      };
+      setState(() => _cashError = hint);
       return;
     }
     try {
       final account = await widget.repository.addAccount(
         name,
-        AccountKind.cash,
+        kind,
       );
       final opening = int.tryParse(
         _cashOpeningCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''),
@@ -200,7 +205,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
         await widget.repository.setOpeningBalance(account.id, opening);
       }
       if (!mounted) return;
-      questSnack(context, '$name siap dipakai.', icon: Icons.payments_rounded);
+      questSnack(context, '$name siap dipakai.', icon: Icons.check_rounded);
       Navigator.pop(context);
     } catch (_) {
       if (mounted) {
@@ -260,6 +265,8 @@ class _AddAccountSheetState extends State<AddAccountSheet>
           selected: _kind,
           onChanged: (kind) => setState(() {
             _kind = kind;
+            _cashNameCtrl.clear();
+            _cashOpeningCtrl.clear();
             _cashError = null;
           }),
         ),
@@ -271,31 +278,107 @@ class _AddAccountSheetState extends State<AddAccountSheet>
 
   List<Widget> _buildBankList() {
     final banks = _availableBanks;
+    final isBank = _kind == AccountKind.bank;
+    final presets = isBank
+        ? const ['BCA', 'Mandiri', 'BRI', 'BNI', 'CIMB Niaga', 'BSI', 'Permata']
+        : const ['GoPay', 'OVO', 'DANA', 'ShopeePay', 'LinkAja'];
+
     return [
-      Text(
-        _kind == AccountKind.bank
-            ? 'Pilih bank yang mau dicatat otomatis:'
-            : 'Pilih e-wallet yang mau dicatat otomatis:',
-        style: context.qBody(13),
-      ),
-      const SizedBox(height: Spacing.s),
-      if (banks.isEmpty)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: Spacing.m),
-          child: Text(
-            _kind == AccountKind.bank
-                ? 'Semua bank yang didukung sudah kamu hubungkan. Mantap!'
-                : 'Semua e-wallet yang didukung sudah kamu hubungkan. '
-                  'Mantap!',
-            style: context.qSmall(),
-            textAlign: TextAlign.center,
-          ),
-        )
-      else
+      if (banks.isNotEmpty) ...[
+        Text(
+          isBank
+              ? 'Pilih bank untuk baca notifikasi otomatis:'
+              : 'Pilih e-wallet untuk baca notifikasi otomatis:',
+          style: context.qBody(13),
+        ),
+        const SizedBox(height: Spacing.s),
         for (final b in banks) ...[
           _BankRow(bank: b, onTap: () => _pickBank(b)),
           const SizedBox(height: Spacing.s),
         ],
+        const SizedBox(height: Spacing.s),
+        Row(
+          children: [
+            Expanded(child: Divider(color: context.q.line)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Text(
+                'ATAU CATAT MANUAL',
+                style: context.qEyebrow(10.5).copyWith(color: context.q.muted),
+              ),
+            ),
+            Expanded(child: Divider(color: context.q.line)),
+          ],
+        ),
+        const SizedBox(height: Spacing.s),
+      ],
+      Text(
+        isBank
+            ? 'Tambah bank manual (tanpa baca notifikasi):'
+            : 'Tambah e-wallet (pilih atau ketik):',
+        style: context.qBody(13),
+      ),
+      const SizedBox(height: Spacing.xs),
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (final p in presets) ...[
+              QuestChip(
+                label: p,
+                selected: _cashNameCtrl.text == p,
+                onTap: () {
+                  setState(() {
+                    _cashNameCtrl.text = p;
+                    _cashError = null;
+                  });
+                },
+              ),
+              const SizedBox(width: Spacing.xs),
+            ],
+          ],
+        ),
+      ),
+      const SizedBox(height: Spacing.s),
+      TextField(
+        controller: _cashNameCtrl,
+        textCapitalization: TextCapitalization.words,
+        decoration: InputDecoration(
+          labelText: isBank ? 'Nama Bank' : 'Nama E-Wallet',
+          hintText: isBank ? 'Misalnya: BCA atau Mandiri' : 'Misalnya: GoPay',
+          errorText: _cashError,
+        ),
+      ),
+      const SizedBox(height: Spacing.s),
+      TextField(
+        controller: _cashOpeningCtrl,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        decoration: const InputDecoration(
+          labelText: 'Saldo awal (opsional)',
+          hintText: 'Misalnya: 500000',
+        ),
+      ),
+      const SizedBox(height: Spacing.m),
+      Row(
+        children: [
+          Expanded(
+            child: QuestButton(
+              label: 'Batal',
+              tone: QuestTone.secondary,
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          const SizedBox(width: Spacing.s),
+          Expanded(
+            child: QuestButton(
+              label: 'Simpan',
+              icon: Icons.check_rounded,
+              onPressed: () => _saveManual(_kind),
+            ),
+          ),
+        ],
+      ),
     ];
   }
 
@@ -336,7 +419,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
             child: QuestButton(
               label: 'Simpan',
               icon: Icons.check_rounded,
-              onPressed: _saveCash,
+              onPressed: () => _saveManual(AccountKind.cash),
             ),
           ),
         ],

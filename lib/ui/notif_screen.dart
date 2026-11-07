@@ -483,15 +483,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                     'Yuk cek batas pengeluaranmu di Anggaran',
                                 onTap: () => _goTo(widget.onOpenAnggaran),
                               ),
-                            _NotifItem(
-                              icon: Icons.handshake_outlined,
-                              color: q.bad,
-                              title:
-                                  '$aging bon lebih dari 30 hari '
-                                  'belum lunas',
-                              subtitle: 'Ingatkan dirimu atau tandai lunas',
-                              onTap: () => _goTo(widget.onOpenBon),
-                            ),
+                            if (aging > 0)
+                              _NotifItem(
+                                icon: Icons.handshake_outlined,
+                                color: q.bad,
+                                title:
+                                    '$aging bon lebih dari 30 hari '
+                                    'belum lunas',
+                                subtitle: 'Ingatkan dirimu atau tandai lunas',
+                                onTap: () => _goTo(widget.onOpenBon),
+                              ),
                           ];
                           if (drafts.isEmpty && items.isEmpty) {
                             return ListView(

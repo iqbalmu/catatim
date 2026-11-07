@@ -510,6 +510,12 @@ class _RencanaBatasState extends State<RencanaBatas> {
 
     // Update atau hapus alokasi anggaran
     if (result.limit != null && result.limit! > 0) {
+      if (existing != null && existing.accountId != result.accountId) {
+        await widget.repository.removeBudget(
+          category.id,
+          accountId: existing.accountId,
+        );
+      }
       await widget.repository.setBudget(
         category.id,
         result.limit!,

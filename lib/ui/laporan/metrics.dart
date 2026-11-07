@@ -90,16 +90,18 @@ class _ReportMetrics {
 
     for (final r in rows) {
       if (r.tx.direction == Direction.incoming) {
-        totalIn += r.tx.amount;
-        inCount++;
-        final key = r.category?.id;
-        catMeta[key] = r.category;
-        inByCat.putIfAbsent(key, () => []).add(r);
-        points.add((
-          at: r.tx.occurredAt,
-          direction: Direction.incoming,
-          amount: r.tx.amount,
-        ));
+        if (r.tx.kind != TxKind.transfer) {
+          totalIn += r.tx.amount;
+          inCount++;
+          final key = r.category?.id;
+          catMeta[key] = r.category;
+          inByCat.putIfAbsent(key, () => []).add(r);
+          points.add((
+            at: r.tx.occurredAt,
+            direction: Direction.incoming,
+            amount: r.tx.amount,
+          ));
+        }
       } else if (r.tx.kind != TxKind.transfer) {
         totalOut += r.tx.amount;
         outCount++;
@@ -119,7 +121,9 @@ class _ReportMetrics {
     var prevOut = 0;
     for (final r in prevRows) {
       if (r.tx.direction == Direction.incoming) {
-        prevIn += r.tx.amount;
+        if (r.tx.kind != TxKind.transfer) {
+          prevIn += r.tx.amount;
+        }
       } else if (r.tx.kind != TxKind.transfer) {
         prevOut += r.tx.amount;
       }

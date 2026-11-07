@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:bukuduit/capture/pipeline.dart';
 import 'package:bukuduit/capture/simulator.dart';
 import 'package:bukuduit/capture/capture_channel.dart';
-import 'package:bukuduit/models.dart';
 import 'package:bukuduit/rules/engine.dart';
 import 'package:bukuduit/rules/rule_set.dart';
 import 'package:bukuduit/storage/database.dart';

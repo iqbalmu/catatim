@@ -136,4 +136,57 @@ void main() {
       });
     },
   );
+
+  testWidgets(
+    'LaporanScreen: Transfer masuk tidak dihitung sebagai pemasukan baru di ringkasan arus kas',
+    (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final repo = LedgerRepository(db);
+
+      await tester.runAsync(() async {
+        final bca = await repo.addAccount('BCA', AccountKind.bank);
+        final gopay = await repo.addAccount('GoPay', AccountKind.ewallet);
+        final now = DateTime.now();
+        final day = DateTime(now.year, now.month, 10);
+
+        // Catat transfer internal: BCA -> GoPay 500k
+        await repo.addManualTransfer(
+          fromAccountId: bca.id,
+          toAccountId: gopay.id,
+          amount: 500000,
+          occurredAt: day,
+        );
+
+        // Catat pemasukan gaji asli: 3.000.000
+        await repo.addManual(
+          amount: 3000000,
+          direction: Direction.incoming,
+          kind: TxKind.payment,
+          counterparty: 'Gaji Bulanan',
+          accountId: bca.id,
+          occurredAt: day,
+        );
+      });
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: QuestSchemes.light(),
+          home: Scaffold(
+            body: LaporanScreen(repository: repo),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Pemasukan harus Rp3.000.000, bukan Rp3.500.000 (transfer 500k tidak boleh masuk)
+      expect(find.textContaining('3.000.000'), findsWidgets);
+      expect(find.textContaining('3.500.000'), findsNothing);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 1));
+      await tester.runAsync(() async {
+        await db.close();
+      });
+    },
+  );
 }

@@ -14,7 +14,10 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'bon_screen.dart';
 import 'month_picker.dart';
+import 'notif_screen.dart';
+import 'ocr_screen.dart';
 import 'quest.dart';
+import 'transaction_sheet.dart';
 import 'transaction_tile.dart';
 
 /// Cocokkan transaksi dengan query: pihak, kategori, bank, jenis, nominal.
@@ -76,6 +79,123 @@ class TransaksiScreenState extends State<TransaksiScreen> {
 
   void showBon() {
     _setBonView(true);
+  }
+
+  Future<void> _openOcr() async {
+    final p = widget.pipeline;
+    if (p == null) return;
+    await OcrScreen.start(context, pipeline: p);
+  }
+
+  Future<void> _settleBon(Bon bon) async {
+    if (bon.settledAt != null) {
+      await widget.repository.updateBon(
+        bon.id,
+        const BonsCompanion(settledAt: Value(null)),
+      );
+      if (mounted) questSnack(context, 'Status lunas dibatalkan.');
+      return;
+    }
+
+    final accounts = await widget.repository.getAccounts();
+    if (!mounted) return;
+    int? selectedAccountId = accounts.firstOrNull?.id;
+    bool recordTx = accounts.isNotEmpty;
+
+    final shouldSettle = await showQuestDialog<bool>(
+      context,
+      title: 'Lunasi Bon',
+      content: StatefulBuilder(
+        builder: (context, setDialogState) {
+          final isLent = bon.direction == BonDirection.lent;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Tandai bon ${bon.person} (${Money.format(bon.amount)}) sebagai lunas?',
+                style: context.qBody(13),
+              ),
+              if (accounts.isNotEmpty) ...[
+                const SizedBox(height: Spacing.m),
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: recordTx,
+                  title: Text(
+                    isLent
+                        ? 'Catat uang masuk ke rekening'
+                        : 'Catat uang keluar dari rekening',
+                    style: context.qTitle(13),
+                  ),
+                  onChanged: (val) =>
+                      setDialogState(() => recordTx = val ?? true),
+                ),
+                if (recordTx) ...[
+                  const SizedBox(height: Spacing.xs),
+                  DropdownButtonFormField<int>(
+                    initialValue: selectedAccountId,
+                    isExpanded: true,
+                    decoration: const InputDecoration(labelText: 'Pilih Akun'),
+                    items: [
+                      for (final a in accounts)
+                        DropdownMenuItem(
+                          value: a.id,
+                          child: Text('${a.name} · ${a.kind.label}'),
+                        ),
+                    ],
+                    onChanged: (v) =>
+                        setDialogState(() => selectedAccountId = v),
+                  ),
+                ],
+              ],
+            ],
+          );
+        },
+      ),
+      actions: [
+        QuestButton(
+          label: 'Batal',
+          tone: QuestTone.secondary,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        QuestButton(
+          label: 'Lunasi',
+          icon: Icons.check_rounded,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
+    );
+
+    if (shouldSettle != true || !mounted) return;
+
+    await widget.repository.updateBon(
+      bon.id,
+      BonsCompanion(settledAt: Value(DateTime.now())),
+    );
+
+    if (recordTx && selectedAccountId != null) {
+      final isLent = bon.direction == BonDirection.lent;
+      final otherCatId = (await widget.repository.getCategories())
+          .where((c) => c.name.toLowerCase() == 'lainnya')
+          .firstOrNull
+          ?.id;
+      await widget.repository.addManual(
+        amount: bon.amount,
+        direction: isLent ? Direction.incoming : Direction.outgoing,
+        kind: TxKind.payment,
+        counterparty: isLent
+            ? 'Pelunasan piutang: ${bon.person}'
+            : 'Bayar utang ke: ${bon.person}',
+        accountId: selectedAccountId,
+        categoryId: otherCatId,
+        occurredAt: DateTime.now(),
+      );
+      await widget.progress?.onTransactionRecorded();
+    }
+
+    if (mounted) {
+      questSnack(context, 'Bon ${bon.person} berhasil dilunasi!');
+    }
   }
   late DateTime _selectedMonth;
   final TextEditingController _searchCtrl = TextEditingController();
@@ -258,7 +378,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                 ),
               ),
 
-              // Button Bon Shortcut (Kanan)
+              // Button Bon Shortcut & OCR (Kanan)
               Expanded(
                 child: Align(
                   alignment: Alignment.centerRight,
@@ -268,7 +388,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                       final bons = snapshot.data ?? const [];
                       final unsettledCount = bons.where((b) => b.settledAt == null).length;
 
-                      return QuestPress(
+                      final bonChip = QuestPress(
                         onTap: () => _setBonView(true),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -320,10 +440,25 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                            ),
                          ),
                        );
-                     },
-                   ),
-                 ),
-               ),
+
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          bonChip,
+                          if (widget.pipeline != null) ...[
+                            const SizedBox(width: Spacing.xs),
+                            QuestIconButton(
+                              icon: Icons.document_scanner_rounded,
+                              tooltip: 'Foto Struk (OCR)',
+                              onPressed: _openOcr,
+                            ),
+                          ],
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -462,6 +597,76 @@ class TransaksiScreenState extends State<TransaksiScreen> {
         ),
         ),
         const SizedBox(height: Spacing.xs),
+
+        // Draf Notifikasi Bank Strip
+        StreamBuilder<List<Draft>>(
+          stream: widget.repository.watchDrafts(),
+          builder: (context, draftSnap) {
+            final drafts = draftSnap.data ?? const [];
+            if (drafts.isEmpty) return const SizedBox.shrink();
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(Spacing.m, 0, Spacing.m, Spacing.xs),
+              child: QuestPress(
+                onTap: () {
+                  if (drafts.length == 1) {
+                    TransactionSheet.show(
+                      context,
+                      widget.repository,
+                      draft: drafts.first,
+                      progress: widget.progress,
+                      pipeline: widget.pipeline,
+                      ruleSet: widget.ruleSet,
+                    );
+                  } else if (widget.pipeline != null && widget.ruleSet != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => NotificationScreen(
+                          repository: widget.repository,
+                          pipeline: widget.pipeline!,
+                          ruleSet: widget.ruleSet!,
+                          progress: widget.progress,
+                        ),
+                      ),
+                    );
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: context.q.primaryLight,
+                    borderRadius: BorderRadius.circular(AppRadius.tile),
+                    border: Border.all(color: context.q.primary.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.mark_email_unread_rounded, size: 18, color: context.q.primaryDeep),
+                      const SizedBox(width: Spacing.s),
+                      Expanded(
+                        child: Text(
+                          '${drafts.length} draf transaksi bank menunggu konfirmasi',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: context.q.primaryDeep,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        'Tinjau →',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: context.q.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
 
         // Transactions Stream List
         Expanded(
@@ -887,19 +1092,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                       const SizedBox(height: 4),
                       // Quick Settle Button
                       InkWell(
-                        onTap: () async {
-                          if (bon.settledAt == null) {
-                            await widget.repository.updateBon(
-                              bon.id,
-                              BonsCompanion(settledAt: Value(DateTime.now())),
-                            );
-                          } else {
-                            await widget.repository.updateBon(
-                              bon.id,
-                              const BonsCompanion(settledAt: Value(null)),
-                            );
-                          }
-                        },
+                        onTap: () => _settleBon(bon),
                         borderRadius: BorderRadius.circular(AppRadius.pill),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

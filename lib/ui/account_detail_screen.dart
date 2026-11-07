@@ -165,6 +165,7 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
       name: bank.displayName,
       kind: bank.accountKind,
     );
+    await widget.pipeline.syncAllowedPackages();
     if (mounted) {
       questSnack(
         context,
@@ -177,6 +178,7 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
   Future<void> _toggleAutoRead(BankRules bank, bool on) async {
     if (!on) {
       await widget.repository.setBankConnected(bank.id, false);
+      await widget.pipeline.syncAllowedPackages();
       if (mounted) {
         questSnack(
           context,
