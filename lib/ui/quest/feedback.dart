@@ -84,7 +84,11 @@ Future<T?> showQuestDialog<T>(
                 ),
                 child: Text(title, style: context.qTitle(18)),
               ),
-              Divider(height: 1, thickness: 1, color: q.line),
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: q.line.withValues(alpha: 0.5),
+              ),
               Flexible(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(

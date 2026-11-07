@@ -107,13 +107,13 @@ class _UnparsedLogsSheetState extends State<UnparsedLogsSheet> {
             return ListView(
               controller: scrollController,
               padding: const EdgeInsets.fromLTRB(
-                Spacing.l,
+                Spacing.m,
                 Spacing.xs,
+                Spacing.m,
                 Spacing.l,
-                Spacing.xl,
               ),
               children: [
-                // Header
+                // Header Ramping
                 Row(
                   children: [
                     Expanded(
@@ -121,36 +121,59 @@ class _UnparsedLogsSheetState extends State<UnparsedLogsSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Notifikasi Belum Terbaca',
-                            style: context.qTitle(18),
+                            'Format Belum Dikenali',
+                            style: context.qTitle(17),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Pilih notifikasi untuk melihat detail atau membuat aturan kustom.',
+                            'Notifikasi yang belum cocok dengan aturan bank',
                             style: context.qSmall(12).copyWith(color: q.muted),
                           ),
                         ],
                       ),
                     ),
+                    if (unparsed.isNotEmpty) ...[
+                      QuestPress(
+                        onTap: _isReparsing ? null : _reparseAll,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: q.surface2,
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                            border: Border.all(color: q.line),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.refresh_rounded,
+                                size: 14,
+                                color: _isReparsing ? q.muted : q.text,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _isReparsing ? 'Memindai...' : 'Pindai Ulang',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: _isReparsing ? q.muted : q.text,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: Spacing.xs),
+                    ],
                     IconButton(
-                      icon: const Icon(Icons.close_rounded),
+                      icon: const Icon(Icons.close_rounded, size: 20),
                       tooltip: 'Tutup',
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
-                ),
-                const SizedBox(height: Spacing.m),
-
-                // Tombol Pindai Ulang
-                QuestButton(
-                  label: _isReparsing
-                      ? 'Memindai Ulang...'
-                      : 'Pindai Ulang Semua Notifikasi',
-                  icon: Icons.refresh_rounded,
-                  tone: QuestTone.secondary,
-                  onPressed: (_isReparsing || unparsed.isEmpty)
-                      ? null
-                      : _reparseAll,
                 ),
                 const SizedBox(height: Spacing.m),
 
@@ -162,7 +185,7 @@ class _UnparsedLogsSheetState extends State<UnparsedLogsSheet> {
                         children: [
                           Icon(
                             Icons.check_circle_outline_rounded,
-                            size: 48,
+                            size: 44,
                             color: q.good,
                           ),
                           const SizedBox(height: Spacing.s),
@@ -181,70 +204,153 @@ class _UnparsedLogsSheetState extends State<UnparsedLogsSheet> {
                     ),
                   ),
                 ] else ...[
-                  Text(
-                    '${unparsed.length} NOTIFIKASI TERTUNDA',
-                    style: context
-                        .qSmall(11.5)
-                        .copyWith(color: q.muted, fontWeight: FontWeight.w800),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${unparsed.length} notifikasi belum diproses',
+                        style: context.qSmall(11.5).copyWith(color: q.muted),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: Spacing.s),
-                  QuestCard(
-                    padding: EdgeInsets.zero,
-                    child: Column(
-                      children: [
-                        for (var i = 0; i < unparsed.length; i++) ...[
-                          QuestListTile(
-                            leading: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: q.surface2,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Icon(
-                                Icons.mark_email_unread_rounded,
-                                color: q.warn,
-                                size: 19,
-                              ),
+                  const SizedBox(height: Spacing.xs),
+                  for (final log in unparsed) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: Spacing.s),
+                      decoration: BoxDecoration(
+                        color: q.surface,
+                        borderRadius: BorderRadius.circular(AppRadius.tile),
+                        border: Border.all(color: q.line.withValues(alpha: 0.6)),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(Spacing.m),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: q.surface2,
+                                    borderRadius:
+                                        BorderRadius.circular(AppRadius.pill),
+                                  ),
+                                  child: Text(
+                                    log.packageName.isEmpty
+                                        ? 'Tempel / SMS'
+                                        : (log.packageName.contains('.')
+                                            ? log.packageName.split('.').last
+                                            : log.packageName),
+                                    style: TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: q.muted,
+                                    ),
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  idDateTime(log.postedAt),
+                                  style: context
+                                      .qSmall(10.5)
+                                      .copyWith(color: q.muted),
+                                ),
+                              ],
                             ),
-                            title: Text(
-                              unparsed[i].title.isNotEmpty
-                                  ? unparsed[i].title
-                                  : unparsed[i].body,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: context.qTitle(13.5),
-                            ),
-                            subtitle: Text(
-                              '${idDateTime(unparsed[i].postedAt)} · ${unparsed[i].packageName.isEmpty ? 'Manual/Tempel' : unparsed[i].packageName}\n${unparsed[i].body}',
+                            const SizedBox(height: Spacing.xs),
+                            if (log.title.isNotEmpty && log.title != log.body) ...[
+                              Text(
+                                log.title,
+                                style: context.qTitle(13.5),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                            ],
+                            Text(
+                              log.body,
+                              style: context.qSmall(12).copyWith(
+                                color: q.text.withValues(alpha: 0.85),
+                              ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 11.5, color: q.muted),
                             ),
-                            trailing: Icon(
-                              Icons.tune_rounded,
-                              size: 18,
-                              color: q.primary,
+                            const SizedBox(height: Spacing.s),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                QuestPress(
+                                  onTap: () async {
+                                    await widget.repository.deleteCaptureLog(log.id);
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 6,
+                                    ),
+                                    child: Text(
+                                      'Abaikan',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: q.muted,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: Spacing.xs),
+                                QuestPress(
+                                  onTap: () async {
+                                    await CaptureTuneSheet.show(
+                                      context,
+                                      log: log,
+                                      repository: widget.repository,
+                                      pipeline: widget.pipeline,
+                                      ruleSet: widget.ruleSet,
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: q.primary.withValues(alpha: 0.14),
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.pill),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.tune_rounded,
+                                          size: 14,
+                                          color: q.primary,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Latih Pola',
+                                          style: TextStyle(
+                                            color: q.primary,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            onTap: () async {
-                              final updated = await CaptureTuneSheet.show(
-                                context,
-                                log: unparsed[i],
-                                repository: widget.repository,
-                                pipeline: widget.pipeline,
-                                ruleSet: widget.ruleSet,
-                              );
-                              if (updated == true && mounted) {
-                                // Refresh stream otomatis via database
-                              }
-                            },
-                          ),
-                          if (i < unparsed.length - 1)
-                            Divider(height: 1, thickness: 1, color: q.line),
-                        ],
-                      ],
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ],
             );

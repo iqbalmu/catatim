@@ -22,6 +22,7 @@ class _NotifItem {
     required this.color,
     required this.title,
     required this.subtitle,
+    required this.actionLabel,
     required this.onTap,
   });
 
@@ -29,6 +30,7 @@ class _NotifItem {
   final Color color;
   final String title;
   final String subtitle;
+  final String actionLabel;
   final VoidCallback onTap;
 }
 
@@ -157,6 +159,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 title: 'Izin baca notifikasi belum nyala',
                                 subtitle:
                                     'Nyalakan agar draf transaksi otomatis masuk',
+                                actionLabel: 'Nyalakan',
                                 onTap: _openBankAccounts,
                               ),
                             if (unread > 0)
@@ -167,6 +170,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                     '$unread notifikasi belum dikenali formatnya',
                                 subtitle:
                                     'Ketuk untuk melatih pola bank atau catat manual',
+                                actionLabel: 'Periksa',
                                 onTap: () => _handleUnread(unread, connected),
                               ),
                             if (level == BudgetLevel.over)
@@ -177,6 +181,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                     'Batas ${critical?.label ?? 'harian'} terlampaui',
                                 subtitle:
                                     'Yuk cek batas pengeluaranmu di Anggaran',
+                                actionLabel: 'Anggaran',
                                 onTap: () => _goTo(widget.onOpenAnggaran),
                               )
                             else if (level == BudgetLevel.warning)
@@ -188,6 +193,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                     'mendekati plafon',
                                 subtitle:
                                     'Yuk cek batas pengeluaranmu di Anggaran',
+                                actionLabel: 'Anggaran',
                                 onTap: () => _goTo(widget.onOpenAnggaran),
                               ),
                             if (aging > 0)
@@ -197,6 +203,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 title:
                                     '$aging bon lebih dari 30 hari belum lunas',
                                 subtitle: 'Ingatkan dirimu atau tandai lunas',
+                                actionLabel: 'Lihat Bon',
                                 onTap: () => _goTo(widget.onOpenBon),
                               ),
                           ];
@@ -307,48 +314,78 @@ class _AttentionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final q = context.q;
-    return QuestPress(
-      onTap: item.onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: Spacing.s),
-        padding: Insets.tile,
-        decoration: BoxDecoration(
-          color: q.surface,
-          borderRadius: BorderRadius.circular(AppRadius.tile),
-          border: Border.all(color: q.line.withValues(alpha: 0.6)),
-          boxShadow: [
-            BoxShadow(
-              color: q.shadow,
-              offset: const Offset(0, 4),
-              blurRadius: 14,
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: item.color.withValues(alpha: 0.16),
-                shape: BoxShape.circle,
+    return Container(
+      margin: const EdgeInsets.only(bottom: Spacing.s),
+      decoration: BoxDecoration(
+        color: q.surface,
+        borderRadius: BorderRadius.circular(AppRadius.tile),
+        border: Border.all(color: q.line.withValues(alpha: 0.6)),
+      ),
+      child: QuestPress(
+        onTap: item.onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Spacing.m,
+            vertical: 12,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: item.color.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(item.icon, size: 19, color: item.color),
               ),
-              child: Icon(item.icon, size: 19, color: item.color),
-            ),
-            const SizedBox(width: Spacing.s),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(item.title, style: context.qTitle(14)),
-                  const SizedBox(height: 2),
-                  Text(item.subtitle, style: context.qSmall(11.5)),
-                ],
+              const SizedBox(width: Spacing.s),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item.title, style: context.qTitle(14)),
+                    const SizedBox(height: 2),
+                    Text(
+                      item.subtitle,
+                      style: context.qSmall(11.5).copyWith(color: q.muted),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Icon(Icons.chevron_right_rounded, size: 18, color: q.muted),
-          ],
+              const SizedBox(width: Spacing.xs),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: item.color.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      item.actionLabel,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: item.color,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 14,
+                      color: item.color,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
