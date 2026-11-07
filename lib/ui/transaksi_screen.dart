@@ -785,7 +785,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(Spacing.m, 0, Spacing.m, Spacing.s),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(
                         color: context.q.surface,
                         borderRadius: BorderRadius.circular(AppRadius.tile),
@@ -801,17 +801,20 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                               children: [
                                 Text(
                                   'PEMASUKAN',
-                                  style: context.qEyebrow(9).copyWith(color: context.q.good),
+                                  style: context.qEyebrow(10.5).copyWith(
+                                    color: context.q.good,
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
-                                const SizedBox(height: 2),
+                                const SizedBox(height: 4),
                                 FittedBox(
                                   fit: BoxFit.scaleDown,
                                   alignment: Alignment.centerLeft,
                                   child: Text(
                                     '+${Money.format(totalIn)}',
                                     style: TextStyle(
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.w800,
+                                      fontSize: 15.5,
+                                      fontWeight: FontWeight.w900,
                                       color: context.q.good,
                                       fontFeatures: const [FontFeature.tabularFigures()],
                                     ),
@@ -822,27 +825,30 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                           ),
                           Container(
                             width: 1,
-                            height: 22,
+                            height: 32,
                             color: context.q.line.withValues(alpha: 0.5),
                           ),
-                          const SizedBox(width: Spacing.s),
+                          const SizedBox(width: Spacing.m),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   'PENGELUARAN',
-                                  style: context.qEyebrow(9).copyWith(color: context.q.bad),
+                                  style: context.qEyebrow(10.5).copyWith(
+                                    color: context.q.bad,
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
-                                const SizedBox(height: 2),
+                                const SizedBox(height: 4),
                                 FittedBox(
                                   fit: BoxFit.scaleDown,
                                   alignment: Alignment.centerLeft,
                                   child: Text(
                                     '-${Money.format(totalOut)}',
                                     style: TextStyle(
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.w800,
+                                      fontSize: 15.5,
+                                      fontWeight: FontWeight.w900,
                                       color: context.q.bad,
                                       fontFeatures: const [FontFeature.tabularFigures()],
                                     ),
@@ -853,27 +859,30 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                           ),
                           Container(
                             width: 1,
-                            height: 22,
+                            height: 32,
                             color: context.q.line.withValues(alpha: 0.5),
                           ),
-                          const SizedBox(width: Spacing.s),
+                          const SizedBox(width: Spacing.m),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   'SELISIH',
-                                  style: context.qEyebrow(9).copyWith(color: context.q.muted),
+                                  style: context.qEyebrow(10.5).copyWith(
+                                    color: context.q.muted,
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
-                                const SizedBox(height: 2),
+                                const SizedBox(height: 4),
                                 FittedBox(
                                   fit: BoxFit.scaleDown,
                                   alignment: Alignment.centerLeft,
                                   child: Text(
                                     (netCashflow >= 0 ? '+' : '') + Money.format(netCashflow),
                                     style: TextStyle(
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.w800,
+                                      fontSize: 15.5,
+                                      fontWeight: FontWeight.w900,
                                       color: netCashflow >= 0 ? context.q.text : context.q.bad,
                                       fontFeatures: const [FontFeature.tabularFigures()],
                                     ),
