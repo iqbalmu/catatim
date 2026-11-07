@@ -78,6 +78,9 @@ class _TransactionSheetState extends State<TransactionSheet> {
   /// supaya sheet tidak pernah terdorong naik-turun.
   int _amount = 0;
 
+  /// Alur 2-langkah: 0 = Input Nominal & Arah, 1 = Detail Transaksi.
+  int _currentStep = 0;
+
   late Direction _direction;
   late TxKind _kind;
   late DateTime _occurredAt;
@@ -103,6 +106,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
     _accountId = tx?.accountId ?? draft?.accountId;
     _amount = tx?.amount ?? draft?.amount ?? 0;
     _counterpartyCtrl.text = tx?.counterparty ?? draft?.counterparty ?? '';
+    _currentStep = (_isEdit || _isDraft) ? 1 : 0;
     _loadCategories();
     _loadAccounts();
   }
@@ -452,13 +456,8 @@ class _TransactionSheetState extends State<TransactionSheet> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildStep1Nominal(BuildContext context) {
     final q = context.q;
-    // Keyboard sistem hanya muncul untuk field keterangan opsional. Saat itu
-    // keypad disembunyikan — keduanya bertukar di area yang sama, jadi sheet
-    // tidak pernah terdorong naik-turun.
-    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -468,8 +467,8 @@ class _TransactionSheetState extends State<TransactionSheet> {
             Expanded(
               child: Text(
                 _isDraft
-                    ? 'Periksa & catat'
-                    : (_isEdit ? 'Ubah transaksi' : 'Catat transaksi'),
+                    ? 'Nominal draf'
+                    : (_isEdit ? 'Ubah nominal' : 'Catat transaksi'),
                 style: context.qTitle(20),
               ),
             ),
@@ -494,40 +493,231 @@ class _TransactionSheetState extends State<TransactionSheet> {
           ],
         ),
         const SizedBox(height: Spacing.s),
-        Text(
-          _amount > 0 ? Money.format(_amount) : 'Rp0',
-          style: context
-              .qDisplay(30)
-              .copyWith(
-                color: _amount > 0 ? null : q.muted.withValues(alpha: 0.5),
+        QuestSegmented<Direction>(
+          selected: _direction,
+          onChanged: (d) => setState(() => _direction = d),
+          options: const [
+            (
+              value: Direction.outgoing,
+              label: 'Keluar',
+              icon: Icons.arrow_upward_rounded,
+            ),
+            (
+              value: Direction.incoming,
+              label: 'Masuk',
+              icon: Icons.arrow_downward_rounded,
+            ),
+          ],
+        ),
+        const SizedBox(height: Spacing.m),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: q.surface2,
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: q.line.withValues(alpha: 0.6)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Nominal',
+                style: context.qSmall(13).copyWith(color: q.muted),
               ),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    _amount > 0 ? Money.format(_amount) : 'Rp0',
+                    style: TextStyle(
+                      fontFamily: 'Nunito',
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      color: _amount > 0
+                          ? (_direction == Direction.outgoing ? q.bad : q.good)
+                          : q.muted.withValues(alpha: 0.5),
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: Spacing.s),
+        Text(
+          'KATEGORI',
+          style: context.qEyebrow(10).copyWith(color: q.muted),
+        ),
+        const SizedBox(height: Spacing.xs),
+        _buildCategoryChips(),
+        const SizedBox(height: Spacing.m),
+        Container(height: 1, color: q.line.withValues(alpha: 0.5)),
+        const SizedBox(height: Spacing.xs),
+        QuestKeypad(
+          amount: _amount,
+          saveLabel: 'Lanjut',
+          onChanged: (val) => setState(() => _amount = val),
+          onSave: () {
+            if (_amount <= 0) {
+              HapticFeedback.heavyImpact();
+              questSnack(context, 'Masukkan nominal terlebih dahulu');
+              return;
+            }
+            HapticFeedback.selectionClick();
+            setState(() => _currentStep = 1);
+          },
+        ),
+        const SizedBox(height: Spacing.xs),
+      ],
+    );
+  }
+
+  Widget _buildStep2Detail(BuildContext context) {
+    final q = context.q;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              icon: const Icon(Icons.arrow_back_rounded, size: 22),
+              tooltip: 'Ubah Nominal',
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                setState(() => _currentStep = 0);
+              },
+            ),
+            const SizedBox(width: Spacing.s),
+            Expanded(
+              child: Text(
+                _isDraft
+                    ? 'Detail Draf'
+                    : (_isEdit ? 'Ubah Transaksi' : 'Detail Transaksi'),
+                style: context.qTitle(19),
+              ),
+            ),
+            if (_isEdit || _isDraft)
+              QuestIconButton(
+                icon: Icons.delete_outline_rounded,
+                tooltip: _isDraft ? 'Buang' : 'Hapus',
+                onPressed: _delete,
+              ),
+          ],
+        ),
+        const SizedBox(height: Spacing.s),
+        QuestPress(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            setState(() => _currentStep = 0);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: (_direction == Direction.outgoing ? q.bad : q.good)
+                  .withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(AppRadius.card),
+              border: Border.all(
+                color: (_direction == Direction.outgoing ? q.bad : q.good)
+                    .withValues(alpha: 0.3),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: (_direction == Direction.outgoing ? q.bad : q.good)
+                        .withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _direction == Direction.outgoing
+                        ? Icons.arrow_upward_rounded
+                        : Icons.arrow_downward_rounded,
+                    size: 16,
+                    color: _direction == Direction.outgoing ? q.bad : q.good,
+                  ),
+                ),
+                const SizedBox(width: Spacing.s),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _direction == Direction.outgoing
+                          ? 'PENGELUARAN'
+                          : 'PEMASUKAN',
+                      style: TextStyle(
+                        fontFamily: 'Nunito',
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: _direction == Direction.outgoing ? q.bad : q.good,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    Text(
+                      Money.format(_amount),
+                      style: TextStyle(
+                        fontFamily: 'Nunito',
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                        color: q.text,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: q.surface,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    border: Border.all(color: q.line.withValues(alpha: 0.6)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Ubah',
+                        style: TextStyle(
+                          fontFamily: 'Nunito',
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: q.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 2),
+                      Icon(Icons.edit_outlined, size: 12, color: q.primary),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
         const SizedBox(height: Spacing.m),
         Flexible(
           child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                QuestSegmented<Direction>(
-                  selected: _direction,
-                  onChanged: (d) => setState(() => _direction = d),
-                  options: const [
-                    (
-                      value: Direction.outgoing,
-                      label: 'Keluar',
-                      icon: Icons.arrow_upward_rounded,
-                    ),
-                    (
-                      value: Direction.incoming,
-                      label: 'Masuk',
-                      icon: Icons.arrow_downward_rounded,
-                    ),
-                  ],
+                Text(
+                  'KATEGORI',
+                  style: context.qEyebrow(10).copyWith(color: q.muted),
                 ),
-                const SizedBox(height: Spacing.m),
+                const SizedBox(height: Spacing.xs),
                 _buildCategoryChips(),
                 const SizedBox(height: Spacing.m),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<int>(
@@ -537,7 +727,16 @@ class _TransactionSheetState extends State<TransactionSheet> {
                             : (_accounts.isNotEmpty ? _accounts.first.id : null),
                         isExpanded: true,
                         decoration: InputDecoration(
-                          labelText: _kind == TxKind.transfer ? 'Dari Akun' : 'Akun',
+                          labelText: _kind == TxKind.transfer ? 'Dari Akun' : 'Akun Pembayaran',
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.tile),
+                            borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.tile),
+                            borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                          ),
                         ),
                         items: [
                           for (final a in _accounts)
@@ -546,51 +745,62 @@ class _TransactionSheetState extends State<TransactionSheet> {
                               child: Text(
                                 '${a.name} · ${a.kind.label}',
                                 overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 13),
                               ),
                             ),
                         ],
                         onChanged: (v) => setState(() => _accountId = v),
                       ),
                     ),
+                    const SizedBox(width: Spacing.xs),
                     IconButton(
                       icon: const Icon(Icons.add_circle_outline_rounded, size: 22),
                       tooltip: 'Tambah akun baru',
-                      visualDensity: VisualDensity.compact,
                       onPressed: _addAccount,
                     ),
-                    const SizedBox(width: Spacing.xs),
-                    Expanded(
-                      child: DropdownButtonFormField<TxKind>(
-                        initialValue: _kind,
-                        isExpanded: true,
-                        decoration: const InputDecoration(labelText: 'Jenis'),
-                        items: [
-                          for (final k in TxKind.values)
-                            DropdownMenuItem(
-                              value: k,
-                              child: Text(
-                                k.label,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                        ],
-                        onChanged: (k) {
-                          final newKind = k ?? TxKind.payment;
-                          setState(() {
-                            _kind = newKind;
-                            if (newKind == TxKind.transfer &&
-                                _toAccountId == null &&
-                                _accounts.length > 1) {
-                              _toAccountId = _accounts
-                                  .firstWhere((a) => a.id != _accountId,
-                                      orElse: () => _accounts.last)
-                                  .id;
-                            }
-                          });
-                        },
-                      ),
-                    ),
                   ],
+                ),
+                const SizedBox(height: Spacing.s),
+                DropdownButtonFormField<TxKind>(
+                  initialValue: _kind,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: 'Jenis Transaksi',
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.tile),
+                      borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.tile),
+                      borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                    ),
+                  ),
+                  items: [
+                    for (final k in TxKind.values)
+                      DropdownMenuItem(
+                        value: k,
+                        child: Text(
+                          k.label,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
+                  ],
+                  onChanged: (k) {
+                    final newKind = k ?? TxKind.payment;
+                    setState(() {
+                      _kind = newKind;
+                      if (newKind == TxKind.transfer &&
+                          _toAccountId == null &&
+                          _accounts.length > 1) {
+                        _toAccountId = _accounts
+                            .firstWhere((a) => a.id != _accountId,
+                                orElse: () => _accounts.last)
+                            .id;
+                      }
+                    });
+                  },
                 ),
                 if (_kind == TxKind.transfer) ...[
                   const SizedBox(height: Spacing.s),
@@ -605,9 +815,18 @@ class _TransactionSheetState extends State<TransactionSheet> {
                                 .id
                             : null),
                     isExpanded: true,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Ke Akun (Tujuan Transfer)',
-                      prefixIcon: Icon(Icons.arrow_forward_rounded, size: 18),
+                      prefixIcon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.tile),
+                        borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.tile),
+                        borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                      ),
                     ),
                     items: [
                       for (final a in _accounts)
@@ -616,6 +835,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
                           child: Text(
                             '${a.name} · ${a.kind.label}',
                             overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 13),
                           ),
                         ),
                     ],
@@ -623,13 +843,53 @@ class _TransactionSheetState extends State<TransactionSheet> {
                   ),
                 ],
                 const SizedBox(height: Spacing.m),
-                QuestButton(
-                  label: _dateLabel(_occurredAt),
-                  icon: Icons.event_outlined,
-                  tone: QuestTone.secondary,
-                  onPressed: _pickDate,
+                Text(
+                  'WAKTU TRANSAKSI',
+                  style: context.qEyebrow(10).copyWith(color: q.muted),
+                ),
+                const SizedBox(height: Spacing.xs),
+                QuestPress(
+                  onTap: _pickDate,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: q.surface2,
+                      borderRadius: BorderRadius.circular(AppRadius.tile),
+                      border: Border.all(color: q.line.withValues(alpha: 0.6)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.event_outlined, size: 18, color: q.primary),
+                        const SizedBox(width: Spacing.s),
+                        Text(
+                          _dateLabel(_occurredAt),
+                          style: TextStyle(
+                            fontFamily: 'Nunito',
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            color: q.text,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Ubah',
+                          style: TextStyle(
+                            fontFamily: 'Nunito',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: q.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: Spacing.m),
+                Text(
+                  'KETERANGAN (OPSIONAL)',
+                  style: context.qEyebrow(10).copyWith(color: q.muted),
+                ),
+                const SizedBox(height: Spacing.xs),
                 TextFormField(
                   controller: _counterpartyCtrl,
                   textCapitalization: TextCapitalization.words,
@@ -639,8 +899,17 @@ class _TransactionSheetState extends State<TransactionSheet> {
                     _onCounterpartyChanged(_counterpartyCtrl.text);
                     FocusScope.of(context).unfocus();
                   },
-                  decoration: const InputDecoration(
-                    labelText: 'Siapa / keterangan (opsional)',
+                  decoration: InputDecoration(
+                    hintText: 'Contoh: Kopi Kenangan, Beli Makan, dll...',
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.tile),
+                      borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.tile),
+                      borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                    ),
                   ),
                 ),
                 const SizedBox(height: Spacing.s),
@@ -648,30 +917,31 @@ class _TransactionSheetState extends State<TransactionSheet> {
             ),
           ),
         ),
-        // Saat keyboard keterangan terbuka, Simpan tetap terjangkau tanpa
-        // menutup keyboard; saat keyboard tertutup, keypad kustom terpasang fixed di bawah.
-        if (keyboardVisible)
-          Padding(
-            padding: const EdgeInsets.only(top: Spacing.m),
-            child: QuestButton(
-              label: _isDraft ? 'Catat' : 'Simpan',
-              icon: Icons.check_rounded,
-              onPressed: _amount > 0 ? _save : null,
-            ),
-          )
-        else ...[
-          const SizedBox(height: Spacing.xs),
-          Container(height: 1, color: q.line),
-          const SizedBox(height: Spacing.xs),
-          QuestKeypad(
-            amount: _amount,
-            saveLabel: _isDraft ? 'Catat' : 'Simpan',
-            onChanged: (val) => setState(() => _amount = val),
-            onSave: _save,
-          ),
-          const SizedBox(height: Spacing.xs),
-        ],
+        const SizedBox(height: Spacing.m),
+        QuestButton(
+          label: _isDraft ? 'Catat Transaksi' : 'Simpan Transaksi',
+          icon: Icons.check_rounded,
+          onPressed: _amount > 0 ? _save : null,
+        ),
       ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: QuestMotion.medium,
+      switchInCurve: QuestMotion.easeOut,
+      switchOutCurve: QuestMotion.easeOut,
+      child: _currentStep == 0
+          ? KeyedSubtree(
+              key: const ValueKey('step_nominal'),
+              child: _buildStep1Nominal(context),
+            )
+          : KeyedSubtree(
+              key: const ValueKey('step_detail'),
+              child: _buildStep2Detail(context),
+            ),
     );
   }
 
