@@ -13,7 +13,6 @@ import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'bon_screen.dart';
-import 'draft_inbox_sheet.dart';
 import 'month_picker.dart';
 import 'ocr_screen.dart';
 import 'quest.dart';
@@ -84,19 +83,6 @@ class TransaksiScreenState extends State<TransaksiScreen> {
     final p = widget.pipeline;
     if (p == null) return;
     await OcrScreen.start(context, pipeline: p);
-  }
-
-  void _openDraftInbox() {
-    final p = widget.pipeline;
-    final r = widget.ruleSet;
-    if (p == null || r == null) return;
-    DraftInboxSheet.show(
-      context,
-      repository: widget.repository,
-      pipeline: p,
-      ruleSet: r,
-      progress: widget.progress,
-    );
   }
 
   Future<void> _settleBon(Bon bon) async {
@@ -456,52 +442,6 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                       return Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (widget.pipeline != null && widget.ruleSet != null)
-                            StreamBuilder<List<Draft>>(
-                              stream: widget.repository.watchDrafts(),
-                              builder: (context, draftSnap) {
-                                final count = draftSnap.data?.length ?? 0;
-                                if (count == 0) return const SizedBox.shrink();
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: Spacing.xs),
-                                  child: QuestPress(
-                                    onTap: _openDraftInbox,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: context.q.primary.withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                                        border: Border.all(
-                                          color: context.q.primary.withValues(alpha: 0.3),
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.inbox_rounded,
-                                            size: 15,
-                                            color: context.q.primary,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '$count',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w800,
-                                              color: context.q.primary,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
                           bonChip,
                           if (widget.pipeline != null) ...[
                             const SizedBox(width: Spacing.xs),
@@ -655,72 +595,6 @@ class TransaksiScreenState extends State<TransaksiScreen> {
         ),
         ),
         const SizedBox(height: Spacing.xs),
-
-        // Kotak Masuk Banner (bila ada draf tertangkap menunggu keputusan)
-        if (widget.pipeline != null && widget.ruleSet != null)
-          StreamBuilder<List<Draft>>(
-            stream: widget.repository.watchDrafts(),
-            builder: (context, draftSnap) {
-              final drafts = draftSnap.data ?? const [];
-              if (drafts.isEmpty) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  Spacing.m,
-                  0,
-                  Spacing.m,
-                  Spacing.s,
-                ),
-                child: QuestCard(
-                  variant: QuestCardVariant.flat,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  onTap: _openDraftInbox,
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: context.q.primary.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.inbox_rounded,
-                          color: context.q.primary,
-                          size: 19,
-                        ),
-                      ),
-                      const SizedBox(width: Spacing.s),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Kotak Masuk: ${drafts.length} draf baru',
-                              style: context.qTitle(13.5),
-                            ),
-                            Text(
-                              'Notifikasi bank terdeteksi menunggu keputusanmu',
-                              style: context
-                                  .qSmall(11.5)
-                                  .copyWith(color: context.q.muted),
-                            ),
-                          ],
-                        ),
-                      ),
-                      QuestButton(
-                        label: 'Tinjau',
-                        expanded: false,
-                        onPressed: _openDraftInbox,
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
 
         // Transactions Stream List & Monthly Cashflow Summary
         Expanded(

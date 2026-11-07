@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
 
 import '../capture/pipeline.dart';
 import '../core/dates_id.dart';
@@ -11,12 +10,11 @@ import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
-import 'ocr_screen.dart';
 import 'quest.dart';
 import 'transaction_sheet.dart';
 
-/// Lembar Kotak Masuk Draf Transaksi dari Capture Bank / OCR / Tempel Teks.
-class DraftInboxSheet extends StatefulWidget {
+/// Modal bottom sheet untuk melihat dan mengelola draf tangkapan bank.
+class DraftInboxSheet extends StatelessWidget {
   const DraftInboxSheet({
     super.key,
     required this.repository,
@@ -41,20 +39,69 @@ class DraftInboxSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => DraftInboxSheet(
-        repository: repository,
-        pipeline: pipeline,
-        ruleSet: ruleSet,
-        progress: progress,
+      builder: (_) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.88,
+        ),
+        decoration: BoxDecoration(
+          color: context.q.bg,
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(AppRadius.sheet),
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: Spacing.xs),
+              const Center(child: QuestGrabber()),
+              Expanded(
+                child: DraftInboxView(
+                  repository: repository,
+                  pipeline: pipeline,
+                  ruleSet: ruleSet,
+                  progress: progress,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   @override
-  State<DraftInboxSheet> createState() => _DraftInboxSheetState();
+  Widget build(BuildContext context) {
+    return DraftInboxView(
+      repository: repository,
+      pipeline: pipeline,
+      ruleSet: ruleSet,
+      progress: progress,
+    );
+  }
 }
 
-class _DraftInboxSheetState extends State<DraftInboxSheet> {
+/// Tampilan daftar draf notifikasi bank yang tertangkap (bisa ditempatkan di tab atau sheet).
+class DraftInboxView extends StatefulWidget {
+  const DraftInboxView({
+    super.key,
+    required this.repository,
+    required this.pipeline,
+    required this.ruleSet,
+    this.progress,
+  });
+
+  final LedgerRepository repository;
+  final CapturePipeline pipeline;
+  final RuleSet ruleSet;
+  final ProgressService? progress;
+
+  @override
+  State<DraftInboxView> createState() => _DraftInboxViewState();
+}
+
+class _DraftInboxViewState extends State<DraftInboxView> {
   late final Future<Map<String, String>> _customNames = widget.repository
       .customBanks()
       .then((list) => {for (final c in list) 'app:${c.package}': c.label});
@@ -75,7 +122,7 @@ class _DraftInboxSheetState extends State<DraftInboxSheet> {
       context,
       title: 'Abaikan semua draf?',
       content: Text(
-        'Ada ${drafts.length} draf yang belum dicatat. Semua draf akan dihapus dari kotak masuk.',
+        'Ada ${drafts.length} draf yang belum dicatat. Semua draf akan dihapus dari daftar.',
         style: context.qBody(13),
       ),
       actions: [
@@ -159,7 +206,7 @@ class _DraftInboxSheetState extends State<DraftInboxSheet> {
                 ),
               ),
               title: const Text('Abaikan Draf Ini Saja'),
-              subtitle: const Text('Hapus dari kotak masuk saat ini.'),
+              subtitle: const Text('Hapus dari daftar saat ini.'),
               onTap: () => Navigator.pop(sheetContext, 'once'),
             ),
             const SizedBox(height: Spacing.xs),
@@ -370,343 +417,178 @@ class _DraftInboxSheetState extends State<DraftInboxSheet> {
     );
   }
 
-  Future<void> _showPasteDialog() async {
-    final controller = TextEditingController();
-    final text = await showQuestDialog<String>(
-      context,
-      title: 'Tempel Teks',
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Tempel pesan notifikasi, SMS, atau email transaksi di sini. '
-            'Bukuduit akan membacanya menjadi draf.',
-            style: context.qBody(13),
-          ),
-          const SizedBox(height: Spacing.m),
-          TextField(
-            controller: controller,
-            autofocus: true,
-            maxLines: 5,
-            decoration: const InputDecoration(
-              hintText: 'Contoh:\nTransfer masuk Rp150.000 dari BUDI...',
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.all(Spacing.s),
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        QuestButton(
-          label: 'Batal',
-          tone: QuestTone.secondary,
-          onPressed: () => Navigator.pop(context),
-        ),
-        QuestButton(
-          label: 'Proses',
-          icon: Icons.check_rounded,
-          onPressed: () => Navigator.pop(context, controller.text),
-        ),
-      ],
-    );
-
-    if (text == null || text.trim().isEmpty || !mounted) return;
-    final ok = await widget.pipeline.submitPastedText(text);
-    if (!mounted) return;
-    questSnack(
-      context,
-      ok ? 'Teks berhasil diproses menjadi draf!' : 'Gagal memproses teks.',
-      icon: ok
-          ? Icons.check_circle_outline_rounded
-          : Icons.error_outline_rounded,
-    );
-  }
-
-  Future<void> _showOcrOptions() async {
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        padding: const EdgeInsets.all(Spacing.m),
-        decoration: BoxDecoration(
-          color: context.q.bg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const QuestGrabber(),
-              const SizedBox(height: Spacing.s),
-              Text('Pindai Struk / Bukti Transaksi', style: context.qTitle(16)),
-              const SizedBox(height: Spacing.xs),
-              Text(
-                'Teks struk akan dipindai secara offline di perangkat.',
-                style: context.qSmall(12).copyWith(color: context.q.muted),
-              ),
-              const SizedBox(height: Spacing.m),
-              QuestListTile(
-                leading: const Icon(Icons.camera_alt_rounded),
-                title: const Text('Ambil Foto Kamera'),
-                subtitle: const Text('Arahkan kamera ke struk/nota pembayaran'),
-                onTap: () => Navigator.pop(context, ImageSource.camera),
-              ),
-              QuestListTile(
-                leading: const Icon(Icons.photo_library_rounded),
-                title: const Text('Pilih dari Galeri'),
-                subtitle: const Text(
-                  'Gunakan foto struk atau screenshot bukti transfer',
-                ),
-                onTap: () => Navigator.pop(context, ImageSource.gallery),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (source == null || !mounted) return;
-    await OcrScreen.start(
-      context,
-      pipeline: widget.pipeline,
-      pickSource: source,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final q = context.q;
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.88,
-      ),
-      decoration: BoxDecoration(
-        color: q.bg,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppRadius.sheet),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: StreamBuilder<List<Draft>>(
-          stream: _repo.watchDrafts(),
-          builder: (context, draftSnap) {
-            final drafts = draftSnap.data ?? const <Draft>[];
-            final nonTxDrafts = drafts.where((d) {
-              final text =
-                  '${d.rawTitle ?? ''} ${d.rawBody ?? ''} ${d.counterparty ?? ''}'
-                      .trim();
-              return widget.pipeline.engine.isIgnored(
-                    text,
-                    bankId: d.bankId,
-                  ) ||
-                  d.amount == 0;
-            }).toList();
-            final partitioned = LedgerRepository.partitionDrafts(drafts);
-            final pairs = partitioned.pairs;
-            final singles = partitioned.singles;
+    return StreamBuilder<List<Draft>>(
+      stream: _repo.watchDrafts(),
+      builder: (context, draftSnap) {
+        final drafts = draftSnap.data ?? const <Draft>[];
+        final nonTxDrafts = drafts.where((d) {
+          final text =
+              '${d.rawTitle ?? ''} ${d.rawBody ?? ''} ${d.counterparty ?? ''}'
+                  .trim();
+          return widget.pipeline.engine.isIgnored(
+                text,
+                bankId: d.bankId,
+              ) ||
+              d.amount == 0;
+        }).toList();
+        final partitioned = LedgerRepository.partitionDrafts(drafts);
+        final pairs = partitioned.pairs;
+        final singles = partitioned.singles;
 
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+        if (drafts.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(Spacing.l),
+              child: QuestEmpty(
+                title: 'Belum ada tangkapan baru',
+                hint:
+                    'Notifikasi SMS atau m-banking yang masuk akan otomatis tampil di sini untuk kamu konfirmasi.',
+              ),
+            ),
+          );
+        }
+
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(
+            Spacing.m,
+            Spacing.xs,
+            Spacing.m,
+            Spacing.m,
+          ),
+          children: [
+            // Sub-header draf
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const SizedBox(height: Spacing.xs),
-                const Center(child: QuestGrabber()),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    Spacing.m,
-                    Spacing.s,
-                    Spacing.m,
-                    Spacing.xs,
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: q.primary.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.inbox_rounded,
-                          color: q.primary,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: Spacing.s),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Kotak Masuk Draf (${drafts.length})',
-                              style: context.qTitle(16),
-                            ),
-                            Text(
-                              'Notifikasi bank & tangkapan menunggu keputusan',
-                              style: context
-                                  .qSmall(11.5)
-                                  .copyWith(color: q.muted),
-                            ),
-                          ],
-                        ),
-                      ),
-                      QuestIconButton(
-                        icon: Icons.document_scanner_rounded,
-                        tooltip: 'Foto Struk (OCR)',
-                        onPressed: _showOcrOptions,
-                      ),
-                      QuestIconButton(
-                        icon: Icons.content_paste_rounded,
-                        tooltip: 'Tempel Teks',
-                        onPressed: _showPasteDialog,
-                      ),
-                      if (drafts.length > 1)
-                        QuestPress(
-                          onTap: () => _discardAllDrafts(drafts),
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 4),
-                            child: Text(
-                              'Abaikan Semua',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                                color: q.bad,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+                Text(
+                  'Menunggu Keputusan (${drafts.length})',
+                  style: context.qEyebrow(10).copyWith(color: q.muted),
                 ),
-                const Divider(height: 1),
-                Expanded(
-                  child: drafts.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(Spacing.l),
-                            child: QuestEmpty(
-                              title: 'Kotak masuk bersih',
-                              hint:
-                                  'Semua notifikasi bank sudah dicatat atau diabaikan.',
-                              actionLabel: 'Tempel Teks Transaksi',
-                              onAction: _showPasteDialog,
-                            ),
-                          ),
-                        )
-                      : ListView(
-                          padding: const EdgeInsets.all(Spacing.m),
-                          children: [
-                            if (nonTxDrafts.isNotEmpty) ...[
-                              Container(
-                                margin:
-                                    const EdgeInsets.only(bottom: Spacing.s),
-                                padding: const EdgeInsets.all(Spacing.m),
-                                decoration: BoxDecoration(
-                                  color: q.surface,
-                                  borderRadius:
-                                      BorderRadius.circular(AppRadius.tile),
-                                  border: Border.all(
-                                    color: q.warn.withValues(alpha: 0.4),
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          Icons.cleaning_services_rounded,
-                                          color: q.warn,
-                                          size: 18,
-                                        ),
-                                        const SizedBox(width: Spacing.xs),
-                                        Expanded(
-                                          child: Text(
-                                            '${nonTxDrafts.length} pesan bukan transaksi',
-                                            style: context
-                                                .qTitle(13.5)
-                                                .copyWith(color: q.text),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: Spacing.xs),
-                                    Text(
-                                      'Pesan OTP, info login, sisa saldo, atau promo terdeteksi di draf.',
-                                      style: context
-                                          .qSmall(11.5)
-                                          .copyWith(color: q.muted),
-                                    ),
-                                    const SizedBox(height: Spacing.s),
-                                    QuestButton(
-                                      label:
-                                          'Bersihkan Otomatis (${nonTxDrafts.length})',
-                                      icon: Icons.auto_delete_outlined,
-                                      tone: QuestTone.secondary,
-                                      onPressed: () async {
-                                        final purged = await _repo
-                                            .purgeNonTransactionDrafts(
-                                              widget.pipeline.engine,
-                                            );
-                                        if (!context.mounted) return;
-                                        questSnack(
-                                          context,
-                                          '$purged draf bukan transaksi dibersihkan.',
-                                          icon: Icons
-                                              .check_circle_outline_rounded,
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                            for (var i = 0; i < pairs.length; i++)
-                              FutureBuilder<String>(
-                                future: _bankName(pairs[i].outDraft.bankId),
-                                builder: (context, fromSnap) =>
-                                    FutureBuilder<String>(
-                                  future: _bankName(pairs[i].inDraft.bankId),
-                                  builder: (context, toSnap) =>
-                                      _TransferPairTile(
-                                    pair: pairs[i],
-                                    fromBankName:
-                                        fromSnap.data ?? pairs[i].outDraft.bankId,
-                                    toBankName:
-                                        toSnap.data ?? pairs[i].inDraft.bankId,
-                                    onTap: () => _openTransferPair(pairs[i]),
-                                    onConfirm: () =>
-                                        _confirmTransferPairQuick(pairs[i]),
-                                    onDiscard: () =>
-                                        _discardTransferPairQuick(pairs[i]),
-                                  ),
-                                ),
-                              ),
-                            for (var i = 0; i < singles.length; i++)
-                              FutureBuilder<String>(
-                                future: _bankName(singles[i].bankId),
-                                builder: (context, nameSnap) => _DraftTile(
-                                  draft: singles[i],
-                                  bankName:
-                                      nameSnap.data ?? singles[i].bankId,
-                                  onTap: () => _openDraft(singles[i]),
-                                  onConfirm: () =>
-                                      _confirmDraftQuick(singles[i]),
-                                  onDiscard: () =>
-                                      _discardDraftQuick(singles[i]),
-                                ),
-                              ),
-                          ],
+                if (drafts.length > 1)
+                  QuestPress(
+                    onTap: () => _discardAllDrafts(drafts),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Text(
+                        'Abaikan Semua',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: q.bad,
                         ),
-                ),
+                      ),
+                    ),
+                  ),
               ],
-            );
-          },
-        ),
-      ),
+            ),
+            const SizedBox(height: Spacing.xs),
+
+            // Banner deteksi bukan transaksi
+            if (nonTxDrafts.isNotEmpty) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: Spacing.s),
+                padding: const EdgeInsets.all(Spacing.m),
+                decoration: BoxDecoration(
+                  color: q.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  border: Border.all(
+                    color: q.warn.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.cleaning_services_rounded,
+                          color: q.warn,
+                          size: 18,
+                        ),
+                        const SizedBox(width: Spacing.xs),
+                        Expanded(
+                          child: Text(
+                            '${nonTxDrafts.length} pesan bukan transaksi',
+                            style: context
+                                .qTitle(13.5)
+                                .copyWith(color: q.text),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: Spacing.xs),
+                    Text(
+                      'Pesan OTP, info login, sisa saldo, atau promo terdeteksi di draf.',
+                      style: context
+                          .qSmall(11.5)
+                          .copyWith(color: q.muted),
+                    ),
+                    const SizedBox(height: Spacing.s),
+                    QuestButton(
+                      label:
+                          'Bersihkan Otomatis (${nonTxDrafts.length})',
+                      icon: Icons.auto_delete_outlined,
+                      tone: QuestTone.secondary,
+                      onPressed: () async {
+                        final purged = await _repo
+                            .purgeNonTransactionDrafts(
+                              widget.pipeline.engine,
+                            );
+                        if (!context.mounted) return;
+                        questSnack(
+                          context,
+                          '$purged draf bukan transaksi dibersihkan.',
+                          icon: Icons.check_circle_outline_rounded,
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            // Pairs
+            for (var i = 0; i < pairs.length; i++)
+              FutureBuilder<String>(
+                future: _bankName(pairs[i].outDraft.bankId),
+                builder: (context, fromSnap) =>
+                    FutureBuilder<String>(
+                  future: _bankName(pairs[i].inDraft.bankId),
+                  builder: (context, toSnap) => _TransferPairTile(
+                    pair: pairs[i],
+                    fromBankName:
+                        fromSnap.data ?? pairs[i].outDraft.bankId,
+                    toBankName:
+                        toSnap.data ?? pairs[i].inDraft.bankId,
+                    onTap: () => _openTransferPair(pairs[i]),
+                    onConfirm: () =>
+                        _confirmTransferPairQuick(pairs[i]),
+                    onDiscard: () =>
+                        _discardTransferPairQuick(pairs[i]),
+                  ),
+                ),
+              ),
+
+            // Singles
+            for (var i = 0; i < singles.length; i++)
+              FutureBuilder<String>(
+                future: _bankName(singles[i].bankId),
+                builder: (context, nameSnap) => _DraftTile(
+                  draft: singles[i],
+                  bankName: nameSnap.data ?? singles[i].bankId,
+                  onTap: () => _openDraft(singles[i]),
+                  onConfirm: () =>
+                      _confirmDraftQuick(singles[i]),
+                  onDiscard: () =>
+                      _discardDraftQuick(singles[i]),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

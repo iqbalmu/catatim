@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:flutter/services.dart';
 
 import '../capture/pipeline.dart';
 import '../core/budget.dart';
@@ -12,7 +12,6 @@ import '../theme/tokens.dart';
 import 'bank_accounts_screen.dart';
 import 'bon_screen.dart';
 import 'draft_inbox_sheet.dart';
-import 'ocr_screen.dart';
 import 'quest.dart';
 import 'unparsed_logs_sheet.dart';
 
@@ -33,14 +32,9 @@ class _NotifItem {
   final VoidCallback onTap;
 }
 
-/// Layar Notifikasi: Pusat Peringatan & Perhatian Sistem
-///
-/// Murni untuk hal-hal yang membutuhkan atensi pengguna:
-/// - Peringatan plafon anggaran (over/warning)
-/// - Pengingat bon/hutang piutang yang menua
-/// - Status izin listener notifikasi HP
-/// - Format notifikasi belum dikenali (mode belajar)
-/// - Jembatan cepat ke Kotak Masuk Draf bila ada draf menunggu
+/// Layar Notifikasi dengan 2 Tab:
+/// 1. Peringatan (Batas anggaran, bon jatuh tempo, status izin sistem)
+/// 2. Tangkapan Bank (Draf transaksi tertangkap dari SMS / notifikasi m-banking)
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({
     super.key,
@@ -50,6 +44,7 @@ class NotificationScreen extends StatefulWidget {
     this.progress,
     this.onOpenAnggaran,
     this.onOpenBon,
+    this.initialTab = 0,
   });
 
   final LedgerRepository repository;
@@ -57,7 +52,10 @@ class NotificationScreen extends StatefulWidget {
   final ProgressService? progress;
   final RuleSet ruleSet;
 
-  /// Tutup layar ini lalu alih ke tab Rencana / Bon.
+  /// Tab awal: 0 = Peringatan, 1 = Tangkapan Bank.
+  final int initialTab;
+
+  /// Navigasi ke tab Rencana / Bon.
   final VoidCallback? onOpenAnggaran;
   final VoidCallback? onOpenBon;
 
@@ -66,6 +64,8 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
+  late int _selectedTab = widget.initialTab;
+
   late final Future<bool> _listenerEnabled =
       widget.pipeline.channel.isListenerEnabled();
 
@@ -98,149 +98,41 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
-  Future<void> _showPasteDialog() async {
-    final controller = TextEditingController();
-    final text = await showQuestDialog<String>(
-      context,
-      title: 'Tempel Teks',
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Tempel pesan notifikasi, SMS, atau email transaksi di sini. '
-            'Bukuduit akan membacanya menjadi draf di Kotak Masuk.',
-            style: context.qBody(13),
-          ),
-          const SizedBox(height: Spacing.m),
-          TextField(
-            controller: controller,
-            autofocus: true,
-            maxLines: 5,
-            decoration: const InputDecoration(
-              hintText: 'Contoh:\nTransfer masuk Rp150.000 dari BUDI...',
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.all(Spacing.s),
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        QuestButton(
-          label: 'Batal',
-          tone: QuestTone.secondary,
-          onPressed: () => Navigator.pop(context),
-        ),
-        QuestButton(
-          label: 'Proses',
-          icon: Icons.check_rounded,
-          onPressed: () => Navigator.pop(context, controller.text),
-        ),
-      ],
-    );
-
-    if (text == null || text.trim().isEmpty || !mounted) return;
-    final ok = await widget.pipeline.submitPastedText(text);
-    if (!mounted) return;
-    questSnack(
-      context,
-      ok ? 'Teks berhasil diproses ke Kotak Masuk Draf!' : 'Gagal memproses teks.',
-      icon: ok
-          ? Icons.check_circle_outline_rounded
-          : Icons.error_outline_rounded,
-    );
-  }
-
-  Future<void> _showOcrOptions() async {
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        padding: const EdgeInsets.all(Spacing.m),
-        decoration: BoxDecoration(
-          color: context.q.bg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const QuestGrabber(),
-              const SizedBox(height: Spacing.s),
-              Text('Pindai Struk / Bukti Transaksi', style: context.qTitle(16)),
-              const SizedBox(height: Spacing.xs),
-              Text(
-                'Teks struk akan dipindai secara offline di perangkat.',
-                style: context.qSmall(12).copyWith(color: context.q.muted),
-              ),
-              const SizedBox(height: Spacing.m),
-              QuestListTile(
-                leading: const Icon(Icons.camera_alt_rounded),
-                title: const Text('Ambil Foto Kamera'),
-                subtitle: const Text('Arahkan kamera ke struk/nota pembayaran'),
-                onTap: () => Navigator.pop(context, ImageSource.camera),
-              ),
-              QuestListTile(
-                leading: const Icon(Icons.photo_library_rounded),
-                title: const Text('Pilih dari Galeri'),
-                subtitle: const Text(
-                  'Gunakan foto struk atau screenshot bukti transfer',
-                ),
-                onTap: () => Navigator.pop(context, ImageSource.gallery),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (source == null || !mounted) return;
-    await OcrScreen.start(
-      context,
-      pipeline: widget.pipeline,
-      pickSource: source,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final q = context.q;
+
     return Scaffold(
       backgroundColor: q.bg,
       appBar: QuestHeader(
         title: 'Notifikasi',
-        subtitle: 'Pusat perhatian & pengingat',
+        subtitle: _selectedTab == 0
+            ? 'Pusat perhatian & pengingat'
+            : 'Tangkapan transaksi bank',
         showBack: true,
-        actions: [
-          QuestIconButton(
-            icon: Icons.document_scanner_rounded,
-            tooltip: 'Foto Struk (OCR)',
-            onPressed: _showOcrOptions,
-          ),
-          QuestIconButton(
-            icon: Icons.content_paste_rounded,
-            tooltip: 'Tempel Teks',
-            onPressed: _showPasteDialog,
-          ),
-        ],
       ),
       body: FutureBuilder<bool>(
         future: _listenerEnabled,
         builder: (context, listenerSnap) {
           final enabled = listenerSnap.data ?? false;
+
           return StreamBuilder<Set<String>>(
             stream: _repo.watchConnectedBanks(),
             builder: (context, connSnap) {
               final connected = connSnap.data ?? const <String>{};
+
               return StreamBuilder<List<Draft>>(
                 stream: _repo.watchDrafts(),
                 builder: (context, draftSnap) {
                   final drafts = draftSnap.data ?? const <Draft>[];
+
                   return StreamBuilder<List<CaptureLog>>(
                     stream: _repo.watchCaptureLog(),
                     builder: (context, logSnap) {
                       final unread = (logSnap.data ?? const <CaptureLog>[])
                           .where((l) => !l.parsed)
                           .length;
+
                       return StreamBuilder<List<Bon>>(
                         stream: _repo.watchBons(),
                         builder: (context, bonSnap) {
@@ -252,27 +144,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                     bonNeedsBadge(b.occurredAt),
                               )
                               .length;
+
                           final summary = widget.progress?.latest;
                           final level = summary?.snapshot.worstLevel;
                           final critical = summary?.snapshot.criticalLine;
 
                           final items = [
-                            if (drafts.isNotEmpty)
-                              _NotifItem(
-                                icon: Icons.inbox_rounded,
-                                color: q.primary,
-                                title:
-                                    '${drafts.length} draf transaksi menunggu keputusan',
-                                subtitle:
-                                    'Ketuk untuk membuka kotak masuk transaksi',
-                                onTap: () => DraftInboxSheet.show(
-                                  context,
-                                  repository: _repo,
-                                  pipeline: widget.pipeline,
-                                  ruleSet: widget.ruleSet,
-                                  progress: widget.progress,
-                                ),
-                              ),
                             if (connected.isNotEmpty && !enabled)
                               _NotifItem(
                                 icon: Icons.notifications_off_rounded,
@@ -324,38 +201,57 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               ),
                           ];
 
-                          if (items.isEmpty) {
-                            return ListView(
-                              padding: const EdgeInsets.all(Spacing.m),
-                              children: [
-                                QuestEmpty(
-                                  title: 'Tidak ada notifikasi',
-                                  hint:
-                                      'Semua aman — anggaran terkendali dan sistem berjalan baik.',
-                                ),
-                              ],
-                            );
-                          }
-
-                          return ListView(
-                            padding: const EdgeInsets.fromLTRB(
-                              Spacing.m,
-                              Spacing.s,
-                              Spacing.m,
-                              Spacing.m,
-                            ),
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              const QuestEnter(
-                                index: 0,
-                                child: QuestSectionHeader(
-                                  title: 'Perlu perhatian',
+                              // Tab Selector Segmen
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  Spacing.m,
+                                  0,
+                                  Spacing.m,
+                                  Spacing.s,
+                                ),
+                                child: QuestSegmented<int>(
+                                  options: [
+                                    (
+                                      value: 0,
+                                      label: items.isEmpty
+                                          ? 'Peringatan'
+                                          : 'Peringatan (${items.length})',
+                                      icon: Icons.notifications_none_rounded,
+                                    ),
+                                    (
+                                      value: 1,
+                                      label: drafts.isEmpty
+                                          ? 'Tangkapan Bank'
+                                          : 'Tangkapan Bank (${drafts.length})',
+                                      icon: Icons.inbox_outlined,
+                                    ),
+                                  ],
+                                  selected: _selectedTab,
+                                  onChanged: (val) {
+                                    HapticFeedback.selectionClick();
+                                    setState(() => _selectedTab = val);
+                                  },
                                 ),
                               ),
-                              for (var i = 0; i < items.length; i++)
-                                QuestEnter(
-                                  index: 1 + i,
-                                  child: _AttentionTile(item: items[i]),
+
+                              // Tab Content
+                              Expanded(
+                                child: AnimatedSwitcher(
+                                  duration: QuestMotion.fast,
+                                  child: _selectedTab == 0
+                                      ? _buildPeringatanView(context, items)
+                                      : DraftInboxView(
+                                          key: const ValueKey('drafts-tab'),
+                                          repository: widget.repository,
+                                          pipeline: widget.pipeline,
+                                          ruleSet: widget.ruleSet,
+                                          progress: widget.progress,
+                                        ),
                                 ),
+                              ),
                             ],
                           );
                         },
@@ -368,6 +264,37 @@ class _NotificationScreenState extends State<NotificationScreen> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildPeringatanView(BuildContext context, List<_NotifItem> items) {
+    if (items.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(Spacing.l),
+          child: QuestEmpty(
+            title: 'Tidak ada peringatan',
+            hint:
+                'Semua aman — anggaran terkendali, bon lancar, dan izin capture aktif.',
+          ),
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        Spacing.m,
+        Spacing.xs,
+        Spacing.m,
+        Spacing.m,
+      ),
+      children: [
+        for (var i = 0; i < items.length; i++)
+          QuestEnter(
+            index: i,
+            child: _AttentionTile(item: items[i]),
+          ),
+      ],
     );
   }
 }
