@@ -255,54 +255,48 @@ class _DraftInboxViewState extends State<DraftInboxView> {
     }
   }
 
-  Future<void> _confirmTransferPairQuick(InternalTransferPair pair) async {
-    HapticFeedback.lightImpact();
-    await _repo.confirmTransferPair(pair: pair);
-    if (mounted) {
-      questSnack(
-        context,
-        'Transfer antar akun berhasil dicatat!',
-        icon: Icons.check_circle_outline_rounded,
-      );
-    }
-  }
-
-  Future<void> _discardTransferPairQuick(InternalTransferPair pair) async {
-    HapticFeedback.lightImpact();
-    await _repo.discardDrafts([pair.outDraft.id, pair.inDraft.id]);
-    if (mounted) {
-      questSnack(context, 'Draf transfer diabaikan.');
-    }
-  }
-
   Future<void> _openTransferPair(InternalTransferPair pair) async {
     final fromName = await _bankName(pair.outDraft.bankId);
     final toName = await _bankName(pair.inDraft.bankId);
     if (!mounted) return;
 
+    final rawText = (pair.outDraft.rawBody ??
+            pair.inDraft.rawBody ??
+            pair.outDraft.rawTitle ??
+            pair.inDraft.rawTitle ??
+            '')
+        .trim();
+
     await showQuestSheet<void>(
       context,
-      (sheetContext) => Padding(
-        padding: const EdgeInsets.all(Spacing.m),
+      (sheetContext) => SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          Spacing.m,
+          Spacing.s,
+          Spacing.m,
+          Spacing.l,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               children: [
                 Container(
-                  width: 36,
-                  height: 36,
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: sheetContext.q.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
+                    shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.swap_horiz_rounded,
+                    size: 22,
                     color: sheetContext.q.primary,
                   ),
                 ),
-                const SizedBox(width: Spacing.s),
+                const SizedBox(width: Spacing.m),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,9 +305,12 @@ class _DraftInboxViewState extends State<DraftInboxView> {
                         'Transfer Antar Akun',
                         style: sheetContext.qTitle(16),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         'Pindah saldo antar rekening sendiri',
-                        style: sheetContext.qSmall(12),
+                        style: sheetContext.qSmall(12).copyWith(
+                          color: sheetContext.q.muted,
+                        ),
                       ),
                     ],
                   ),
@@ -324,9 +321,11 @@ class _DraftInboxViewState extends State<DraftInboxView> {
             Container(
               padding: const EdgeInsets.all(Spacing.m),
               decoration: BoxDecoration(
-                color: sheetContext.q.surface,
+                color: sheetContext.q.bg,
                 borderRadius: BorderRadius.circular(AppRadius.tile),
-                border: Border.all(color: sheetContext.q.line),
+                border: Border.all(
+                  color: sheetContext.q.line.withValues(alpha: 0.6),
+                ),
               ),
               child: Column(
                 children: [
@@ -369,10 +368,56 @@ class _DraftInboxViewState extends State<DraftInboxView> {
                 ],
               ),
             ),
+            if (rawText.isNotEmpty) ...[
+              const SizedBox(height: Spacing.m),
+              Container(
+                padding: const EdgeInsets.all(Spacing.m),
+                decoration: BoxDecoration(
+                  color: sheetContext.q.bg,
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  border: Border.all(
+                    color: sheetContext.q.line.withValues(alpha: 0.6),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.mark_email_read_outlined,
+                          size: 15,
+                          color: sheetContext.q.muted,
+                        ),
+                        const SizedBox(width: Spacing.xs),
+                        Text(
+                          'Pesan Notifikasi Asli',
+                          style: sheetContext.qSmall(11.5).copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: sheetContext.q.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: Spacing.xs),
+                    SelectableText(
+                      rawText,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        height: 1.45,
+                        color: sheetContext.q.text,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: Spacing.s),
             Text(
               'Kedua draf akan disatukan sebagai transfer dan tidak dihitung sebagai pengeluaran baru di anggaran/laporan.',
-              style: sheetContext.qSmall(11.5).copyWith(color: sheetContext.q.muted),
+              style: sheetContext.qSmall(11.5).copyWith(
+                color: sheetContext.q.muted,
+              ),
             ),
             const SizedBox(height: Spacing.m),
             QuestButton(
@@ -403,7 +448,9 @@ class _DraftInboxViewState extends State<DraftInboxView> {
                     label: 'Abaikan Keduanya',
                     tone: QuestTone.secondary,
                     onPressed: () async {
-                      await _repo.discardDrafts([pair.outDraft.id, pair.inDraft.id]);
+                      await _repo.discardDrafts(
+                        [pair.outDraft.id, pair.inDraft.id],
+                      );
                       if (sheetContext.mounted) Navigator.pop(sheetContext);
                       if (mounted) questSnack(context, 'Draf transfer diabaikan.');
                     },
@@ -414,6 +461,284 @@ class _DraftInboxViewState extends State<DraftInboxView> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _openDraftDetail(Draft draft) async {
+    final bankName = await _bankName(draft.bankId);
+    if (!mounted) return;
+
+    final incoming = draft.direction == Direction.incoming;
+    final isUnparsed = draft.amount == 0;
+    final counterparty = (draft.counterparty ?? '').trim();
+
+    final String titleText;
+    if (counterparty.isNotEmpty) {
+      titleText = counterparty;
+    } else if (isUnparsed) {
+      final rawTitle = draft.rawTitle?.trim() ?? '';
+      titleText = rawTitle.isNotEmpty ? rawTitle : 'Format Belum Dikenali';
+    } else if (incoming) {
+      titleText = 'Dana Masuk';
+    } else if (draft.kind == TxKind.payment) {
+      titleText = 'Pembayaran';
+    } else if (draft.kind == TxKind.transfer) {
+      titleText = 'Transfer Keluar';
+    } else {
+      titleText = 'Transaksi';
+    }
+
+    final rawTitle = (draft.rawTitle ?? '').trim();
+    final rawBody = (draft.rawBody ?? '').trim();
+    final now = DateTime.now();
+    final day = DateTime(
+      draft.occurredAt.year,
+      draft.occurredAt.month,
+      draft.occurredAt.day,
+    );
+    final time =
+        '${draft.occurredAt.hour.toString().padLeft(2, '0')}:'
+        '${draft.occurredAt.minute.toString().padLeft(2, '0')}';
+
+    await showQuestSheet<void>(
+      context,
+      (sheetContext) {
+        final q = sheetContext.q;
+        final Color directionColor = isUnparsed
+            ? q.warn
+            : (incoming ? q.good : q.bad);
+        final IconData directionIcon = isUnparsed
+            ? Icons.help_outline_rounded
+            : (incoming
+                ? Icons.arrow_downward_rounded
+                : Icons.arrow_upward_rounded);
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            Spacing.m,
+            Spacing.s,
+            Spacing.m,
+            Spacing.l,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header Transaksi
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: directionColor.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(directionIcon, size: 22, color: directionColor),
+                  ),
+                  const SizedBox(width: Spacing.m),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          titleText,
+                          style: sheetContext.qTitle(16),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$bankName · ${idRelativeDay(day, now)} $time',
+                          style: sheetContext.qSmall(12).copyWith(
+                            color: q.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Spacing.m),
+
+              // Nominal Card
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Spacing.m,
+                  vertical: Spacing.s,
+                ),
+                decoration: BoxDecoration(
+                  color: q.bg,
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  border: Border.all(
+                    color: q.line.withValues(alpha: 0.6),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Nominal',
+                      style: sheetContext.qSmall(12).copyWith(
+                        color: q.muted,
+                      ),
+                    ),
+                    if (isUnparsed)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: q.warn.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                        ),
+                        child: Text(
+                          'Isi nominal saat mencatat',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: q.warn,
+                          ),
+                        ),
+                      )
+                    else
+                      QuestMoney(
+                        amount: draft.amount,
+                        prefix: incoming ? '+ ' : '− ',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          color: directionColor,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: Spacing.m),
+
+              // Detail Pesan Notifikasi Asli
+              if (rawBody.isNotEmpty || rawTitle.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.all(Spacing.m),
+                  decoration: BoxDecoration(
+                    color: q.bg,
+                    borderRadius: BorderRadius.circular(AppRadius.tile),
+                    border: Border.all(
+                      color: q.line.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.mark_email_read_outlined,
+                            size: 15,
+                            color: q.muted,
+                          ),
+                          const SizedBox(width: Spacing.xs),
+                          Text(
+                            'Pesan Notifikasi Asli',
+                            style: sheetContext.qSmall(11.5).copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: q.muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: Spacing.xs),
+                      if (rawTitle.isNotEmpty && rawTitle != titleText) ...[
+                        Text(
+                          rawTitle,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12.5,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                      ],
+                      SelectableText(
+                        rawBody.isNotEmpty ? rawBody : rawTitle,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          height: 1.45,
+                          color: q.text,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: Spacing.l),
+              ] else ...[
+                const SizedBox(height: Spacing.s),
+              ],
+
+              // Action Buttons
+              if (!isUnparsed) ...[
+                QuestButton(
+                  label: 'Catat Transaksi',
+                  icon: Icons.check_rounded,
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    _confirmDraftQuick(draft);
+                  },
+                ),
+                const SizedBox(height: Spacing.s),
+                Row(
+                  children: [
+                    Expanded(
+                      child: QuestButton(
+                        label: 'Ubah Detail',
+                        icon: Icons.edit_note_rounded,
+                        tone: QuestTone.secondary,
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          _openDraft(draft);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: Spacing.s),
+                    Expanded(
+                      child: QuestButton(
+                        label: 'Abaikan',
+                        icon: Icons.close_rounded,
+                        tone: QuestTone.secondary,
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          _discardDraftQuick(draft);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                QuestButton(
+                  label: 'Lengkapi & Catat',
+                  icon: Icons.edit_rounded,
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    _openDraft(draft);
+                  },
+                ),
+                const SizedBox(height: Spacing.s),
+                QuestButton(
+                  label: 'Abaikan Notifikasi Ini',
+                  icon: Icons.close_rounded,
+                  tone: QuestTone.secondary,
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    _discardDraftQuick(draft);
+                  },
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -561,10 +886,6 @@ class _DraftInboxViewState extends State<DraftInboxView> {
                     toBankName:
                         toSnap.data ?? pairs[i].inDraft.bankId,
                     onTap: () => _openTransferPair(pairs[i]),
-                    onConfirm: () =>
-                        _confirmTransferPairQuick(pairs[i]),
-                    onDiscard: () =>
-                        _discardTransferPairQuick(pairs[i]),
                   ),
                 ),
               ),
@@ -576,11 +897,7 @@ class _DraftInboxViewState extends State<DraftInboxView> {
                 builder: (context, nameSnap) => _DraftTile(
                   draft: singles[i],
                   bankName: nameSnap.data ?? singles[i].bankId,
-                  onTap: () => _openDraft(singles[i]),
-                  onConfirm: () =>
-                      _confirmDraftQuick(singles[i]),
-                  onDiscard: () =>
-                      _discardDraftQuick(singles[i]),
+                  onTap: () => _openDraftDetail(singles[i]),
                 ),
               ),
           ],
@@ -596,16 +913,12 @@ class _TransferPairTile extends StatelessWidget {
     required this.fromBankName,
     required this.toBankName,
     required this.onTap,
-    required this.onConfirm,
-    required this.onDiscard,
   });
 
   final InternalTransferPair pair;
   final String fromBankName;
   final String toBankName;
   final VoidCallback onTap;
-  final VoidCallback onConfirm;
-  final VoidCallback onDiscard;
 
   @override
   Widget build(BuildContext context) {
@@ -620,13 +933,6 @@ class _TransferPairTile extends StatelessWidget {
         '${pair.occurredAt.hour.toString().padLeft(2, '0')}:'
         '${pair.occurredAt.minute.toString().padLeft(2, '0')}';
 
-    final rawText = (pair.outDraft.rawBody ??
-            pair.inDraft.rawBody ??
-            pair.outDraft.rawTitle ??
-            pair.inDraft.rawTitle ??
-            '')
-        .trim();
-
     return Container(
       margin: const EdgeInsets.only(bottom: Spacing.s),
       decoration: BoxDecoration(
@@ -634,162 +940,64 @@ class _TransferPairTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.tile),
         border: Border.all(color: q.line.withValues(alpha: 0.6)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.m),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            QuestPress(
-              onTap: onTap,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: q.primary.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.swap_horiz_rounded,
-                      size: 18,
-                      color: q.primary,
-                    ),
-                  ),
-                  const SizedBox(width: Spacing.s),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '$fromBankName → $toBankName',
-                          style: context.qTitle(14.5),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Transfer Antar Akun · ${idRelativeDay(day, now)} $time',
-                          style: context.qSmall(11.5).copyWith(color: q.muted),
-                        ),
-                        if (rawText.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            rawText,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontStyle: FontStyle.italic,
-                              color: q.muted.withValues(alpha: 0.85),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: Spacing.s),
-                  QuestMoney(
-                    amount: pair.amount,
-                    alignment: Alignment.centerRight,
-                    style: TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w900,
-                      color: q.text,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                ],
+      child: QuestPress(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(Spacing.m),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: q.primary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.swap_horiz_rounded,
+                  size: 18,
+                  color: q.primary,
+                ),
               ),
-            ),
-            const SizedBox(height: Spacing.s),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                QuestPress(
-                  onTap: onTap,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 6,
+              const SizedBox(width: Spacing.s),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$fromBankName → $toBankName',
+                      style: context.qTitle(14.5),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          size: 15,
-                          color: q.muted,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Detail',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: q.muted,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(height: 2),
+                    Text(
+                      'Transfer Antar Akun · ${idRelativeDay(day, now)} $time',
+                      style: context.qSmall(11.5).copyWith(color: q.muted),
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(width: Spacing.xs),
-                QuestPress(
-                  onTap: onDiscard,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 6,
-                    ),
-                    child: Text(
-                      'Abaikan',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: q.muted,
-                      ),
-                    ),
-                  ),
+              ),
+              const SizedBox(width: Spacing.s),
+              QuestMoney(
+                amount: pair.amount,
+                alignment: Alignment.centerRight,
+                style: TextStyle(
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w900,
+                  color: q.text,
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
-                const SizedBox(width: Spacing.xs),
-                QuestPress(
-                  onTap: onConfirm,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: q.primary.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.check_rounded,
-                          size: 14,
-                          color: q.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Konfirmasi Transfer',
-                          style: TextStyle(
-                            color: q.primary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(width: Spacing.xs),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: q.muted.withValues(alpha: 0.4),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -801,15 +1009,11 @@ class _DraftTile extends StatelessWidget {
     required this.draft,
     required this.bankName,
     required this.onTap,
-    required this.onConfirm,
-    required this.onDiscard,
   });
 
   final Draft draft;
   final String bankName;
   final VoidCallback onTap;
-  final VoidCallback onConfirm;
-  final VoidCallback onDiscard;
 
   @override
   Widget build(BuildContext context) {
@@ -843,8 +1047,6 @@ class _DraftTile extends StatelessWidget {
       titleText = 'Transaksi';
     }
 
-    final rawText = (draft.rawBody ?? draft.rawTitle ?? '').trim();
-
     final Color directionColor = isUnparsed
         ? q.warn
         : (incoming ? q.good : q.bad);
@@ -861,187 +1063,81 @@ class _DraftTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.tile),
         border: Border.all(color: q.line.withValues(alpha: 0.6)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(Spacing.m),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Row Utama: Ikon, Info Transaksi, Nominal
-            QuestPress(
-              onTap: onTap,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: directionColor.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(directionIcon, size: 18, color: directionColor),
-                  ),
-                  const SizedBox(width: Spacing.s),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          titleText,
-                          style: context.qTitle(14.5),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '$bankName · ${idRelativeDay(day, now)} $time',
-                          style: context.qSmall(11.5).copyWith(color: q.muted),
-                        ),
-                        if (rawText.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            rawText,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontStyle: FontStyle.italic,
-                              color: q.muted.withValues(alpha: 0.85),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: Spacing.s),
-                  if (isUnparsed)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: q.warn.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                      ),
-                      child: Text(
-                        'Isi nominal',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: q.warn,
-                        ),
-                      ),
-                    )
-                  else
-                    QuestMoney(
-                      amount: draft.amount,
-                      prefix: incoming ? '+' : '−',
-                      alignment: Alignment.centerRight,
-                      style: TextStyle(
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w900,
-                        color: directionColor,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                ],
+      child: QuestPress(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(Spacing.m),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: directionColor.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(directionIcon, size: 18, color: directionColor),
               ),
-            ),
-            const SizedBox(height: Spacing.s),
-
-            // Baris Aksi Ringan & Minimalis
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (!isUnparsed) ...[
-                  QuestPress(
-                    onTap: onTap,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 6,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.edit_note_rounded,
-                            size: 16,
-                            color: q.muted,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Ubah',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: q.muted,
-                            ),
-                          ),
-                        ],
-                      ),
+              const SizedBox(width: Spacing.s),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      titleText,
+                      style: context.qTitle(14.5),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$bankName · ${idRelativeDay(day, now)} $time',
+                      style: context.qSmall(11.5).copyWith(color: q.muted),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: Spacing.s),
+              if (isUnparsed)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: q.warn.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Text(
+                    'Isi nominal',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: q.warn,
                     ),
                   ),
-                  const SizedBox(width: Spacing.xs),
-                ],
-                QuestPress(
-                  onTap: onDiscard,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 6,
-                    ),
-                    child: Text(
-                      'Abaikan',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: q.muted,
-                      ),
-                    ),
+                )
+              else
+                QuestMoney(
+                  amount: draft.amount,
+                  prefix: incoming ? '+' : '−',
+                  alignment: Alignment.centerRight,
+                  style: TextStyle(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w900,
+                    color: directionColor,
+                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
-                const SizedBox(width: Spacing.xs),
-                QuestPress(
-                  onTap: isUnparsed ? onTap : onConfirm,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: (isUnparsed ? q.warn : q.primary)
-                          .withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          isUnparsed
-                              ? Icons.edit_rounded
-                              : Icons.check_rounded,
-                          size: 14,
-                          color: isUnparsed ? q.warn : q.primary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          isUnparsed ? 'Lengkapi' : 'Catat',
-                          style: TextStyle(
-                            color: isUnparsed ? q.warn : q.primary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+              const SizedBox(width: Spacing.xs),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: q.muted.withValues(alpha: 0.4),
+              ),
+            ],
+          ),
         ),
       ),
     );
