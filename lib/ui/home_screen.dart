@@ -155,7 +155,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
-  void _openTransaksi() => _switchTab(1);
   void _openAnggaran() => _switchTab(2);
   void _openBon() => _switchTab(1, openBon: true);
 
@@ -228,7 +227,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   pipeline: widget.pipeline,
                   progress: widget.progress,
                   ruleSet: widget.ruleSet,
-                  onOpenTransaksi: _openTransaksi,
                   onOpenAnggaran: _openAnggaran,
                   onOpenBon: _openBon,
                 ),
@@ -291,15 +289,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 }
 
-/// Beranda: panggung maskot & saldo hero, belanja hari ini, streak,
-/// dan transaksi terbaru. Pencatatan via tombol + tengah navbar.
+/// Beranda: ringkasan saldo & kartu akun, serta batas anggaran bulanan.
+/// Pencatatan via tombol + tengah navbar.
 class _BerandaTab extends StatefulWidget {
   const _BerandaTab({
     required this.repository,
     required this.pipeline,
     required this.progress,
     required this.ruleSet,
-    required this.onOpenTransaksi,
     required this.onOpenAnggaran,
     required this.onOpenBon,
   });
@@ -308,7 +305,6 @@ class _BerandaTab extends StatefulWidget {
   final CapturePipeline pipeline;
   final ProgressService progress;
   final RuleSet ruleSet;
-  final VoidCallback onOpenTransaksi;
   final VoidCallback onOpenAnggaran;
   final VoidCallback onOpenBon;
   @override
@@ -377,17 +373,6 @@ class _BerandaTabState extends State<_BerandaTab> {
             ),
             QuestTabEnter(
               index: 1,
-              child: DraftAttentionBanner(
-                repository: widget.repository,
-                ruleSet: widget.ruleSet,
-                progress: widget.progress,
-                pipeline: widget.pipeline,
-                onOpenAnggaran: widget.onOpenAnggaran,
-                onOpenBon: widget.onOpenBon,
-              ),
-            ),
-            QuestTabEnter(
-              index: 1,
               child: TotalBalanceCard(
                 repository: widget.repository,
                 pipeline: widget.pipeline,
@@ -401,11 +386,6 @@ class _BerandaTabState extends State<_BerandaTab> {
                 progress: widget.progress,
                 onTap: widget.onOpenAnggaran,
               ),
-            ),
-            RecentTransactionsCard(
-              repository: widget.repository,
-              progress: widget.progress,
-              onSeeAll: widget.onOpenTransaksi,
             ),
             const SizedBox(height: 96),
           ],
