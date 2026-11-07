@@ -816,6 +816,7 @@ class _DraftTile extends StatelessWidget {
     final q = context.q;
     final incoming = draft.direction == Direction.incoming;
     final counterparty = (draft.counterparty ?? '').trim();
+    final isUnparsed = draft.amount == 0;
     final now = DateTime.now();
     final day = DateTime(
       draft.occurredAt.year,
@@ -829,6 +830,9 @@ class _DraftTile extends StatelessWidget {
     final String titleText;
     if (counterparty.isNotEmpty) {
       titleText = counterparty;
+    } else if (isUnparsed) {
+      final rawTitle = draft.rawTitle?.trim() ?? '';
+      titleText = rawTitle.isNotEmpty ? rawTitle : 'Format Belum Dikenali';
     } else if (incoming) {
       titleText = 'Dana Masuk';
     } else if (draft.kind == TxKind.payment) {
@@ -841,10 +845,14 @@ class _DraftTile extends StatelessWidget {
 
     final rawText = (draft.rawBody ?? draft.rawTitle ?? '').trim();
 
-    final Color directionColor = incoming ? q.good : q.bad;
-    final IconData directionIcon = incoming
-        ? Icons.arrow_downward_rounded
-        : Icons.arrow_upward_rounded;
+    final Color directionColor = isUnparsed
+        ? q.warn
+        : (incoming ? q.good : q.bad);
+    final IconData directionIcon = isUnparsed
+        ? Icons.help_outline_rounded
+        : (incoming
+            ? Icons.arrow_downward_rounded
+            : Icons.arrow_upward_rounded);
 
     return Container(
       margin: const EdgeInsets.only(bottom: Spacing.s),
@@ -907,17 +915,37 @@ class _DraftTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: Spacing.s),
-                  QuestMoney(
-                    amount: draft.amount,
-                    prefix: incoming ? '+' : '−',
-                    alignment: Alignment.centerRight,
-                    style: TextStyle(
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.w900,
-                      color: directionColor,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                  if (isUnparsed)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: q.warn.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                      child: Text(
+                        'Isi nominal',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: q.warn,
+                        ),
+                      ),
+                    )
+                  else
+                    QuestMoney(
+                      amount: draft.amount,
+                      prefix: incoming ? '+' : '−',
+                      alignment: Alignment.centerRight,
+                      style: TextStyle(
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w900,
+                        color: directionColor,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -927,35 +955,37 @@ class _DraftTile extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                QuestPress(
-                  onTap: onTap,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 6,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.edit_note_rounded,
-                          size: 16,
-                          color: q.muted,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Ubah',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                if (!isUnparsed) ...[
+                  QuestPress(
+                    onTap: onTap,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 6,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.edit_note_rounded,
+                            size: 16,
                             color: q.muted,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 4),
+                          Text(
+                            'Ubah',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: q.muted,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: Spacing.xs),
+                  const SizedBox(width: Spacing.xs),
+                ],
                 QuestPress(
                   onTap: onDiscard,
                   child: Padding(
@@ -975,29 +1005,32 @@ class _DraftTile extends StatelessWidget {
                 ),
                 const SizedBox(width: Spacing.xs),
                 QuestPress(
-                  onTap: onConfirm,
+                  onTap: isUnparsed ? onTap : onConfirm,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: q.primary.withValues(alpha: 0.14),
+                      color: (isUnparsed ? q.warn : q.primary)
+                          .withValues(alpha: 0.14),
                       borderRadius: BorderRadius.circular(AppRadius.pill),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.check_rounded,
+                          isUnparsed
+                              ? Icons.edit_rounded
+                              : Icons.check_rounded,
                           size: 14,
-                          color: q.primary,
+                          color: isUnparsed ? q.warn : q.primary,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Catat',
+                          isUnparsed ? 'Lengkapi' : 'Catat',
                           style: TextStyle(
-                            color: q.primary,
+                            color: isUnparsed ? q.warn : q.primary,
                             fontWeight: FontWeight.w700,
                             fontSize: 12,
                           ),
