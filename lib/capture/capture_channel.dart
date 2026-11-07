@@ -106,6 +106,26 @@ class CaptureChannel {
     await _method.invokeMethod<void>('openBatterySettings');
   }
 
+  /// Simulasikan notifikasi melalui lapisan native untuk pengujian end-to-end.
+  Future<bool> simulateNotification({
+    required String packageName,
+    required String title,
+    required String body,
+    DateTime? postedAt,
+  }) async {
+    try {
+      final res = await _method.invokeMethod<bool>('simulateNotification', {
+        'packageName': packageName,
+        'title': title,
+        'body': body,
+        'postedAt': (postedAt ?? DateTime.now()).millisecondsSinceEpoch,
+      });
+      return res ?? true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Ambil notifikasi yang tertangkap saat app tidak berjalan, lalu
   /// antrian native dikosongkan. Baris korup dilewati — satu baris
   /// rusak tidak boleh membuang seluruh antrean.

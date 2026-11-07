@@ -133,6 +133,12 @@ class CapturePipeline extends ChangeNotifier {
     _tail = _tail.then((_) => _handle(raw));
   }
 
+  /// Masukkan notifikasi mentah ke antrean pemrosesan pipeline.
+  void submit(RawCapture raw) => _submit(raw);
+
+  /// Tunggu hingga antrean pemrosesan saat ini selesai.
+  Future<void> flush() => _tail;
+
   Future<void> _handle(RawCapture raw) async {
     if (raw.packageName == _ownPackage) return;
     try {

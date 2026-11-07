@@ -1,6 +1,7 @@
 package id.xmuu.bukuduit
 
 import android.app.Notification
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -111,6 +112,25 @@ class MainActivity : FlutterActivity() {
                         val p = pendingSharedPayload
                         pendingSharedPayload = null
                         result.success(p)
+                    }
+                    "simulateNotification" -> {
+                        val pkg = call.argument<String>("packageName") ?: "com.bcadigital.blu"
+                        val title = call.argument<String>("title").orEmpty()
+                        val body = call.argument<String>("body").orEmpty()
+                        val postedAt = (call.argument<Number>("postedAt"))?.toLong() ?: System.currentTimeMillis()
+                        val json = JSONObject()
+                            .put("packageName", pkg)
+                            .put("title", title)
+                            .put("body", body)
+                            .put("postedAt", postedAt)
+                            .toString()
+                        val current = NotificationCatcher.sink
+                        if (current != null) {
+                            mainHandler.post { runCatching { current.success(json) } }
+                        } else {
+                            NotificationCatcher.enqueue(this, json)
+                        }
+                        result.success(true)
                     }
                     else -> result.notImplemented()
                 }
@@ -299,5 +319,42 @@ class NotificationCatcher : NotificationListenerService() {
 
         val current = sink ?: return
         mainHandler.post { runCatching { current.success(line) } }
+    }
+}
+
+/**
+ * Receiver simulasi notifikasi untuk pengujian otomatisasi dan pengujian manual
+ * via `adb shell am broadcast -a id.xmuu.bukuduit.SIMULATE_NOTIFICATION ...`
+ */
+class NotificationSimulatorReceiver : BroadcastReceiver() {
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action != ACTION_SIMULATE) return
+        val pkg = intent.getStringExtra("package")
+            ?: intent.getStringExtra("packageName")
+            ?: "com.bcadigital.blu"
+        val title = intent.getStringExtra("title").orEmpty()
+        val body = intent.getStringExtra("body")
+            ?: intent.getStringExtra("text").orEmpty()
+        val postedAt = intent.getLongExtra("postedAt", System.currentTimeMillis())
+
+        val json = JSONObject()
+            .put("packageName", pkg)
+            .put("title", title)
+            .put("body", body)
+            .put("postedAt", postedAt)
+            .toString()
+
+        val currentSink = NotificationCatcher.sink
+        if (currentSink != null) {
+            mainHandler.post { runCatching { currentSink.success(json) } }
+        } else {
+            NotificationCatcher.enqueue(context.applicationContext, json)
+        }
+    }
+
+    companion object {
+        const val ACTION_SIMULATE = "id.xmuu.bukuduit.SIMULATE_NOTIFICATION"
     }
 }

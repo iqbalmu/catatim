@@ -11,6 +11,7 @@ import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'quest.dart';
+import 'capture_simulator_sheet.dart';
 import 'transaction_sheet.dart';
 import 'unparsed_logs_sheet.dart';
 
@@ -596,6 +597,18 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                             icon: Icons.mark_email_unread_rounded,
                             tone: QuestTone.secondary,
                             onPressed: () => UnparsedLogsSheet.show(
+                              context,
+                              repository: widget.repository,
+                              pipeline: widget.pipeline,
+                              ruleSet: widget.ruleSet,
+                            ),
+                          ),
+                          const SizedBox(height: Spacing.s),
+                          QuestButton(
+                            label: 'Simulator & Validasi Notifikasi (M3)',
+                            icon: Icons.science_rounded,
+                            tone: QuestTone.secondary,
+                            onPressed: () => CaptureSimulatorSheet.show(
                               context,
                               repository: widget.repository,
                               pipeline: widget.pipeline,

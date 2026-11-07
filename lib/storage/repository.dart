@@ -69,6 +69,12 @@ class LedgerRepository {
     return (_db.delete(_db.captureLogs)..where((c) => c.id.equals(id))).go();
   }
 
+  /// Hapus beberapa baris log notifikasi sekaligus.
+  Future<int> deleteCaptureLogs(Iterable<int> ids) {
+    if (ids.isEmpty) return Future.value(0);
+    return (_db.delete(_db.captureLogs)..where((c) => c.id.isIn(ids))).go();
+  }
+
   /// Bersihkan log yang tak lagi relevan: sudah terbaca atau duplikat
   /// yang lebih tua dari 30 hari. Mengembalikan jumlah baris terhapus.
   Future<int> pruneCaptureLogs() async {
@@ -312,6 +318,12 @@ class LedgerRepository {
   /// Buang draf tanpa mencatat apa pun.
   Future<void> discardDraft(int id) {
     return (_db.delete(_db.drafts)..where((d) => d.id.equals(id))).go();
+  }
+
+  /// Buang beberapa draf sekaligus berdasarkan ID.
+  Future<int> discardDrafts(Iterable<int> ids) {
+    if (ids.isEmpty) return Future.value(0);
+    return (_db.delete(_db.drafts)..where((d) => d.id.isIn(ids))).go();
   }
 
   // --- koneksi bank (model hubungkan bank) ----------------------------------------
