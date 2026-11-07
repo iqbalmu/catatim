@@ -14,7 +14,6 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'bon_screen.dart';
 import 'month_picker.dart';
-import 'ocr_screen.dart';
 import 'quest.dart';
 import 'transaction_tile.dart';
 
@@ -77,12 +76,6 @@ class TransaksiScreenState extends State<TransaksiScreen> {
 
   void showBon() {
     _setBonView(true);
-  }
-
-  Future<void> _openOcr() async {
-    final p = widget.pipeline;
-    if (p == null) return;
-    await OcrScreen.start(context, pipeline: p);
   }
 
   Future<void> _settleBon(Bon bon) async {
@@ -384,31 +377,6 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                             },
                           ),
                         ),
-                        if (widget.pipeline != null) ...[
-                          const SizedBox(width: Spacing.xs),
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: context.q.surface,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: context.q.line.withValues(alpha: 0.6),
-                              ),
-                            ),
-                            child: IconButton(
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              icon: Icon(
-                                Icons.document_scanner_rounded,
-                                size: 18,
-                                color: context.q.text,
-                              ),
-                              tooltip: 'Foto Struk (OCR)',
-                              onPressed: _openOcr,
-                            ),
-                          ),
-                        ],
                         const SizedBox(width: Spacing.xs),
                         // Bon Shortcut
                         QuestPress(
