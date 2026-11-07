@@ -785,12 +785,13 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(Spacing.m, 0, Spacing.m, Spacing.s),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
                       decoration: BoxDecoration(
                         color: context.q.surface,
-                        borderRadius: BorderRadius.circular(AppRadius.tile),
+                        borderRadius: BorderRadius.circular(AppRadius.card),
                         border: Border.all(
-                          color: context.q.line.withValues(alpha: 0.6),
+                          color: context.q.line.withValues(alpha: 0.7),
+                          width: 1.2,
                         ),
                       ),
                       child: Row(
@@ -801,19 +802,20 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                               children: [
                                 Text(
                                   'PEMASUKAN',
-                                  style: context.qEyebrow(10.5).copyWith(
+                                  style: context.qEyebrow(11.5).copyWith(
                                     color: context.q.good,
-                                    letterSpacing: 0.5,
+                                    letterSpacing: 0.6,
+                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 6),
                                 FittedBox(
                                   fit: BoxFit.scaleDown,
                                   alignment: Alignment.centerLeft,
                                   child: Text(
                                     '+${Money.format(totalIn)}',
                                     style: TextStyle(
-                                      fontSize: 15.5,
+                                      fontSize: 18.5,
                                       fontWeight: FontWeight.w900,
                                       color: context.q.good,
                                       fontFeatures: const [FontFeature.tabularFigures()],
@@ -825,8 +827,8 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                           ),
                           Container(
                             width: 1,
-                            height: 32,
-                            color: context.q.line.withValues(alpha: 0.5),
+                            height: 42,
+                            color: context.q.line.withValues(alpha: 0.6),
                           ),
                           const SizedBox(width: Spacing.m),
                           Expanded(
@@ -835,19 +837,20 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                               children: [
                                 Text(
                                   'PENGELUARAN',
-                                  style: context.qEyebrow(10.5).copyWith(
+                                  style: context.qEyebrow(11.5).copyWith(
                                     color: context.q.bad,
-                                    letterSpacing: 0.5,
+                                    letterSpacing: 0.6,
+                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 6),
                                 FittedBox(
                                   fit: BoxFit.scaleDown,
                                   alignment: Alignment.centerLeft,
                                   child: Text(
                                     '-${Money.format(totalOut)}',
                                     style: TextStyle(
-                                      fontSize: 15.5,
+                                      fontSize: 18.5,
                                       fontWeight: FontWeight.w900,
                                       color: context.q.bad,
                                       fontFeatures: const [FontFeature.tabularFigures()],
@@ -859,8 +862,8 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                           ),
                           Container(
                             width: 1,
-                            height: 32,
-                            color: context.q.line.withValues(alpha: 0.5),
+                            height: 42,
+                            color: context.q.line.withValues(alpha: 0.6),
                           ),
                           const SizedBox(width: Spacing.m),
                           Expanded(
@@ -869,19 +872,20 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                               children: [
                                 Text(
                                   'SELISIH',
-                                  style: context.qEyebrow(10.5).copyWith(
+                                  style: context.qEyebrow(11.5).copyWith(
                                     color: context.q.muted,
-                                    letterSpacing: 0.5,
+                                    letterSpacing: 0.6,
+                                    fontWeight: FontWeight.w800,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 6),
                                 FittedBox(
                                   fit: BoxFit.scaleDown,
                                   alignment: Alignment.centerLeft,
                                   child: Text(
                                     (netCashflow >= 0 ? '+' : '') + Money.format(netCashflow),
                                     style: TextStyle(
-                                      fontSize: 15.5,
+                                      fontSize: 18.5,
                                       fontWeight: FontWeight.w900,
                                       color: netCashflow >= 0 ? context.q.text : context.q.bad,
                                       fontFeatures: const [FontFeature.tabularFigures()],
