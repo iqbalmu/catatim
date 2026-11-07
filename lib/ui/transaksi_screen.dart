@@ -14,10 +14,8 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'bon_screen.dart';
 import 'month_picker.dart';
-import 'notif_screen.dart';
 import 'ocr_screen.dart';
 import 'quest.dart';
-import 'transaction_sheet.dart';
 import 'transaction_tile.dart';
 
 /// Cocokkan transaksi dengan query: pihak, kategori, bank, jenis, nominal.
@@ -598,77 +596,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
         ),
         const SizedBox(height: Spacing.xs),
 
-        // Draf Notifikasi Bank Strip
-        StreamBuilder<List<Draft>>(
-          stream: widget.repository.watchDrafts(),
-          builder: (context, draftSnap) {
-            final drafts = draftSnap.data ?? const [];
-            if (drafts.isEmpty) return const SizedBox.shrink();
-            return Padding(
-              padding: const EdgeInsets.fromLTRB(Spacing.m, 0, Spacing.m, Spacing.xs),
-              child: QuestPress(
-                onTap: () {
-                  if (drafts.length == 1) {
-                    TransactionSheet.show(
-                      context,
-                      widget.repository,
-                      draft: drafts.first,
-                      progress: widget.progress,
-                      pipeline: widget.pipeline,
-                      ruleSet: widget.ruleSet,
-                    );
-                  } else if (widget.pipeline != null && widget.ruleSet != null) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => NotificationScreen(
-                          repository: widget.repository,
-                          pipeline: widget.pipeline!,
-                          ruleSet: widget.ruleSet!,
-                          progress: widget.progress,
-                        ),
-                      ),
-                    );
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: context.q.primaryLight,
-                    borderRadius: BorderRadius.circular(AppRadius.tile),
-                    border: Border.all(color: context.q.primary.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.mark_email_unread_rounded, size: 18, color: context.q.primaryDeep),
-                      const SizedBox(width: Spacing.s),
-                      Expanded(
-                        child: Text(
-                          '${drafts.length} draf transaksi bank menunggu konfirmasi',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: context.q.primaryDeep,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        'Tinjau →',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: context.q.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-
-        // Transactions Stream List
+        // Transactions Stream List & Monthly Cashflow Summary
         Expanded(
           child: StreamBuilder<List<TxWithCategory>>(
             stream: widget.repository.watchBetweenWithCategory(
@@ -695,60 +623,188 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                 return true;
               }).toList();
 
-              if (filtered.isEmpty) {
-                return QuestTabEnter(
+              int totalIn = 0;
+              int totalOut = 0;
+              for (final item in allItems) {
+                if (item.tx.kind == TxKind.transfer) continue;
+                if (item.tx.direction == Direction.incoming) {
+                  totalIn += item.tx.amount;
+                } else if (item.tx.direction == Direction.outgoing) {
+                  totalOut += item.tx.amount;
+                }
+              }
+              final netCashflow = totalIn - totalOut;
+
+              Widget? summaryWidget;
+              if (allItems.isNotEmpty) {
+                summaryWidget = QuestTabEnter(
                   index: 3,
                   replayKey: _filterRevision,
-                  child: QuestEmpty(
-                    title: 'Tidak ada transaksi',
-                    hint: _searchQuery.isNotEmpty
-                        ? 'Coba kata kunci pencarian yang lain.'
-                        : 'Belum ada transaksi di bulan ${idMonthYear(_selectedMonth)}.',
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(Spacing.m, 0, Spacing.m, Spacing.s),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: context.q.surface,
+                        borderRadius: BorderRadius.circular(AppRadius.tile),
+                        border: Border.all(color: context.q.line),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'PEMASUKAN',
+                                  style: context.qEyebrow(9.5).copyWith(color: context.q.good),
+                                ),
+                                const SizedBox(height: 2),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    '+${Money.format(totalIn)}',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: context.q.good,
+                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(width: 1, height: 26, color: context.q.line),
+                          const SizedBox(width: Spacing.s),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'PENGELUARAN',
+                                  style: context.qEyebrow(9.5).copyWith(color: context.q.bad),
+                                ),
+                                const SizedBox(height: 2),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    '-${Money.format(totalOut)}',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: context.q.bad,
+                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(width: 1, height: 26, color: context.q.line),
+                          const SizedBox(width: Spacing.s),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'SELISIH',
+                                  style: context.qEyebrow(9.5).copyWith(color: context.q.muted),
+                                ),
+                                const SizedBox(height: 2),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    (netCashflow >= 0 ? '+' : '') + Money.format(netCashflow),
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: netCashflow >= 0 ? context.q.text : context.q.bad,
+                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
+                );
+              }
+
+              if (filtered.isEmpty) {
+                return Column(
+                  children: [
+                    ?summaryWidget,
+                    Expanded(
+                      child: QuestTabEnter(
+                        index: 4,
+                        replayKey: _filterRevision,
+                        child: QuestEmpty(
+                          title: 'Tidak ada transaksi',
+                          hint: _searchQuery.isNotEmpty
+                              ? 'Coba kata kunci pencarian yang lain.'
+                              : 'Belum ada transaksi di bulan ${idMonthYear(_selectedMonth)}.',
+                        ),
+                      ),
+                    ),
+                  ],
                 );
               }
 
               final grouped = groupTxByDay(filtered);
               final days = grouped.keys.toList();
 
-              return ListView.builder(
-                padding: EdgeInsets.fromLTRB(
-                  Spacing.m,
-                  0,
-                  Spacing.m,
-                  96 + MediaQuery.paddingOf(context).bottom,
-                ),
-                itemCount: days.length,
-                itemBuilder: (context, i) {
-                  final day = days[i];
-                  final items = grouped[day]!;
-                  final dayTotalOut = items
-                      .where((item) => item.tx.direction == Direction.outgoing)
-                      .fold<int>(0, (sum, item) => sum + item.tx.amount);
-
-                  final group = Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TransactionDayHeader(
-                        day: day,
-                        first: i == 0,
-                        totalOut: dayTotalOut > 0 ? dayTotalOut : null,
+              return Column(
+                children: [
+                  ?summaryWidget,
+                  Expanded(
+                    child: ListView.builder(
+                      padding: EdgeInsets.fromLTRB(
+                        Spacing.m,
+                        0,
+                        Spacing.m,
+                        96 + MediaQuery.paddingOf(context).bottom,
                       ),
-                      for (final item in items)
-                        TransactionTile(
-                          item: item,
-                          repository: widget.repository,
-                          progress: widget.progress,
-                        ),
-                    ],
-                  );
-                  if (i >= 8) return group;
-                  return QuestTabEnter(
-                    index: 3 + i,
-                    replayKey: _filterRevision,
-                    child: group,
-                  );
-                },
+                      itemCount: days.length,
+                      itemBuilder: (context, i) {
+                        final day = days[i];
+                        final items = grouped[day]!;
+                        final dayTotalOut = items
+                            .where((item) => item.tx.direction == Direction.outgoing)
+                            .fold<int>(0, (sum, item) => sum + item.tx.amount);
+
+                        final group = Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TransactionDayHeader(
+                              day: day,
+                              first: i == 0,
+                              totalOut: dayTotalOut > 0 ? dayTotalOut : null,
+                            ),
+                            for (final item in items)
+                              TransactionTile(
+                                item: item,
+                                repository: widget.repository,
+                                progress: widget.progress,
+                              ),
+                          ],
+                        );
+                        if (i >= 8) return group;
+                        return QuestTabEnter(
+                          index: 4 + i,
+                          replayKey: _filterRevision,
+                          child: group,
+                        );
+                      },
+                    ),
+                  ),
+                ],
               );
             },
           ),
