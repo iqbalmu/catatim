@@ -822,13 +822,13 @@ class LedgerRepository {
     return pattern;
   }
 
-  /// Bersihkan draf non-transaksi (OTP, login alert, promo, atau draf Rp 0 tanpa mutasi riil).
+  /// Bersihkan draf non-transaksi (OTP, login alert, promo, info saldo).
   Future<int> purgeNonTransactionDrafts(RuleEngine engine) async {
     final allDrafts = await (_db.select(_db.drafts)).get();
     final toDelete = <int>[];
     for (final d in allDrafts) {
       final text = '${d.rawTitle ?? ''} ${d.rawBody ?? ''} ${d.counterparty ?? ''}'.trim();
-      if (engine.isIgnored(text, bankId: d.bankId) || d.amount == 0) {
+      if (engine.isIgnored(text, bankId: d.bankId)) {
         toDelete.add(d.id);
       }
     }

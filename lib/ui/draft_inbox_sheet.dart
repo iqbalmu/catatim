@@ -108,6 +108,12 @@ class _DraftInboxViewState extends State<DraftInboxView> {
 
   LedgerRepository get _repo => widget.repository;
 
+  @override
+  void initState() {
+    super.initState();
+    _repo.purgeNonTransactionDrafts(widget.pipeline.engine);
+  }
+
   Future<String> _bankName(String bankId) async {
     if (bankId == 'paste') return 'Tempelan / Struk';
     if (bankId.startsWith('app:')) {
@@ -115,30 +121,6 @@ class _DraftInboxViewState extends State<DraftInboxView> {
       return customs[bankId] ?? bankId.substring(4);
     }
     return widget.ruleSet.bank(bankId)?.displayName ?? bankId;
-  }
-
-  Future<void> _discardAllDrafts(List<Draft> drafts) async {
-    final sure = await showQuestDialog<bool>(
-      context,
-      title: 'Abaikan semua draf?',
-      content: Text(
-        'Ada ${drafts.length} draf yang belum dicatat. Semua draf akan dihapus dari daftar.',
-        style: context.qBody(13),
-      ),
-      actions: [
-        QuestButton(
-          label: 'Abaikan Semua',
-          tone: QuestTone.danger,
-          onPressed: () => Navigator.pop(context, true),
-        ),
-      ],
-    );
-    if (sure == true && mounted) {
-      await _repo.discardDrafts(drafts.map((d) => d.id));
-      if (mounted) {
-        questSnack(context, '${drafts.length} draf berhasil diabaikan.');
-      }
-    }
   }
 
   void _openDraft(Draft draft) {
@@ -744,26 +726,24 @@ class _DraftInboxViewState extends State<DraftInboxView> {
 
   @override
   Widget build(BuildContext context) {
-    final q = context.q;
     return StreamBuilder<List<Draft>>(
       stream: _repo.watchDrafts(),
       builder: (context, draftSnap) {
         final drafts = draftSnap.data ?? const <Draft>[];
-        final nonTxDrafts = drafts.where((d) {
+        final validDrafts = drafts.where((d) {
           final text =
               '${d.rawTitle ?? ''} ${d.rawBody ?? ''} ${d.counterparty ?? ''}'
                   .trim();
-          return widget.pipeline.engine.isIgnored(
-                text,
-                bankId: d.bankId,
-              ) ||
-              d.amount == 0;
+          return !widget.pipeline.engine.isIgnored(
+            text,
+            bankId: d.bankId,
+          );
         }).toList();
-        final partitioned = LedgerRepository.partitionDrafts(drafts);
+        final partitioned = LedgerRepository.partitionDrafts(validDrafts);
         final pairs = partitioned.pairs;
         final singles = partitioned.singles;
 
-        if (drafts.isEmpty) {
+        if (validDrafts.isEmpty) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(Spacing.l),
@@ -779,99 +759,11 @@ class _DraftInboxViewState extends State<DraftInboxView> {
         return ListView(
           padding: const EdgeInsets.fromLTRB(
             Spacing.m,
-            Spacing.xs,
+            Spacing.s,
             Spacing.m,
             Spacing.m,
           ),
           children: [
-            // Sub-header draf
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${drafts.length} tangkapan belum dicatat',
-                  style: context.qSmall(11.5).copyWith(color: q.muted),
-                ),
-                if (drafts.length > 1)
-                  QuestPress(
-                    onTap: () => _discardAllDrafts(drafts),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Text(
-                        'Abaikan Semua',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: q.bad,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: Spacing.xs),
-
-            // Banner deteksi bukan transaksi (ringkas sebaris)
-            if (nonTxDrafts.isNotEmpty) ...[
-              Container(
-                margin: const EdgeInsets.only(bottom: Spacing.s),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Spacing.m,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: q.surface,
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  border: Border.all(
-                    color: q.warn.withValues(alpha: 0.35),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.cleaning_services_rounded,
-                      color: q.warn,
-                      size: 16,
-                    ),
-                    const SizedBox(width: Spacing.xs),
-                    Expanded(
-                      child: Text(
-                        '${nonTxDrafts.length} pesan non-transaksi (OTP / promo)',
-                        style: context.qSmall(11.5).copyWith(color: q.text),
-                      ),
-                    ),
-                    QuestPress(
-                      onTap: () async {
-                        final purged = await _repo.purgeNonTransactionDrafts(
-                          widget.pipeline.engine,
-                        );
-                        if (!context.mounted) return;
-                        questSnack(
-                          context,
-                          '$purged draf bukan transaksi dibersihkan.',
-                          icon: Icons.check_circle_outline_rounded,
-                        );
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        child: Text(
-                          'Bersihkan',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: q.warn,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
             // Pairs
             for (var i = 0; i < pairs.length; i++)
               FutureBuilder<String>(

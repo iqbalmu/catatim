@@ -85,6 +85,30 @@ class _NotificationScreenState extends State<NotificationScreen> {
     );
   }
 
+  Future<void> _discardAllDrafts(List<Draft> drafts) async {
+    final sure = await showQuestDialog<bool>(
+      context,
+      title: 'Abaikan semua tangkapan?',
+      content: Text(
+        'Ada ${drafts.length} tangkapan bank yang belum dicatat. Semua akan dihapus dari daftar.',
+        style: context.qBody(13),
+      ),
+      actions: [
+        QuestButton(
+          label: 'Abaikan Semua',
+          tone: QuestTone.danger,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
+    );
+    if (sure == true && mounted) {
+      await _repo.discardDrafts(drafts.map((d) => d.id));
+      if (mounted) {
+        questSnack(context, '${drafts.length} tangkapan berhasil diabaikan.');
+      }
+    }
+  }
+
   void _goTo(VoidCallback? navigate) {
     Navigator.of(context).popUntil((route) => route.isFirst);
     navigate?.call();
@@ -94,29 +118,53 @@ class _NotificationScreenState extends State<NotificationScreen> {
   Widget build(BuildContext context) {
     final q = context.q;
 
-    return Scaffold(
-      backgroundColor: q.bg,
-      appBar: QuestHeader(
-        title: 'Notifikasi',
-        subtitle: _selectedTab == 0
-            ? 'Pusat perhatian & pengingat'
-            : 'Tangkapan transaksi bank',
-        showBack: true,
-      ),
-      body: FutureBuilder<bool>(
-        future: _listenerEnabled,
-        builder: (context, listenerSnap) {
-          final enabled = listenerSnap.data ?? false;
+    return StreamBuilder<List<Draft>>(
+      stream: _repo.watchDrafts(),
+      builder: (context, draftSnap) {
+        final drafts = draftSnap.data ?? const <Draft>[];
 
-          return StreamBuilder<Set<String>>(
-            stream: _repo.watchConnectedBanks(),
-            builder: (context, connSnap) {
-              final connected = connSnap.data ?? const <String>{};
+        return Scaffold(
+          backgroundColor: q.bg,
+          appBar: QuestHeader(
+            title: 'Notifikasi',
+            subtitle: _selectedTab == 0
+                ? 'Pusat perhatian & pengingat'
+                : 'Tangkapan transaksi bank',
+            showBack: true,
+            actions: [
+              if (_selectedTab == 1 && drafts.length > 1)
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: q.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: q.line),
+                    boxShadow: AppShadows.card,
+                  ),
+                  child: IconButton(
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    icon: Icon(
+                      Icons.delete_sweep_outlined,
+                      color: q.bad,
+                      size: 20,
+                    ),
+                    tooltip: 'Abaikan Semua',
+                    onPressed: () => _discardAllDrafts(drafts),
+                  ),
+                ),
+            ],
+          ),
+          body: FutureBuilder<bool>(
+            future: _listenerEnabled,
+            builder: (context, listenerSnap) {
+              final enabled = listenerSnap.data ?? false;
 
-              return StreamBuilder<List<Draft>>(
-                stream: _repo.watchDrafts(),
-                builder: (context, draftSnap) {
-                  final drafts = draftSnap.data ?? const <Draft>[];
+              return StreamBuilder<Set<String>>(
+                stream: _repo.watchConnectedBanks(),
+                builder: (context, connSnap) {
+                  final connected = connSnap.data ?? const <String>{};
 
                   return StreamBuilder<List<Bon>>(
                     stream: _repo.watchBons(),
@@ -238,9 +286,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 },
               );
             },
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
