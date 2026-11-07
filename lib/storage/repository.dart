@@ -1097,6 +1097,17 @@ class LedgerRepository {
         );
   }
 
+  /// Stream nilai setting integer (mis. batas harian/mingguan/bulanan) secara reaktif.
+  Stream<int?> watchIntSetting(String key) {
+    return (_db.select(_db.appSettings)..where((s) => s.key.equals(key)))
+        .watchSingleOrNull()
+        .map((row) {
+          final text = row?.valueText.trim();
+          if (text == null || text.isEmpty) return null;
+          return int.tryParse(text);
+        });
+  }
+
   // --- anggaran ---------------------------------------------------------------
 
   Stream<List<Budget>> watchBudgets() => (_db.select(
@@ -1499,6 +1510,36 @@ class LedgerRepository {
             ignoredDup: Value(ignoredDup),
           ),
         );
+  }
+
+  /// Kosongkan seluruh data aplikasi (transaksi, draf, bon, anggaran, log capture,
+  /// saldo akun) dan kembalikan ke kondisi bawaan bersih.
+  Future<void> resetAllData() async {
+    await _db.transaction(() async {
+      // 1. Hapus transaksi, draf, bon, anggaran, dan log capture
+      await _db.delete(_db.transactions).go();
+      await _db.delete(_db.drafts).go();
+      await _db.delete(_db.bons).go();
+      await _db.delete(_db.captureLogs).go();
+      await _db.delete(_db.budgets).go();
+
+      // 2. Hapus preferensi dan setelan lama, lalu tandai demo seed dinonaktifkan
+      await _db.delete(_db.appSettings).go();
+      await _db.into(_db.appSettings).insert(
+        AppSettingsCompanion.insert(
+          key: 'demo_seed_disabled',
+          valueText: '1',
+        ),
+      );
+
+      // 3. Reset akun: hapus semua akun dan buat ulang akun default bersih dengan saldo 0
+      await _db.delete(_db.accounts).go();
+      await _db.batch((b) => b.insertAll(_db.accounts, defaultAccountRows()));
+
+      // 4. Reset kategori: hapus semua kategori dan buat ulang kategori bawaan
+      await _db.delete(_db.categories).go();
+      await _db.batch((b) => b.insertAll(_db.categories, defaultCategoryRows()));
+    });
   }
 }
 

@@ -21,6 +21,7 @@ import 'repository.dart';
 /// tidak dihidupkan ulang.
 Future<void> seedDummyIfEmpty(AppDatabase db, LedgerRepository repo) async {
   if (!kDebugMode) return;
+  if (await repo.getSetting('demo_seed_disabled') == '1') return;
   await _seedLimitsAccountsBudgets(repo);
   await _purgeLegacySeed(repo, db);
   // Insert selama baris demo (uuid seed-dummy-*) belum ada — data

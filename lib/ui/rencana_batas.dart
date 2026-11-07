@@ -100,10 +100,6 @@ class RencanaBatas extends StatefulWidget {
 }
 
 class _RencanaBatasState extends State<RencanaBatas> {
-  int? _dailyLimit;
-  int? _weeklyLimit;
-  int? _monthlyTotal;
-
   /// Stream disematkan per bulan (bukan dibuat di build) agar rebuild
   /// biasa tak subscribe ulang (anti-kedip). Dibuat ulang hanya saat
   /// bulan berganti lewat [_ensureStreams].
@@ -113,29 +109,28 @@ class _RencanaBatasState extends State<RencanaBatas> {
   late Stream<List<Budget>> _budgets;
   late Stream<List<Account>> _accounts;
   late Stream<Map<({int? category, int? account}), int>> _outPairs;
+  late Stream<int?> _monthlyLimitStream;
+  late Stream<int?> _weeklyLimitStream;
+  late Stream<int?> _dailyLimitStream;
 
   @override
   void initState() {
     super.initState();
-    _loadLimits();
+    _initLimitStreams();
   }
 
-  Future<void> _loadLimits() async {
-    final daily = int.tryParse(
-      await widget.repository.getSetting(kKeyDailyLimit) ?? '',
-    );
-    final weekly = int.tryParse(
-      await widget.repository.getSetting(kKeyWeeklyLimit) ?? '',
-    );
-    final monthly = int.tryParse(
-      await widget.repository.getSetting(kKeyMonthlyTotal) ?? '',
-    );
-    if (!mounted) return;
-    setState(() {
-      _dailyLimit = daily;
-      _weeklyLimit = weekly;
-      _monthlyTotal = monthly;
-    });
+  void _initLimitStreams() {
+    _monthlyLimitStream = widget.repository.watchIntSetting(kKeyMonthlyTotal);
+    _weeklyLimitStream = widget.repository.watchIntSetting(kKeyWeeklyLimit);
+    _dailyLimitStream = widget.repository.watchIntSetting(kKeyDailyLimit);
+  }
+
+  @override
+  void didUpdateWidget(covariant RencanaBatas oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.repository != widget.repository) {
+      _initLimitStreams();
+    }
   }
 
   @override
@@ -161,68 +156,77 @@ class _RencanaBatasState extends State<RencanaBatas> {
               return const QuestSkeleton(rows: 1, height: 80);
             }
             final usage = usageSnap.data;
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Kartu batas bulanan utama
-                QuestTabEnter(
-                  index: 1,
-                  child: _BatasBulananCard(
-                    used: usage?.month ?? 0,
-                    limit: _monthlyTotal,
-                    onTap: () => _editLimit(
-                      title: 'Total bulanan',
-                      current: _monthlyTotal,
-                      save: (v) async {
-                        await _saveLimit(kKeyMonthlyTotal, v);
-                        setState(() => _monthlyTotal = v);
+            return StreamBuilder<int?>(
+              stream: _monthlyLimitStream,
+              builder: (context, monthSnap) {
+                final monthlyTotal = monthSnap.data;
+                return StreamBuilder<int?>(
+                  stream: _weeklyLimitStream,
+                  builder: (context, weekSnap) {
+                    final weeklyLimit = weekSnap.data;
+                    return StreamBuilder<int?>(
+                      stream: _dailyLimitStream,
+                      builder: (context, dailySnap) {
+                        final dailyLimit = dailySnap.data;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Kartu batas bulanan utama
+                            QuestTabEnter(
+                              index: 1,
+                              child: _BatasBulananCard(
+                                used: usage?.month ?? 0,
+                                limit: monthlyTotal,
+                                onTap: () => _editLimit(
+                                  title: 'Total bulanan',
+                                  current: monthlyTotal,
+                                  save: (v) => _saveLimit(kKeyMonthlyTotal, v),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: Spacing.s),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: QuestTabEnter(
+                                    index: 2,
+                                    child: _LimitMiniCard(
+                                      label: 'Mingguan',
+                                      used: usage?.week ?? 0,
+                                      limit: weeklyLimit,
+                                      onTap: () => _editLimit(
+                                        title: 'Batas mingguan',
+                                        current: weeklyLimit,
+                                        save: (v) => _saveLimit(kKeyWeeklyLimit, v),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: Spacing.s),
+                                Expanded(
+                                  child: QuestTabEnter(
+                                    index: 3,
+                                    child: _LimitMiniCard(
+                                      label: 'Harian',
+                                      used: usage?.day ?? 0,
+                                      limit: dailyLimit,
+                                      onTap: () => _editLimit(
+                                        title: 'Batas harian',
+                                        current: dailyLimit,
+                                        save: (v) => _saveLimit(kKeyDailyLimit, v),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
                       },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: Spacing.s),
-                Row(
-                  children: [
-                    Expanded(
-                      child: QuestTabEnter(
-                        index: 2,
-                        child: _LimitMiniCard(
-                          label: 'Mingguan',
-                          used: usage?.week ?? 0,
-                          limit: _weeklyLimit,
-                          onTap: () => _editLimit(
-                            title: 'Batas mingguan',
-                            current: _weeklyLimit,
-                            save: (v) async {
-                              await _saveLimit(kKeyWeeklyLimit, v);
-                              setState(() => _weeklyLimit = v);
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: Spacing.s),
-                    Expanded(
-                      child: QuestTabEnter(
-                        index: 3,
-                        child: _LimitMiniCard(
-                          label: 'Harian',
-                          used: usage?.day ?? 0,
-                          limit: _dailyLimit,
-                          onTap: () => _editLimit(
-                            title: 'Batas harian',
-                            current: _dailyLimit,
-                            save: (v) async {
-                              await _saveLimit(kKeyDailyLimit, v);
-                              setState(() => _dailyLimit = v);
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                    );
+                  },
+                );
+              },
             );
           },
         ),

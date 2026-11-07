@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../capture/pipeline.dart';
 import '../game/progress.dart';
@@ -348,9 +349,40 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: Spacing.m),
 
-          // ── Seksi 4: Tentang Aplikasi ──
+          // ── Seksi 4: Zona Bahaya ──
           QuestEnter(
             index: 4,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const QuestSectionHeader(title: 'Zona Bahaya'),
+                QuestCard(
+                  padding: EdgeInsets.zero,
+                  child: QuestListTile(
+                    leading: _SettingIcon(
+                      icon: Icons.delete_forever_rounded,
+                      color: q.bad,
+                      bgColor: q.bad.withValues(alpha: 0.12),
+                    ),
+                    title: Text(
+                      'Kosongkan Data Aplikasi',
+                      style: context.qTitle(15).copyWith(color: q.bad),
+                    ),
+                    subtitle: Text(
+                      'Hapus semua transaksi, saldo, bon, dan mulai dari awal',
+                      style: context.qSmall(12),
+                    ),
+                    onTap: () => _confirmResetData(context),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: Spacing.m),
+
+          // ── Seksi 5: Tentang Aplikasi ──
+          QuestEnter(
+            index: 5,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -434,6 +466,73 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmResetData(BuildContext context) async {
+    final confirmed = await showQuestDialog<bool>(
+      context,
+      title: 'Kosongkan Seluruh Data?',
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Semua riwayat transaksi, saldo akun, draf notifikasi, bon/utang, alokasi anggaran, dan preferensi akan dihapus bersih.',
+            style: context.qBody(13),
+          ),
+          const SizedBox(height: Spacing.s),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: context.q.bad.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppRadius.tile),
+              border: Border.all(color: context.q.bad.withValues(alpha: 0.25)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: context.q.bad, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Tindakan ini permanen dan tidak dapat dibatalkan.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: context.q.bad,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        QuestButton(
+          label: 'Batal',
+          tone: QuestTone.secondary,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        QuestButton(
+          label: 'Kosongkan Data',
+          tone: QuestTone.danger,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
+    );
+
+    if (confirmed == true && context.mounted) {
+      HapticFeedback.heavyImpact();
+      await repository.resetAllData();
+      await progress?.refresh();
+      if (context.mounted) {
+        questSnack(
+          context,
+          'Seluruh data berhasil dikosongkan.',
+          icon: Icons.check_circle_outline_rounded,
+        );
+      }
+    }
   }
 }
 
