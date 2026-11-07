@@ -54,10 +54,12 @@ class LaporanScreen extends StatefulWidget {
     super.key,
     required this.repository,
     this.progress,
+    this.showBack = false,
   });
 
   final LedgerRepository repository;
   final ProgressService? progress;
+  final bool showBack;
 
   @override
   State<LaporanScreen> createState() => LaporanScreenState();
@@ -433,12 +435,14 @@ class LaporanScreenState extends State<LaporanScreen> {
                       endExclusive: win.end,
                     );
 
+                    final isPushed = widget.showBack || Navigator.canPop(context);
+
                     return ListView(
                       padding: EdgeInsets.fromLTRB(
                         Spacing.m,
                         Spacing.m,
                         Spacing.m,
-                        104 + MediaQuery.paddingOf(context).bottom,
+                        (isPushed ? Spacing.xl : 104) + MediaQuery.paddingOf(context).bottom,
                       ),
                       children: [
                         // ── Top Bar: Title + Account Filter ────────────────
@@ -447,6 +451,31 @@ class LaporanScreenState extends State<LaporanScreen> {
                           child:
                         Row(
                           children: [
+                            if (isPushed) ...[
+                              Padding(
+                                padding: const EdgeInsets.only(right: Spacing.s),
+                                child: Container(
+                                  width: 38,
+                                  height: 38,
+                                  decoration: BoxDecoration(
+                                    color: context.q.surface,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: context.q.line),
+                                    boxShadow: AppShadows.card,
+                                  ),
+                                  child: IconButton(
+                                    visualDensity: VisualDensity.compact,
+                                    padding: EdgeInsets.zero,
+                                    icon: Icon(
+                                      Icons.arrow_back_rounded,
+                                      color: context.q.text,
+                                      size: 20,
+                                    ),
+                                    onPressed: () => Navigator.maybePop(context),
+                                  ),
+                                ),
+                              ),
+                            ],
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,

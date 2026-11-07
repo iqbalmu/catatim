@@ -18,7 +18,6 @@ import 'add_account_sheet.dart';
 import 'gamification_sheet.dart';
 import 'notif_screen.dart';
 import 'quest.dart';
-import 'settings_screen.dart';
 import 'transaction_sheet.dart';
 import 'transaction_tile.dart';
 
@@ -48,11 +47,47 @@ class HomeTopBar extends StatelessWidget {
   final VoidCallback onOpenAnggaran;
   final VoidCallback onOpenBon;
 
+  ({String title, String subtitle, IconData icon, List<Color> colors})
+      _getGreeting(QuestPalette q) {
+    final hour = DateTime.now().hour;
+    if (hour >= 4 && hour < 11) {
+      return (
+        title: 'Selamat pagi 👋',
+        subtitle: 'Awali hari dengan catatan rapi',
+        icon: Icons.wb_sunny_rounded,
+        colors: [const Color(0xFFF59E0B), q.primary],
+      );
+    }
+    if (hour >= 11 && hour < 15) {
+      return (
+        title: 'Selamat siang 👋',
+        subtitle: 'Sudah catat pengeluaran hari ini?',
+        icon: Icons.wb_sunny_rounded,
+        colors: [const Color(0xFF38BDF8), q.primary],
+      );
+    }
+    if (hour >= 15 && hour < 18) {
+      return (
+        title: 'Selamat sore 👋',
+        subtitle: 'Yuk rekap belanjaan hari ini',
+        icon: Icons.wb_twilight_rounded,
+        colors: [const Color(0xFFFB923C), q.violet],
+      );
+    }
+    return (
+      title: 'Selamat malam 👋',
+      subtitle: 'Waktunya cek sisa anggaranmu',
+      icon: Icons.nightlight_round,
+      colors: [q.primary, q.violet],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final q = context.q;
     final summary = progress.latest;
     final streakDays = summary?.streakDays ?? 0;
+    final greeting = _getGreeting(q);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -63,42 +98,67 @@ class HomeTopBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Brand Logo & Title
+          // Greeting & Friendly Prompt
           Expanded(
             child: Row(
               children: [
                 Container(
-                  width: 36,
-                  height: 36,
+                  width: 38,
+                  height: 38,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [q.primary, q.violet],
+                      colors: greeting.colors,
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: q.primary.withValues(alpha: 0.25),
+                        color: greeting.colors.first.withValues(alpha: 0.25),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.account_balance_wallet_rounded,
+                  child: Icon(
+                    greeting.icon,
                     color: Colors.white,
-                    size: 19,
+                    size: 20,
                   ),
                 ),
                 const SizedBox(width: Spacing.s),
-                Text(
-                  'bukuduit',
-                  style: context.qTitle(19).copyWith(letterSpacing: -0.5),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        greeting.title,
+                        style: context.qTitle(16).copyWith(
+                          letterSpacing: -0.3,
+                          height: 1.15,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        greeting.subtitle,
+                        style: context.qSmall(11.5).copyWith(
+                          color: q.muted,
+                          fontWeight: FontWeight.w500,
+                          height: 1.1,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: Spacing.s),
 
           // Streak Chip Button (Netral, tidak menyaingi saldo)
           Tooltip(
@@ -200,42 +260,6 @@ class HomeTopBar extends StatelessWidget {
                 ),
               );
             },
-          ),
-          const SizedBox(width: Spacing.s),
-
-          // Settings Button
-          Tooltip(
-            message: 'Pengaturan',
-            child: Semantics(
-              label: 'Pengaturan',
-              button: true,
-              child: QuestPress(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => SettingsScreen(
-                      repository: repository,
-                      pipeline: pipeline,
-                      ruleSet: ruleSet,
-                      progress: progress,
-                      onOpenAnggaran: onOpenAnggaran,
-                      onOpenBon: onOpenBon,
-                    ),
-                  ),
-                ),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: q.surface,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: q.line),
-                    boxShadow: AppShadows.card,
-                  ),
-                  child: Icon(Icons.settings_outlined, color: q.text, size: 19),
-                ),
-              ),
-            ),
           ),
         ],
       ),
