@@ -140,10 +140,12 @@ class LedgerRepository {
     int? categoryId,
     int? accountId,
     DateTime? occurredAt,
-  }) {
+  }) async {
     final clean = (counterparty == null || counterparty.trim().isEmpty)
         ? null
         : counterparty.trim();
+    final resolvedCategoryId = categoryId ??
+        await preferredCategoryId(counterparty: clean, kind: kind);
     return _db
         .into(_db.transactions)
         .insert(
@@ -156,7 +158,7 @@ class LedgerRepository {
             counterparty: Value(clean),
             occurredAt: occurredAt ?? DateTime.now(),
             source: TxSource.manual,
-            categoryId: Value(categoryId),
+            categoryId: Value(resolvedCategoryId),
             accountId: Value(accountId),
           ),
         );
@@ -203,6 +205,35 @@ class LedgerRepository {
     return row?.id;
   }
 
+  /// Kategori yang disukai/terakhir dipilih untuk [counterparty] tertentu.
+  /// Bila belum ada riwayat transaksi dengan pihak ini, gunakan default dari [kind].
+  Future<int?> preferredCategoryId({
+    String? counterparty,
+    TxKind? kind,
+  }) async {
+    final clean = counterparty?.trim();
+    if (clean != null && clean.isNotEmpty) {
+      final cleanLower = clean.toLowerCase();
+      final lastTx = await (_db.select(_db.transactions)
+            ..where(
+              (t) =>
+                  t.counterparty.isNotNull() &
+                  t.categoryId.isNotNull() &
+                  t.counterparty.lower().equals(cleanLower),
+            )
+            ..orderBy([(t) => OrderingTerm.desc(t.occurredAt)])
+            ..limit(1))
+          .getSingleOrNull();
+      if (lastTx?.categoryId != null) {
+        return lastTx!.categoryId;
+      }
+    }
+    if (kind != null) {
+      return _defaultCategoryId(kind);
+    }
+    return null;
+  }
+
   // --- draf (model hubungkan bank) ------------------------------------------------
 
   /// Simpan hasil capture sebagai DRAF menunggu keputusan user.
@@ -246,6 +277,11 @@ class LedgerRepository {
         return null;
       }
 
+      final resolvedCatId = await preferredCategoryId(
+        counterparty: draft.counterparty,
+        kind: draft.kind,
+      );
+
       return _db
           .into(_db.drafts)
           .insert(
@@ -258,7 +294,7 @@ class LedgerRepository {
               occurredAt: raw.postedAt,
               rawTitle: Value(raw.title),
               rawBody: Value(raw.body),
-              categoryId: Value(await _defaultCategoryId(draft.kind)),
+              categoryId: Value(resolvedCatId),
               accountId: Value(await _accountIdForBank(draft.bankId)),
             ),
           );
@@ -288,6 +324,13 @@ class LedgerRepository {
       final clean = (counterparty == null || counterparty.trim().isEmpty)
           ? null
           : counterparty.trim();
+      final targetCounterparty = clean ?? draft.counterparty;
+      final resolvedCategoryId = categoryId ??
+          draft.categoryId ??
+          await preferredCategoryId(
+            counterparty: targetCounterparty,
+            kind: kind,
+          );
       final id = await _db
           .into(_db.transactions)
           .insert(
@@ -297,16 +340,12 @@ class LedgerRepository {
               kind: kind,
               direction: direction,
               amount: amount,
-              counterparty: Value(clean ?? draft.counterparty),
+              counterparty: Value(targetCounterparty),
               occurredAt: occurredAt ?? draft.occurredAt,
               source: TxSource.notification,
               rawTitle: Value(draft.rawTitle),
               rawBody: Value(draft.rawBody),
-              categoryId: Value(
-                categoryId ??
-                    draft.categoryId ??
-                    await _defaultCategoryId(kind),
-              ),
+              categoryId: Value(resolvedCategoryId),
               accountId: Value(accountId ?? draft.accountId),
             ),
           );
@@ -324,6 +363,161 @@ class LedgerRepository {
   Future<int> discardDrafts(Iterable<int> ids) {
     if (ids.isEmpty) return Future.value(0);
     return (_db.delete(_db.drafts)..where((d) => d.id.isIn(ids))).go();
+  }
+
+  // --- transfer antar-akun internal -------------------------------------------
+
+  /// Pisahkan daftar draf menjadi pasangan transfer antar-akun sendiri dan draf tunggal.
+  /// Dua draf berpasangan bila:
+  /// - Nominalnya sama
+  /// - Arahnya berlawanan (satu keluar, satu masuk)
+  /// - Berasal dari bank berbeda (atau akun berbeda)
+  /// - Waktu kejadiannya berdekatan (dalam [window], default 5 menit).
+  static ({List<InternalTransferPair> pairs, List<Draft> singles}) partitionDrafts(
+    List<Draft> drafts, {
+    Duration window = const Duration(minutes: 5),
+  }) {
+    if (drafts.length < 2) {
+      return (pairs: const [], singles: drafts);
+    }
+
+    final pairs = <InternalTransferPair>[];
+    final matchedIds = <int>{};
+
+    for (var i = 0; i < drafts.length; i++) {
+      final a = drafts[i];
+      if (matchedIds.contains(a.id)) continue;
+
+      for (var j = i + 1; j < drafts.length; j++) {
+        final b = drafts[j];
+        if (matchedIds.contains(b.id)) continue;
+
+        final isOppositeDirection = a.direction != b.direction;
+        final isSameAmount = a.amount == b.amount;
+        final isDifferentBankOrAccount = a.bankId != b.bankId ||
+            (a.accountId != null &&
+                b.accountId != null &&
+                a.accountId != b.accountId);
+        final isWithinWindow =
+            a.occurredAt.difference(b.occurredAt).abs() <= window;
+
+        if (isOppositeDirection &&
+            isSameAmount &&
+            isDifferentBankOrAccount &&
+            isWithinWindow) {
+          matchedIds.add(a.id);
+          matchedIds.add(b.id);
+          final outDraft = a.direction == Direction.outgoing ? a : b;
+          final inDraft = a.direction == Direction.incoming ? a : b;
+          pairs.add(InternalTransferPair(outDraft: outDraft, inDraft: inDraft));
+          break;
+        }
+      }
+    }
+
+    final singles = [
+      for (final d in drafts)
+        if (!matchedIds.contains(d.id)) d,
+    ];
+
+    return (pairs: pairs, singles: singles);
+  }
+
+  /// Konfirmasi pasangan transfer antar rekening sendiri:
+  /// Mencatat dua transaksi jenis transfer (keluar di akun asal, masuk di akun tujuan)
+  /// dengan kategori "Transfer", lalu menghapus kedua draf.
+  Future<void> confirmTransferPair({
+    required InternalTransferPair pair,
+    int? outAccountId,
+    int? inAccountId,
+  }) {
+    return _db.transaction(() async {
+      final transferCatId = await _defaultCategoryId(TxKind.transfer);
+      final fromAccId = outAccountId ??
+          pair.outDraft.accountId ??
+          await _accountIdForBank(pair.outDraft.bankId);
+      final toAccId = inAccountId ??
+          pair.inDraft.accountId ??
+          await _accountIdForBank(pair.inDraft.bankId);
+
+      final toAccount = toAccId != null
+          ? await (_db.select(_db.accounts)
+                ..where((a) => a.id.equals(toAccId)))
+              .getSingleOrNull()
+          : null;
+      final fromAccount = fromAccId != null
+          ? await (_db.select(_db.accounts)
+                ..where((a) => a.id.equals(fromAccId)))
+              .getSingleOrNull()
+          : null;
+
+      final toLabel = toAccount?.name ?? pair.inDraft.bankId;
+      final fromLabel = fromAccount?.name ?? pair.outDraft.bankId;
+
+      // 1. Kaki keluar
+      await _db.into(_db.transactions).insert(
+            TransactionsCompanion.insert(
+              uuid: newUuid(),
+              bankId: pair.outDraft.bankId,
+              kind: TxKind.transfer,
+              direction: Direction.outgoing,
+              amount: pair.amount,
+              counterparty: Value('Transfer ke $toLabel'),
+              occurredAt: pair.outDraft.occurredAt,
+              source: TxSource.notification,
+              rawTitle: Value(pair.outDraft.rawTitle),
+              rawBody: Value(pair.outDraft.rawBody),
+              categoryId: Value(transferCatId),
+              accountId: Value(fromAccId),
+            ),
+          );
+
+      // 2. Kaki masuk
+      await _db.into(_db.transactions).insert(
+            TransactionsCompanion.insert(
+              uuid: newUuid(),
+              bankId: pair.inDraft.bankId,
+              kind: TxKind.transfer,
+              direction: Direction.incoming,
+              amount: pair.amount,
+              counterparty: Value('Transfer dari $fromLabel'),
+              occurredAt: pair.inDraft.occurredAt,
+              source: TxSource.notification,
+              rawTitle: Value(pair.inDraft.rawTitle),
+              rawBody: Value(pair.inDraft.rawBody),
+              categoryId: Value(transferCatId),
+              accountId: Value(toAccId),
+            ),
+          );
+
+      // 3. Hapus kedua draf
+      await (_db.delete(_db.drafts)
+            ..where((d) => d.id.isIn([pair.outDraft.id, pair.inDraft.id])))
+          .go();
+    });
+  }
+
+  /// Cari transaksi pasangan transfer yang mungkin sudah tercatat sebelumnya.
+  Future<Transaction?> findMatchingTransferTransaction(
+    Draft draft, {
+    Duration window = const Duration(minutes: 5),
+  }) async {
+    final from = draft.occurredAt.subtract(window);
+    final to = draft.occurredAt.add(window);
+    final oppositeDirection = draft.direction == Direction.incoming
+        ? Direction.outgoing
+        : Direction.incoming;
+
+    return (_db.select(_db.transactions)
+          ..where(
+            (t) =>
+                t.amount.equals(draft.amount) &
+                t.direction.equalsValue(oppositeDirection) &
+                t.bankId.equals(draft.bankId).not() &
+                t.occurredAt.isBetweenValues(from, to),
+          )
+          ..limit(1))
+        .getSingleOrNull();
   }
 
   // --- koneksi bank (model hubungkan bank) ----------------------------------------
@@ -501,7 +695,11 @@ class LedgerRepository {
                 ..limit(1))
               .getSingleOrNull();
       if (dup != null) return null;
-      final resolvedCatId = categoryId ?? await _defaultCategoryId(TxKind.other);
+      final resolvedCatId = categoryId ??
+          await preferredCategoryId(
+            counterparty: title,
+            kind: TxKind.other,
+          );
       final resolvedAccId = accountId ?? await _accountIdForBank(bankId);
       return _db
           .into(_db.drafts)
@@ -1097,4 +1295,22 @@ class LedgerRepository {
           ),
         );
   }
+}
+
+/// Pasangan dua draf notifikasi yang saling melengkapi sebagai
+/// transfer antar rekening sendiri (uang keluar di satu akun, masuk di akun lain).
+class InternalTransferPair {
+  const InternalTransferPair({
+    required this.outDraft,
+    required this.inDraft,
+  });
+
+  final Draft outDraft;
+  final Draft inDraft;
+
+  int get amount => outDraft.amount;
+
+  DateTime get occurredAt => outDraft.occurredAt.isAfter(inDraft.occurredAt)
+      ? outDraft.occurredAt
+      : inDraft.occurredAt;
 }

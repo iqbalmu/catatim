@@ -19,21 +19,21 @@
           "kind": "transfer",
           "direction": "in",
           "matchAll": ["transfer masuk"],
-          "counterparty": "dari\\s+(.+?)(?:\\.|,|$)"
+          "counterparty": "dari\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
         },
         {
           "name": "menerima uang",
           "kind": "transfer",
           "direction": "in",
           "matchAll": ["kamu menerima"],
-          "counterparty": "dari\\s+(.+?)(?:\\.|,|$)"
+          "counterparty": "dari\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
         },
         {
           "name": "transfer keluar",
           "kind": "transfer",
           "direction": "out",
           "matchAll": ["transfer ke "],
-          "counterparty": "ke\\s+(.+?)(?:\\.|,|$)"
+          "counterparty": "ke\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
         },
         {
           "name": "pembayaran / qr",
@@ -60,14 +60,14 @@
           "kind": "transfer",
           "direction": "in",
           "matchAny": ["kredit", "transfer masuk", "dana masuk", "menerima"],
-          "counterparty": "dari\\s+(.+?)(?:\\.|,|$)"
+          "counterparty": "dari\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
         },
         {
           "name": "debit keluar",
           "kind": "transfer",
           "direction": "out",
           "matchAny": ["debit", "transfer ke", "tarik tunai", "tarik"],
-          "counterparty": "a\\.n\\.\\s*(.+?)(?:\\.|,|$)"
+          "counterparty": "a\\.n\\.\\s*(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
         },
         {
           "name": "pembayaran / qris",
@@ -80,6 +80,250 @@
           "kind": "topup",
           "direction": "out",
           "matchAny": ["top up", "topup", "isi ulang"]
+        }
+      ]
+    },
+    {
+      "id": "bca",
+      "displayName": "BCA",
+      "packageNames": ["com.bca", "com.bca.mybca"],
+      "keywords": ["bca", "m-bca", "mybca", "bank central asia"],
+      "templates": [
+        {
+          "name": "transfer masuk",
+          "kind": "transfer",
+          "direction": "in",
+          "matchAny": ["transfer masuk", "dana masuk", "kamu menerima transfer", "menerima uang"],
+          "counterparty": "dari\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "m-transfer keluar",
+          "kind": "transfer",
+          "direction": "out",
+          "matchAny": ["m-transfer berhasil", "transfer ke", "transfer berhasil ke", "kamu telah transfer"],
+          "counterparty": "(?:ke|rek)\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "pembayaran / qris",
+          "kind": "payment",
+          "direction": "out",
+          "matchAny": ["pembayaran qris", "qris berhasil", "pembayaran berhasil", "pembayaran di", "qris"],
+          "counterparty": "(?:di|merchant|ke)\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "tarik tunai",
+          "kind": "withdrawal",
+          "direction": "out",
+          "matchAny": ["tarik tunai", "penarikan tunai"]
+        }
+      ]
+    },
+    {
+      "id": "mandiri",
+      "displayName": "Livin' by Mandiri",
+      "packageNames": ["id.bmri.livin"],
+      "keywords": ["mandiri", "livin", "livin by mandiri", "bank mandiri"],
+      "templates": [
+        {
+          "name": "transfer masuk",
+          "kind": "transfer",
+          "direction": "in",
+          "matchAny": ["transfer masuk", "dana masuk", "kamu menerima", "kamu dapat transfer"],
+          "counterparty": "dari\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "transfer keluar",
+          "kind": "transfer",
+          "direction": "out",
+          "matchAny": ["transfer berhasil", "transfer ke", "kamu berhasil transfer"],
+          "counterparty": "ke\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "qris / pembayaran",
+          "kind": "payment",
+          "direction": "out",
+          "matchAny": ["qris", "pembayaran berhasil", "pembelian berhasil", "debit pos", "transaksi berhasil di"],
+          "counterparty": "(?:di|ke|merchant)\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "top up",
+          "kind": "topup",
+          "direction": "out",
+          "matchAny": ["top up", "topup", "isi saldo"]
+        }
+      ]
+    },
+    {
+      "id": "bri",
+      "displayName": "BRImo",
+      "packageNames": ["id.co.bri.brimo"],
+      "keywords": ["brimo", "bank bri", "bri"],
+      "templates": [
+        {
+          "name": "transaksi masuk",
+          "kind": "transfer",
+          "direction": "in",
+          "matchAny": ["transfer masuk", "transaksi kredit", "dana masuk", "kamu menerima"],
+          "counterparty": "dari\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "transaksi keluar",
+          "kind": "transfer",
+          "direction": "out",
+          "matchAny": ["transfer berhasil", "transfer ke", "transaksi debit", "debit rekening"],
+          "counterparty": "ke\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "qris / belanja",
+          "kind": "payment",
+          "direction": "out",
+          "matchAny": ["qris", "pembelian berhasil", "pembayaran berhasil", "belanja"],
+          "counterparty": "(?:di|ke)\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        }
+      ]
+    },
+    {
+      "id": "bni",
+      "displayName": "wondr by BNI",
+      "packageNames": ["id.bni.wondr", "src.com.bni"],
+      "keywords": ["wondr", "bni", "bni mobile"],
+      "templates": [
+        {
+          "name": "transfer masuk",
+          "kind": "transfer",
+          "direction": "in",
+          "matchAny": ["transfer masuk", "dana masuk", "kamu menerima", "kredit"],
+          "counterparty": "dari\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "transfer keluar",
+          "kind": "transfer",
+          "direction": "out",
+          "matchAny": ["transfer keluar", "transfer berhasil", "transfer ke", "debit"],
+          "counterparty": "ke\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "qris / pembayaran",
+          "kind": "payment",
+          "direction": "out",
+          "matchAny": ["qris", "pembayaran", "pembelian", "belanja"],
+          "counterparty": "(?:di|ke)\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        }
+      ]
+    },
+    {
+      "id": "gopay",
+      "displayName": "GoPay",
+      "packageNames": ["com.gojek.app", "id.co.gopay"],
+      "keywords": ["gopay", "gojek"],
+      "templates": [
+        {
+          "name": "top up / uang masuk",
+          "kind": "topup",
+          "direction": "in",
+          "matchAny": ["top up berhasil", "isi saldo berhasil", "kamu menerima", "saldo masuk", "uang masuk"],
+          "counterparty": "dari\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "pembayaran / qris",
+          "kind": "payment",
+          "direction": "out",
+          "matchAny": ["kamu telah membayar", "pembayaran berhasil", "transaksi di", "qris", "berhasil bayar"],
+          "counterparty": "(?:di|ke)\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "transfer keluar",
+          "kind": "transfer",
+          "direction": "out",
+          "matchAny": ["transfer berhasil", "kirim uang berhasil", "kirim saldo ke"],
+          "counterparty": "ke\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        }
+      ]
+    },
+    {
+      "id": "ovo",
+      "displayName": "OVO",
+      "packageNames": ["ovo.id"],
+      "keywords": ["ovo"],
+      "templates": [
+        {
+          "name": "top up / uang masuk",
+          "kind": "topup",
+          "direction": "in",
+          "matchAny": ["top up berhasil", "berhasil masuk", "kamu menerima", "saldo bertambah"],
+          "counterparty": "dari\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "pembayaran",
+          "kind": "payment",
+          "direction": "out",
+          "matchAny": ["pembayaran berhasil", "kamu telah membayar", "berhasil bayar", "qris"],
+          "counterparty": "(?:di|ke)\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "transfer keluar",
+          "kind": "transfer",
+          "direction": "out",
+          "matchAny": ["transfer berhasil", "berhasil transfer ke", "kirim uang"],
+          "counterparty": "ke\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        }
+      ]
+    },
+    {
+      "id": "dana",
+      "displayName": "DANA",
+      "packageNames": ["id.dana"],
+      "keywords": ["dana", "dana wallet"],
+      "templates": [
+        {
+          "name": "terima uang / top up",
+          "kind": "topup",
+          "direction": "in",
+          "matchAny": ["berhasil top up", "isi saldo berhasil", "kamu telah menerima", "terima uang", "uang masuk"],
+          "counterparty": "dari\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "pembayaran / qris",
+          "kind": "payment",
+          "direction": "out",
+          "matchAny": ["pembayaran berhasil", "berhasil bayar", "qris", "transaksi berhasil"],
+          "counterparty": "(?:di|ke)\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "kirim uang",
+          "kind": "transfer",
+          "direction": "out",
+          "matchAny": ["kirim uang berhasil", "kamu telah mengirim", "transfer ke"],
+          "counterparty": "ke\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        }
+      ]
+    },
+    {
+      "id": "shopeepay",
+      "displayName": "ShopeePay",
+      "packageNames": ["com.shopee.id", "com.shopeepay.id"],
+      "keywords": ["shopeepay", "shopee pay"],
+      "templates": [
+        {
+          "name": "top up / terima dana",
+          "kind": "topup",
+          "direction": "in",
+          "matchAny": ["top up berhasil", "isi saldo berhasil", "menerima transfer", "dana masuk"],
+          "counterparty": "dari\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "pembayaran",
+          "kind": "payment",
+          "direction": "out",
+          "matchAny": ["pembayaran berhasil", "kamu telah membayar", "pembayaran dengan shopeepay", "qris"],
+          "counterparty": "(?:di|ke)\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
+        },
+        {
+          "name": "transfer keluar",
+          "kind": "transfer",
+          "direction": "out",
+          "matchAny": ["transfer berhasil", "berhasil transfer ke", "kirim dana"],
+          "counterparty": "ke\\s+(.+?)(?:\\s+(?:berhasil|sukses)|[.,]|$)"
         }
       ]
     },

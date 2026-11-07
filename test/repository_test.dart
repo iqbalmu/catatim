@@ -846,4 +846,196 @@ void main() {
       expect(await repo.customTemplates(), isEmpty);
     });
   });
+
+  group('preferredCategoryId & merchant memory', () {
+    test('mengingat kategori terakhir berdasarkan counterparty (case-insensitive)', () async {
+      final catKopi = await repo.addCategory('Kopi & Nongkrong');
+      final catMakan = await repo.addCategory('Makanan & Minuman');
+
+      // Belum ada histori → fallback ke default kind
+      final initialPref = await repo.preferredCategoryId(
+        counterparty: 'Kopi Kenangan',
+        kind: TxKind.payment,
+      );
+      final defaultPaymentCat = await db.select(db.categories)
+          .get()
+          .then((l) => l.firstWhere((c) => c.name == 'Belanja').id);
+      expect(initialPref, defaultPaymentCat);
+
+      // Simpan transaksi pertama dengan counterparty Kopi Kenangan
+      await repo.addManual(
+        amount: 25000,
+        direction: Direction.outgoing,
+        kind: TxKind.payment,
+        counterparty: 'Kopi Kenangan',
+        categoryId: catKopi.id,
+        occurredAt: DateTime(2026, 10, 1, 10),
+      );
+
+      // Preferred sekarang harus Kopi & Nongkrong
+      final learnedPref = await repo.preferredCategoryId(
+        counterparty: 'kopi kenangan', // huruf kecil
+        kind: TxKind.payment,
+      );
+      expect(learnedPref, catKopi.id);
+
+      // Draf baru dari notifikasi dengan counterparty sama otomatis dapat kategori tersebut
+      final draftId = await repo.addDraftFromCapture(
+        raw: capture(
+          body: 'Pembayaran QRIS Rp28.000 ke KOPI KENANGAN berhasil',
+          postedAt: DateTime(2026, 10, 11, 10),
+        ),
+        draft: ParsedDraft(
+          bankId: 'blu',
+          bankName: 'blu by BCA',
+          ruleName: 'pembayaran',
+          kind: TxKind.payment,
+          direction: Direction.outgoing,
+          amount: 28000,
+          counterparty: 'KOPI KENANGAN',
+        ),
+      );
+      expect(draftId, isNotNull);
+      final savedDraft = await (db.select(db.drafts)..where((d) => d.id.equals(draftId!))).getSingle();
+      expect(savedDraft.categoryId, catKopi.id);
+
+      // Jika user mencatat transaksi baru dengan kategori berbeda, memory terupdate ke yang terbaru
+      await repo.addManual(
+        amount: 30000,
+        direction: Direction.outgoing,
+        kind: TxKind.payment,
+        counterparty: 'Kopi Kenangan',
+        categoryId: catMakan.id,
+        occurredAt: DateTime(2026, 10, 12, 10),
+      );
+      final updatedPref = await repo.preferredCategoryId(
+        counterparty: 'KOPI KENANGAN',
+        kind: TxKind.payment,
+      );
+      expect(updatedPref, catMakan.id);
+    });
+  });
+
+  group('Internal Transfer Pairing & Confirmation', () {
+    test('partitionDrafts mendeteksi pasangan draf keluar & masuk bernominal sama', () {
+      final now = DateTime(2026, 11, 1, 10, 0);
+      final draftBca = Draft(
+        id: 1,
+        bankId: 'bca',
+        kind: TxKind.transfer,
+        direction: Direction.outgoing,
+        amount: 150000,
+        occurredAt: now,
+        createdAt: now,
+      );
+      final draftGopay = Draft(
+        id: 2,
+        bankId: 'gopay',
+        kind: TxKind.topup,
+        direction: Direction.incoming,
+        amount: 150000,
+        occurredAt: now.add(const Duration(minutes: 1)),
+        createdAt: now,
+      );
+      final draftSingle = Draft(
+        id: 3,
+        bankId: 'bca',
+        kind: TxKind.payment,
+        direction: Direction.outgoing,
+        amount: 25000,
+        occurredAt: now.add(const Duration(minutes: 2)),
+        createdAt: now,
+      );
+
+      final result = LedgerRepository.partitionDrafts([
+        draftBca,
+        draftGopay,
+        draftSingle,
+      ]);
+
+      expect(result.pairs, hasLength(1));
+      expect(result.singles, hasLength(1));
+      expect(result.pairs.first.outDraft.id, draftBca.id);
+      expect(result.pairs.first.inDraft.id, draftGopay.id);
+      expect(result.pairs.first.amount, 150000);
+      expect(result.singles.first.id, draftSingle.id);
+    });
+
+    test('confirmTransferPair mencatat 2 transaksi transfer, hapus draf, dan tak menambah pengeluaran', () async {
+      final accBca = await repo.ensureBankAccount(
+        bankId: 'bca',
+        name: 'BCA',
+        kind: AccountKind.bank,
+      );
+      await repo.setOpeningBalance(accBca.id, 500000);
+
+      final accGopay = await repo.ensureBankAccount(
+        bankId: 'gopay',
+        name: 'GoPay',
+        kind: AccountKind.ewallet,
+      );
+      await repo.setOpeningBalance(accGopay.id, 50000);
+
+      final now = DateTime(2026, 11, 1, 10, 0);
+      final idOut = await repo.addDraftFromCapture(
+        raw: capture(
+          packageName: 'com.bca',
+          title: 'm-BCA',
+          body: 'Transfer berhasil ke GoPay Rp 100.000',
+          postedAt: now,
+        ),
+        draft: ParsedDraft(
+          bankId: 'bca',
+          bankName: 'BCA',
+          ruleName: 'm-transfer keluar',
+          kind: TxKind.transfer,
+          direction: Direction.outgoing,
+          amount: 100000,
+        ),
+      );
+      final idIn = await repo.addDraftFromCapture(
+        raw: capture(
+          packageName: 'com.gojek.app',
+          title: 'GoPay',
+          body: 'Top up berhasil Rp 100.000 dari BCA',
+          postedAt: now.add(const Duration(minutes: 1)),
+        ),
+        draft: ParsedDraft(
+          bankId: 'gopay',
+          bankName: 'GoPay',
+          ruleName: 'top up',
+          kind: TxKind.topup,
+          direction: Direction.incoming,
+          amount: 100000,
+        ),
+      );
+
+      final allDrafts = await db.select(db.drafts).get();
+      final partition = LedgerRepository.partitionDrafts(allDrafts);
+      expect(partition.pairs, hasLength(1));
+
+      // Konfirmasi transfer pair
+      await repo.confirmTransferPair(pair: partition.pairs.first);
+
+      // 1. Draf harus terhapus
+      expect(await db.select(db.drafts).get(), isEmpty);
+
+      // 2. Transaksi baru harus tercatat dengan kind transfer
+      final txs = await db.select(db.transactions).get();
+      expect(txs, hasLength(2));
+      expect(txs.every((t) => t.kind == TxKind.transfer), isTrue);
+
+      // 3. Saldo akun terupdate: BCA berkurang 100k, GoPay bertambah 100k
+      final balances = await repo.watchAccountBalances().first;
+      expect(balances[accBca.id], 400000);
+      expect(balances[accGopay.id], 150000);
+
+      // 4. Belanja murni tetap 0 (transfer antar akun tidak dihitung sebagai beban pengeluaran)
+      final spend = await repo.outSpendPairsBetween(
+        DateTime(2026, 11, 1),
+        DateTime(2026, 11, 2),
+      );
+      expect(spend.values.fold<int>(0, (a, b) => a + b), 0);
+    });
+  });
 }

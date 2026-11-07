@@ -219,6 +219,188 @@ void main() {
     });
   });
 
+  group('Katalog Bank & E-Wallet Baru', () {
+    test('BCA: transfer keluar & QRIS', () {
+      final tf = engine.parse(
+        packageName: 'com.bca',
+        title: 'm-BCA',
+        body: 'm-Transfer berhasil ke rek 1234567890 a.n. BUDI sebesar Rp 1.500.000',
+      );
+      expect(tf, isNotNull);
+      expect(tf!.bankId, 'bca');
+      expect(tf.kind, TxKind.transfer);
+      expect(tf.direction, Direction.outgoing);
+      expect(tf.amount, 1500000);
+
+      final qris = engine.parse(
+        packageName: 'com.bca.mybca',
+        title: 'myBCA',
+        body: 'Pembayaran QRIS sebesar Rp 75.000 di KOPI KENANGAN Berhasil',
+      );
+      expect(qris, isNotNull);
+      expect(qris!.bankId, 'bca');
+      expect(qris.kind, TxKind.payment);
+      expect(qris.direction, Direction.outgoing);
+      expect(qris.amount, 75000);
+      expect(qris.counterparty, 'KOPI KENANGAN');
+    });
+
+    test('Livin by Mandiri: transfer masuk & keluar', () {
+      final tfMasuk = engine.parse(
+        packageName: 'id.bmri.livin',
+        title: 'Livin by Mandiri',
+        body: 'Kamu menerima transfer masuk sebesar Rp 500.000 dari SITI AMINAH',
+      );
+      expect(tfMasuk, isNotNull);
+      expect(tfMasuk!.bankId, 'mandiri');
+      expect(tfMasuk.kind, TxKind.transfer);
+      expect(tfMasuk.direction, Direction.incoming);
+      expect(tfMasuk.amount, 500000);
+      expect(tfMasuk.counterparty, 'SITI AMINAH');
+
+      final tfKeluar = engine.parse(
+        packageName: 'id.bmri.livin',
+        title: 'Livin by Mandiri',
+        body: 'Transfer berhasil ke REK 987654321 sebesar Rp 250.000',
+      );
+      expect(tfKeluar, isNotNull);
+      expect(tfKeluar!.bankId, 'mandiri');
+      expect(tfKeluar.kind, TxKind.transfer);
+      expect(tfKeluar.direction, Direction.outgoing);
+      expect(tfKeluar.amount, 250000);
+    });
+
+    test('BRImo: transaksi kredit & qris belanja', () {
+      final kredit = engine.parse(
+        packageName: 'id.co.bri.brimo',
+        title: 'BRImo',
+        body: 'Transaksi Kredit Rp 1.000.000 dari PT ABC SUKSES',
+      );
+      expect(kredit, isNotNull);
+      expect(kredit!.bankId, 'bri');
+      expect(kredit.kind, TxKind.transfer);
+      expect(kredit.direction, Direction.incoming);
+      expect(kredit.amount, 1000000);
+
+      final qris = engine.parse(
+        packageName: 'id.co.bri.brimo',
+        title: 'BRImo',
+        body: 'Transaksi QRIS Sebesar Rp 35.000 di TOKO BERKAH Berhasil',
+      );
+      expect(qris, isNotNull);
+      expect(qris!.bankId, 'bri');
+      expect(qris.kind, TxKind.payment);
+      expect(qris.direction, Direction.outgoing);
+      expect(qris.amount, 35000);
+      expect(qris.counterparty, 'TOKO BERKAH');
+    });
+
+    test('wondr by BNI: transfer & qris', () {
+      final qris = engine.parse(
+        packageName: 'id.bni.wondr',
+        title: 'wondr by BNI',
+        body: 'Pembayaran QRIS Rp 50.000 di SUPERINDO Berhasil',
+      );
+      expect(qris, isNotNull);
+      expect(qris!.bankId, 'bni');
+      expect(qris.kind, TxKind.payment);
+      expect(qris.direction, Direction.outgoing);
+      expect(qris.amount, 50000);
+      expect(qris.counterparty, 'SUPERINDO');
+    });
+
+    test('GoPay: top up & bayar qris', () {
+      final topup = engine.parse(
+        packageName: 'com.gojek.app',
+        title: 'GoPay',
+        body: 'Top up berhasil! Saldo masuk Rp 100.000 dari BCA',
+      );
+      expect(topup, isNotNull);
+      expect(topup!.bankId, 'gopay');
+      expect(topup.kind, TxKind.topup);
+      expect(topup.direction, Direction.incoming);
+      expect(topup.amount, 100000);
+      expect(topup.counterparty, 'BCA');
+
+      final bayar = engine.parse(
+        packageName: 'id.co.gopay',
+        title: 'GoPay',
+        body: 'Kamu telah membayar Rp 42.000 di INDOMARET',
+      );
+      expect(bayar, isNotNull);
+      expect(bayar!.bankId, 'gopay');
+      expect(bayar.kind, TxKind.payment);
+      expect(bayar.direction, Direction.outgoing);
+      expect(bayar.amount, 42000);
+      expect(bayar.counterparty, 'INDOMARET');
+    });
+
+    test('OVO: top up & pembayaran', () {
+      final topup = engine.parse(
+        packageName: 'ovo.id',
+        title: 'OVO',
+        body: 'Top up berhasil sebesar Rp 200.000',
+      );
+      expect(topup, isNotNull);
+      expect(topup!.bankId, 'ovo');
+      expect(topup.kind, TxKind.topup);
+      expect(topup.direction, Direction.incoming);
+      expect(topup.amount, 200000);
+
+      final bayar = engine.parse(
+        packageName: 'ovo.id',
+        title: 'OVO',
+        body: 'Pembayaran berhasil Rp 15.000 di KANTIN KITA',
+      );
+      expect(bayar, isNotNull);
+      expect(bayar!.bankId, 'ovo');
+      expect(bayar.kind, TxKind.payment);
+      expect(bayar.direction, Direction.outgoing);
+      expect(bayar.amount, 15000);
+      expect(bayar.counterparty, 'KANTIN KITA');
+    });
+
+    test('DANA: kirim uang & bayar qris', () {
+      final kirim = engine.parse(
+        packageName: 'id.dana',
+        title: 'DANA',
+        body: 'Kirim uang berhasil Rp 120.000 ke AHMAD',
+      );
+      expect(kirim, isNotNull);
+      expect(kirim!.bankId, 'dana');
+      expect(kirim.kind, TxKind.transfer);
+      expect(kirim.direction, Direction.outgoing);
+      expect(kirim.amount, 120000);
+      expect(kirim.counterparty, 'AHMAD');
+
+      final bayar = engine.parse(
+        packageName: 'id.dana',
+        title: 'DANA',
+        body: 'Pembayaran berhasil Rp 18.000 di MINIMARKET',
+      );
+      expect(bayar, isNotNull);
+      expect(bayar!.bankId, 'dana');
+      expect(bayar.kind, TxKind.payment);
+      expect(bayar.direction, Direction.outgoing);
+      expect(bayar.amount, 18000);
+      expect(bayar.counterparty, 'MINIMARKET');
+    });
+
+    test('ShopeePay: pembayaran & transfer keluar', () {
+      final bayar = engine.parse(
+        packageName: 'com.shopee.id',
+        title: 'ShopeePay',
+        body: 'Pembayaran berhasil sebesar Rp 85.000 di SELLER SHOP',
+      );
+      expect(bayar, isNotNull);
+      expect(bayar!.bankId, 'shopeepay');
+      expect(bayar.kind, TxKind.payment);
+      expect(bayar.direction, Direction.outgoing);
+      expect(bayar.amount, 85000);
+      expect(bayar.counterparty, 'SELLER SHOP');
+    });
+  });
+
   test('bankFor: paket blu dikenal, chat tidak', () {
     expect(
       engine.bankFor(packageName: 'com.bcadigital.blu', lowerText: 'apa saja'),

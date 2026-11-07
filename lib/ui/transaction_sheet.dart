@@ -73,6 +73,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
   List<Category> _categories = const [];
   int? _accountId;
   List<Account> _accounts = const [];
+  bool _userExplicitlySelectedCategory = false;
 
   bool get _isEdit => widget.existing != null;
   bool get _isDraft => widget.draft != null;
@@ -97,8 +98,28 @@ class _TransactionSheetState extends State<TransactionSheet> {
     final cats = await widget.repository.getCategories();
     if (!mounted) return;
     setState(() => _categories = cats);
-    if (!_isEdit && _categoryId == null && cats.isNotEmpty) {
-      setState(() => _categoryId = cats.first.id);
+    if (!_isEdit && _categoryId == null) {
+      final preferred = await widget.repository.preferredCategoryId(
+        counterparty: _counterpartyCtrl.text,
+        kind: _kind,
+      );
+      if (!mounted) return;
+      if (preferred != null) {
+        setState(() => _categoryId = preferred);
+      } else if (cats.isNotEmpty) {
+        setState(() => _categoryId = cats.first.id);
+      }
+    }
+  }
+
+  Future<void> _onCounterpartyChanged(String text) async {
+    if (_userExplicitlySelectedCategory || _isEdit) return;
+    final preferred = await widget.repository.preferredCategoryId(
+      counterparty: text,
+      kind: _kind,
+    );
+    if (preferred != null && mounted && !_userExplicitlySelectedCategory) {
+      setState(() => _categoryId = preferred);
     }
   }
 
@@ -270,7 +291,10 @@ class _TransactionSheetState extends State<TransactionSheet> {
             QuestChip(
               label: c.name,
               selected: _categoryId == c.id,
-              onTap: () => setState(() => _categoryId = c.id),
+              onTap: () {
+                _userExplicitlySelectedCategory = true;
+                setState(() => _categoryId = c.id);
+              },
               leading: Container(
                 width: 12,
                 height: 12,
@@ -410,7 +434,11 @@ class _TransactionSheetState extends State<TransactionSheet> {
                   controller: _counterpartyCtrl,
                   textCapitalization: TextCapitalization.words,
                   textInputAction: TextInputAction.done,
-                  onEditingComplete: () => FocusScope.of(context).unfocus(),
+                  onChanged: _onCounterpartyChanged,
+                  onEditingComplete: () {
+                    _onCounterpartyChanged(_counterpartyCtrl.text);
+                    FocusScope.of(context).unfocus();
+                  },
                   decoration: const InputDecoration(
                     labelText: 'Siapa / keterangan (opsional)',
                   ),

@@ -49,14 +49,114 @@ class DraftAttentionBanner extends StatelessWidget {
                   )
                 : Builder(
                     builder: (context) {
-                      final draft = drafts.first;
-                      final isIncoming = draft.direction == Direction.incoming;
-                      final bank = _bankName(draft.bankId);
-                      final party =
-                          (draft.counterparty != null &&
-                              draft.counterparty!.trim().isNotEmpty)
-                          ? draft.counterparty!.trim()
-                          : null;
+                      final partitioned =
+                          LedgerRepository.partitionDrafts(drafts);
+                      final hasPair = partitioned.pairs.isNotEmpty;
+
+                      final String titleText;
+                      final String subtitleText;
+                      Widget? amountWidget;
+                      VoidCallback onTap;
+
+                      if (hasPair && drafts.length == 2) {
+                        final pair = partitioned.pairs.first;
+                        final fromBank = _bankName(pair.outDraft.bankId);
+                        final toBank = _bankName(pair.inDraft.bankId);
+                        titleText = 'Transfer Antar Akun Terdeteksi';
+                        subtitleText = '$fromBank → $toBank · Pindah saldo';
+                        amountWidget = QuestMoney(
+                          amount: pair.amount,
+                          alignment: Alignment.centerRight,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w900,
+                            color: q.text,
+                            fontFeatures: const [
+                              FontFeature.tabularFigures(),
+                            ],
+                          ),
+                        );
+                        onTap = () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => NotificationScreen(
+                                  repository: repository,
+                                  pipeline: pipeline,
+                                  ruleSet: ruleSet,
+                                  progress: progress,
+                                  onOpenAnggaran: onOpenAnggaran,
+                                  onOpenBon: onOpenBon,
+                                ),
+                              ),
+                            );
+                      } else if (drafts.length == 1) {
+                        final draft = drafts.first;
+                        final isIncoming =
+                            draft.direction == Direction.incoming;
+                        final bank = _bankName(draft.bankId);
+                        final party = (draft.counterparty != null &&
+                                draft.counterparty!.trim().isNotEmpty)
+                            ? draft.counterparty!.trim()
+                            : null;
+                        titleText = 'Transaksi Bank Terdeteksi';
+                        subtitleText =
+                            '$bank${party != null ? ' · $party' : ''}';
+                        amountWidget = QuestMoney(
+                          amount: draft.amount,
+                          prefix: isIncoming ? '+' : '−',
+                          alignment: Alignment.centerRight,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w900,
+                            color: isIncoming ? q.good : q.bad,
+                            fontFeatures: const [
+                              FontFeature.tabularFigures(),
+                            ],
+                          ),
+                        );
+                        onTap = () => TransactionSheet.show(
+                              context,
+                              repository,
+                              draft: draft,
+                              progress: progress,
+                            );
+                      } else {
+                        titleText =
+                            '${drafts.length} Transaksi Bank Terdeteksi';
+                        subtitleText = 'Ketuk untuk tinjau & selesaikan';
+                        amountWidget = Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: q.primary.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${drafts.length} draf',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: q.primaryDeep,
+                            ),
+                          ),
+                        );
+                        onTap = () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => NotificationScreen(
+                                  repository: repository,
+                                  pipeline: pipeline,
+                                  ruleSet: ruleSet,
+                                  progress: progress,
+                                  onOpenAnggaran: onOpenAnggaran,
+                                  onOpenBon: onOpenBon,
+                                ),
+                              ),
+                            );
+                      }
+
                       return Padding(
                         key: const ValueKey('draft-banner-on'),
                         padding: const EdgeInsets.fromLTRB(
@@ -68,189 +168,67 @@ class DraftAttentionBanner extends StatelessWidget {
                         child: QuestCard(
                           color: q.primaryLight,
                           border: Border.all(
-                            color: q.primary.withValues(alpha: 0.2),
+                            color: q.primary.withValues(alpha: 0.25),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
                           ),
                           shadow: null,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          onTap: onTap,
+                          child: Row(
                             children: [
-                              // Header Banner
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 26,
-                                    height: 26,
-                                    decoration: BoxDecoration(
-                                      color: q.primary,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: const Icon(
-                                      Icons.bolt_rounded,
-                                      color: Colors.white,
-                                      size: 16,
-                                    ),
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: q.primary,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.cell,
                                   ),
-                                  const SizedBox(width: Spacing.s),
-                                  Expanded(
-                                    child: Text(
-                                      drafts.length == 1
-                                          ? 'Transaksi Bank Terdeteksi'
-                                          : '${drafts.length} Transaksi Bank Terdeteksi',
+                                ),
+                                child: Icon(
+                                  hasPair
+                                      ? Icons.swap_horiz_rounded
+                                      : Icons.bolt_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: Spacing.s),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      titleText,
                                       style: TextStyle(
-                                        fontSize: 13.5,
+                                        fontSize: 13,
                                         fontWeight: FontWeight.w800,
                                         color: q.primaryDeep,
                                       ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
-                                  if (drafts.length > 1)
-                                    InkWell(
-                                      onTap: () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => NotificationScreen(
-                                            repository: repository,
-                                            pipeline: pipeline,
-                                            ruleSet: ruleSet,
-                                            progress: progress,
-                                            onOpenAnggaran: onOpenAnggaran,
-                                            onOpenBon: onOpenBon,
-                                          ),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        'Lihat Semua (${drafts.length}) →',
-                                        style: TextStyle(
-                                          fontSize: 11.5,
-                                          fontWeight: FontWeight.w700,
-                                          color: q.primaryDeep,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              const SizedBox(height: Spacing.s),
-
-                              // Draft Details Box
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: q.surface,
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadius.tile,
-                                  ),
-                                  border: Border.all(color: q.line),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 38,
-                                      height: 38,
-                                      decoration: BoxDecoration(
-                                        color: isIncoming
-                                            ? SeedColors.incomingTint
-                                            : SeedColors.outgoingTint,
-                                        borderRadius: BorderRadius.circular(
-                                          AppRadius.cell,
-                                        ),
-                                      ),
-                                      child: Icon(
-                                        isIncoming
-                                            ? Icons.arrow_downward_rounded
-                                            : Icons.arrow_upward_rounded,
-                                        color: isIncoming ? q.good : q.bad,
-                                        size: 19,
-                                      ),
-                                    ),
-                                    const SizedBox(width: Spacing.s),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            bank,
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w800,
-                                              color: q.text,
-                                            ),
-                                          ),
-                                          if (party != null)
-                                            Text(
-                                              party,
-                                              style: context.qSmall(11.5),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: Spacing.s),
-                                    ConstrainedBox(
-                                      constraints: const BoxConstraints(
-                                        maxWidth: 130,
-                                      ),
-                                      child: FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        alignment: Alignment.centerRight,
-                                        child: QuestMoney(
-                                          amount: draft.amount,
-                                          prefix: isIncoming ? '+' : '−',
-                                          alignment: Alignment.centerRight,
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w900,
-                                            color: isIncoming ? q.good : q.bad,
-                                            fontFeatures: const [
-                                              FontFeature.tabularFigures(),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
+                                    const SizedBox(height: 1),
+                                    Text(
+                                      subtitleText,
+                                      style: context.qSmall(11),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: Spacing.s),
-
-                              // Inline Action Buttons
-                              Row(
-                                children: [
-                                  Expanded(
-                                    flex: 3,
-                                    child: QuestButton(
-                                      label: 'Konfirmasi & Catat',
-                                      icon: Icons.check_rounded,
-                                      onPressed: () => TransactionSheet.show(
-                                        context,
-                                        repository,
-                                        draft: draft,
-                                        progress: progress,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: Spacing.s),
-                                  Expanded(
-                                    flex: 2,
-                                    child: QuestButton(
-                                      label: 'Abaikan',
-                                      tone: QuestTone.secondary,
-                                      onPressed: () async {
-                                        await repository.discardDraft(draft.id);
-                                        if (context.mounted) {
-                                          questSnack(
-                                            context,
-                                            'Draf transaksi diabaikan.',
-                                          );
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                ],
+                              const SizedBox(width: Spacing.s),
+                              if (amountWidget != null) amountWidget,
+                              const SizedBox(width: 2),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: q.primaryDeep,
+                                size: 19,
                               ),
                             ],
                           ),

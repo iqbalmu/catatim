@@ -67,12 +67,38 @@ class _NotificationScreenState extends State<NotificationScreen> {
   late final Future<bool> _listenerEnabled = widget.pipeline.channel
       .isListenerEnabled();
 
+  bool _showAllDrafts = false;
+
   /// Nama bank custom mode belajar — bankId `app:<paket>` → label.
   late final Future<Map<String, String>> _customNames = widget.repository
       .customBanks()
       .then((list) => {for (final c in list) 'app:${c.package}': c.label});
 
   LedgerRepository get _repo => widget.repository;
+
+  Future<void> _discardAllDrafts(List<Draft> drafts) async {
+    final sure = await showQuestDialog<bool>(
+      context,
+      title: 'Abaikan semua draf?',
+      content: Text(
+        'Ada ${drafts.length} draf yang belum dicatat. Semua draf akan dihapus dari daftar.',
+        style: context.qBody(13),
+      ),
+      actions: [
+        QuestButton(
+          label: 'Abaikan Semua',
+          tone: QuestTone.danger,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
+    );
+    if (sure == true && mounted) {
+      await _repo.discardDrafts(drafts.map((d) => d.id));
+      if (mounted) {
+        questSnack(context, '${drafts.length} draf berhasil diabaikan.');
+      }
+    }
+  }
 
   Future<String> _bankName(String bankId) async {
     if (bankId == 'paste') return 'Tempelan / Struk';
@@ -107,6 +133,148 @@ class _NotificationScreenState extends State<NotificationScreen> {
       _repo,
       draft: draft,
       progress: widget.progress,
+    );
+  }
+
+  Future<void> _openTransferPair(InternalTransferPair pair) async {
+    final fromName = await _bankName(pair.outDraft.bankId);
+    final toName = await _bankName(pair.inDraft.bankId);
+    if (!mounted) return;
+
+    await showQuestSheet<void>(
+      context,
+      (sheetContext) => Padding(
+        padding: const EdgeInsets.all(Spacing.m),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: sheetContext.q.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.swap_horiz_rounded,
+                    color: sheetContext.q.primary,
+                  ),
+                ),
+                const SizedBox(width: Spacing.s),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Transfer Antar Akun',
+                        style: sheetContext.qTitle(16),
+                      ),
+                      Text(
+                        'Pindah saldo antar rekening sendiri',
+                        style: sheetContext.qSmall(12),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: Spacing.m),
+            Container(
+              padding: const EdgeInsets.all(Spacing.m),
+              decoration: BoxDecoration(
+                color: sheetContext.q.surface,
+                borderRadius: BorderRadius.circular(AppRadius.tile),
+                border: Border.all(color: sheetContext.q.line),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Dari (Akun Asal)', style: sheetContext.qSmall(12)),
+                      Text(
+                        fromName,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: Spacing.s),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Ke (Akun Tujuan)', style: sheetContext.qSmall(12)),
+                      Text(
+                        toName,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: Spacing.l),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Nominal Transfer', style: sheetContext.qSmall(12)),
+                      QuestMoney(
+                        amount: pair.amount,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: sheetContext.q.text,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: Spacing.s),
+            Text(
+              'Kedua draf akan disatukan sebagai transfer dan tidak dihitung sebagai pengeluaran baru di anggaran/laporan.',
+              style: sheetContext.qSmall(11.5).copyWith(color: sheetContext.q.muted),
+            ),
+            const SizedBox(height: Spacing.m),
+            QuestButton(
+              label: 'Konfirmasi Transfer',
+              icon: Icons.check_rounded,
+              onPressed: () async {
+                await _repo.confirmTransferPair(pair: pair);
+                if (sheetContext.mounted) Navigator.pop(sheetContext);
+                if (mounted) questSnack(context, 'Transfer antar akun dicatat.');
+              },
+            ),
+            const SizedBox(height: Spacing.s),
+            Row(
+              children: [
+                Expanded(
+                  child: QuestButton(
+                    label: 'Buka Terpisah',
+                    tone: QuestTone.secondary,
+                    onPressed: () {
+                      Navigator.pop(sheetContext);
+                      _openDraft(pair.outDraft);
+                    },
+                  ),
+                ),
+                const SizedBox(width: Spacing.s),
+                Expanded(
+                  child: QuestButton(
+                    label: 'Abaikan Keduanya',
+                    tone: QuestTone.secondary,
+                    onPressed: () async {
+                      await _repo.discardDrafts([pair.outDraft.id, pair.inDraft.id]);
+                      if (sheetContext.mounted) Navigator.pop(sheetContext);
+                      if (mounted) questSnack(context, 'Draf transfer diabaikan.');
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -339,6 +507,25 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               ],
                             );
                           }
+                          final partitioned =
+                              LedgerRepository.partitionDrafts(drafts);
+                          final totalDraftCount =
+                              partitioned.pairs.length +
+                              partitioned.singles.length;
+                          final bool shouldCollapse =
+                              totalDraftCount > 4 && !_showAllDrafts;
+                          final visiblePairs = shouldCollapse
+                              ? partitioned.pairs.take(2).toList()
+                              : partitioned.pairs;
+                          final remainingSlots = shouldCollapse
+                              ? (3 - visiblePairs.length).clamp(1, 4)
+                              : partitioned.singles.length;
+                          final visibleSingles = shouldCollapse
+                              ? partitioned.singles.take(remainingSlots).toList()
+                              : partitioned.singles;
+                          final hiddenCount = totalDraftCount -
+                              (visiblePairs.length + visibleSingles.length);
+
                           return ListView(
                             padding: const EdgeInsets.fromLTRB(
                               Spacing.m,
@@ -347,46 +534,160 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               Spacing.m,
                             ),
                             children: [
-                              if (drafts.isNotEmpty) ...[
+                              // 1. Peringatan sistem & perhatian (DI ATAS)
+                              if (items.isNotEmpty) ...[
                                 const QuestEnter(
                                   index: 0,
                                   child: QuestSectionHeader(
-                                    title: 'Menunggu keputusanmu',
-                                  ),
-                                ),
-                                for (var i = 0; i < drafts.length; i++)
-                                  QuestEnter(
-                                    index: 1 + i,
-                                    child: FutureBuilder<String>(
-                                      future: _bankName(drafts[i].bankId),
-                                      builder: (context, nameSnap) =>
-                                          _DraftTile(
-                                            draft: drafts[i],
-                                            bankName:
-                                                nameSnap.data ??
-                                                drafts[i].bankId,
-                                            onTap: () => _openDraft(drafts[i]),
-                                          ),
-                                    ),
-                                  ),
-                                const SizedBox(height: Spacing.s),
-                              ],
-                              if (items.isNotEmpty) ...[
-                                QuestEnter(
-                                  index: drafts.isEmpty ? 0 : 1 + drafts.length,
-                                  child: const QuestSectionHeader(
                                     title: 'Perlu perhatian',
                                   ),
                                 ),
                                 for (var i = 0; i < items.length; i++)
                                   QuestEnter(
-                                    index:
-                                        (drafts.isEmpty
-                                            ? 1
-                                            : 2 + drafts.length) +
-                                        i,
+                                    index: 1 + i,
                                     child: _AttentionTile(item: items[i]),
                                   ),
+                                const SizedBox(height: Spacing.xs),
+                              ],
+
+                              // 2. Draf transaksi menunggu keputusan
+                              if (drafts.isNotEmpty) ...[
+                                QuestEnter(
+                                  index: items.length + 1,
+                                  child: QuestSectionHeader(
+                                    title: 'Menunggu keputusanmu',
+                                    trailing: drafts.length > 1
+                                        ? QuestPress(
+                                            onTap: () =>
+                                                _discardAllDrafts(drafts),
+                                            child: Text(
+                                              'Abaikan Semua',
+                                              style: TextStyle(
+                                                fontSize: 11.5,
+                                                fontWeight: FontWeight.w700,
+                                                color: q.bad,
+                                              ),
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                ),
+                                for (var i = 0; i < visiblePairs.length; i++)
+                                  QuestEnter(
+                                    index: items.length + 2 + i,
+                                    child: FutureBuilder<String>(
+                                      future: _bankName(
+                                        visiblePairs[i].outDraft.bankId,
+                                      ),
+                                      builder: (context, fromSnap) =>
+                                          FutureBuilder<String>(
+                                            future: _bankName(
+                                              visiblePairs[i].inDraft.bankId,
+                                            ),
+                                            builder: (context, toSnap) =>
+                                                _TransferPairTile(
+                                                  pair: visiblePairs[i],
+                                                  fromBankName:
+                                                      fromSnap.data ??
+                                                      visiblePairs[i]
+                                                          .outDraft.bankId,
+                                                  toBankName:
+                                                      toSnap.data ??
+                                                      visiblePairs[i]
+                                                          .inDraft.bankId,
+                                                  onTap: () =>
+                                                      _openTransferPair(
+                                                        visiblePairs[i],
+                                                      ),
+                                                ),
+                                          ),
+                                    ),
+                                  ),
+                                for (var i = 0;
+                                    i < visibleSingles.length;
+                                    i++)
+                                  QuestEnter(
+                                    index: items.length +
+                                        2 +
+                                        visiblePairs.length +
+                                        i,
+                                    child: FutureBuilder<String>(
+                                      future: _bankName(
+                                        visibleSingles[i].bankId,
+                                      ),
+                                      builder: (context, nameSnap) =>
+                                          _DraftTile(
+                                            draft: visibleSingles[i],
+                                            bankName:
+                                                nameSnap.data ??
+                                                visibleSingles[i].bankId,
+                                            onTap: () => _openDraft(
+                                              visibleSingles[i],
+                                            ),
+                                          ),
+                                    ),
+                                  ),
+                                if (shouldCollapse && hiddenCount > 0)
+                                  QuestCard(
+                                    variant: QuestCardVariant.flat,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 10,
+                                      horizontal: Spacing.m,
+                                    ),
+                                    onTap: () =>
+                                        setState(() => _showAllDrafts = true),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Tampilkan $hiddenCount draf lainnya',
+                                          style: TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: q.primaryDeep,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Icon(
+                                          Icons.keyboard_arrow_down_rounded,
+                                          size: 18,
+                                          color: q.primaryDeep,
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                else if (!shouldCollapse && totalDraftCount > 4)
+                                  QuestCard(
+                                    variant: QuestCardVariant.flat,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                      horizontal: Spacing.m,
+                                    ),
+                                    onTap: () =>
+                                        setState(() => _showAllDrafts = false),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Perkecil daftar',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: q.muted,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Icon(
+                                          Icons.keyboard_arrow_up_rounded,
+                                          size: 16,
+                                          color: q.muted,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                const SizedBox(height: Spacing.s),
                               ],
                             ],
                           );
@@ -399,6 +700,122 @@ class _NotificationScreenState extends State<NotificationScreen> {
             },
           );
         },
+      ),
+    );
+  }
+}
+
+class _TransferPairTile extends StatelessWidget {
+  const _TransferPairTile({
+    required this.pair,
+    required this.fromBankName,
+    required this.toBankName,
+    required this.onTap,
+  });
+
+  final InternalTransferPair pair;
+  final String fromBankName;
+  final String toBankName;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    final now = DateTime.now();
+    final day = DateTime(
+      pair.occurredAt.year,
+      pair.occurredAt.month,
+      pair.occurredAt.day,
+    );
+    final time =
+        '${pair.occurredAt.hour.toString().padLeft(2, '0')}:'
+        '${pair.occurredAt.minute.toString().padLeft(2, '0')}';
+
+    return QuestPress(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: Spacing.s),
+        padding: Insets.tile,
+        decoration: BoxDecoration(
+          color: q.surface,
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+          border: Border.all(color: q.primary.withValues(alpha: 0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: q.shadow,
+              offset: const Offset(0, 6),
+              blurRadius: 18,
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: q.primary.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.swap_horiz_rounded,
+                color: q.primary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: Spacing.s),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1.5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: q.primary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'TRANSFER ANTAR AKUN',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: q.primaryDeep,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$fromBankName → $toBankName',
+                    style: context.qTitle(14),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    'Pindah saldo · ${idRelativeDay(day, now)} $time',
+                    style: context.qSmall(11),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: Spacing.s),
+            QuestMoney(
+              amount: pair.amount,
+              alignment: Alignment.centerRight,
+              style: context.qAmount(15, incoming: false).copyWith(color: q.text),
+            ),
+          ],
+        ),
       ),
     );
   }
