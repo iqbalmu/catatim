@@ -8,9 +8,10 @@ import 'rule_set.dart';
 
 /// Mesin pencocokan notifikasi → draf transaksi berbasis template JSON.
 class RuleEngine {
-  RuleEngine(this.ruleSet);
+  RuleEngine(this.ruleSet, {this.ignoredPatterns = const []});
 
   RuleSet ruleSet;
+  List<IgnoredPattern> ignoredPatterns;
 
   /// Pola nominal default, dicoba berurutan:
   /// 1. "Rp" atau "Rp." diikuti angka bebas (paling spesifik).
@@ -28,6 +29,103 @@ class RuleEngine {
   /// Bank generik sebagai fallback bila bank tidak dikenali.
   BankRules? get _generic => ruleSet.bank('unknown');
 
+  /// Deteksi apakah pesan adalah notifikasi non-transaksi (OTP, login alert, promo, info saldo).
+  static bool isNonTransactionNotification(String text) {
+    final lower = text.toLowerCase();
+
+    // 1. OTP & Kode Otentikasi
+    const otpKeywords = [
+      'otp',
+      'one time password',
+      'kode verifikasi',
+      'kode rahasia',
+      'kode keamanan',
+      'security code',
+      'passcode',
+      'jangan berikan kode',
+      'jangan beritahu kode',
+      'jangan bagikan kode',
+      'jangan berikan ke siapa',
+      'kode aktivasi',
+      'm-token',
+    ];
+    if (otpKeywords.any(lower.contains)) return true;
+
+    // 2. Akses Akun & Login
+    const loginKeywords = [
+      'login baru',
+      'login berhasil',
+      'berhasil login',
+      'perangkat baru terdeteksi',
+      'perangkat baru berhasil',
+      'masuk ke perangkat baru',
+      'ganti password',
+      'ubah password',
+      'ganti pin',
+      'ubah pin',
+      'sesi anda berakhir',
+      'session expired',
+      'aktivasi akun',
+      'pemblokiran kartu',
+    ];
+    if (loginKeywords.any(lower.contains)) return true;
+
+    // 3. Pemasaran, Promo & Penawaran (yang bukan mutasi riil)
+    const promoKeywords = [
+      'cashback hingga',
+      'dapatkan cashback',
+      'promo diskon',
+      'nikmati promo',
+      'penawaran spesial',
+      'apply kartu kredit',
+      'pengajuan pinjaman',
+      'khusus untuk anda',
+      'khusus untukmu',
+      's&k berlaku',
+      'syarat dan ketentuan berlaku',
+    ];
+    if (promoKeywords.any(lower.contains)) return true;
+
+    // 4. Informasi Saldo Murni (tanpa kata mutasi riil)
+    const balanceOnlyKeywords = [
+      'sisa saldo anda',
+      'sisa saldo rekening',
+      'informasi saldo',
+      'saldo rekening anda',
+      'saldo anda saat ini',
+    ];
+    if (balanceOnlyKeywords.any(lower.contains) &&
+        !lower.contains('berhasil') &&
+        !lower.contains('transfer') &&
+        !lower.contains('pembayaran') &&
+        !lower.contains('debit') &&
+        !lower.contains('kredit')) {
+      return true;
+    }
+
+    // 5. Pemeliharaan Sistem
+    const maintenanceKeywords = [
+      'pemeliharaan sistem',
+      'maintenance sistem',
+      'gangguan sementara',
+      'jadwal pemeliharaan',
+    ];
+    if (maintenanceKeywords.any(lower.contains)) return true;
+
+    return false;
+  }
+
+  /// Cek apakah notifikasi diabaikan (karena non-transaksi atau pola yang dipelajari).
+  bool isIgnored(String text, {String? bankId}) {
+    if (isNonTransactionNotification(text)) return true;
+    final lower = text.toLowerCase();
+    for (final ip in ignoredPatterns) {
+      if (ip.bankId != null && bankId != null && ip.bankId != bankId) continue;
+      if (lower.contains(ip.pattern)) return true;
+    }
+    return false;
+  }
+
   /// Mengembalikan null bila notifikasi bukan transaksi yang dikenali.
   ParsedDraft? parse({
     required String packageName,
@@ -37,8 +135,12 @@ class RuleEngine {
     final text = '$title $body';
     final lower = text.toLowerCase();
 
-    // Seed rules — katalog bank murni (model hubungkan bank).
+    // Bank terdeteksi
     final bank = _detectBank(packageName, lower);
+
+    if (isIgnored(text, bankId: bank?.id)) return null;
+
+    // Seed rules — katalog bank murni (model hubungkan bank).
     final candidates = <BankRules>[
       ?bank,
       if (_generic != null && bank?.id != 'unknown') _generic!,
@@ -122,27 +224,37 @@ class RuleEngine {
     final amount = _extractAmount(null, text);
     final lower = text.toLowerCase();
     const inWords = [
-      'masuk',
+      'dana masuk',
+      'uang masuk',
+      'transfer masuk',
+      'setoran masuk',
+      'setoran',
       'kredit',
-      'menerima',
-      'diterima',
-      'ditambahkan',
-      'top up',
+      'menerima transfer',
+      'menerima dana',
+      'diterima dari',
+      'berhasil ditambahkan',
+      'top up berhasil',
+      'isi saldo berhasil',
     ];
     const outWords = [
-      'keluar',
+      'dana keluar',
+      'uang keluar',
+      'transfer keluar',
+      'transfer ke',
       'debit',
       'pembayaran',
       'membayar',
       'belanja',
+      'tarik tunai',
       'tarik',
-      'transfer ke',
+      'qris',
     ];
     final isIn = inWords.any(lower.contains);
     final isOut = outWords.any(lower.contains);
     return (
       amount: amount,
-      direction: isOut && !isIn ? Direction.outgoing : Direction.incoming,
+      direction: isIn && !isOut ? Direction.incoming : Direction.outgoing,
     );
   }
 

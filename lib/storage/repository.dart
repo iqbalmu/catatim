@@ -46,6 +46,13 @@ class LedgerRepository {
     });
   }
 
+  /// Catat notifikasi yang diabaikan (karena non-transaksi atau pola yang diblokir).
+  Future<void> recordIgnoredCapture(RawCapture raw) {
+    return _db.transaction(() async {
+      await _logCaptureOnce(raw, parsed: true, ignoredDup: true);
+    });
+  }
+
   /// Notifikasi mentah yang belum berhasil diparse.
   Future<List<CaptureLog>> unparsedCaptures() async {
     return (_db.select(_db.captureLogs)
@@ -717,6 +724,134 @@ class LedgerRepository {
       customTemplatesKey,
       jsonEncode([for (final t in current) t.toJson()]),
     );
+  }
+
+  // --- pola notifikasi yang diabaikan (blacklist / auto-ignore) ----------------
+
+  static const ignoredPatternsKey = 'ignored_patterns';
+
+  Future<List<IgnoredPattern>> ignoredPatterns() async {
+    final raw = await getSetting(ignoredPatternsKey);
+    return _parseIgnoredPatterns(raw);
+  }
+
+  Stream<List<IgnoredPattern>> watchIgnoredPatterns() {
+    return (_db.select(_db.appSettings)
+          ..where((s) => s.key.equals(ignoredPatternsKey)))
+        .watchSingleOrNull()
+        .map((row) => _parseIgnoredPatterns(row?.valueText));
+  }
+
+  static List<IgnoredPattern> _parseIgnoredPatterns(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return const [];
+    try {
+      final list = jsonDecode(raw) as List<dynamic>? ?? const [];
+      return [
+        for (final item in list)
+          if (item is Map<String, dynamic>) IgnoredPattern.fromJson(item),
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> addIgnoredPattern({
+    required String pattern,
+    required String label,
+    String? bankId,
+  }) async {
+    final cleanPattern = pattern.trim().toLowerCase();
+    if (cleanPattern.isEmpty) return;
+    final current = [...await ignoredPatterns()];
+    if (current.any((p) => p.pattern == cleanPattern && p.bankId == bankId)) {
+      return;
+    }
+    current.add(
+      IgnoredPattern(
+        id: newUuid(),
+        pattern: cleanPattern,
+        label: label.trim(),
+        bankId: bankId,
+        createdAt: DateTime.now(),
+      ),
+    );
+    await setSetting(
+      ignoredPatternsKey,
+      jsonEncode([for (final p in current) p.toJson()]),
+    );
+  }
+
+  Future<void> deleteIgnoredPattern(String id) async {
+    final current = [...await ignoredPatterns()];
+    current.removeWhere((p) => p.id == id);
+    await setSetting(
+      ignoredPatternsKey,
+      jsonEncode([for (final p in current) p.toJson()]),
+    );
+  }
+
+  /// Ekstrak frasa yang cocok untuk diabaikan dari draf, simpan ke pola abaikan,
+  /// dan bersihkan draf saat ini serta draf lain yang berpola sama.
+  Future<String> discardDraftAndLearnPattern(Draft draft, {String? customPattern}) async {
+    final rawText = '${draft.rawTitle ?? ''} ${draft.rawBody ?? ''} ${draft.counterparty ?? ''}'.trim();
+    String pattern = (customPattern ?? '').trim().toLowerCase();
+    if (pattern.isEmpty) {
+      pattern = _smartExtractIgnorePattern(rawText);
+    }
+    if (pattern.isNotEmpty) {
+      final bank = draft.bankId.startsWith('app:') ? draft.bankId.substring(4) : draft.bankId;
+      await addIgnoredPattern(
+        pattern: pattern,
+        label: '$bank: "$pattern"',
+        bankId: draft.bankId != 'unknown' && !draft.bankId.startsWith('app:') ? draft.bankId : null,
+      );
+    }
+
+    // Hapus draf ini dan draf lain yang cocok dengan pola tersebut
+    final allDrafts = await (_db.select(_db.drafts)).get();
+    final toDelete = <int>[draft.id];
+    if (pattern.isNotEmpty) {
+      for (final d in allDrafts) {
+        final dText = '${d.rawTitle ?? ''} ${d.rawBody ?? ''} ${d.counterparty ?? ''}'.toLowerCase();
+        if (dText.contains(pattern)) {
+          toDelete.add(d.id);
+        }
+      }
+    }
+    await discardDrafts(toDelete.toSet());
+    return pattern;
+  }
+
+  /// Bersihkan draf non-transaksi (OTP, login alert, promo, atau draf Rp 0 tanpa mutasi riil).
+  Future<int> purgeNonTransactionDrafts(RuleEngine engine) async {
+    final allDrafts = await (_db.select(_db.drafts)).get();
+    final toDelete = <int>[];
+    for (final d in allDrafts) {
+      final text = '${d.rawTitle ?? ''} ${d.rawBody ?? ''} ${d.counterparty ?? ''}'.trim();
+      if (engine.isIgnored(text, bankId: d.bankId) || d.amount == 0) {
+        toDelete.add(d.id);
+      }
+    }
+    if (toDelete.isNotEmpty) {
+      await discardDrafts(toDelete.toSet());
+    }
+    return toDelete.length;
+  }
+
+  static String _smartExtractIgnorePattern(String rawText) {
+    if (rawText.isEmpty) return '';
+    // Buang angka dinamis (OTP, nomor rekening, nominal) untuk mendapatkan kata kunci inti
+    final withoutNumbers = rawText
+        .replaceAll(RegExp(r'\b\d+\b'), '')
+        .replaceAll(RegExp(r'Rp\.?\s*[\d.,]*', caseSensitive: false), '')
+        .replaceAll(RegExp(r'[.,:;!?()\[\]]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim()
+        .toLowerCase();
+    final words = withoutNumbers.split(' ').where((w) => w.length > 2).toList();
+    if (words.isEmpty) return rawText.toLowerCase().trim();
+    // Ambil 3-5 kata pertama yang signifikan
+    return words.take(4).join(' ');
   }
 
   /// Draf "mentah" dari app custom (mode belajar): format notifikasinya

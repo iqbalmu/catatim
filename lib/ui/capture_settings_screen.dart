@@ -734,6 +734,114 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                 },
               ),
 
+              // ── 4d. Pola Notifikasi yang Diabaikan ──
+              StreamBuilder<List<IgnoredPattern>>(
+                stream: widget.repository.watchIgnoredPatterns(),
+                builder: (context, snap) {
+                  final ignoredList = snap.data ?? const <IgnoredPattern>[];
+                  if (ignoredList.isEmpty) return const SizedBox.shrink();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const QuestSectionHeader(
+                        title: 'Pola Notifikasi yang Diabaikan',
+                      ),
+                      Text(
+                        'Notifikasi yang mengandung kata kunci di bawah akan otomatis dibuang dan tidak menjadi draf.',
+                        style: context.qSmall(12).copyWith(color: q.muted),
+                      ),
+                      const SizedBox(height: Spacing.xs),
+                      QuestCard(
+                        padding: EdgeInsets.zero,
+                        child: Column(
+                          children: [
+                            for (var i = 0; i < ignoredList.length; i++) ...[
+                              QuestListTile(
+                                leading: Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: q.surface2,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    Icons.block_rounded,
+                                    color: q.bad,
+                                    size: 19,
+                                  ),
+                                ),
+                                title: Text(
+                                  ignoredList[i].label,
+                                  style: context.qTitle(14),
+                                ),
+                                subtitle: Text(
+                                  'Pola: "${ignoredList[i].pattern}"'
+                                  '${ignoredList[i].bankId != null ? ' · Bank: ${ignoredList[i].bankId}' : ''}',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    color: q.muted,
+                                  ),
+                                ),
+                                trailing: IconButton(
+                                  icon: Icon(
+                                    Icons.delete_outline_rounded,
+                                    color: q.bad,
+                                    size: 20,
+                                  ),
+                                  tooltip: 'Hapus Pola Abaikan',
+                                  onPressed: () async {
+                                    final confirmed =
+                                        await showQuestDialog<bool>(
+                                      context,
+                                      title: 'Hapus Pola Abaikan?',
+                                      content: Text(
+                                        'Pola "${ignoredList[i].label}" akan dihapus. Notifikasi yang mengandung kata kunci ini akan diproses kembali seperti biasa.',
+                                        style: context.qBody(13),
+                                      ),
+                                      actions: [
+                                        QuestButton(
+                                          label: 'Batal',
+                                          tone: QuestTone.secondary,
+                                          onPressed: () =>
+                                              Navigator.pop(context, false),
+                                        ),
+                                        QuestButton(
+                                          label: 'Hapus',
+                                          tone: QuestTone.danger,
+                                          onPressed: () =>
+                                              Navigator.pop(context, true),
+                                        ),
+                                      ],
+                                    );
+                                    if (confirmed == true) {
+                                      await widget.repository
+                                          .deleteIgnoredPattern(
+                                            ignoredList[i].id,
+                                          );
+                                      await widget.pipeline.refreshRules();
+                                      if (context.mounted) {
+                                        questSnack(
+                                          context,
+                                          'Pola abaikan dihapus.',
+                                          icon: Icons.delete_outline_rounded,
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
+                              ),
+                              if (i < ignoredList.length - 1)
+                                Divider(height: 1, thickness: 1, color: q.line),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: Spacing.m),
+                    ],
+                  );
+                },
+              ),
+
               QuestEnter(
                 index: 5,
                 child:

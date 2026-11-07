@@ -43,7 +43,9 @@ class CapturePipeline extends ChangeNotifier {
   /// Muat ulang aturan: gabungkan template bawaan dengan template kustom dari DB.
   Future<void> refreshRules() async {
     final customs = await repository.customTemplates();
+    final ignored = await repository.ignoredPatterns();
     engine.ruleSet = _baseRuleSet.withCustomTemplates(customs);
+    engine.ignoredPatterns = ignored;
     await syncAllowedPackages();
     notifyListeners();
   }
@@ -153,6 +155,14 @@ class CapturePipeline extends ChangeNotifier {
         if (c.package == raw.packageName) customLabel = c.label;
       }
       if (bank == null && customLabel == null) return;
+
+      final fullText = '${raw.title} ${raw.body}';
+      if (engine.isIgnored(fullText, bankId: bank?.id)) {
+        await repository.recordIgnoredCapture(raw);
+        handledCount++;
+        notifyListeners();
+        return;
+      }
 
       if (bank != null &&
           !engine.packageNamesFor(connected).contains(raw.packageName)) {

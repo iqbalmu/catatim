@@ -337,13 +337,13 @@
           "name": "masuk umum",
           "kind": "transfer",
           "direction": "in",
-          "matchAny": ["kredit", "masuk", "menerima", "berhasil ditambahkan"]
+          "matchAny": ["dana masuk", "uang masuk", "transfer masuk", "setoran", "kredit", "menerima transfer", "menerima dana", "berhasil ditambahkan"]
         },
         {
           "name": "keluar umum",
           "kind": "transfer",
           "direction": "out",
-          "matchAny": ["debit", "keluar", "pembayaran", "membayar", "belanja", "tarik tunai", "qris"]
+          "matchAny": ["debit", "dana keluar", "uang keluar", "transfer keluar", "pembayaran", "membayar", "belanja", "tarik tunai", "qris"]
         }
       ]
     }

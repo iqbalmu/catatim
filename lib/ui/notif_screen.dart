@@ -160,10 +160,85 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   Future<void> _discardDraftQuick(Draft draft) async {
-    HapticFeedback.lightImpact();
-    await _repo.discardDrafts([draft.id]);
-    if (mounted) {
-      questSnack(context, 'Draf transaksi diabaikan.');
+    final result = await showQuestSheet<String>(
+      context,
+      (sheetContext) => Padding(
+        padding: const EdgeInsets.all(Spacing.m),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const QuestGrabber(),
+            const SizedBox(height: Spacing.s),
+            Text('Abaikan Notifikasi', style: sheetContext.qTitle(16)),
+            const SizedBox(height: Spacing.xs),
+            Text(
+              'Pilih perlakuan untuk draf notifikasi ini:',
+              style:
+                  sheetContext.qSmall(12).copyWith(color: sheetContext.q.muted),
+            ),
+            const SizedBox(height: Spacing.m),
+            QuestListTile(
+              leading: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: sheetContext.q.surface2,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.close_rounded,
+                  color: sheetContext.q.muted,
+                  size: 20,
+                ),
+              ),
+              title: const Text('Abaikan Draf Ini Saja'),
+              subtitle: const Text('Hapus dari daftar draf saat ini.'),
+              onTap: () => Navigator.pop(sheetContext, 'once'),
+            ),
+            const SizedBox(height: Spacing.xs),
+            QuestListTile(
+              leading: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: sheetContext.q.bad.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.block_rounded,
+                  color: sheetContext.q.bad,
+                  size: 20,
+                ),
+              ),
+              title: const Text('Abaikan Pola Ini Seterusnya'),
+              subtitle: const Text(
+                'Otomatis buang notifikasi serupa di masa depan tanpa membuat draf.',
+              ),
+              onTap: () => Navigator.pop(sheetContext, 'always'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result == 'once' && mounted) {
+      HapticFeedback.lightImpact();
+      await _repo.discardDrafts([draft.id]);
+      if (mounted) {
+        questSnack(context, 'Draf transaksi diabaikan.');
+      }
+    } else if (result == 'always' && mounted) {
+      HapticFeedback.mediumImpact();
+      final pattern = await _repo.discardDraftAndLearnPattern(draft);
+      await widget.pipeline.refreshRules();
+      if (mounted) {
+        questSnack(
+          context,
+          'Pola "$pattern" berhasil diabaikan seterusnya.',
+          icon: Icons.check_circle_outline_rounded,
+        );
+      }
     }
   }
 
@@ -559,6 +634,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
                               ],
                             );
                           }
+                          final nonTxDrafts = drafts.where((d) {
+                            final text =
+                                '${d.rawTitle ?? ''} ${d.rawBody ?? ''} ${d.counterparty ?? ''}'
+                                    .trim();
+                            return widget.pipeline.engine.isIgnored(
+                                  text,
+                                  bankId: d.bankId,
+                                ) ||
+                                d.amount == 0;
+                          }).toList();
                           final partitioned =
                               LedgerRepository.partitionDrafts(drafts);
                           final totalDraftCount =
@@ -607,7 +692,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                 QuestEnter(
                                   index: items.length + 1,
                                   child: QuestSectionHeader(
-                                    title: 'Menunggu keputusanmu (${drafts.length})',
+                                    title:
+                                        'Menunggu keputusanmu (${drafts.length})',
                                     trailing: drafts.length > 1
                                         ? QuestPress(
                                             onTap: () =>
@@ -624,6 +710,77 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                         : null,
                                   ),
                                 ),
+                                if (nonTxDrafts.isNotEmpty) ...[
+                                  QuestEnter(
+                                    index: items.length + 2,
+                                    child: Container(
+                                      margin: const EdgeInsets.only(
+                                        bottom: Spacing.s,
+                                      ),
+                                      padding: const EdgeInsets.all(Spacing.m),
+                                      decoration: BoxDecoration(
+                                        color: q.surface,
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.tile,
+                                        ),
+                                        border: Border.all(
+                                          color: q.warn.withValues(alpha: 0.4),
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.cleaning_services_rounded,
+                                                color: q.warn,
+                                                size: 18,
+                                              ),
+                                              const SizedBox(width: Spacing.xs),
+                                              Expanded(
+                                                child: Text(
+                                                  '${nonTxDrafts.length} pesan bukan transaksi',
+                                                  style: context
+                                                      .qTitle(13.5)
+                                                      .copyWith(color: q.text),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: Spacing.xs),
+                                          Text(
+                                            'Pesan OTP, info login, sisa saldo, atau promo terdeteksi di draf.',
+                                            style: context
+                                                .qSmall(11.5)
+                                                .copyWith(color: q.muted),
+                                          ),
+                                          const SizedBox(height: Spacing.s),
+                                          QuestButton(
+                                            label:
+                                                'Bersihkan Otomatis (${nonTxDrafts.length})',
+                                            icon: Icons.auto_delete_outlined,
+                                            tone: QuestTone.secondary,
+                                            onPressed: () async {
+                                              final purged = await _repo
+                                                  .purgeNonTransactionDrafts(
+                                                    widget.pipeline.engine,
+                                                  );
+                                              if (!context.mounted) return;
+                                              questSnack(
+                                                context,
+                                                '$purged draf bukan transaksi dibersihkan.',
+                                                icon: Icons
+                                                    .check_circle_outline_rounded,
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                                 for (var i = 0; i < visiblePairs.length; i++)
                                   QuestEnter(
                                     index: items.length + 2 + i,

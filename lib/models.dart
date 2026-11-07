@@ -78,6 +78,39 @@ class ParsedDraft {
 
 }
 
+/// Pola pesan notifikasi yang diabaikan permanen oleh pengguna.
+class IgnoredPattern {
+  const IgnoredPattern({
+    required this.id,
+    required this.pattern,
+    required this.label,
+    this.bankId,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String pattern;
+  final String label;
+  final String? bankId;
+  final DateTime createdAt;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'pattern': pattern,
+    'label': label,
+    if (bankId != null) 'bankId': bankId,
+    'createdAt': createdAt.toIso8601String(),
+  };
+
+  factory IgnoredPattern.fromJson(Map<String, dynamic> json) => IgnoredPattern(
+    id: json['id'] as String,
+    pattern: (json['pattern'] as String).toLowerCase(),
+    label: json['label'] as String? ?? json['pattern'] as String,
+    bankId: json['bankId'] as String?,
+    createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+  );
+}
+
 /// Notifikasi mentah yang ditangkap dari lapisan native.
 class RawCapture {
   const RawCapture({
