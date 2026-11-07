@@ -198,6 +198,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
   late DateTime _selectedMonth;
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';
+  bool _isSearchVisible = false;
   int? _selectedAccountId;
   Direction? _selectedDirection;
   bool _showBonView = false;
@@ -317,201 +318,306 @@ class TransaksiScreenState extends State<TransaksiScreen> {
 
     return Column(
       children: [
-        // Top Header: Title (Kiri) + Month Selector (Tengah) + Bon Shortcut (Kanan)
+        // Top Header: Title (Kiri) + Action Icons (Kanan)
         QuestTabEnter(
           index: 0,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.m, Spacing.m, Spacing.xs),
+            padding: const EdgeInsets.fromLTRB(
+              Spacing.m,
+              Spacing.m,
+              Spacing.m,
+              Spacing.xs,
+            ),
             child: Row(
               children: [
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text('Transaksi', style: context.qTitle(20)),
-                ),
-              ),
+                Text('Transaksi', style: context.qTitle(20)),
+                const Spacer(),
+                StreamBuilder<List<Bon>>(
+                  stream: widget.repository.watchBons(),
+                  builder: (context, snapshot) {
+                    final bons = snapshot.data ?? const [];
+                    final unsettledCount =
+                        bons.where((b) => b.settledAt == null).length;
 
-              // Month Selector Pill (Pas di Tengah)
-              Container(
-                decoration: BoxDecoration(
-                  color: context.q.surface2,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  border: Border.all(color: context.q.line),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      constraints: const BoxConstraints(),
-                      icon: const Icon(Icons.chevron_left_rounded, size: 20),
-                      onPressed: () => _shiftMonth(-1),
-                    ),
-                    QuestPress(
-                      onTap: _openMonthPicker,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-                        child: QuestSwap(
-                          child: Text(
-                            idMonthYear(_selectedMonth),
-                            key: ValueKey(idMonthYear(_selectedMonth)),
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                              color: context.q.text,
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Search Toggle
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: _isSearchVisible
+                                ? context.q.primary.withValues(alpha: 0.12)
+                                : context.q.surface,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: _isSearchVisible
+                                  ? context.q.primary
+                                  : context.q.line.withValues(alpha: 0.6),
                             ),
+                          ),
+                          child: IconButton(
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            icon: Icon(
+                              _isSearchVisible
+                                  ? Icons.search_off_rounded
+                                  : Icons.search_rounded,
+                              size: 18,
+                              color: _isSearchVisible
+                                  ? context.q.primary
+                                  : context.q.text,
+                            ),
+                            tooltip: _isSearchVisible
+                                ? 'Tutup Pencarian'
+                                : 'Cari Transaksi',
+                            onPressed: () {
+                              HapticFeedback.selectionClick();
+                              setState(() {
+                                _isSearchVisible = !_isSearchVisible;
+                                if (!_isSearchVisible) {
+                                  _searchCtrl.clear();
+                                  _searchQuery = '';
+                                }
+                              });
+                            },
                           ),
                         ),
-                      ),
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      constraints: const BoxConstraints(),
-                      icon: const Icon(Icons.chevron_right_rounded, size: 20),
-                      onPressed: () => _shiftMonth(1),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Button Bon Shortcut & OCR (Kanan)
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: StreamBuilder<List<Bon>>(
-                    stream: widget.repository.watchBons(),
-                    builder: (context, snapshot) {
-                      final bons = snapshot.data ?? const [];
-                      final unsettledCount = bons.where((b) => b.settledAt == null).length;
-
-                      final bonChip = QuestPress(
-                        onTap: () => _setBonView(true),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: unsettledCount > 0 ? context.q.warnTint : context.q.surface2,
-                            borderRadius: BorderRadius.circular(AppRadius.pill),
-                            border: Border.all(
-                              color: unsettledCount > 0
-                                  ? context.q.warn.withValues(alpha: 0.3)
-                                  : context.q.line,
+                        if (widget.pipeline != null) ...[
+                          const SizedBox(width: Spacing.xs),
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: context.q.surface,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: context.q.line.withValues(alpha: 0.6),
+                              ),
                             ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.handshake_outlined,
-                                 size: 16,
-                                 color: unsettledCount > 0 ? context.q.warn : context.q.text,
-                               ),
-                               const SizedBox(width: 4),
-                               Text(
-                                 'Bon',
-                                 style: TextStyle(
-                                   fontSize: 12,
-                                   fontWeight: FontWeight.w700,
-                                   color: unsettledCount > 0 ? context.q.warn : context.q.text,
-                                 ),
-                               ),
-                               if (unsettledCount > 0) ...[
-                                 const SizedBox(width: 4),
-                                 Container(
-                                   padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                   decoration: BoxDecoration(
-                                     color: context.q.warn,
-                                     shape: BoxShape.circle,
-                                   ),
-                                   child: Text(
-                                     '$unsettledCount',
-                                     style: const TextStyle(
-                                       fontSize: 9.5,
-                                       fontWeight: FontWeight.w800,
-                                       color: Colors.white,
-                                     ),
-                                   ),
-                                 ),
-                               ],
-                             ],
-                           ),
-                         ),
-                       );
-
-                      return Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          bonChip,
-                          if (widget.pipeline != null) ...[
-                            const SizedBox(width: Spacing.xs),
-                            QuestIconButton(
-                              icon: Icons.document_scanner_rounded,
+                            child: IconButton(
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                              icon: Icon(
+                                Icons.document_scanner_rounded,
+                                size: 18,
+                                color: context.q.text,
+                              ),
                               tooltip: 'Foto Struk (OCR)',
                               onPressed: _openOcr,
                             ),
-                          ],
+                          ),
                         ],
-                      );
-                    },
+                        const SizedBox(width: Spacing.xs),
+                        // Bon Shortcut
+                        QuestPress(
+                          onTap: () => _setBonView(true),
+                          child: Container(
+                            height: 36,
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            decoration: BoxDecoration(
+                              color: unsettledCount > 0
+                                  ? context.q.warnTint
+                                  : context.q.surface,
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.pill),
+                              border: Border.all(
+                                color: unsettledCount > 0
+                                    ? context.q.warn.withValues(alpha: 0.3)
+                                    : context.q.line.withValues(alpha: 0.6),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.handshake_outlined,
+                                  size: 15,
+                                  color: unsettledCount > 0
+                                      ? context.q.warn
+                                      : context.q.muted,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Bon',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: unsettledCount > 0
+                                        ? context.q.warn
+                                        : context.q.text,
+                                  ),
+                                ),
+                                if (unsettledCount > 0) ...[
+                                  const SizedBox(width: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 5,
+                                      vertical: 1,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: context.q.warn,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Text(
+                                      '',
+                                      style: const TextStyle(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Search Input (Muncul saat ikon cari ditekan)
+        if (_isSearchVisible)
+          QuestTabEnter(
+            index: 1,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Spacing.m,
+                0,
+                Spacing.m,
+                Spacing.xs,
+              ),
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: context.q.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  border: Border.all(
+                    color: context.q.line.withValues(alpha: 0.6),
+                  ),
+                ),
+                child: TextField(
+                  controller: _searchCtrl,
+                  autofocus: true,
+                  onChanged: (val) => setState(() => _searchQuery = val),
+                  style: context.qBody(13.5),
+                  decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.symmetric(vertical: 9),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      size: 18,
+                      color: context.q.muted,
+                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear_rounded, size: 18),
+                            onPressed: () {
+                              _searchCtrl.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          )
+                        : null,
+                    hintText: 'Cari transaksi, toko, nominal...',
+                    hintStyle: context.qSmall(12.5),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
-        ),
-        // Search Input
-        QuestTabEnter(
-          index: 1,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: Spacing.xs),
-            child: Container(
-            height: 42,
-            decoration: BoxDecoration(
-              color: context.q.surface,
-              borderRadius: BorderRadius.circular(AppRadius.tile),
-              border: Border.all(color: context.q.line),
-            ),
-            child: TextField(
-              controller: _searchCtrl,
-              onChanged: (val) => setState(() => _searchQuery = val),
-              style: context.qBody(13.5),
-              decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                prefixIcon: Icon(Icons.search_rounded, size: 20, color: context.q.muted),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, size: 18),
-                        onPressed: () {
-                          _searchCtrl.clear();
-                          setState(() => _searchQuery = '');
-                        },
-                      )
-                    : null,
-                hintText: 'Cari transaksi, toko, nominal...',
-                hintStyle: context.qSmall(13),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-              ),
             ),
           ),
-        ),
-        ),
 
-        // Filter Pills Row
+        // Toolbar: Pemilih Bulan & Filter Arah/Akun Menyatu
         QuestTabEnter(
           index: 2,
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: Spacing.xs),
+            padding: const EdgeInsets.fromLTRB(
+              Spacing.m,
+              Spacing.xs,
+              Spacing.m,
+              Spacing.xs,
+            ),
             physics: const BouncingScrollPhysics(),
             child: Row(
               children: [
+                // Month Selector Pill
+                Container(
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: context.q.surface,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    border: Border.all(
+                      color: context.q.line.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        constraints: const BoxConstraints(),
+                        icon: const Icon(Icons.chevron_left_rounded, size: 18),
+                        onPressed: () => _shiftMonth(-1),
+                      ),
+                      QuestPress(
+                        onTap: _openMonthPicker,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              QuestSwap(
+                                child: Text(
+                                  idMonthYear(_selectedMonth),
+                                  key: ValueKey(idMonthYear(_selectedMonth)),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: context.q.text,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              Icon(
+                                Icons.arrow_drop_down_rounded,
+                                size: 16,
+                                color: context.q.muted,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        constraints: const BoxConstraints(),
+                        icon: const Icon(Icons.chevron_right_rounded, size: 18),
+                        onPressed: () => _shiftMonth(1),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: Spacing.s),
+                Container(
+                  width: 1,
+                  height: 18,
+                  color: context.q.line.withValues(alpha: 0.6),
+                ),
+                const SizedBox(width: Spacing.s),
+
                 // Direction Filter
                 _FilterChip(
-                  label: 'Semua Arah',
+                  label: 'Semua',
                   selected: _selectedDirection == null,
                   onSelected: () {
                     if (_selectedDirection == null) return;
@@ -548,53 +654,57 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                     });
                   },
                 ),
-              Container(width: 1, height: 20, color: context.q.line),
-              const SizedBox(width: Spacing.s),
+                const SizedBox(width: Spacing.s),
+                Container(
+                  width: 1,
+                  height: 18,
+                  color: context.q.line.withValues(alpha: 0.6),
+                ),
+                const SizedBox(width: Spacing.s),
 
-              // Account Filter
-              StreamBuilder<List<Account>>(
-                stream: widget.repository.watchAccounts(),
-                builder: (context, snapshot) {
-                  final accounts = snapshot.data ?? const [];
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _FilterChip(
-                        label: 'Semua Akun',
-                        selected: _selectedAccountId == null,
-                        onSelected: () {
-                          if (_selectedAccountId == null) return;
-                          HapticFeedback.selectionClick();
-                          setState(() {
-                            _selectedAccountId = null;
-                            _filterRevision++;
-                          });
-                        },
-                      ),
-                      for (final acc in accounts) ...[
-                        const SizedBox(width: Spacing.xs),
+                // Account Filter
+                StreamBuilder<List<Account>>(
+                  stream: widget.repository.watchAccounts(),
+                  builder: (context, snapshot) {
+                    final accounts = snapshot.data ?? const [];
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                         _FilterChip(
-                          label: acc.name,
-                          selected: _selectedAccountId == acc.id,
+                          label: 'Semua Akun',
+                          selected: _selectedAccountId == null,
                           onSelected: () {
-                            if (_selectedAccountId == acc.id) return;
+                            if (_selectedAccountId == null) return;
                             HapticFeedback.selectionClick();
                             setState(() {
-                              _selectedAccountId = acc.id;
+                              _selectedAccountId = null;
                               _filterRevision++;
                             });
                           },
                         ),
+                        for (final acc in accounts) ...[
+                          const SizedBox(width: Spacing.xs),
+                          _FilterChip(
+                            label: acc.name,
+                            selected: _selectedAccountId == acc.id,
+                            onSelected: () {
+                              if (_selectedAccountId == acc.id) return;
+                              HapticFeedback.selectionClick();
+                              setState(() {
+                                _selectedAccountId = acc.id;
+                                _filterRevision++;
+                              });
+                            },
+                          ),
+                        ],
                       ],
-                    ],
-                  );
-                },
-              ),
-            ],
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
-        ),
-        ),
-        const SizedBox(height: Spacing.xs),
+        ),        const SizedBox(height: Spacing.xs),
 
         // Transactions Stream List & Monthly Cashflow Summary
         Expanded(
@@ -643,11 +753,13 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(Spacing.m, 0, Spacing.m, Spacing.s),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
                         color: context.q.surface,
                         borderRadius: BorderRadius.circular(AppRadius.tile),
-                        border: Border.all(color: context.q.line),
+                        border: Border.all(
+                          color: context.q.line.withValues(alpha: 0.6),
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -657,7 +769,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                               children: [
                                 Text(
                                   'PEMASUKAN',
-                                  style: context.qEyebrow(9.5).copyWith(color: context.q.good),
+                                  style: context.qEyebrow(9).copyWith(color: context.q.good),
                                 ),
                                 const SizedBox(height: 2),
                                 FittedBox(
@@ -676,7 +788,11 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                               ],
                             ),
                           ),
-                          Container(width: 1, height: 26, color: context.q.line),
+                          Container(
+                            width: 1,
+                            height: 22,
+                            color: context.q.line.withValues(alpha: 0.5),
+                          ),
                           const SizedBox(width: Spacing.s),
                           Expanded(
                             child: Column(
@@ -684,7 +800,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                               children: [
                                 Text(
                                   'PENGELUARAN',
-                                  style: context.qEyebrow(9.5).copyWith(color: context.q.bad),
+                                  style: context.qEyebrow(9).copyWith(color: context.q.bad),
                                 ),
                                 const SizedBox(height: 2),
                                 FittedBox(
@@ -703,7 +819,11 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                               ],
                             ),
                           ),
-                          Container(width: 1, height: 26, color: context.q.line),
+                          Container(
+                            width: 1,
+                            height: 22,
+                            color: context.q.line.withValues(alpha: 0.5),
+                          ),
                           const SizedBox(width: Spacing.s),
                           Expanded(
                             child: Column(
@@ -711,7 +831,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                               children: [
                                 Text(
                                   'SELISIH',
-                                  style: context.qEyebrow(9.5).copyWith(color: context.q.muted),
+                                  style: context.qEyebrow(9).copyWith(color: context.q.muted),
                                 ),
                                 const SizedBox(height: 2),
                                 FittedBox(
@@ -1200,6 +1320,7 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final q = context.q;
     return QuestPress(
       onTap: onSelected,
       child: AnimatedContainer(
@@ -1207,10 +1328,10 @@ class _FilterChip extends StatelessWidget {
         curve: QuestMotion.easeOut,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? context.q.primary : context.q.surface,
+          color: selected ? q.primary.withValues(alpha: 0.12) : q.surface,
           borderRadius: BorderRadius.circular(AppRadius.pill),
           border: Border.all(
-            color: selected ? context.q.primary : context.q.line,
+            color: selected ? q.primary : q.line.withValues(alpha: 0.6),
           ),
         ),
         child: AnimatedDefaultTextStyle(
@@ -1220,7 +1341,7 @@ class _FilterChip extends StatelessWidget {
             fontFamily: 'Nunito',
             fontSize: 12,
             fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-            color: selected ? Colors.white : context.q.text,
+            color: selected ? q.primary : q.text,
           ),
           child: Text(label),
         ),

@@ -101,19 +101,22 @@ class TransactionTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.q.surface,
           borderRadius: BorderRadius.circular(AppRadius.tile),
-          border: Border.all(color: context.q.line, width: 1),
-          boxShadow: AppShadows.card,
+          border: Border.all(
+            color: context.q.line.withValues(alpha: 0.6),
+            width: 1,
+          ),
         ),
         child: Row(
           children: [
             Container(
-              width: 46,
-              height: 46,
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: dotColor.withValues(alpha: 0.16),
+                color: dotColor.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(_iconFor(tx.kind), color: dotColor, size: 22),
+              child: Icon(_iconFor(tx.kind), color: dotColor, size: 20),
             ),
             const SizedBox(width: Spacing.m),
             Expanded(
@@ -123,22 +126,19 @@ class TransactionTile extends StatelessWidget {
                   Text(
                     title,
                     overflow: TextOverflow.ellipsis,
-                    style: context.qTitle(15),
+                    style: context.qTitle(14.5),
                   ),
-                  const SizedBox(height: Spacing.xxs),
+                  const SizedBox(height: 2),
                   Text(
                     '${category?.name ?? tx.kind.label} · ${tx.bankId}',
                     overflow: TextOverflow.ellipsis,
-                    style: context.qSmall(12),
+                    style: context.qSmall(11.5).copyWith(color: context.q.muted),
                   ),
                 ],
               ),
             ),
             const SizedBox(width: Spacing.s),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 110),
-              child: QuestAmount(amount: tx.amount, incoming: incoming),
-            ),
+            QuestAmount(amount: tx.amount, incoming: incoming),
           ],
         ),
       ),
