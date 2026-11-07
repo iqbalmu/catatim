@@ -78,6 +78,29 @@ class TransaksiScreenState extends State<TransaksiScreen> {
     _setBonView(true);
   }
 
+  Future<void> _openFilterSheet() async {
+    final accounts = await widget.repository.getAccounts();
+    if (!mounted) return;
+
+    final result = await showQuestSheet<({Direction? direction, int? accountId})>(
+      context,
+      (ctx) => _TransactionFilterSheet(
+        initialDirection: _selectedDirection,
+        initialAccountId: _selectedAccountId,
+        accounts: accounts,
+      ),
+    );
+
+    if (result != null && mounted) {
+      HapticFeedback.selectionClick();
+      setState(() {
+        _selectedDirection = result.direction;
+        _selectedAccountId = result.accountId;
+        _filterRevision++;
+      });
+    }
+  }
+
   Future<void> _settleBon(Bon bon) async {
     if (bon.settledAt != null) {
       await widget.repository.updateBon(
@@ -378,6 +401,60 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                           ),
                         ),
                         const SizedBox(width: Spacing.xs),
+                        // Filter Drawer Button
+                        Builder(
+                          builder: (context) {
+                            final hasFilter = _selectedDirection != null ||
+                                _selectedAccountId != null;
+                            return Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: hasFilter
+                                    ? context.q.primary.withValues(alpha: 0.12)
+                                    : context.q.surface,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: hasFilter
+                                      ? context.q.primary
+                                      : context.q.line.withValues(alpha: 0.6),
+                                ),
+                              ),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  IconButton(
+                                    visualDensity: VisualDensity.compact,
+                                    padding: EdgeInsets.zero,
+                                    icon: Icon(
+                                      Icons.tune_rounded,
+                                      size: 18,
+                                      color: hasFilter
+                                          ? context.q.primary
+                                          : context.q.text,
+                                    ),
+                                    tooltip: 'Filter Transaksi',
+                                    onPressed: _openFilterSheet,
+                                  ),
+                                  if (hasFilter)
+                                    Positioned(
+                                      top: 6,
+                                      right: 6,
+                                      child: Container(
+                                        width: 7,
+                                        height: 7,
+                                        decoration: BoxDecoration(
+                                          color: context.q.primary,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: Spacing.xs),
                         // Bon Shortcut
                         QuestPress(
                           onTap: () => _setBonView(true),
@@ -503,19 +580,18 @@ class TransaksiScreenState extends State<TransaksiScreen> {
             ),
           ),
 
-        // Toolbar: Pemilih Bulan & Filter Arah/Akun Menyatu
+        // Month Navigation & Active Filter indicator
         QuestTabEnter(
           index: 2,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
+          child: Padding(
             padding: const EdgeInsets.fromLTRB(
               Spacing.m,
               Spacing.xs,
               Spacing.m,
               Spacing.xs,
             ),
-            physics: const BouncingScrollPhysics(),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 // Month Selector Pill
                 Container(
@@ -575,104 +651,68 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(width: Spacing.s),
-                Container(
-                  width: 1,
-                  height: 18,
-                  color: context.q.line.withValues(alpha: 0.6),
-                ),
-                const SizedBox(width: Spacing.s),
 
-                // Direction Filter
-                _FilterChip(
-                  label: 'Semua',
-                  selected: _selectedDirection == null,
-                  onSelected: () {
-                    if (_selectedDirection == null) return;
-                    HapticFeedback.selectionClick();
-                    setState(() {
-                      _selectedDirection = null;
-                      _filterRevision++;
-                    });
-                  },
-                ),
-                const SizedBox(width: Spacing.xs),
-                _FilterChip(
-                  label: 'Keluar (-)',
-                  selected: _selectedDirection == Direction.outgoing,
-                  onSelected: () {
-                    if (_selectedDirection == Direction.outgoing) return;
-                    HapticFeedback.selectionClick();
-                    setState(() {
-                      _selectedDirection = Direction.outgoing;
-                      _filterRevision++;
-                    });
-                  },
-                ),
-                const SizedBox(width: Spacing.xs),
-                _FilterChip(
-                  label: 'Masuk (+)',
-                  selected: _selectedDirection == Direction.incoming,
-                  onSelected: () {
-                    if (_selectedDirection == Direction.incoming) return;
-                    HapticFeedback.selectionClick();
-                    setState(() {
-                      _selectedDirection = Direction.incoming;
-                      _filterRevision++;
-                    });
-                  },
-                ),
-                const SizedBox(width: Spacing.s),
-                Container(
-                  width: 1,
-                  height: 18,
-                  color: context.q.line.withValues(alpha: 0.6),
-                ),
-                const SizedBox(width: Spacing.s),
-
-                // Account Filter
-                StreamBuilder<List<Account>>(
-                  stream: widget.repository.watchAccounts(),
-                  builder: (context, snapshot) {
-                    final accounts = snapshot.data ?? const [];
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _FilterChip(
-                          label: 'Semua Akun',
-                          selected: _selectedAccountId == null,
-                          onSelected: () {
-                            if (_selectedAccountId == null) return;
-                            HapticFeedback.selectionClick();
-                            setState(() {
-                              _selectedAccountId = null;
-                              _filterRevision++;
-                            });
-                          },
+                // Active Filter Quick Reset Pill
+                if (_selectedDirection != null || _selectedAccountId != null)
+                  QuestPress(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        _selectedDirection = null;
+                        _selectedAccountId = null;
+                        _filterRevision++;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: context.q.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        border: Border.all(
+                          color: context.q.primary.withValues(alpha: 0.4),
                         ),
-                        for (final acc in accounts) ...[
-                          const SizedBox(width: Spacing.xs),
-                          _FilterChip(
-                            label: acc.name,
-                            selected: _selectedAccountId == acc.id,
-                            onSelected: () {
-                              if (_selectedAccountId == acc.id) return;
-                              HapticFeedback.selectionClick();
-                              setState(() {
-                                _selectedAccountId = acc.id;
-                                _filterRevision++;
-                              });
-                            },
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.filter_alt_outlined,
+                            size: 13,
+                            color: context.q.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _selectedDirection != null && _selectedAccountId != null
+                                ? '${_selectedDirection == Direction.outgoing ? 'Keluar' : 'Masuk'} + Akun'
+                                : switch (_selectedDirection) {
+                                    Direction.outgoing => 'Keluar',
+                                    Direction.incoming => 'Masuk',
+                                    null => 'Filter Akun',
+                                  },
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: context.q.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.close_rounded,
+                            size: 13,
+                            color: context.q.primary,
                           ),
                         ],
-                      ],
-                    );
-                  },
-                ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
-        ),        const SizedBox(height: Spacing.xs),
+        ),
+        const SizedBox(height: Spacing.xs),
 
         // Transactions Stream List & Monthly Cashflow Summary
         Expanded(
@@ -1275,43 +1315,300 @@ class TransaksiScreenState extends State<TransaksiScreen> {
   }
 }
 
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
+class _TransactionFilterSheet extends StatefulWidget {
+  const _TransactionFilterSheet({
+    required this.initialDirection,
+    required this.initialAccountId,
+    required this.accounts,
+  });
+
+  final Direction? initialDirection;
+  final int? initialAccountId;
+  final List<Account> accounts;
+
+  @override
+  State<_TransactionFilterSheet> createState() =>
+      _TransactionFilterSheetState();
+}
+
+class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
+  late Direction? _direction;
+  late int? _accountId;
+
+  @override
+  void initState() {
+    super.initState();
+    _direction = widget.initialDirection;
+    _accountId = widget.initialAccountId;
+  }
+
+  bool get _hasFilter => _direction != null || _accountId != null;
+
+  void _reset() {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _direction = null;
+      _accountId = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        Spacing.l,
+        Spacing.xs,
+        Spacing.l,
+        Spacing.l,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header: Judul + Reset
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Filter Transaksi', style: context.qTitle(18)),
+              if (_hasFilter)
+                QuestPress(
+                  onTap: _reset,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    child: Text(
+                      'Reset',
+                      style: TextStyle(
+                        fontFamily: 'Nunito',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: q.bad,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: Spacing.m),
+
+          // Section 1: Arah Transaksi
+          Text(
+            'JENIS TRANSAKSI',
+            style: context.qEyebrow(10).copyWith(color: q.muted),
+          ),
+          const SizedBox(height: Spacing.xs),
+          Row(
+            children: [
+              Expanded(
+                child: _FilterOptionCard(
+                  label: 'Semua',
+                  icon: Icons.swap_vert_rounded,
+                  selected: _direction == null,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _direction = null);
+                  },
+                ),
+              ),
+              const SizedBox(width: Spacing.xs),
+              Expanded(
+                child: _FilterOptionCard(
+                  label: 'Keluar',
+                  icon: Icons.arrow_upward_rounded,
+                  iconColor: q.bad,
+                  selected: _direction == Direction.outgoing,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _direction = Direction.outgoing);
+                  },
+                ),
+              ),
+              const SizedBox(width: Spacing.xs),
+              Expanded(
+                child: _FilterOptionCard(
+                  label: 'Masuk',
+                  icon: Icons.arrow_downward_rounded,
+                  iconColor: q.good,
+                  selected: _direction == Direction.incoming,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _direction = Direction.incoming);
+                  },
+                ),
+              ),
+            ],
+          ),
+
+          if (widget.accounts.isNotEmpty) ...[
+            const SizedBox(height: Spacing.m),
+            // Section 2: Rekening / Akun
+            Text(
+              'AKUN / REKENING',
+              style: context.qEyebrow(10).copyWith(color: q.muted),
+            ),
+            const SizedBox(height: Spacing.xs),
+            Wrap(
+              spacing: Spacing.xs,
+              runSpacing: Spacing.xs,
+              children: [
+                _FilterOptionChip(
+                  label: 'Semua Akun',
+                  selected: _accountId == null,
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _accountId = null);
+                  },
+                ),
+                for (final acc in widget.accounts)
+                  _FilterOptionChip(
+                    label: acc.name,
+                    icon: switch (acc.kind) {
+                      AccountKind.bank => Icons.account_balance_rounded,
+                      AccountKind.ewallet => Icons.phone_android_rounded,
+                      AccountKind.cash => Icons.payments_outlined,
+                    },
+                    selected: _accountId == acc.id,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() => _accountId = acc.id);
+                    },
+                  ),
+              ],
+            ),
+          ],
+
+          const SizedBox(height: Spacing.l),
+
+          // Action Button
+          QuestButton(
+            label: 'Terapkan Filter',
+            onPressed: () {
+              Navigator.pop(
+                context,
+                (direction: _direction, accountId: _accountId),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterOptionCard extends StatelessWidget {
+  const _FilterOptionCard({
     required this.label,
+    required this.icon,
+    this.iconColor,
     required this.selected,
-    required this.onSelected,
+    required this.onTap,
   });
 
   final String label;
+  final IconData icon;
+  final Color? iconColor;
   final bool selected;
-  final VoidCallback onSelected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final q = context.q;
     return QuestPress(
-      onTap: onSelected,
+      onTap: onTap,
       child: AnimatedContainer(
         duration: QuestMotion.fast,
         curve: QuestMotion.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? q.primary.withValues(alpha: 0.12) : q.surface,
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+          border: Border.all(
+            color: selected ? q.primary : q.line.withValues(alpha: 0.6),
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: selected
+                  ? (iconColor ?? q.primary)
+                  : (iconColor?.withValues(alpha: 0.7) ?? q.muted),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Nunito',
+                fontSize: 12,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                color: selected ? q.primary : q.text,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FilterOptionChip extends StatelessWidget {
+  const _FilterOptionChip({
+    required this.label,
+    this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData? icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    return QuestPress(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: QuestMotion.fast,
+        curve: QuestMotion.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
           color: selected ? q.primary.withValues(alpha: 0.12) : q.surface,
           borderRadius: BorderRadius.circular(AppRadius.pill),
           border: Border.all(
             color: selected ? q.primary : q.line.withValues(alpha: 0.6),
+            width: selected ? 1.5 : 1,
           ),
         ),
-        child: AnimatedDefaultTextStyle(
-          duration: QuestMotion.fast,
-          curve: QuestMotion.easeOut,
-          style: TextStyle(
-            fontFamily: 'Nunito',
-            fontSize: 12,
-            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-            color: selected ? q.primary : q.text,
-          ),
-          child: Text(label),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 14,
+                color: selected ? q.primary : q.muted,
+              ),
+              const SizedBox(width: 5),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Nunito',
+                fontSize: 12,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                color: selected ? q.primary : q.text,
+              ),
+            ),
+          ],
         ),
       ),
     );
