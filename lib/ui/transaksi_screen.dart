@@ -580,7 +580,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
             ),
           ),
 
-        // Month Navigation & Active Filter indicator
+        // Full-Width Month Navigator Bar (seperti di Halaman Laporan)
         QuestTabEnter(
           index: 2,
           child: Padding(
@@ -590,124 +590,148 @@ class TransaksiScreenState extends State<TransaksiScreen> {
               Spacing.m,
               Spacing.xs,
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Month Selector Pill
                 Container(
-                  height: 32,
+                  height: 44,
                   decoration: BoxDecoration(
                     color: context.q.surface,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                    borderRadius: BorderRadius.circular(AppRadius.tile),
                     border: Border.all(
                       color: context.q.line.withValues(alpha: 0.6),
                     ),
                   ),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
                         visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        constraints: const BoxConstraints(),
-                        icon: const Icon(Icons.chevron_left_rounded, size: 18),
+                        tooltip: 'Bulan sebelumnya',
+                        icon: Icon(
+                          Icons.chevron_left_rounded,
+                          color: context.q.text,
+                          size: 22,
+                        ),
                         onPressed: () => _shiftMonth(-1),
                       ),
-                      QuestPress(
-                        onTap: _openMonthPicker,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              QuestSwap(
-                                child: Text(
-                                  idMonthYear(_selectedMonth),
-                                  key: ValueKey(idMonthYear(_selectedMonth)),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: context.q.text,
+                      Expanded(
+                        child: InkWell(
+                          onTap: _openMonthPicker,
+                          borderRadius: BorderRadius.circular(AppRadius.cell),
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.calendar_today_rounded,
+                                    size: 14,
+                                    color: context.q.primary,
                                   ),
-                                ),
+                                  const SizedBox(width: 7),
+                                  Flexible(
+                                    child: QuestSwap(
+                                      child: Text(
+                                        idMonthYear(_selectedMonth),
+                                        key: ValueKey(idMonthYear(_selectedMonth)),
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontFamily: 'Nunito',
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: context.q.text,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(
+                                    Icons.unfold_more_rounded,
+                                    size: 16,
+                                    color: context.q.muted,
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 2),
-                              Icon(
-                                Icons.arrow_drop_down_rounded,
-                                size: 16,
-                                color: context.q.muted,
-                              ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
                       IconButton(
                         visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        constraints: const BoxConstraints(),
-                        icon: const Icon(Icons.chevron_right_rounded, size: 18),
+                        tooltip: 'Bulan berikutnya',
+                        icon: Icon(
+                          Icons.chevron_right_rounded,
+                          color: context.q.text,
+                          size: 22,
+                        ),
                         onPressed: () => _shiftMonth(1),
                       ),
                     ],
                   ),
                 ),
 
-                // Active Filter Quick Reset Pill
-                if (_selectedDirection != null || _selectedAccountId != null)
-                  QuestPress(
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        _selectedDirection = null;
-                        _selectedAccountId = null;
-                        _filterRevision++;
-                      });
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: context.q.primary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                        border: Border.all(
-                          color: context.q.primary.withValues(alpha: 0.4),
+                // Active Filter Quick Reset Pill (bila ada filter arah/akun)
+                if (_selectedDirection != null || _selectedAccountId != null) ...[
+                  const SizedBox(height: Spacing.xs),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: QuestPress(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() {
+                          _selectedDirection = null;
+                          _selectedAccountId = null;
+                          _filterRevision++;
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
                         ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.filter_alt_outlined,
-                            size: 13,
-                            color: context.q.primary,
+                        decoration: BoxDecoration(
+                          color: context.q.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                          border: Border.all(
+                            color: context.q.primary.withValues(alpha: 0.3),
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _selectedDirection != null && _selectedAccountId != null
-                                ? '${_selectedDirection == Direction.outgoing ? 'Keluar' : 'Masuk'} + Akun'
-                                : switch (_selectedDirection) {
-                                    Direction.outgoing => 'Keluar',
-                                    Direction.incoming => 'Masuk',
-                                    null => 'Filter Akun',
-                                  },
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.filter_alt_outlined,
+                              size: 12,
                               color: context.q.primary,
                             ),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.close_rounded,
-                            size: 13,
-                            color: context.q.primary,
-                          ),
-                        ],
+                            const SizedBox(width: 4),
+                            Text(
+                              _selectedDirection != null && _selectedAccountId != null
+                                  ? '${_selectedDirection == Direction.outgoing ? 'Keluar' : 'Masuk'} · Filter Akun'
+                                  : switch (_selectedDirection) {
+                                      Direction.outgoing => 'Keluar',
+                                      Direction.incoming => 'Masuk',
+                                      null => 'Filter Akun',
+                                    },
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: context.q.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.close_rounded,
+                              size: 12,
+                              color: context.q.primary,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
+                ],
               ],
             ),
           ),
