@@ -55,7 +55,7 @@ void main() {
       // Verifikasi navbar memiliki 'Profil' dan tidak ada 'Laporan' di navbar
       expect(find.text('Beranda'), findsOneWidget);
       expect(find.text('Transaksi'), findsOneWidget);
-      expect(find.text('Anggaran'), findsOneWidget);
+      expect(find.text('Bon'), findsOneWidget);
       expect(find.text('Profil'), findsOneWidget);
       expect(find.text('Laporan'), findsNothing);
 
@@ -94,6 +94,72 @@ void main() {
       // Tunggu timer refresh settle selesai dan tutup db
       await tester.pump(const Duration(milliseconds: 350));
       await tester.pumpAndSettle();
+      await db.close();
+    },
+  );
+
+  testWidgets(
+    'SettingsScreen di tab Profil: komponen menetas dengan animasi bertahap (QuestTabEnter)',
+    (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final repo = LedgerRepository(db);
+      final ruleSet = RuleSet.fromJson({
+        'version': 1,
+        'banks': [],
+      });
+      final pipeline = CapturePipeline(
+        channel: const CaptureChannel(),
+        engine: RuleEngine(ruleSet),
+        repository: repo,
+      );
+      final progress = ProgressService(repository: repo);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: QuestSchemes.light(),
+          home: HomeScreen(
+            repository: repo,
+            pipeline: pipeline,
+            progress: progress,
+            ruleSet: ruleSet,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Pindah ke tab Profil
+      await tester.tap(find.text('Profil'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 60));
+
+      // Di tengah animasi, kartu di tab Profil sedang menetas (opacity < 1.0)
+      final cardOpacity = tester
+          .widget<Opacity>(
+            find
+                .ancestor(
+                  of: find.text('Laporan Finansial'),
+                  matching: find.byType(Opacity),
+                )
+                .first,
+          )
+          .opacity;
+      expect(cardOpacity, lessThan(1.0));
+
+      await tester.pumpAndSettle();
+      final settledOpacity = tester
+          .widget<Opacity>(
+            find
+                .ancestor(
+                  of: find.text('Laporan Finansial'),
+                  matching: find.byType(Opacity),
+                )
+                .first,
+          )
+          .opacity;
+      expect(settledOpacity, equals(1.0));
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 1));
       await db.close();
     },
   );

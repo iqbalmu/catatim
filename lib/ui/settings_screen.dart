@@ -60,8 +60,8 @@ class SettingsScreen extends StatelessWidget {
         ),
         children: [
           // ── Seksi 0: Profil Disiplin & Maskot ──
-          QuestEnter(
-            index: 0,
+          QuestTabEnter(
+            index: 1,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -164,8 +164,8 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: Spacing.m),
 
           // ── Seksi 1: Laporan & Analisis ──
-          QuestEnter(
-            index: 1,
+          QuestTabEnter(
+            index: 2,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -205,8 +205,8 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: Spacing.m),
 
           // ── Seksi 2: Data & Rekening ──
-          QuestEnter(
-            index: 2,
+          QuestTabEnter(
+            index: 3,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -296,8 +296,8 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: Spacing.m),
 
           // ── Seksi 3: Otomatisasi & Capture ──
-          QuestEnter(
-            index: 3,
+          QuestTabEnter(
+            index: 4,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -350,8 +350,8 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: Spacing.m),
 
           // ── Seksi 4: Zona Bahaya ──
-          QuestEnter(
-            index: 4,
+          QuestTabEnter(
+            index: 5,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -381,8 +381,8 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: Spacing.m),
 
           // ── Seksi 5: Tentang Aplikasi ──
-          QuestEnter(
-            index: 5,
+          QuestTabEnter(
+            index: 6,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

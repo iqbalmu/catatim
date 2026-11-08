@@ -560,21 +560,21 @@ void main() {
       }
       await tester.pumpAndSettle();
 
-      // Pindah dari Beranda ke Anggaran via bottom nav.
-      await tester.tap(find.text('Anggaran'));
+      // Pindah dari Beranda ke Bon via bottom nav.
+      await tester.tap(find.text('Bon'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 60));
 
-      // Posisi horizontal judul 'Batas Total Bulanan' tidak bergeser dari samping:
+      // Posisi horizontal judul 'PIUTANG' tidak bergeser dari samping:
       // sama persis antara saat baru masuk (60ms) dan saat animasi selesai.
-      final earlyX = tester.getTopLeft(find.text('Batas Total Bulanan')).dx;
+      final earlyX = tester.getTopLeft(find.text('PIUTANG')).dx;
 
       // Di tengah animasi, kartu masih menetas (opacity < 1.0).
       final cardOpacity = tester
           .widget<Opacity>(
             find
                 .ancestor(
-                  of: find.text('Batas Total Bulanan'),
+                  of: find.text('PIUTANG'),
                   matching: find.byType(Opacity),
                 )
                 .first,
@@ -583,7 +583,7 @@ void main() {
       expect(cardOpacity, lessThan(1.0));
 
       await tester.pumpAndSettle();
-      final settledX = tester.getTopLeft(find.text('Batas Total Bulanan')).dx;
+      final settledX = tester.getTopLeft(find.text('PIUTANG')).dx;
       expect(earlyX, equals(settledX));
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());

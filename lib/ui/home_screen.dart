@@ -14,13 +14,12 @@ import 'bon_screen.dart';
 import 'home_cards.dart';
 import 'ocr_screen.dart';
 import 'quest.dart';
-import 'rencana_batas.dart';
 import 'rencana_screen.dart';
 import 'settings_screen.dart';
 import 'transaction_sheet.dart';
 import 'transaksi_screen.dart';
 
-/// Shell utama: Beranda | Transaksi | Anggaran | Profil.
+/// Shell utama: Beranda | Transaksi | Bon | Profil.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
@@ -38,7 +37,7 @@ class HomeScreen extends StatefulWidget {
   static const _destinations = [
     QuestDestination(icon: Icons.dashboard_rounded, label: 'Beranda'),
     QuestDestination(icon: Icons.receipt_long_rounded, label: 'Transaksi'),
-    QuestDestination(icon: Icons.pie_chart_outline_rounded, label: 'Anggaran'),
+    QuestDestination(icon: Icons.handshake_outlined, label: 'Bon'),
     QuestDestination(icon: Icons.person_rounded, label: 'Profil'),
   ];
 
@@ -114,39 +113,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   /// Token panggung per-tab: hanya tab TUJUAN yang dinaikkan saat berpindah
   /// agar komponen di tab aktif menetas satu-per-satu & bar tumbuh dari 0.
   final List<int> _tabTokens = [0, 0, 0, 0];
-  bool _inBonView = false;
 
-  /// Kunci layar Transaksi untuk mengelola sub-tampilan Bon & tombol Back.
-  final _transaksiKey = GlobalKey<TransaksiScreenState>();
-
-  void _switchTab(int target, {bool openBon = false}) {
-    if (target == _tab) {
-      if (target == 1 && !openBon && _inBonView) {
-        _transaksiKey.currentState?.handleBack();
-      } else if (target == 1 && openBon && !_inBonView) {
-        setState(() => _inBonView = true);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _transaksiKey.currentState?.showBon();
-        });
-      }
-      return;
-    }
+  void _switchTab(int target) {
+    if (target == _tab) return;
     HapticFeedback.selectionClick();
     setState(() {
       _tab = target;
       _tabTokens[target]++;
-      if (target == 1 && openBon) {
-        _inBonView = true;
-      } else if (target != 1 && _inBonView) {
-        _inBonView = false;
-        _transaksiKey.currentState?.handleBack();
-      }
     });
-    if (target == 1 && openBon) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _transaksiKey.currentState?.showBon();
-      });
-    }
     if (target == 0 || target == 3) {
       _refreshTimer?.cancel();
       _refreshTimer = Timer(_refreshSettle, () {
@@ -155,8 +129,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
-  void _openAnggaran() => _switchTab(2);
-  void _openBon() => _switchTab(1, openBon: true);
+  void _openAnggaran() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RencanaScreen(
+          repository: widget.repository,
+          progress: widget.progress,
+        ),
+      ),
+    );
+  }
+
+  void _openBon() => _switchTab(2);
 
   /// Aksi tombol + tengah navbar: Langsung catat transaksi 1-tap.
   void _primaryAction() {
@@ -171,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   ({String tooltip, VoidCallback onTap, IconData? icon}) _getCenterAction() {
-    if (_tab == 1 && _inBonView) {
+    if (_tab == 2) {
       return (
         tooltip: 'Catat bon baru',
         onTap: () {
@@ -179,16 +163,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           BonSheet.show(context, widget.repository);
         },
         icon: Icons.handshake_outlined,
-      );
-    }
-    if (_tab == 2) {
-      return (
-        tooltip: 'Tambah kategori',
-        onTap: () {
-          HapticFeedback.lightImpact();
-          showAddCategoryFlow(context, widget.repository);
-        },
-        icon: Icons.playlist_add_rounded,
       );
     }
     return (
@@ -206,10 +180,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       canPop: _tab == 0,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        if (_tab == 1) {
-          final handled = _transaksiKey.currentState?.handleBack() ?? false;
-          if (handled) return;
-        }
         if (_tab != 0) _switchTab(0);
       },
       child: Scaffold(
@@ -237,13 +207,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               child: TickerMode(
                 enabled: _tab == 1,
                 child: TransaksiScreen(
-                  key: _transaksiKey,
                   repository: widget.repository,
                   progress: widget.progress,
                   pipeline: widget.pipeline,
                   ruleSet: widget.ruleSet,
-                  onBonViewChanged: (inBon) =>
-                      setState(() => _inBonView = inBon),
                 ),
               ),
             ),
@@ -251,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               token: _tabTokens[2],
               child: TickerMode(
                 enabled: _tab == 2,
-                child: RencanaScreen(
+                child: BonScreen(
                   repository: widget.repository,
                   progress: widget.progress,
                 ),
@@ -284,7 +251,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               index: _tab,
               onChanged: _onTabChanged,
               destinations: HomeScreen._destinations,
-              badges: hasOld ? const {1} : const <int>{},
+              badges: hasOld ? const {2} : const <int>{},
               centerAction: _getCenterAction(),
             );
           },

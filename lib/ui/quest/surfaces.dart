@@ -37,60 +37,63 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
           Spacing.m,
           Spacing.xs,
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (showBack) ...[
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: context.q.surface,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: context.q.line),
-                  boxShadow: AppShadows.card,
-                ),
-                child: IconButton(
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  icon: Icon(
-                    Icons.arrow_back_rounded,
-                    color: context.q.text,
-                    size: 20,
+        child: QuestTabEnter(
+          index: 0,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (showBack) ...[
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: context.q.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: context.q.line),
+                    boxShadow: AppShadows.card,
                   ),
-                  tooltip: 'Kembali',
-                  onPressed: () => Navigator.maybePop(context),
+                  child: IconButton(
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    icon: Icon(
+                      Icons.arrow_back_rounded,
+                      color: context.q.text,
+                      size: 20,
+                    ),
+                    tooltip: 'Kembali',
+                    onPressed: () => Navigator.maybePop(context),
+                  ),
+                ),
+                const SizedBox(width: Spacing.s),
+              ],
+              if (leading != null) ...[
+                leading!,
+                const SizedBox(width: Spacing.s),
+              ],
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: compact
+                          ? context
+                                .qSmall(13)
+                                .copyWith(
+                                  color: context.q.muted,
+                                  fontWeight: FontWeight.w800,
+                                )
+                          : context.qTitle(20),
+                    ),
+                    if (!compact && subtitle != null)
+                      Text(subtitle!, style: context.qSmall(12)),
+                  ],
                 ),
               ),
-              const SizedBox(width: Spacing.s),
+              ...actions,
             ],
-            if (leading != null) ...[
-              leading!,
-              const SizedBox(width: Spacing.s),
-            ],
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: compact
-                        ? context
-                              .qSmall(13)
-                              .copyWith(
-                                color: context.q.muted,
-                                fontWeight: FontWeight.w800,
-                              )
-                        : context.qTitle(20),
-                  ),
-                  if (!compact && subtitle != null)
-                    Text(subtitle!, style: context.qSmall(12)),
-                ],
-              ),
-            ),
-            ...actions,
-          ],
+          ),
         ),
       ),
     );
