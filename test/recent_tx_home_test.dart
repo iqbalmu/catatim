@@ -1,0 +1,92 @@
+import 'package:bukuduit/capture/capture_channel.dart';
+import 'package:bukuduit/capture/pipeline.dart';
+import 'package:bukuduit/game/progress.dart';
+import 'package:bukuduit/models.dart';
+import 'package:bukuduit/rules/engine.dart';
+import 'package:bukuduit/rules/rule_set.dart';
+import 'package:bukuduit/storage/database.dart';
+import 'package:bukuduit/storage/repository.dart';
+import 'package:bukuduit/theme/quest.dart';
+import 'package:bukuduit/ui/home_screen.dart';
+import 'package:bukuduit/ui/transaction_tile.dart';
+import 'package:bukuduit/ui/transaksi_screen.dart';
+import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  testWidgets(
+    'Beranda menampilkan Transaksi Terbaru dan navigasi Lihat Semua ke tab Transaksi',
+    (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final repo = LedgerRepository(db);
+      final ruleSet = RuleSet.fromJson({
+        'version': 1,
+        'banks': [],
+      });
+      final pipeline = CapturePipeline(
+        channel: const CaptureChannel(),
+        engine: RuleEngine(ruleSet),
+        repository: repo,
+      );
+      final progress = ProgressService(repository: repo);
+
+      // Tambahkan 2 transaksi contoh
+      final accounts = await repo.getAccounts();
+      final catId = (await repo.getCategories()).first.id;
+      final accId = accounts.first.id;
+
+      await repo.addManual(
+        amount: 50000,
+        direction: Direction.outgoing,
+        kind: TxKind.payment,
+        counterparty: 'Kopi Kenangan',
+        accountId: accId,
+        categoryId: catId,
+        occurredAt: DateTime.now(),
+      );
+
+      await repo.addManual(
+        amount: 25000,
+        direction: Direction.outgoing,
+        kind: TxKind.payment,
+        counterparty: 'Indomaret',
+        accountId: accId,
+        categoryId: catId,
+        occurredAt: DateTime.now(),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: QuestSchemes.light(),
+          home: HomeScreen(
+            repository: repo,
+            pipeline: pipeline,
+            progress: progress,
+            ruleSet: ruleSet,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // 1. Verifikasi judul Transaksi Terbaru tampil di Beranda
+      expect(find.text('Transaksi Terbaru'), findsOneWidget);
+      expect(find.text('Lihat Semua →'), findsOneWidget);
+
+      // 2. Verifikasi transaksi tampil sebagai TransactionTile di Beranda
+      expect(find.text('Kopi Kenangan'), findsOneWidget);
+      expect(find.text('Indomaret'), findsOneWidget);
+      expect(find.byType(TransactionTile), findsNWidgets(2));
+
+      // 3. Tap 'Lihat Semua →' berpindah ke tab Transaksi
+      await tester.tap(find.text('Lihat Semua →'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TransaksiScreen), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 1));
+      await db.close();
+    },
+  );
+}

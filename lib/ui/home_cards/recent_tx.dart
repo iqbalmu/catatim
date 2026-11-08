@@ -59,9 +59,34 @@ class RecentTransactionsCard extends StatelessWidget {
               if (items.isEmpty) {
                 return QuestTabEnter(
                   index: 4,
-                  child: QuestEmpty(
-                    title: 'Belum ada transaksi',
-                    hint: 'Tap tombol (+) di bawah untuk mulai mencatat.',
+                  child: QuestCard(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: Spacing.m,
+                      vertical: Spacing.l,
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.receipt_long_rounded,
+                            size: 28,
+                            color: q.muted.withValues(alpha: 0.5),
+                          ),
+                          const SizedBox(height: Spacing.xs),
+                          Text(
+                            'Belum ada transaksi',
+                            style: context.qTitle(14),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Tap tombol (+) di bawah untuk mulai mencatat',
+                            style: context.qSmall(11.5),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 );
               }

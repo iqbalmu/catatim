@@ -140,6 +140,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+  void _openTransaksi() => _switchTab(1);
   void _openBon() => _switchTab(2);
 
   /// Aksi tombol + tengah navbar: Langsung catat transaksi 1-tap.
@@ -197,6 +198,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   pipeline: widget.pipeline,
                   progress: widget.progress,
                   ruleSet: widget.ruleSet,
+                  onOpenTransaksi: _openTransaksi,
                   onOpenAnggaran: _openAnggaran,
                   onOpenBon: _openBon,
                 ),
@@ -261,7 +263,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 }
 
-/// Beranda: ringkasan saldo & kartu akun, serta batas anggaran bulanan.
+/// Beranda: ringkasan saldo & kartu akun, batas anggaran, dan transaksi terbaru.
 /// Pencatatan via tombol + tengah navbar.
 class _BerandaTab extends StatefulWidget {
   const _BerandaTab({
@@ -269,6 +271,7 @@ class _BerandaTab extends StatefulWidget {
     required this.pipeline,
     required this.progress,
     required this.ruleSet,
+    required this.onOpenTransaksi,
     required this.onOpenAnggaran,
     required this.onOpenBon,
   });
@@ -277,6 +280,7 @@ class _BerandaTab extends StatefulWidget {
   final CapturePipeline pipeline;
   final ProgressService progress;
   final RuleSet ruleSet;
+  final VoidCallback onOpenTransaksi;
   final VoidCallback onOpenAnggaran;
   final VoidCallback onOpenBon;
   @override
@@ -358,6 +362,11 @@ class _BerandaTabState extends State<_BerandaTab> {
                 progress: widget.progress,
                 onTap: widget.onOpenAnggaran,
               ),
+            ),
+            RecentTransactionsCard(
+              repository: widget.repository,
+              progress: widget.progress,
+              onSeeAll: widget.onOpenTransaksi,
             ),
             const SizedBox(height: 96),
           ],
