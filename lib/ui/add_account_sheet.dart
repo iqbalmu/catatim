@@ -229,12 +229,16 @@ class _AddAccountSheetState extends State<AddAccountSheet>
 
   @override
   Widget build(BuildContext context) {
-    return switch (_step) {
+    final content = switch (_step) {
       _AddStep.pick => _buildPick(),
       _AddStep.explain => _buildExplain(),
       _AddStep.permission => _buildPermission(),
       _AddStep.success => _buildSuccess(),
     };
+
+    return SingleChildScrollView(
+      child: content,
+    );
   }
 
   Widget _buildPick() {
