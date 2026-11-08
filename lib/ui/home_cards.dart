@@ -18,6 +18,7 @@ import 'add_account_sheet.dart';
 import 'gamification_sheet.dart';
 import 'notif_screen.dart';
 import 'quest.dart';
+import 'settings_screen.dart';
 import 'transaction_sheet.dart';
 import 'transaction_tile.dart';
 
@@ -260,6 +261,47 @@ class HomeTopBar extends StatelessWidget {
                 ),
               );
             },
+          ),
+          const SizedBox(width: Spacing.s),
+
+          // Profile & Settings Button
+          Tooltip(
+            message: 'Profil & Pengaturan',
+            child: Semantics(
+              label: 'Profil & Pengaturan',
+              button: true,
+              child: QuestPress(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SettingsScreen(
+                      repository: repository,
+                      pipeline: pipeline,
+                      ruleSet: ruleSet,
+                      progress: progress,
+                      onOpenAnggaran: onOpenAnggaran,
+                      onOpenBon: onOpenBon,
+                      showBack: true,
+                    ),
+                  ),
+                ),
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: q.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: q.line),
+                    boxShadow: AppShadows.card,
+                  ),
+                  child: Icon(
+                    Icons.person_outline_rounded,
+                    color: q.text,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),

@@ -12,130 +12,11 @@ import 'package:bukuduit/storage/repository.dart';
 import 'package:bukuduit/theme/quest.dart';
 import 'package:bukuduit/ui/home_screen.dart';
 import 'package:bukuduit/ui/laporan_screen.dart';
-import 'package:bukuduit/ui/rencana_screen.dart';
 import 'package:bukuduit/ui/settings_screen.dart';
 
 void main() {
   testWidgets(
-    'HomeScreen: Tab Profil & Pengaturan menggantikan Laporan di navbar, dan Laporan dapat dibuka dari Profil',
-    (tester) async {
-      final db = AppDatabase(NativeDatabase.memory());
-      final repo = LedgerRepository(db);
-      final ruleSet = RuleSet.fromJson({
-        'version': 1,
-        'banks': [
-          {
-            'id': 'blu',
-            'displayName': 'blu by BCA',
-            'packageNames': ['id.bm.blu'],
-            'keywords': ['blu'],
-            'templates': [],
-          },
-        ],
-      });
-      final pipeline = CapturePipeline(
-        channel: const CaptureChannel(),
-        engine: RuleEngine(ruleSet),
-        repository: repo,
-      );
-      final progress = ProgressService(repository: repo);
-
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: QuestSchemes.light(),
-          home: HomeScreen(
-            repository: repo,
-            pipeline: pipeline,
-            progress: progress,
-            ruleSet: ruleSet,
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      // Verifikasi navbar memiliki 'Profil' dan tidak ada 'Laporan' di navbar
-      expect(find.text('Beranda'), findsOneWidget);
-      expect(find.text('Transaksi'), findsOneWidget);
-      expect(find.text('Bon'), findsOneWidget);
-      expect(find.text('Profil'), findsOneWidget);
-      expect(find.text('Laporan'), findsNothing);
-
-      // Pindah ke tab Profil via bottom nav
-      await tester.tap(find.text('Profil'));
-      await tester.pumpAndSettle();
-
-      // Layar Profil & Pengaturan tampil
-      expect(find.byType(SettingsScreen), findsOneWidget);
-      expect(find.text('Profil & Pengaturan'), findsOneWidget);
-      expect(find.text('Laporan Finansial'), findsOneWidget);
-
-      // Buka Laporan Finansial dari dalam Profil & Pengaturan
-      await tester.tap(find.text('Laporan Finansial'));
-      await tester.pumpAndSettle();
-
-      // Layar Laporan sekarang terbuka dengan tombol back
-      expect(find.byType(LaporanScreen), findsOneWidget);
-      expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
-
-      // Tekan tombol back untuk kembali ke Profil & Pengaturan
-      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(SettingsScreen), findsOneWidget);
-      expect(find.text('Profil & Pengaturan'), findsOneWidget);
-
-      // Verifikasi 2 grup terstruktur: Manajemen Keuangan & Pengaturan Sistem
-      expect(find.text('Akun Bank & Dompet'), findsOneWidget);
-      expect(find.text('Anggaran & Kategori'), findsOneWidget);
-      expect(find.text('Laporan Finansial'), findsOneWidget);
-
-      // Buka Anggaran & Kategori dari dalam Profil & Pengaturan
-      await tester.tap(find.text('Anggaran & Kategori'));
-      await tester.pumpAndSettle();
-
-      // Layar RencanaScreen sekarang terbuka dengan AppBar
-      expect(find.byType(RencanaScreen), findsOneWidget);
-
-      // Tekan tombol back untuk kembali ke Profil & Pengaturan
-      final backButton = find.byType(BackButton);
-      if (backButton.evaluate().isNotEmpty) {
-        await tester.tap(backButton);
-      } else {
-        await tester.pageBack();
-      }
-      await tester.pumpAndSettle();
-
-      expect(find.byType(SettingsScreen), findsOneWidget);
-
-      // Scroll ke bawah untuk memverifikasi grup Pengaturan & Sistem dan kartu Tentang Bukuduit
-      final backupTile = find.text('Backup & Pulihkan Data');
-      await tester.scrollUntilVisible(backupTile, 200);
-      expect(backupTile, findsOneWidget);
-
-      final aboutCard = find.text('bukuduit');
-      await tester.scrollUntilVisible(aboutCard, 200);
-      await tester.ensureVisible(aboutCard);
-      await tester.pumpAndSettle();
-      expect(aboutCard, findsOneWidget);
-      expect(find.textContaining('100% Offline & Privat'), findsOneWidget);
-
-      // Kembali ke tab Beranda
-      await tester.tap(find.text('Beranda'));
-      await tester.pumpAndSettle();
-
-      // Di Beranda, header sudah bersih tanpa tombol profil/pengaturan
-      expect(find.byIcon(Icons.person_outline_rounded), findsNothing);
-      expect(find.byIcon(Icons.settings_outlined), findsNothing);
-
-      // Tunggu timer refresh settle selesai dan tutup db
-      await tester.pump(const Duration(milliseconds: 350));
-      await tester.pumpAndSettle();
-      await db.close();
-    },
-  );
-
-  testWidgets(
-    'SettingsScreen di tab Profil: komponen menetas dengan animasi bertahap (QuestTabEnter)',
+    'HomeScreen: Laporan menggantikan Profil di navbar, Profil dibuka dari Header Beranda tanpa navbar',
     (tester) async {
       final db = AppDatabase(NativeDatabase.memory());
       final repo = LedgerRepository(db);
@@ -163,39 +44,51 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Pindah ke tab Profil
-      await tester.tap(find.text('Profil'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 60));
+      // 1. Verifikasi navbar memiliki 'Laporan' dan tidak ada 'Profil' di navbar
+      expect(find.text('Beranda'), findsOneWidget);
+      expect(find.text('Transaksi'), findsOneWidget);
+      expect(find.text('Bon'), findsOneWidget);
+      expect(find.text('Laporan'), findsOneWidget);
+      expect(find.text('Profil'), findsNothing);
 
-      // Di tengah animasi, kartu di tab Profil sedang menetas (opacity < 1.0)
-      final cardOpacity = tester
-          .widget<Opacity>(
-            find
-                .ancestor(
-                  of: find.text('Laporan Finansial'),
-                  matching: find.byType(Opacity),
-                )
-                .first,
-          )
-          .opacity;
-      expect(cardOpacity, lessThan(1.0));
-
+      // 2. Tab Laporan di navbar berfungsi
+      await tester.tap(find.text('Laporan'));
       await tester.pumpAndSettle();
-      final settledOpacity = tester
-          .widget<Opacity>(
-            find
-                .ancestor(
-                  of: find.text('Laporan Finansial'),
-                  matching: find.byType(Opacity),
-                )
-                .first,
-          )
-          .opacity;
-      expect(settledOpacity, equals(1.0));
+      expect(find.byType(LaporanScreen), findsOneWidget);
+
+      // Kembali ke tab Beranda
+      await tester.tap(find.text('Beranda'));
+      await tester.pumpAndSettle();
+      expect(find.byType(LaporanScreen), findsNothing);
+
+      // 3. Buka Profil dari Header Beranda (tombol avatar di pojok kanan atas)
+      final profileHeaderBtn = find.byIcon(Icons.person_outline_rounded);
+      expect(profileHeaderBtn, findsOneWidget);
+
+      await tester.tap(profileHeaderBtn);
+      await tester.pumpAndSettle();
+
+      // Layar Profil & Pengaturan tampil secara mandiri dengan tombol back (tanpa navbar)
+      expect(find.byType(SettingsScreen), findsOneWidget);
+      expect(find.text('Profil & Pengaturan'), findsOneWidget);
+      expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
+
+      // Verifikasi 2 grup terstruktur: Manajemen Keuangan & Pengaturan Sistem
+      expect(find.text('Akun Bank & Dompet'), findsOneWidget);
+      expect(find.text('Anggaran & Kategori'), findsOneWidget);
+      expect(find.text('Laporan Finansial'), findsOneWidget);
+
+      // Tekan tombol back di halaman Profil untuk kembali ke Beranda
+      final settingsBackButton = find.byIcon(Icons.arrow_back_rounded);
+      await tester.tap(settingsBackButton);
+      await tester.pumpAndSettle();
+
+      // Sudah kembali ke Beranda
+      expect(find.byType(SettingsScreen), findsNothing);
+      expect(find.text('Beranda'), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox.shrink());
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(milliseconds: 100));
       await db.close();
     },
   );

@@ -27,7 +27,7 @@ class SettingsScreen extends StatelessWidget {
     this.progress,
     this.onOpenAnggaran,
     this.onOpenBon,
-    this.showBack = false,
+    this.showBack = true,
   });
 
   final LedgerRepository repository;

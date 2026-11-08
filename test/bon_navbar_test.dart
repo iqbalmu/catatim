@@ -48,7 +48,7 @@ void main() {
       expect(find.text('Beranda'), findsOneWidget);
       expect(find.text('Transaksi'), findsOneWidget);
       expect(find.text('Bon'), findsOneWidget);
-      expect(find.text('Profil'), findsOneWidget);
+      expect(find.text('Laporan'), findsOneWidget);
 
       // 2. Buka tab Transaksi, verifikasi tombol Bon di header tidak ada
       await tester.tap(find.text('Transaksi'));

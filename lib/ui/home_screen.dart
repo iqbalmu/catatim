@@ -12,14 +12,14 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'bon_screen.dart';
 import 'home_cards.dart';
+import 'laporan_screen.dart';
 import 'ocr_screen.dart';
 import 'quest.dart';
 import 'rencana_screen.dart';
-import 'settings_screen.dart';
 import 'transaction_sheet.dart';
 import 'transaksi_screen.dart';
 
-/// Shell utama: Beranda | Transaksi | Bon | Profil.
+/// Shell utama: Beranda | Transaksi | Bon | Laporan.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
@@ -38,7 +38,7 @@ class HomeScreen extends StatefulWidget {
     QuestDestination(icon: Icons.dashboard_rounded, label: 'Beranda'),
     QuestDestination(icon: Icons.receipt_long_rounded, label: 'Transaksi'),
     QuestDestination(icon: Icons.handshake_outlined, label: 'Bon'),
-    QuestDestination(icon: Icons.person_rounded, label: 'Profil'),
+    QuestDestination(icon: Icons.bar_chart_rounded, label: 'Laporan'),
   ];
 
   @override
@@ -121,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _tab = target;
       _tabTokens[target]++;
     });
-    if (target == 0 || target == 3) {
+    if (target == 0) {
       _refreshTimer?.cancel();
       _refreshTimer = Timer(_refreshSettle, () {
         if (mounted) widget.progress.refresh();
@@ -230,13 +230,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               token: _tabTokens[3],
               child: TickerMode(
                 enabled: _tab == 3,
-                child: SettingsScreen(
+                child: LaporanScreen(
                   repository: widget.repository,
-                  pipeline: widget.pipeline,
-                  ruleSet: widget.ruleSet,
                   progress: widget.progress,
-                  onOpenAnggaran: _openAnggaran,
-                  onOpenBon: _openBon,
                   showBack: false,
                 ),
               ),

@@ -141,7 +141,8 @@ class ProgressService extends ChangeNotifier {
   /// Hitung ulang seluruh kondisi dari data (dipanggil saat app mulai,
   /// setelah transaksi tercatat, dan saat UI perlu sinkron).
   Future<void> refresh() async {
-    final now = DateTime.now();
+    try {
+      final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final dayEnd = DateTime(now.year, now.month, now.day + 1);
     final weekStart = today.subtract(Duration(days: now.weekday - 1));
@@ -378,6 +379,9 @@ class ProgressService extends ChangeNotifier {
       saverStats: saverStats,
     );
     notifyListeners();
+    } catch (_) {
+      // Database mungkin sedang ditutup atau stream queries dibatalkan.
+    }
   }
 
   /// Realtime: dipanggil setiap transaksi tercatat (capture maupun manual).
