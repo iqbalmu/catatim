@@ -140,7 +140,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -215,20 +215,52 @@ class AppDatabase extends _$AppDatabase {
         }
       }
       if (from < 11) {
-        // Index kolom panas: query periode/watch tidak lagi full
-        // scan (audit E-02).
+        // Index kolom panas & komposit: query periode/watch, filter akun,
+        // serta kalkulasi saldo tidak lagi full table scan (audit E-02 & perf).
         await customStatement(
           'CREATE INDEX IF NOT EXISTS idx_transactions_occurred_at '
           'ON transactions (occurred_at)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_transactions_account_occurred '
+          'ON transactions (account_id, occurred_at DESC)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_transactions_balance_covering '
+          'ON transactions (account_id, direction, amount)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_transactions_dir_occurred '
+          'ON transactions (direction, occurred_at DESC)',
+        );
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS idx_transactions_cat_occurred '
+          'ON transactions (category_id, occurred_at DESC)',
         );
       }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
-      // Self-heal index v11 (audit E-02) untuk DB baru maupun lama.
+      // Self-heal index v11 (audit E-02 & optimasi performa) untuk DB baru maupun lama.
       await customStatement(
         'CREATE INDEX IF NOT EXISTS idx_transactions_occurred_at '
         'ON transactions (occurred_at)',
+      );
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_transactions_account_occurred '
+        'ON transactions (account_id, occurred_at DESC)',
+      );
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_transactions_balance_covering '
+        'ON transactions (account_id, direction, amount)',
+      );
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_transactions_dir_occurred '
+        'ON transactions (direction, occurred_at DESC)',
+      );
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_transactions_cat_occurred '
+        'ON transactions (category_id, occurred_at DESC)',
       );
       final m = createMigrator();
       // Self-heal idempoten: buat ulang tabel yang hilang (IF NOT

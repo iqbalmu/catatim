@@ -1252,6 +1252,45 @@ class LedgerRepository {
     return row.read(amountSum) ?? 0;
   }
 
+  /// Ringkasan arus kas bulanan (total masuk, total keluar, dan selisih bersih)
+  /// langsung dari agregasi SQL SQLite menggunakan covering index.
+  /// Transaksi transfer dikecualikan agar tidak menggelembungkan arus kas riil.
+  Stream<({int totalIn, int totalOut, int net})> watchMonthlyCashflow(
+    DateTime start,
+    DateTime end, {
+    int? accountId,
+  }) {
+    final inSum = _db.transactions.amount.sum(
+      filter: _db.transactions.direction.equalsValue(Direction.incoming) &
+          _db.transactions.kind.equalsValue(TxKind.transfer).not(),
+    );
+    final outSum = _db.transactions.amount.sum(
+      filter: _db.transactions.direction.equalsValue(Direction.outgoing) &
+          _db.transactions.kind.equalsValue(TxKind.transfer).not(),
+    );
+
+    final query = _db.selectOnly(_db.transactions)
+      ..addColumns([inSum, outSum])
+      ..where(
+        _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
+            _db.transactions.occurredAt.isSmallerThanValue(end),
+      );
+
+    if (accountId != null) {
+      query.where(_db.transactions.accountId.equals(accountId));
+    }
+
+    return query.watchSingle().map((row) {
+      final totalIn = row.read(inSum) ?? 0;
+      final totalOut = row.read(outSum) ?? 0;
+      return (
+        totalIn: totalIn,
+        totalOut: totalOut,
+        net: totalIn - totalOut,
+      );
+    });
+  }
+
   /// Total keluar MURNI dalam [start, end): outgoing TANPA kind
   /// transfer (transfer dikecualikan).
   Future<int> sumSpendBetween(DateTime start, DateTime end) async {
