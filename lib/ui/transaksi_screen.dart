@@ -699,7 +699,26 @@ class TransaksiScreenState extends State<TransaksiScreen> {
               }
 
               final grouped = groupTxByDay(filtered);
-              final days = grouped.keys.toList();
+              final flatItems = <_FlatTxItem>[];
+              var isFirstDay = true;
+              for (final entry in grouped.entries) {
+                final day = entry.key;
+                final items = entry.value;
+                final dayTotalOut = items
+                    .where((item) => item.tx.direction == Direction.outgoing)
+                    .fold<int>(0, (sum, item) => sum + item.tx.amount);
+
+                flatItems.add(_FlatDayHeaderItem(
+                  day: day,
+                  first: isFirstDay,
+                  totalOut: dayTotalOut > 0 ? dayTotalOut : null,
+                ));
+                isFirstDay = false;
+
+                for (final item in items) {
+                  flatItems.add(_FlatTxEntryItem(item));
+                }
+              }
 
               return Column(
                 children: [
@@ -712,35 +731,42 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                         Spacing.m,
                         96 + MediaQuery.paddingOf(context).bottom,
                       ),
-                      itemCount: days.length,
+                      itemCount: flatItems.length,
+                      findChildIndexCallback: (key) {
+                        if (key is ValueKey<String>) {
+                          final strKey = key.value;
+                          for (var i = 0; i < flatItems.length; i++) {
+                            final itemKey = flatItems[i].key;
+                            if (itemKey is ValueKey<String> && itemKey.value == strKey) {
+                              return i;
+                            }
+                          }
+                        }
+                        return null;
+                      },
                       itemBuilder: (context, i) {
-                        final day = days[i];
-                        final items = grouped[day]!;
-                        final dayTotalOut = items
-                            .where((item) => item.tx.direction == Direction.outgoing)
-                            .fold<int>(0, (sum, item) => sum + item.tx.amount);
-
-                        final group = Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            TransactionDayHeader(
-                              day: day,
-                              first: i == 0,
-                              totalOut: dayTotalOut > 0 ? dayTotalOut : null,
+                        final entry = flatItems[i];
+                        final Widget child = switch (entry) {
+                          _FlatDayHeaderItem h => TransactionDayHeader(
+                              key: h.key,
+                              day: h.day,
+                              first: h.first,
+                              totalOut: h.totalOut,
                             ),
-                            for (final item in items)
-                              TransactionTile(
-                                item: item,
-                                repository: widget.repository,
-                                progress: widget.progress,
-                              ),
-                          ],
-                        );
-                        if (i >= 8) return group;
+                          _FlatTxEntryItem t => TransactionTile(
+                              key: t.key,
+                              item: t.item,
+                              repository: widget.repository,
+                              progress: widget.progress,
+                            ),
+                        };
+
+                        if (i >= 8) return child;
                         return QuestTabEnter(
+                          key: ValueKey('tab_enter_${entry.key}'),
                           index: 4 + i,
                           replayKey: _filterRevision,
-                          child: group,
+                          child: child,
                         );
                       },
                     ),
@@ -753,6 +779,33 @@ class TransaksiScreenState extends State<TransaksiScreen> {
       ],
     );
   }
+}
+
+sealed class _FlatTxItem {
+  const _FlatTxItem();
+  Key get key;
+}
+
+class _FlatDayHeaderItem extends _FlatTxItem {
+  final DateTime day;
+  final bool first;
+  final int? totalOut;
+  const _FlatDayHeaderItem({
+    required this.day,
+    required this.first,
+    this.totalOut,
+  });
+
+  @override
+  Key get key => ValueKey('day_${day.millisecondsSinceEpoch}');
+}
+
+class _FlatTxEntryItem extends _FlatTxItem {
+  final TxWithCategory item;
+  const _FlatTxEntryItem(this.item);
+
+  @override
+  Key get key => ValueKey('tx_${item.tx.id}');
 }
 
 class _TransactionFilterSheet extends StatefulWidget {
