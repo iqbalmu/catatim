@@ -131,6 +131,8 @@ void main() {
       // Scroll ke bawah hingga menemukan 'Kosongkan Data Aplikasi'
       final tileFinder = find.text('Kosongkan Data Aplikasi');
       await tester.scrollUntilVisible(tileFinder, 300);
+      await tester.ensureVisible(tileFinder);
+      await tester.pumpAndSettle();
       expect(tileFinder, findsOneWidget);
 
       // Tap Kosongkan Data Aplikasi

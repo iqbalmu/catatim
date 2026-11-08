@@ -12,6 +12,7 @@ import 'package:bukuduit/storage/repository.dart';
 import 'package:bukuduit/theme/quest.dart';
 import 'package:bukuduit/ui/home_screen.dart';
 import 'package:bukuduit/ui/laporan_screen.dart';
+import 'package:bukuduit/ui/rencana_screen.dart';
 import 'package:bukuduit/ui/settings_screen.dart';
 
 void main() {
@@ -82,6 +83,41 @@ void main() {
 
       expect(find.byType(SettingsScreen), findsOneWidget);
       expect(find.text('Profil & Pengaturan'), findsOneWidget);
+
+      // Verifikasi 2 grup terstruktur: Manajemen Keuangan & Pengaturan Sistem
+      expect(find.text('Akun Bank & Dompet'), findsOneWidget);
+      expect(find.text('Anggaran & Kategori'), findsOneWidget);
+      expect(find.text('Laporan Finansial'), findsOneWidget);
+
+      // Buka Anggaran & Kategori dari dalam Profil & Pengaturan
+      await tester.tap(find.text('Anggaran & Kategori'));
+      await tester.pumpAndSettle();
+
+      // Layar RencanaScreen sekarang terbuka dengan AppBar
+      expect(find.byType(RencanaScreen), findsOneWidget);
+
+      // Tekan tombol back untuk kembali ke Profil & Pengaturan
+      final backButton = find.byType(BackButton);
+      if (backButton.evaluate().isNotEmpty) {
+        await tester.tap(backButton);
+      } else {
+        await tester.pageBack();
+      }
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SettingsScreen), findsOneWidget);
+
+      // Scroll ke bawah untuk memverifikasi grup Pengaturan & Sistem dan kartu Tentang Bukuduit
+      final backupTile = find.text('Backup & Pulihkan Data');
+      await tester.scrollUntilVisible(backupTile, 200);
+      expect(backupTile, findsOneWidget);
+
+      final aboutCard = find.text('bukuduit');
+      await tester.scrollUntilVisible(aboutCard, 200);
+      await tester.ensureVisible(aboutCard);
+      await tester.pumpAndSettle();
+      expect(aboutCard, findsOneWidget);
+      expect(find.textContaining('100% Offline & Privat'), findsOneWidget);
 
       // Kembali ke tab Beranda
       await tester.tap(find.text('Beranda'));
