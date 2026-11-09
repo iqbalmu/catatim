@@ -9,26 +9,32 @@ class TotalBalanceCard extends StatefulWidget {
     required this.pipeline,
     required this.ruleSet,
     this.progress,
+    this.margin,
+    this.initialObscured = false,
+    this.onObscuredChanged,
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
   final RuleSet ruleSet;
   final ProgressService? progress;
+  final EdgeInsetsGeometry? margin;
+  final bool initialObscured;
+  final ValueChanged<bool>? onObscuredChanged;
 
   @override
   State<TotalBalanceCard> createState() => _TotalBalanceCardState();
 }
 
 class _TotalBalanceCardState extends State<TotalBalanceCard> {
-  bool _obscured = false;
+  late bool _obscured = widget.initialObscured;
 
   @override
   Widget build(BuildContext context) {
     final q = context.q;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.s, Spacing.m, 0),
+      padding: widget.margin ?? const EdgeInsets.fromLTRB(Spacing.m, Spacing.m, Spacing.m, 0),
       child: StreamBuilder<Map<int, int>>(
         stream: widget.repository.watchAccountBalances(),
         builder: (context, balanceSnap) {
@@ -116,6 +122,7 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                             onPressed: () {
                               HapticFeedback.lightImpact();
                               setState(() => _obscured = !_obscured);
+                              widget.onObscuredChanged?.call(_obscured);
                             },
                           ),
                         ),

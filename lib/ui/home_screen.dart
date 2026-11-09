@@ -345,18 +345,12 @@ class _BerandaTabState extends State<_BerandaTab> {
             ),
             QuestTabEnter(
               index: 1,
-              child: TotalBalanceCard(
+              child: StackedHeroCards(
+                progress: widget.progress,
                 repository: widget.repository,
                 pipeline: widget.pipeline,
                 ruleSet: widget.ruleSet,
-                progress: widget.progress,
-              ),
-            ),
-            QuestTabEnter(
-              index: 2,
-              child: BudgetSummaryCard(
-                progress: widget.progress,
-                onTap: widget.onOpenAnggaran,
+                onOpenAnggaran: widget.onOpenAnggaran,
               ),
             ),
             RecentTransactionsCard(

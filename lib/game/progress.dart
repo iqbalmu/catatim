@@ -76,6 +76,7 @@ class ProgressSummary {
     required this.mood,
     required this.moodLine,
     required this.snapshot,
+    this.dayOut = 0,
     required this.monthIn,
     required this.monthOut,
     required this.dailyPace,
@@ -95,6 +96,7 @@ class ProgressSummary {
   final String moodLine;
 
   final BudgetSnapshot snapshot;
+  final int dayOut;
   final int monthIn;
   final int monthOut;
 
@@ -371,6 +373,7 @@ class ProgressService extends ChangeNotifier {
       mood: _moodFor(snapshot, recordedToday, streak, wasCelebrating),
       moodLine: _moodLineFor(snapshot, recordedToday, streak, streakPaused),
       snapshot: snapshot,
+      dayOut: dayOut,
       monthIn: monthIn,
       monthOut: monthOut,
       dailyPace: pace,
