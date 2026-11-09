@@ -28,6 +28,30 @@ class TotalBalanceCard extends StatefulWidget {
 
 class _TotalBalanceCardState extends State<TotalBalanceCard> {
   late bool _obscured = widget.initialObscured;
+  late Stream<Map<int, int>> _balancesStream;
+  late Stream<List<Account>> _accountsStream;
+  Map<int, int> _cachedBalances = const {};
+  List<Account> _cachedAccounts = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _balancesStream = widget.repository.watchAccountBalances();
+    _accountsStream = widget.repository.watchAccounts();
+  }
+
+  @override
+  void didUpdateWidget(covariant TotalBalanceCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.repository != widget.repository) {
+      _balancesStream = widget.repository.watchAccountBalances();
+      _accountsStream = widget.repository.watchAccounts();
+    }
+    if (oldWidget.initialObscured != widget.initialObscured &&
+        _obscured != widget.initialObscured) {
+      _obscured = widget.initialObscured;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,15 +60,21 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
     return Padding(
       padding: widget.margin ?? const EdgeInsets.fromLTRB(Spacing.m, Spacing.m, Spacing.m, 0),
       child: StreamBuilder<Map<int, int>>(
-        stream: widget.repository.watchAccountBalances(),
+        stream: _balancesStream,
         builder: (context, balanceSnap) {
-          final balances = balanceSnap.data ?? const {};
+          if (balanceSnap.hasData) {
+            _cachedBalances = balanceSnap.data!;
+          }
+          final balances = _cachedBalances;
           final total = balances.values.fold<int>(0, (sum, val) => sum + val);
 
           return StreamBuilder<List<Account>>(
-            stream: widget.repository.watchAccounts(),
+            stream: _accountsStream,
             builder: (context, accSnap) {
-              final accounts = accSnap.data ?? const [];
+              if (accSnap.hasData) {
+                _cachedAccounts = accSnap.data!;
+              }
+              final accounts = _cachedAccounts;
 
               return QuestCard(
                 variant: QuestCardVariant.hero,

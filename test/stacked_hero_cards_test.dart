@@ -89,4 +89,74 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await db.close();
   });
+
+  testWidgets(
+      'StackedHeroCards tidak pernah remount State atau berkedip Rp0 pada tiap frame saat swipe',
+      (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    final repo = LedgerRepository(db);
+    final ruleSet = RuleSet.fromJson({'version': 1, 'banks': []});
+    final pipeline = CapturePipeline(
+      channel: const CaptureChannel(),
+      engine: RuleEngine(ruleSet),
+      repository: repo,
+    );
+    final progress = ProgressService(repository: repo);
+    final accounts = await repo.getAccounts();
+    await repo.setOpeningBalance(accounts.first.id, 1500000);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: QuestSchemes.light(),
+        home: HomeScreen(
+          repository: repo,
+          pipeline: pipeline,
+          progress: progress,
+          ruleSet: ruleSet,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Simpan referensi State awal dari TotalBalanceCard
+    final initialBalanceState = tester.state(find.byType(TotalBalanceCard));
+    // 2 widget: 1 pada angka hero Total Saldo + 1 pada chip akun pertama
+    expect(find.text('Rp1.500.000'), findsNWidgets(2));
+
+    // Simulasikan drag frame-per-frame (16ms) dan pastikan State tidak pernah
+    // di-recreate serta saldo Rp1.500.000 tidak pernah hilang/berkedip ke Rp0
+    final center = tester.getCenter(find.byType(StackedHeroCards));
+    final gesture = await tester.startGesture(center);
+    for (int i = 0; i < 10; i++) {
+      await gesture.moveBy(const Offset(-22, 0));
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(
+        tester.state(find.byType(TotalBalanceCard)),
+        same(initialBalanceState),
+      );
+      expect(find.text('Rp1.500.000'), findsNWidgets(2));
+    }
+    await gesture.up();
+
+    // Periksa setiap frame selama animasi transisi berlangsung
+    for (int i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(
+        tester.state(find.byType(TotalBalanceCard)),
+        same(initialBalanceState),
+      );
+      expect(find.text('Rp1.500.000'), findsNWidgets(2));
+    }
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.state(find.byType(TotalBalanceCard)),
+      same(initialBalanceState),
+    );
+    expect(find.text('Rp1.500.000'), findsNWidgets(2));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 1));
+    await db.close();
+  });
 }
