@@ -55,3 +55,14 @@ String idRelativeDay(DateTime day, DateTime now) {
   if (day == today.subtract(const Duration(days: 1))) return 'Kemarin';
   return idShortDate(day);
 }
+
+/// Format waktu relatif pendek untuk status/heartbeat ('Baru saja', '5m lalu', '2j lalu', dsb.).
+String idTimeAgo(DateTime dt, [DateTime? now]) {
+  final current = now ?? DateTime.now();
+  final diff = current.difference(dt);
+  if (diff.isNegative || diff.inSeconds < 45) return 'Baru saja';
+  if (diff.inMinutes < 60) return '${diff.inMinutes}m lalu';
+  if (diff.inHours < 24) return '${diff.inHours}j lalu';
+  if (diff.inDays < 7) return '${diff.inDays}h lalu';
+  return idDateTime(dt);
+}

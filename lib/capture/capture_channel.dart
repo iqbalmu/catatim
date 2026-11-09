@@ -21,6 +21,17 @@ class CaptureChannel {
     }
   }
 
+  /// Timestamp terakhir listener aktif / menangkap notifikasi (ms sejak epoch).
+  Future<DateTime?> getLastCaptureHeartbeat() async {
+    try {
+      final ms = await _method.invokeMethod<num>('getLastCaptureHeartbeat');
+      if (ms == null || ms <= 0) return null;
+      return DateTime.fromMillisecondsSinceEpoch(ms.toInt());
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> openListenerSettings() async {
     await _method.invokeMethod<void>('openListenerSettings');
   }

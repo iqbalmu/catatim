@@ -99,6 +99,11 @@ void main() {
     await tester.tap(find.text('Izin & Sistem'));
     await tester.pumpAndSettle();
 
+    expect(find.text('KESEHATAN PENANGKAP (LAMPU SEHAT)'), findsOneWidget);
+    expect(find.text('Layanan Terhenti'), findsOneWidget);
+    expect(find.text('Detak Listener'), findsOneWidget);
+    expect(find.text('Notif Bank Terakhir'), findsOneWidget);
+    expect(find.text('Bank Terpantau'), findsOneWidget);
     expect(find.text('Akses Notifikasi Belum Aktif'), findsOneWidget);
     expect(find.text('Optimasi Baterai HP'), findsOneWidget);
     expect(find.text('Panduan Khusus per Merk HP'), findsOneWidget);

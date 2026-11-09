@@ -88,6 +88,7 @@ class MainActivity : FlutterActivity() {
                         result.success(null)
                     }
                     "drainQueue" -> result.success(NotificationCatcher.drainQueue(this))
+                    "getLastCaptureHeartbeat" -> result.success(NotificationCatcher.getLastHeartbeatAt(this))
                     "listLaunchableApps" -> {
                         val pm = packageManager
                         val intent = Intent(Intent.ACTION_MAIN).addCategory(
@@ -190,6 +191,19 @@ class NotificationCatcher : NotificationListenerService() {
         private const val PREFS = "bukuduit_capture"
         private const val KEY_ALLOWED = "allowed_packages"
         private const val KEY_LEARNED = "learned_packages"
+        private const val KEY_LAST_HEARTBEAT = "last_heartbeat_at"
+
+        fun recordHeartbeat(context: Context) {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .edit()
+                .putLong(KEY_LAST_HEARTBEAT, System.currentTimeMillis())
+                .apply()
+        }
+
+        fun getLastHeartbeatAt(context: Context): Long {
+            return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getLong(KEY_LAST_HEARTBEAT, 0L)
+        }
 
         /// Dorong daftar paket bank terhubung dari Dart. Hanya paket
         /// dalam daftar ini (plus yang sudah dipelajari) yang boleh
@@ -298,6 +312,7 @@ class NotificationCatcher : NotificationListenerService() {
     override fun onListenerConnected() {
         super.onListenerConnected()
         instance = this
+        recordHeartbeat(applicationContext)
     }
 
     override fun onDestroy() {
@@ -308,6 +323,7 @@ class NotificationCatcher : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
+        recordHeartbeat(applicationContext)
         val line = lineFromSbn(applicationContext, sbn, checkAllowed = false) ?: return
 
         // Hanya paket bank terhubung/pelajaran yang boleh menebar ke

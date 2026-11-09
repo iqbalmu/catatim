@@ -1009,6 +1009,22 @@ class LedgerRepository {
         .watch();
   }
 
+  /// Log notifikasi capture terbaru yang tersimpan di database.
+  Future<CaptureLog?> getLatestCaptureLog() async {
+    return (_db.select(_db.captureLogs)
+          ..orderBy([(t) => OrderingTerm.desc(t.postedAt)])
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  /// Stream log notifikasi capture terbaru yang tersimpan di database.
+  Stream<CaptureLog?> watchLatestCaptureLog() {
+    return (_db.select(_db.captureLogs)
+          ..orderBy([(t) => OrderingTerm.desc(t.postedAt)])
+          ..limit(1))
+        .watchSingleOrNull();
+  }
+
   Future<void> markCaptureLogParsed(int logId) async {
     await (_db.update(_db.captureLogs)..where((c) => c.id.equals(logId))).write(
       const CaptureLogsCompanion(parsed: Value(true)),

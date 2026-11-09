@@ -36,6 +36,7 @@ class CaptureSettingsScreen extends StatefulWidget {
 class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     with WidgetsBindingObserver {
   bool _listenerEnabled = false;
+  DateTime? _lastHeartbeat;
   int _currentTab = 0; // 0 = Bank & E-Wallet, 1 = Izin & Sistem, 2 = Aturan & Alat
   late final PageController _pageCtrl = PageController(initialPage: _currentTab);
   final TextEditingController _searchCtrl = TextEditingController();
@@ -65,9 +66,11 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
 
   Future<void> _checkListenerStatus() async {
     final enabled = await widget.pipeline.channel.isListenerEnabled();
+    final heartbeat = await widget.pipeline.channel.getLastCaptureHeartbeat();
     if (!mounted) return;
     setState(() {
       _listenerEnabled = enabled;
+      _lastHeartbeat = heartbeat;
     });
   }
 
@@ -357,7 +360,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                   onPageChanged: (page) => setState(() => _currentTab = page),
                   children: [
                     _buildBankTab(connected, q),
-                    _buildPermissionTab(q),
+                    _buildPermissionTab(connected, q),
                     _buildRulesAndDiagnosticsTab(connected, q),
                   ],
                 ),
@@ -594,7 +597,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
   // ═════════════════════════════════════════════════════════════════════════════
   // TAB 1: IZIN & SISTEM
   // ═════════════════════════════════════════════════════════════════════════════
-  Widget _buildPermissionTab(QuestPalette q) {
+  Widget _buildPermissionTab(Set<String> connected, QuestPalette q) {
     return ListView(
       key: const PageStorageKey('capture_tab_permissions'),
       padding: const EdgeInsets.fromLTRB(
@@ -604,7 +607,12 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         Spacing.xl,
       ),
       children: [
-        // 1. Status Izin Notifikasi Sistem
+        // 1. Indikator Kesehatan Penangkap (Lampu Sehat)
+        const QuestSectionHeader(title: 'Kesehatan Penangkap (Lampu Sehat)'),
+        _buildLampuSehatCard(connected, q),
+        const SizedBox(height: Spacing.m),
+
+        // 2. Status Izin Notifikasi Sistem
         const QuestSectionHeader(title: 'Izin Akses Notifikasi'),
         QuestCard(
           child: Column(
@@ -760,6 +768,210 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                 ),
               ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLampuSehatCard(Set<String> connected, QuestPalette q) {
+    return StreamBuilder<CaptureLog?>(
+      stream: widget.repository.watchLatestCaptureLog(),
+      builder: (context, snapshot) {
+        final latestLog = snapshot.data;
+        final now = DateTime.now();
+        final hasConnected = connected.isNotEmpty;
+        final daysSinceCapture = latestLog != null
+            ? now.difference(latestLog.postedAt).inDays
+            : null;
+        final bool isStale = hasConnected &&
+            ((daysSinceCapture != null && daysSinceCapture >= 7) ||
+                (latestLog == null &&
+                    _lastHeartbeat != null &&
+                    now.difference(_lastHeartbeat!).inDays >= 7));
+
+        final Color statusColor;
+        final String statusBadge;
+        final String statusTitle;
+        final String statusDesc;
+        final IconData statusIcon;
+
+        if (!_listenerEnabled) {
+          statusColor = q.bad;
+          statusBadge = 'TIDAK AKTIF';
+          statusTitle = 'Layanan Terhenti';
+          statusDesc =
+              'Akses notifikasi di sistem Android belum diaktifkan sehingga Bukuduit tidak dapat menangkap mutasi.';
+          statusIcon = Icons.error_outline_rounded;
+        } else if (isStale) {
+          statusColor = q.warn;
+          statusBadge = 'PERIKSA';
+          statusTitle = 'Perlu Pemeriksaan';
+          statusDesc =
+              'Bank terhubung aktif tetapi 0 notifikasi masuk selama ${daysSinceCapture ?? '>7'} hari. Kemungkinan service tertidur oleh optimasi baterai HP.';
+          statusIcon = Icons.warning_amber_rounded;
+        } else if (_lastHeartbeat == null && latestLog == null) {
+          statusColor = q.primary;
+          statusBadge = 'MENUNGGU';
+          statusTitle = 'Siap & Menunggu';
+          statusDesc =
+              'Service aktif di latar belakang dan siap menerima notifikasi transaksi pertama masuk.';
+          statusIcon = Icons.hourglass_empty_rounded;
+        } else {
+          statusColor = q.good;
+          statusBadge = 'OPTIMAL';
+          statusTitle = 'Kondisi Optimal';
+          statusDesc =
+              'Sistem penangkap aktif normal dan siap mendeteksi transaksi secara realtime.';
+          statusIcon = Icons.check_circle_outline_rounded;
+        }
+
+        return QuestCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(statusIcon, color: statusColor, size: 20),
+                  ),
+                  const SizedBox(width: Spacing.s),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              statusTitle,
+                              style: context.qTitle(15).copyWith(
+                                    color: statusColor,
+                                  ),
+                            ),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: statusColor.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(AppRadius.pill),
+                                border: Border.all(
+                                  color: statusColor.withValues(alpha: 0.4),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Text(
+                                statusBadge,
+                                style: TextStyle(
+                                  fontFamily: 'Nunito',
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.5,
+                                  color: statusColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          statusDesc,
+                          style: context.qSmall(12).copyWith(color: q.muted),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: Spacing.m),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: Spacing.m,
+                  vertical: Spacing.s,
+                ),
+                decoration: BoxDecoration(
+                  color: q.surface2.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  border: Border.all(color: q.line.withValues(alpha: 0.6)),
+                ),
+                child: Column(
+                  children: [
+                    _buildHealthMetricRow(
+                      q: q,
+                      label: 'Detak Listener',
+                      value: _lastHeartbeat != null
+                          ? idTimeAgo(_lastHeartbeat!, now)
+                          : 'Belum tercatat',
+                      icon: Icons.favorite_rounded,
+                      iconColor: _lastHeartbeat != null ? q.good : q.muted,
+                    ),
+                    Divider(height: Spacing.m, color: q.line.withValues(alpha: 0.4)),
+                    _buildHealthMetricRow(
+                      q: q,
+                      label: 'Notif Bank Terakhir',
+                      value: latestLog != null
+                          ? '${latestLog.packageName.split('.').last} • ${idTimeAgo(latestLog.postedAt, now)}'
+                          : 'Belum ada',
+                      icon: Icons.receipt_long_rounded,
+                      iconColor: latestLog != null ? q.primary : q.muted,
+                    ),
+                    Divider(height: Spacing.m, color: q.line.withValues(alpha: 0.4)),
+                    _buildHealthMetricRow(
+                      q: q,
+                      label: 'Bank Terpantau',
+                      value: hasConnected
+                          ? '${connected.length} bank aktif'
+                          : 'Belum ada bank terhubung',
+                      icon: Icons.account_balance_rounded,
+                      iconColor: hasConnected ? q.good : q.warn,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHealthMetricRow({
+    required QuestPalette q,
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color iconColor,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 15, color: iconColor),
+        const SizedBox(width: Spacing.xs),
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Nunito',
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: q.muted,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: TextStyle(
+            fontFamily: 'Nunito',
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: q.text,
           ),
         ),
       ],

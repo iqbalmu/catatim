@@ -606,6 +606,23 @@ void main() {
       expect(left.map((l) => l.body).toSet(), {'belum', 'segar'});
     });
 
+    test('getLatestCaptureLog & watchLatestCaptureLog mengembalikan log terbaru', () async {
+      expect(await repo.getLatestCaptureLog(), isNull);
+
+      final t1 = DateTime(2026, 11, 1, 10, 0);
+      final t2 = DateTime(2026, 11, 2, 15, 30);
+      await repo.recordUnparsedCapture(capture(body: 'log lama', postedAt: t1));
+      await repo.recordUnparsedCapture(capture(body: 'log baru', postedAt: t2));
+
+      final latest = await repo.getLatestCaptureLog();
+      expect(latest, isNotNull);
+      expect(latest!.body, 'log baru');
+      expect(latest.postedAt, t2);
+
+      final streamLatest = await repo.watchLatestCaptureLog().first;
+      expect(streamLatest?.body, 'log baru');
+    });
+
     test(
       'draf juga ter-dedup terhadap transaksi yang sudah dikonfirmasi',
       () async {
