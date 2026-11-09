@@ -596,7 +596,7 @@ void main() {
   );
 
   testWidgets(
-    'QuestMoney: nilai nominal meningkat dari 0 ke target dan berputar ulang tiap ganti tab',
+    'QuestMoney: nilai nominal langsung tampil tanpa animasi count-up dari 0',
     (tester) async {
       var token = 0;
       var amount = 1500000;
@@ -619,33 +619,18 @@ void main() {
         ),
       );
 
-      // Awal animasi: masih Rp0, belum langsung nilai akhir.
+      // Langsung menampilkan nilai akhir tanpa count-up dari Rp0.
       await tester.pump();
-      expect(find.text('Rp0'), findsOneWidget);
-      expect(find.text('Rp1.500.000'), findsNothing);
-
-      // Di tengah animasi: nilai sedang meningkat di antara 0 dan 1.500.000.
-      await tester.pump(const Duration(milliseconds: 220));
-      expect(find.text('Rp0'), findsNothing);
-      expect(find.text('Rp1.500.000'), findsNothing);
-
-      // Selesai: tepat di nominal akhir.
-      await tester.pumpAndSettle();
       expect(find.text('Rp1.500.000'), findsOneWidget);
 
-      // Ganti tab (token naik) → menghitung ulang dari Rp0.
+      // Ganti tab (token naik) → tetap langsung nilai nominal tanpa reset ke Rp0.
       setOuter(() => token++);
       await tester.pump();
-      expect(find.text('Rp0'), findsOneWidget);
-      await tester.pumpAndSettle();
       expect(find.text('Rp1.500.000'), findsOneWidget);
 
-      // Perubahan nilai live → meluncur dari 1.500.000 ke 2.000.000 (bukan reset ke Rp0).
+      // Perubahan nilai live → langsung update ke nominal baru.
       setOuter(() => amount = 2000000);
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 120));
-      expect(find.text('Rp0'), findsNothing);
-      await tester.pumpAndSettle();
       expect(find.text('Rp2.000.000'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },

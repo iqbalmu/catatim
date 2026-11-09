@@ -365,15 +365,13 @@ class _BatasBulananCard extends StatelessWidget {
               ),
               const SizedBox(width: Spacing.s),
               if (hasLimit)
-                QuestReplay(
-                  builder: (context, t) => Text(
-                    '${((used * 100 / limit!) * t).round()}%',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w900,
-                      color: progressColor,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
+                Text(
+                  '${((used * 100 / limit!)).round()}%',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: progressColor,
+                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
             ],

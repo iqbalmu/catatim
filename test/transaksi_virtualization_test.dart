@@ -79,8 +79,8 @@ void main() {
     expect(find.text('Makan Siang'), findsOneWidget);
     expect(find.text('Kopi Pagi'), findsOneWidget);
 
-    // Verifikasi ringkasan pemasukan & pengeluaran bulanan
-    expect(find.text('+${Money.format(4000000)}'), findsOneWidget);
+    // Verifikasi ringkasan pemasukan & pengeluaran bulanan (nominal pemasukan ada di header & tile)
+    expect(find.text('+${Money.format(4000000)}'), findsNWidgets(2));
     expect(find.text('-${Money.format(85000)}'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
