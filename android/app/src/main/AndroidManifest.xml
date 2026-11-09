@@ -3,7 +3,8 @@
         android:allowBackup="false"
         android:label="Bukuduit"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -54,14 +55,6 @@
             </intent-filter>
         </service>
 
-        <!-- Receiver simulasi notifikasi untuk validasi & pengujian via ADB / skrip otomatis -->
-        <receiver
-            android:name=".NotificationSimulatorReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="id.xmuu.bukuduit.SIMULATE_NOTIFICATION" />
-            </intent-filter>
-        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

@@ -194,13 +194,18 @@ class QuestIconButton extends StatelessWidget {
     );
     return Tooltip(
       message: tooltip ?? '',
-      child: QuestPress(
-        onTap: onPressed,
-        child: Badge(
-          isLabelVisible: badge,
-          backgroundColor: q.bad,
-          smallSize: 12,
-          child: button,
+      child: Semantics(
+        label: tooltip,
+        button: true,
+        enabled: onPressed != null,
+        child: QuestPress(
+          onTap: onPressed,
+          child: Badge(
+            isLabelVisible: badge,
+            backgroundColor: q.bad,
+            smallSize: 12,
+            child: button,
+          ),
         ),
       ),
     );

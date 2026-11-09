@@ -466,6 +466,7 @@ class LaporanScreenState extends State<LaporanScreen> {
                                   child: IconButton(
                                     visualDensity: VisualDensity.compact,
                                     padding: EdgeInsets.zero,
+                                    tooltip: 'Kembali',
                                     icon: Icon(
                                       Icons.arrow_back_rounded,
                                       color: context.q.text,

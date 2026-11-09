@@ -4,4 +4,15 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
+    <application>
+        <!-- Receiver simulasi notifikasi untuk validasi & pengujian via ADB / skrip otomatis (Profile only) -->
+        <receiver
+            android:name=".NotificationSimulatorReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="id.xmuu.bukuduit.SIMULATE_NOTIFICATION" />
+            </intent-filter>
+        </receiver>
+    </application>
 </manifest>

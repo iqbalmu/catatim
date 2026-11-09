@@ -182,6 +182,7 @@ class _BonScreenState extends State<BonScreen> {
                       IconButton(
                         visualDensity: VisualDensity.compact,
                         icon: const Icon(Icons.arrow_back_rounded),
+                        tooltip: 'Kembali',
                         onPressed: () => Navigator.maybePop(context),
                       ),
                       const SizedBox(width: Spacing.xs),

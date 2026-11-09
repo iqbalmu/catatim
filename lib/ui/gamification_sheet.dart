@@ -98,6 +98,7 @@ class GamificationSheet extends StatelessWidget {
                     ),
                     IconButton(
                       icon: Icon(Icons.close_rounded, color: context.q.muted),
+                      tooltip: 'Tutup',
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
