@@ -393,14 +393,9 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
             // Nama Aturan
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Nama Template Aturan',
                 hintText: 'Contoh: Ollin Debit Belanja',
-                filled: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: Spacing.m,
-                  vertical: Spacing.s,
-                ),
               ),
             ),
             const SizedBox(height: Spacing.m),
@@ -408,13 +403,8 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
             // Pilihan Bank
             DropdownButtonFormField<String>(
               initialValue: _selectedBankId,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Bank / Akun Terkait',
-                filled: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: Spacing.m,
-                  vertical: Spacing.s,
-                ),
               ),
               items: [
                 for (final opt in bankOptions)
@@ -536,13 +526,8 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
                 Expanded(
                   child: TextField(
                     controller: _customKeywordController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: 'Tambah kata kunci manual...',
-                      filled: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: Spacing.m,
-                        vertical: Spacing.s,
-                      ),
                     ),
                     onSubmitted: (val) {
                       final trimmed = val.trim().toLowerCase();

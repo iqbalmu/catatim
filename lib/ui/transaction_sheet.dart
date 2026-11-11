@@ -300,14 +300,6 @@ class _TransactionSheetState extends State<TransactionSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Nama Kategori',
-            style: context.qSmall(12).copyWith(
-              fontWeight: FontWeight.w700,
-              color: q.muted,
-            ),
-          ),
-          const SizedBox(height: Spacing.xs),
           TextField(
             controller: ctrl,
             autofocus: true,
@@ -318,15 +310,9 @@ class _TransactionSheetState extends State<TransactionSheet> {
               fontWeight: FontWeight.w600,
               color: q.text,
             ),
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
+              labelText: 'Nama Kategori',
               hintText: 'Misalnya: Kopi, Langganan, Hobi...',
-              hintStyle: TextStyle(
-                color: q.muted.withValues(alpha: 0.6),
-                fontSize: 13.5,
-                fontWeight: FontWeight.w500,
-              ),
-              filled: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
             ),
           ),
         ],
@@ -798,18 +784,6 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 const SizedBox(height: Spacing.xs),
                 _buildCategoryChips(),
                 const SizedBox(height: Spacing.m),
-                Text(
-                  _kind == TxKind.transfer
-                      ? 'Dari Akun'
-                      : (_direction == Direction.outgoing
-                          ? 'Sumber Dana'
-                          : 'Masuk ke Akun'),
-                  style: context.qSmall(12).copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: q.muted,
-                  ),
-                ),
-                const SizedBox(height: Spacing.xs),
                 IntrinsicHeight(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -827,11 +801,11 @@ class _TransactionSheetState extends State<TransactionSheet> {
                             size: 20,
                           ),
                           decoration: InputDecoration(
-                            filled: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 11,
-                            ),
+                            labelText: _kind == TxKind.transfer
+                                ? 'Dari Akun'
+                                : (_direction == Direction.outgoing
+                                    ? 'Sumber Dana'
+                                    : 'Masuk ke Akun'),
                           ),
                           items: [
                             for (final a in _accounts)
@@ -894,14 +868,6 @@ class _TransactionSheetState extends State<TransactionSheet> {
                   ),
                 ),
                 const SizedBox(height: Spacing.m),
-                Text(
-                  'Jenis Transaksi',
-                  style: context.qSmall(12).copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: q.muted,
-                  ),
-                ),
-                const SizedBox(height: Spacing.xs),
                 DropdownButtonFormField<TxKind>(
                   initialValue: _kind,
                   isExpanded: true,
@@ -910,12 +876,8 @@ class _TransactionSheetState extends State<TransactionSheet> {
                     color: q.muted,
                     size: 20,
                   ),
-                  decoration: InputDecoration(
-                    filled: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 11,
-                    ),
+                  decoration: const InputDecoration(
+                    labelText: 'Jenis Transaksi',
                   ),
                   items: [
                     for (final k in TxKind.values)
@@ -948,14 +910,6 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 ),
                 if (_kind == TxKind.transfer) ...[
                   const SizedBox(height: Spacing.m),
-                  Text(
-                    'Ke Akun (Tujuan Transfer)',
-                    style: context.qSmall(12).copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: q.muted,
-                    ),
-                  ),
-                  const SizedBox(height: Spacing.xs),
                   DropdownButtonFormField<int>(
                     key: ValueKey('to_account_$_toAccountId'),
                     initialValue: _accounts.any((a) => a.id == _toAccountId)
@@ -973,15 +927,11 @@ class _TransactionSheetState extends State<TransactionSheet> {
                       size: 20,
                     ),
                     decoration: InputDecoration(
-                      filled: true,
+                      labelText: 'Ke Akun (Tujuan Transfer)',
                       prefixIcon: Icon(
                         Icons.arrow_forward_rounded,
                         size: 16,
                         color: q.muted,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 11,
                       ),
                     ),
                     items: [
@@ -1031,16 +981,6 @@ class _TransactionSheetState extends State<TransactionSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: Spacing.m),
-                        Text(
-                          _direction == Direction.outgoing
-                              ? 'Lunasi Bon Utang (Opsional)'
-                              : 'Terima Pelunasan Piutang (Opsional)',
-                          style: context.qSmall(12).copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: q.muted,
-                          ),
-                        ),
-                        const SizedBox(height: Spacing.xs),
                         DropdownButtonFormField<int?>(
                           initialValue: _linkedBonId,
                           isExpanded: true,
@@ -1050,15 +990,13 @@ class _TransactionSheetState extends State<TransactionSheet> {
                             size: 20,
                           ),
                           decoration: InputDecoration(
-                            filled: true,
+                            labelText: _direction == Direction.outgoing
+                                ? 'Lunasi Bon Utang (Opsional)'
+                                : 'Terima Pelunasan Piutang (Opsional)',
                             prefixIcon: Icon(
                               Icons.link_rounded,
                               size: 18,
                               color: q.muted,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 11,
                             ),
                           ),
                           items: [
@@ -1105,61 +1043,23 @@ class _TransactionSheetState extends State<TransactionSheet> {
                   return const SizedBox.shrink();
                 }(),
                 const SizedBox(height: Spacing.m),
-                Text(
-                  'Waktu Transaksi',
-                  style: context.qSmall(12).copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: q.muted,
-                  ),
-                ),
-                const SizedBox(height: Spacing.xs),
-                QuestPress(
+                TextFormField(
+                  key: ValueKey(_occurredAt),
+                  initialValue: _dateLabel(_occurredAt),
+                  readOnly: true,
                   onTap: _pickDate,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                    decoration: BoxDecoration(
-                      color: q.surface2,
-                      borderRadius: BorderRadius.circular(AppRadius.tile),
-                      border: Border.all(
-                        color: q.line.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.event_outlined, size: 18, color: q.primary),
-                        const SizedBox(width: Spacing.s),
-                        Text(
-                          _dateLabel(_occurredAt),
-                          style: TextStyle(
-                            fontFamily: 'Nunito',
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w700,
-                            color: q.text,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          'Ubah',
-                          style: TextStyle(
-                            fontFamily: 'Nunito',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: q.muted,
-                          ),
-                        ),
-                      ],
-                    ),
+                  style: TextStyle(
+                    fontFamily: 'Nunito',
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: q.text,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Waktu Transaksi',
+                    prefixIcon: Icon(Icons.event_outlined),
                   ),
                 ),
                 const SizedBox(height: Spacing.m),
-                Text(
-                  'Keterangan (Opsional)',
-                  style: context.qSmall(12).copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: q.muted,
-                  ),
-                ),
-                const SizedBox(height: Spacing.xs),
                 TextFormField(
                   controller: _counterpartyCtrl,
                   textCapitalization: TextCapitalization.words,
@@ -1175,18 +1075,9 @@ class _TransactionSheetState extends State<TransactionSheet> {
                     _onCounterpartyChanged(_counterpartyCtrl.text);
                     FocusScope.of(context).unfocus();
                   },
-                  decoration: InputDecoration(
-                    filled: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Keterangan (Opsional)',
                     hintText: 'Contoh: Kopi Kenangan, Beli Makan, dll...',
-                    hintStyle: TextStyle(
-                      color: q.muted.withValues(alpha: 0.6),
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 11,
-                    ),
                   ),
                 ),
                 const SizedBox(height: Spacing.s),

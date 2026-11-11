@@ -90,14 +90,6 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'Nama Kategori',
-              style: context.qSmall(12).copyWith(
-                fontWeight: FontWeight.w700,
-                color: q.muted,
-              ),
-            ),
-            const SizedBox(height: Spacing.xs),
             TextField(
               controller: nameCtrl,
               textCapitalization: TextCapitalization.words,
@@ -107,21 +99,12 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
                 fontWeight: FontWeight.w600,
                 color: q.text,
               ),
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
+                labelText: 'Nama Kategori',
                 hintText: 'Contoh: Makanan',
-                filled: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
               ),
             ),
             const SizedBox(height: Spacing.m),
-            Text(
-              'Batas Bulanan',
-              style: context.qSmall(12).copyWith(
-                fontWeight: FontWeight.w700,
-                color: q.muted,
-              ),
-            ),
-            const SizedBox(height: Spacing.xs),
             TextField(
               controller: limitCtrl,
               keyboardType: TextInputType.number,
@@ -133,6 +116,7 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
                 color: q.text,
               ),
               decoration: InputDecoration(
+                labelText: 'Batas Bulanan',
                 prefixText: 'Rp ',
                 prefixStyle: TextStyle(
                   fontWeight: FontWeight.w700,
@@ -140,19 +124,9 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
                   fontSize: 13.5,
                 ),
                 hintText: 'Kosongkan jika tanpa batas',
-                filled: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
               ),
             ),
             const SizedBox(height: Spacing.m),
-            Text(
-              'Berlaku di Akun',
-              style: context.qSmall(12).copyWith(
-                fontWeight: FontWeight.w700,
-                color: q.muted,
-              ),
-            ),
-            const SizedBox(height: Spacing.xs),
             DropdownButtonFormField<int?>(
               initialValue: scope,
               isExpanded: true,
@@ -161,9 +135,8 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
                 color: q.muted,
                 size: 20,
               ),
-              decoration: InputDecoration(
-                filled: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              decoration: const InputDecoration(
+                labelText: 'Berlaku di Akun',
               ),
               items: [
                 const DropdownMenuItem<int?>(
@@ -251,14 +224,6 @@ class _NewCategoryFormState extends State<_NewCategoryForm> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Nama Kategori',
-          style: context.qSmall(12).copyWith(
-            fontWeight: FontWeight.w700,
-            color: q.muted,
-          ),
-        ),
-        const SizedBox(height: Spacing.xs),
         TextField(
           controller: nameCtrl,
           autofocus: true,
@@ -269,26 +234,12 @@ class _NewCategoryFormState extends State<_NewCategoryForm> {
             fontWeight: FontWeight.w600,
             color: q.text,
           ),
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
+            labelText: 'Nama Kategori',
             hintText: 'Contoh: Kopi, Langganan, Hobi...',
-            hintStyle: TextStyle(
-              color: q.muted.withValues(alpha: 0.6),
-              fontSize: 13.5,
-              fontWeight: FontWeight.w500,
-            ),
-            filled: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           ),
         ),
         const SizedBox(height: Spacing.m),
-        Text(
-          'Alokasi Bulanan (Opsional)',
-          style: context.qSmall(12).copyWith(
-            fontWeight: FontWeight.w700,
-            color: q.muted,
-          ),
-        ),
-        const SizedBox(height: Spacing.xs),
         TextField(
           controller: limitCtrl,
           keyboardType: TextInputType.number,
@@ -300,6 +251,7 @@ class _NewCategoryFormState extends State<_NewCategoryForm> {
             color: q.text,
           ),
           decoration: InputDecoration(
+            labelText: 'Alokasi Bulanan (Opsional)',
             prefixText: 'Rp ',
             prefixStyle: TextStyle(
               fontWeight: FontWeight.w700,
@@ -307,13 +259,6 @@ class _NewCategoryFormState extends State<_NewCategoryForm> {
               fontSize: 13.5,
             ),
             hintText: 'Kosongkan jika tanpa batas',
-            hintStyle: TextStyle(
-              color: q.muted.withValues(alpha: 0.6),
-              fontSize: 13.5,
-              fontWeight: FontWeight.w500,
-            ),
-            filled: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           ),
         ),
       ],

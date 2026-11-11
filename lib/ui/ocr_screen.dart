@@ -608,14 +608,10 @@ class _OcrScreenState extends State<OcrScreen> {
                       // Nama Toko / Merchant
                       TextField(
                         controller: _merchantCtrl,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Nama Toko / Pihak',
-                          prefixIcon: const Icon(Icons.storefront_rounded),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: Spacing.m,
-                            vertical: Spacing.s,
-                          ),
-                                                  ),
+                          prefixIcon: Icon(Icons.storefront_rounded),
+                        ),
                       ),
                       const SizedBox(height: Spacing.m),
 
@@ -670,15 +666,11 @@ class _OcrScreenState extends State<OcrScreen> {
                       TextField(
                         controller: _amountCtrl,
                         keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Total Nominal (Rupiah)',
                           hintText: 'Misal: 54000',
-                          prefixIcon: const Icon(Icons.payments_rounded),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: Spacing.m,
-                            vertical: Spacing.s,
-                          ),
-                                                  ),
+                          prefixIcon: Icon(Icons.payments_rounded),
+                        ),
                         onChanged: (_) => setState(() {}),
                       ),
 
@@ -730,14 +722,10 @@ class _OcrScreenState extends State<OcrScreen> {
                           final categories = catSnap.data ?? const <Category>[];
                           return DropdownButtonFormField<int>(
                             initialValue: _selectedCategoryId,
-                            decoration: InputDecoration(
+                            decoration: const InputDecoration(
                               labelText: 'Kategori Pengeluaran',
-                              prefixIcon: const Icon(Icons.category_rounded),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: Spacing.m,
-                                vertical: Spacing.s,
-                              ),
-                                                          ),
+                              prefixIcon: Icon(Icons.category_rounded),
+                            ),
                             items: [
                               for (final c in categories)
                                 DropdownMenuItem(
@@ -762,16 +750,12 @@ class _OcrScreenState extends State<OcrScreen> {
                           final accounts = accSnap.data ?? const <Account>[];
                           return DropdownButtonFormField<int>(
                             initialValue: _selectedAccountId,
-                            decoration: InputDecoration(
+                            decoration: const InputDecoration(
                               labelText: 'Akun Sumber Pembayaran',
-                              prefixIcon: const Icon(
+                              prefixIcon: Icon(
                                 Icons.account_balance_wallet_rounded,
                               ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: Spacing.m,
-                                vertical: Spacing.s,
-                              ),
-                                                          ),
+                            ),
                             items: [
                               for (final a in accounts)
                                 DropdownMenuItem(

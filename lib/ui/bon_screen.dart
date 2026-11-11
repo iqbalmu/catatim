@@ -122,14 +122,6 @@ class _BonScreenState extends State<BonScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (isUncalculated) ...[
-                  Text(
-                    'Nominal',
-                    style: context.qSmall(12).copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: q.muted,
-                    ),
-                  ),
-                  const SizedBox(height: Spacing.xs),
                   TextField(
                     controller: amountController,
                     keyboardType: TextInputType.number,
@@ -141,6 +133,7 @@ class _BonScreenState extends State<BonScreen> {
                       color: q.text,
                     ),
                     decoration: InputDecoration(
+                      labelText: 'Nominal',
                       prefixText: 'Rp ',
                       prefixStyle: TextStyle(
                         fontWeight: FontWeight.w700,
@@ -175,14 +168,6 @@ class _BonScreenState extends State<BonScreen> {
                   ),
                   const SizedBox(height: Spacing.m),
                 ],
-                Text(
-                  isLent ? 'Masuk ke Akun' : 'Sumber Dana',
-                  style: context.qSmall(12).copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: q.muted,
-                  ),
-                ),
-                const SizedBox(height: Spacing.xs),
                 DropdownButtonFormField<int>(
                   initialValue: selectedAccountId,
                   isExpanded: true,
@@ -192,6 +177,7 @@ class _BonScreenState extends State<BonScreen> {
                     size: 20,
                   ),
                   decoration: InputDecoration(
+                    labelText: isLent ? 'Masuk ke Akun' : 'Sumber Dana',
                     prefixIcon: const Icon(Icons.account_balance_wallet_outlined, size: 18),
                   ),
                   items: [
@@ -204,14 +190,6 @@ class _BonScreenState extends State<BonScreen> {
                   onChanged: (v) => setDialogState(() => selectedAccountId = v),
                 ),
                 const SizedBox(height: Spacing.m),
-                Text(
-                  'Kategori',
-                  style: context.qSmall(12).copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: q.muted,
-                  ),
-                ),
-                const SizedBox(height: Spacing.xs),
                 DropdownButtonFormField<int>(
                   initialValue: selectedCategoryId,
                   isExpanded: true,
@@ -220,8 +198,9 @@ class _BonScreenState extends State<BonScreen> {
                     color: q.muted,
                     size: 20,
                   ),
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.category_outlined, size: 18),
+                  decoration: const InputDecoration(
+                    labelText: 'Kategori',
+                    prefixIcon: Icon(Icons.category_outlined, size: 18),
                   ),
                   items: [
                     for (final c in categories)
@@ -881,14 +860,6 @@ class _BonSheetState extends State<BonSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Nama Kategori',
-            style: context.qSmall(12).copyWith(
-              fontWeight: FontWeight.w700,
-              color: q.muted,
-            ),
-          ),
-          const SizedBox(height: Spacing.xs),
           TextField(
             controller: ctrl,
             autofocus: true,
@@ -899,7 +870,8 @@ class _BonSheetState extends State<BonSheet> {
               fontWeight: FontWeight.w600,
               color: q.text,
             ),
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
+              labelText: 'Nama Kategori',
               hintText: 'Misalnya: Kopi, Langganan, Hobi...',
             ),
           ),
@@ -1128,14 +1100,6 @@ class _BonSheetState extends State<BonSheet> {
             ],
           ),
           const SizedBox(height: Spacing.m),
-          Text(
-            'Pihak / Kontak',
-            style: context.qSmall(12).copyWith(
-              fontWeight: FontWeight.w700,
-              color: q.muted,
-            ),
-          ),
-          const SizedBox(height: Spacing.xs),
           TextField(
             controller: _personCtrl,
             textCapitalization: TextCapitalization.words,
@@ -1145,20 +1109,13 @@ class _BonSheetState extends State<BonSheet> {
               fontWeight: FontWeight.w600,
               color: q.text,
             ),
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
+              labelText: 'Pihak / Kontak',
               hintText: 'Nama orang atau warung...',
-              prefixIcon: const Icon(Icons.person_outline_rounded, size: 18),
+              prefixIcon: Icon(Icons.person_outline_rounded, size: 18),
             ),
           ),
           const SizedBox(height: Spacing.m),
-          Text(
-            'Nominal',
-            style: context.qSmall(12).copyWith(
-              fontWeight: FontWeight.w700,
-              color: q.muted,
-            ),
-          ),
-          const SizedBox(height: Spacing.xs),
           TextField(
             controller: _amountCtrl,
             keyboardType: TextInputType.number,
@@ -1170,6 +1127,7 @@ class _BonSheetState extends State<BonSheet> {
               color: q.text,
             ),
             decoration: InputDecoration(
+              labelText: 'Nominal',
               prefixText: 'Rp ',
               prefixStyle: TextStyle(
                 fontWeight: FontWeight.w700,
@@ -1182,72 +1140,63 @@ class _BonSheetState extends State<BonSheet> {
           ),
           if (_categories.isNotEmpty) ...[
             const SizedBox(height: Spacing.m),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Kategori',
-                  style: context.qSmall(12).copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: q.muted,
-                  ),
-                ),
-                QuestPress(
-                  onTap: _addCategory,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.add_rounded, size: 14, color: q.primaryText),
-                      const SizedBox(width: 2),
-                      Text(
-                        'Tambah',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: q.primaryText,
-                        ),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<int>(
+                      key: ValueKey('bon_category_$_categoryId'),
+                      initialValue: _categories.any((c) => c.id == _categoryId) ? _categoryId : null,
+                      isExpanded: true,
+                      icon: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: q.muted,
+                        size: 20,
                       ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: Spacing.xs),
-            DropdownButtonFormField<int>(
-              key: ValueKey('bon_category_$_categoryId'),
-              initialValue: _categories.any((c) => c.id == _categoryId) ? _categoryId : null,
-              isExpanded: true,
-              icon: Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: q.muted,
-                size: 20,
-              ),
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.category_outlined, size: 18),
-              ),
-              items: [
-                for (final c in _categories)
-                  DropdownMenuItem(
-                    value: c.id,
-                    child: Text(
-                      c.name,
-                      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
+                      decoration: const InputDecoration(
+                        labelText: 'Kategori',
+                        prefixIcon: Icon(Icons.category_outlined, size: 18),
+                      ),
+                      items: [
+                        for (final c in _categories)
+                          DropdownMenuItem(
+                            value: c.id,
+                            child: Text(
+                              c.name,
+                              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                      ],
+                      onChanged: (v) => setState(() => _categoryId = v),
                     ),
                   ),
-              ],
-              onChanged: (v) => setState(() => _categoryId = v),
+                  const SizedBox(width: Spacing.xs),
+                  QuestPress(
+                    onTap: _addCategory,
+                    child: Container(
+                      width: 44,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: q.surface2,
+                        borderRadius: BorderRadius.circular(AppRadius.tile),
+                        border: Border.all(
+                          color: q.line.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.add_rounded,
+                        size: 20,
+                        color: q.muted,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
           if (_accounts.isNotEmpty) ...[
             const SizedBox(height: Spacing.m),
-            Text(
-              _direction == BonDirection.borrowed ? 'Sumber Dana' : 'Masuk ke Akun',
-              style: context.qSmall(12).copyWith(
-                fontWeight: FontWeight.w700,
-                color: q.muted,
-              ),
-            ),
-            const SizedBox(height: Spacing.xs),
             DropdownButtonFormField<int>(
               key: ValueKey('bon_account_$_accountId'),
               initialValue: _accounts.any((a) => a.id == _accountId) ? _accountId : null,
@@ -1258,6 +1207,7 @@ class _BonSheetState extends State<BonSheet> {
                 size: 20,
               ),
               decoration: InputDecoration(
+                labelText: _direction == BonDirection.borrowed ? 'Sumber Dana' : 'Masuk ke Akun',
                 prefixIcon: const Icon(Icons.account_balance_wallet_outlined, size: 18),
               ),
               items: [
@@ -1274,51 +1224,23 @@ class _BonSheetState extends State<BonSheet> {
             ),
           ],
           const SizedBox(height: Spacing.m),
-          Text(
-            'Tanggal Bon',
-            style: context.qSmall(12).copyWith(
-              fontWeight: FontWeight.w700,
-              color: q.muted,
-            ),
-          ),
-          const SizedBox(height: Spacing.xs),
-          QuestPress(
+          TextFormField(
+            key: ValueKey(_date),
+            initialValue: idFullDate(_date),
+            readOnly: true,
             onTap: _pickDate,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              decoration: BoxDecoration(
-                color: q.surface2,
-                borderRadius: BorderRadius.circular(AppRadius.tile),
-                border: Border.all(color: q.line.withValues(alpha: 0.5)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.event_outlined, size: 18, color: q.primaryText),
-                  const SizedBox(width: Spacing.s),
-                  Text(
-                    idFullDate(_date),
-                    style: TextStyle(
-                      fontFamily: 'Nunito',
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w700,
-                      color: q.text,
-                    ),
-                  ),
-                  const Spacer(),
-                  Icon(Icons.edit_calendar_outlined, size: 16, color: q.muted),
-                ],
-              ),
+            style: TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+              color: q.text,
+            ),
+            decoration: const InputDecoration(
+              labelText: 'Tanggal Bon',
+              prefixIcon: Icon(Icons.event_outlined),
             ),
           ),
           const SizedBox(height: Spacing.m),
-          Text(
-            'Catatan (Opsional)',
-            style: context.qSmall(12).copyWith(
-              fontWeight: FontWeight.w700,
-              color: q.muted,
-            ),
-          ),
-          const SizedBox(height: Spacing.xs),
           TextField(
             controller: _noteCtrl,
             textCapitalization: TextCapitalization.sentences,
@@ -1329,9 +1251,10 @@ class _BonSheetState extends State<BonSheet> {
               fontWeight: FontWeight.w600,
               color: q.text,
             ),
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
+              labelText: 'Catatan (Opsional)',
               hintText: 'Tulis catatan bila perlu...',
-              prefixIcon: const Icon(Icons.notes_rounded, size: 18),
+              prefixIcon: Icon(Icons.notes_rounded, size: 18),
             ),
           ),
           const SizedBox(height: Spacing.m),
