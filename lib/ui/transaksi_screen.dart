@@ -649,9 +649,8 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                             ),
                         };
 
-                        if (i >= 8) return child;
                         return QuestTabEnter(
-                          key: ValueKey('tab_enter_${entry.key}'),
+                          key: entry.key,
                           index: 4 + i,
                           replayKey: _filterRevision,
                           child: child,

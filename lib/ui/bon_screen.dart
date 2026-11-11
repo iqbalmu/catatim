@@ -706,7 +706,6 @@ class _BonScreenState extends State<BonScreen> {
             ),
           ),
         );
-        if (i >= 8) return card;
         return QuestTabEnter(
           index: 4 + i,
           child: card,

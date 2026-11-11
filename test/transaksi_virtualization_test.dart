@@ -3,6 +3,7 @@ import 'package:bukuduit/game/progress.dart';
 import 'package:bukuduit/models.dart';
 import 'package:bukuduit/storage/database.dart';
 import 'package:bukuduit/storage/repository.dart';
+import 'package:bukuduit/theme/quest.dart';
 import 'package:bukuduit/ui/transaction_tile.dart';
 import 'package:bukuduit/ui/transaksi_screen.dart';
 import 'package:drift/native.dart';
@@ -87,4 +88,107 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     await db.close();
   });
+
+  testWidgets(
+    'TransaksiScreen: daftar > 8 transaksi semua terbungkus animasi berurut dari atas ke bawah',
+    (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final db = AppDatabase(NativeDatabase.memory());
+      final repo = LedgerRepository(db);
+      final progress = ProgressService(repository: repo);
+
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day, 12, 0);
+
+      final acc = await repo.addAccount('BCA', AccountKind.bank);
+      final categories = await repo.getCategories();
+      final cat = categories.first;
+
+      // Buat 12 transaksi di hari yang sama sehingga flatItems ada 1 day header + 12 tile = 13 items
+      for (var i = 0; i < 12; i++) {
+        await repo.addManual(
+          accountId: acc.id,
+          categoryId: cat.id,
+          amount: 10000 + i * 1000,
+          direction: Direction.outgoing,
+          occurredAt: today.subtract(Duration(minutes: i * 5)),
+          kind: TxKind.payment,
+          counterparty: 'Item Belanja $i',
+        );
+      }
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: TransaksiScreen(
+              repository: repo,
+              progress: progress,
+            ),
+          ),
+        ),
+      );
+      // Pump initial frame agar StreamBuilder mendapat data
+      await tester.pump();
+
+      // Verifikasi seluruh 12 transaksi + 1 header ter-render dalam viewport
+      expect(find.byType(TransactionTile), findsNWidgets(12));
+
+      // Verifikasi bahwa item ke-8, 9, 10, dst (yang dulu di-skip karena if (i >= 8))
+      // kini semuanya berada di dalam QuestTabEnter
+      final tile11 = find.widgetWithText(TransactionTile, 'Item Belanja 11');
+      expect(tile11, findsOneWidget);
+      expect(
+        find.ancestor(of: tile11, matching: find.byType(QuestTabEnter)),
+        findsOneWidget,
+      );
+
+      // Verifikasi urutan animasi:
+      // Di 360ms:
+      // Item 0 (index 5 -> delay 325ms) sudah mulai memudar masuk,
+      // sedangkan item 11 (index 16 -> delay 1040ms, di bawah dekat navbar)
+      // masih menunggu giliran (opacity == 0.0), TIDAK langsung tampil!
+      await tester.pump(const Duration(milliseconds: 360));
+
+      // Dapatkan Opacity widget di dalam QuestTabEnter untuk item 0 vs item 11
+      final tile0 = find.widgetWithText(TransactionTile, 'Item Belanja 0');
+      final opacityTile0 = tester.widget<Opacity>(
+        find.descendant(
+          of: find.ancestor(of: tile0, matching: find.byType(QuestTabEnter)).first,
+          matching: find.byType(Opacity),
+        ).first,
+      );
+      final opacityTile11 = tester.widget<Opacity>(
+        find.descendant(
+          of: find.ancestor(of: tile11, matching: find.byType(QuestTabEnter)).first,
+          matching: find.byType(Opacity),
+        ).first,
+      );
+
+      // Item 0 sudah mulai muncul
+      expect(opacityTile0.opacity, greaterThan(0.0));
+      // Item 11 di bawah dekat navbar masih antre (belum langsung tampil)
+      expect(opacityTile11.opacity, equals(0.0));
+
+      await tester.pumpAndSettle();
+
+      // Setelah animasi selesai, semua item ber-opacity 1.0
+      final finalOpacityTile11 = tester.widget<Opacity>(
+        find.descendant(
+          of: find.ancestor(of: tile11, matching: find.byType(QuestTabEnter)).first,
+          matching: find.byType(Opacity),
+        ).first,
+      );
+      expect(finalOpacityTile11.opacity, equals(1.0));
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 1));
+      await db.close();
+    },
+  );
 }

@@ -755,9 +755,13 @@ class _QuestTabEnterState extends State<QuestTabEnter>
   int _delayMs = 0;
   int _animMs = QuestMotion.enter.inMilliseconds;
 
-  void _restart() {
+  void _restart({bool animate = true}) {
+    if (!animate) {
+      _controller.value = 1.0;
+      return;
+    }
     _delayMs =
-        widget.index.clamp(0, 10) * QuestMotion.staggerStep.inMilliseconds;
+        widget.index.clamp(0, 20) * QuestMotion.staggerStep.inMilliseconds;
     _animMs = QuestMotion.enter.inMilliseconds;
     _controller.duration = Duration(milliseconds: _delayMs + _animMs);
     _controller.forward(from: 0);
@@ -767,15 +771,19 @@ class _QuestTabEnterState extends State<QuestTabEnter>
   void didChangeDependencies() {
     super.didChangeDependencies();
     final stage = QuestStage.ofOrNull(context);
+    final position = Scrollable.maybeOf(context)?.position;
+    final isScrolled =
+        position != null && position.hasPixels && position.pixels > 0.0;
+
     if (!_initialized) {
       _initialized = true;
       _seenToken = stage?.token ?? -1;
-      _restart();
+      _restart(animate: !isScrolled);
       return;
     }
     if (stage != null && _seenToken != stage.token) {
       _seenToken = stage.token;
-      _restart();
+      _restart(animate: !isScrolled);
     }
   }
 
