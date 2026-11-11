@@ -525,7 +525,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
             const SizedBox(width: Spacing.s),
           ],
           QuestChip(
-            label: '+ Kategori',
+            label: 'Kategori',
             selected: false,
             onTap: _addCategory,
             leading: Icon(Icons.add_rounded, size: 16, color: q.primary),
@@ -640,35 +640,12 @@ class _TransactionSheetState extends State<TransactionSheet> {
           ),
         ),
         const SizedBox(height: Spacing.s),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Kategori',
-              style: context.qSmall(12).copyWith(
-                fontWeight: FontWeight.w700,
-                color: q.muted,
-              ),
-            ),
-            QuestPress(
-              onTap: _addCategory,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add_rounded, size: 14, color: q.primary),
-                  const SizedBox(width: 2),
-                  Text(
-                    'Tambah Kategori',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: q.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+        Text(
+          'Kategori',
+          style: context.qSmall(12).copyWith(
+            fontWeight: FontWeight.w700,
+            color: q.muted,
+          ),
         ),
         const SizedBox(height: Spacing.xs),
         _buildCategoryChips(),
@@ -826,35 +803,12 @@ class _TransactionSheetState extends State<TransactionSheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Kategori',
-                      style: context.qSmall(12).copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: q.muted,
-                      ),
-                    ),
-                    QuestPress(
-                      onTap: _addCategory,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.add_rounded, size: 14, color: q.primary),
-                          const SizedBox(width: 2),
-                          Text(
-                            'Tambah Kategori',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: q.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                Text(
+                  'Kategori',
+                  style: context.qSmall(12).copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: q.muted,
+                  ),
                 ),
                 const SizedBox(height: Spacing.xs),
                 _buildCategoryChips(),
