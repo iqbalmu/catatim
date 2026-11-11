@@ -100,11 +100,17 @@ class Bons extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get uuid => text().unique()();
   TextColumn get person => text()();
-  IntColumn get amount => integer()();
+  IntColumn get amount => integer().withDefault(const Constant(0))();
   TextColumn get direction => textEnum<BonDirection>()();
   TextColumn get note => text().nullable()();
   DateTimeColumn get occurredAt => dateTime()();
   DateTimeColumn get settledAt => dateTime().nullable()();
+  IntColumn get categoryId =>
+      integer().nullable().references(Categories, #id)();
+  IntColumn get accountId =>
+      integer().nullable().references(Accounts, #id)();
+  IntColumn get settlementTransactionId =>
+      integer().nullable().references(Transactions, #id)();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -140,7 +146,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -238,6 +244,19 @@ class AppDatabase extends _$AppDatabase {
           'ON transactions (category_id, occurred_at DESC)',
         );
       }
+      if (from < 12) {
+        if (await _hasTable(m, 'bons')) {
+          if (!await _hasColumn(m, 'bons', 'category_id')) {
+            await m.addColumn(bons, bons.categoryId);
+          }
+          if (!await _hasColumn(m, 'bons', 'account_id')) {
+            await m.addColumn(bons, bons.accountId);
+          }
+          if (!await _hasColumn(m, 'bons', 'settlement_transaction_id')) {
+            await m.addColumn(bons, bons.settlementTransactionId);
+          }
+        }
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -272,6 +291,15 @@ class AppDatabase extends _$AppDatabase {
       await m.createTable(budgets);
 
       await m.createTable(drafts);
+      if (!await _hasColumn(m, 'bons', 'category_id')) {
+        await m.addColumn(bons, bons.categoryId);
+      }
+      if (!await _hasColumn(m, 'bons', 'account_id')) {
+        await m.addColumn(bons, bons.accountId);
+      }
+      if (!await _hasColumn(m, 'bons', 'settlement_transaction_id')) {
+        await m.addColumn(bons, bons.settlementTransactionId);
+      }
       if (!await _hasColumn(m, 'capture_logs', 'ignored_dup')) {
         await m.addColumn(captureLogs, captureLogs.ignoredDup);
       }
@@ -374,6 +402,16 @@ Future<void> applyPendingRestore() async {
     await staging.delete();
   }
   await marker.delete();
+}
+
+Future<bool> _hasTable(Migrator m, String table) async {
+  final rows = await m.database
+      .customSelect(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+        variables: [Variable.withString(table)],
+      )
+      .get();
+  return rows.isNotEmpty;
 }
 
 Future<bool> _hasColumn(Migrator m, String table, String column) async {

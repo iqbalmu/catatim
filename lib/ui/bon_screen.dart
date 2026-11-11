@@ -49,66 +49,140 @@ class _BonScreenState extends State<BonScreen> {
 
   Future<void> _settleBon(Bon bon) async {
     if (bon.settledAt != null) {
-      await widget.repository.updateBon(
-        bon.id,
-        const BonsCompanion(settledAt: Value(null)),
+      final confirmCancel = await showQuestDialog<bool>(
+        context,
+        title: 'Batalkan Status Lunas?',
+        content: Text(
+          'Status bon ${bon.person} akan dikembalikan menjadi Belum Lunas. '
+          'Transaksi kas pelunasan terkait juga akan dihapus.',
+          style: context.qBody(13),
+        ),
+        actions: [
+          QuestButton(
+            label: 'Batal',
+            tone: QuestTone.secondary,
+            onPressed: () => Navigator.pop(context, false),
+          ),
+          QuestButton(
+            label: 'Batalkan Lunas',
+            tone: QuestTone.danger,
+            onPressed: () => Navigator.pop(context, true),
+          ),
+        ],
       );
-      if (mounted) questSnack(context, 'Status lunas dibatalkan.');
+      if (confirmCancel != true || !mounted) return;
+
+      await widget.repository.unsettleBon(bon.id);
+      if (mounted) questSnack(context, 'Status lunas dibatalkan dan transaksi kas dihapus.');
       return;
     }
 
     final accounts = await widget.repository.getAccounts();
+    final categories = await widget.repository.getCategories();
     if (!mounted) return;
-    int? selectedAccountId = accounts.firstOrNull?.id;
-    bool recordTx = accounts.isNotEmpty;
+
+    if (accounts.isEmpty) {
+      questSnack(context, 'Tambahkan akun terlebih dahulu di pengaturan.');
+      return;
+    }
+
+    final isLent = bon.direction == BonDirection.lent;
+    final isUncalculated = bon.amount <= 0;
+
+    int? selectedAccountId = bon.accountId ?? accounts.firstOrNull?.id;
+    int? selectedCategoryId = bon.categoryId ?? categories.firstWhere(
+      (c) {
+        final n = c.name.toLowerCase();
+        return n.contains('makan') || n.contains('belanja') || n.contains('lain');
+      },
+      orElse: () => categories.first,
+    ).id;
+
+    final amountController = TextEditingController(
+      text: isUncalculated ? '' : '${bon.amount}',
+    );
 
     final shouldSettle = await showQuestDialog<bool>(
       context,
-      title: 'Lunasi Bon',
+      title: isLent ? 'Terima Pelunasan' : 'Lunasi Bon',
       content: StatefulBuilder(
         builder: (context, setDialogState) {
-          final isLent = bon.direction == BonDirection.lent;
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Tandai bon ${bon.person} (${Money.format(bon.amount)}) sebagai lunas?',
-                style: context.qBody(13),
-              ),
-              if (accounts.isNotEmpty) ...[
-                const SizedBox(height: Spacing.m),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: recordTx,
-                  title: Text(
-                    isLent
-                        ? 'Catat uang masuk ke rekening'
-                        : 'Catat uang keluar dari rekening',
-                    style: context.qTitle(13),
+          return SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isUncalculated) ...[
+                  TextField(
+                    controller: amountController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: const InputDecoration(
+                      labelText: 'Nominal',
+                      prefixText: 'Rp ',
+                    ),
                   ),
-                  onChanged: (val) =>
-                      setDialogState(() => recordTx = val ?? true),
-                ),
-                if (recordTx) ...[
-                  const SizedBox(height: Spacing.xs),
-                  DropdownButtonFormField<int>(
-                    initialValue: selectedAccountId,
-                    isExpanded: true,
-                    decoration: const InputDecoration(labelText: 'Pilih Akun'),
-                    items: [
-                      for (final a in accounts)
-                        DropdownMenuItem(
-                          value: a.id,
-                          child: Text('${a.name} · ${a.kind.label}'),
+                  const SizedBox(height: Spacing.s),
+                ] else ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: context.q.surface2,
+                      borderRadius: BorderRadius.circular(AppRadius.tile),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Nominal', style: context.qSmall(12)),
+                        Text(
+                          Money.format(bon.amount),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            color: isLent ? context.q.good : context.q.bad,
+                          ),
                         ),
-                    ],
-                    onChanged: (v) =>
-                        setDialogState(() => selectedAccountId = v),
+                      ],
+                    ),
                   ),
+                  const SizedBox(height: Spacing.s),
                 ],
+                DropdownButtonFormField<int>(
+                  initialValue: selectedAccountId,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: isLent ? 'Masuk ke Akun' : 'Sumber Dana',
+                    prefixIcon: const Icon(Icons.account_balance_wallet_outlined, size: 20),
+                  ),
+                  items: [
+                    for (final a in accounts)
+                      DropdownMenuItem(
+                        value: a.id,
+                        child: Text(a.name),
+                      ),
+                  ],
+                  onChanged: (v) => setDialogState(() => selectedAccountId = v),
+                ),
+                const SizedBox(height: Spacing.s),
+                DropdownButtonFormField<int>(
+                  initialValue: selectedCategoryId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Kategori',
+                    prefixIcon: Icon(Icons.category_outlined, size: 20),
+                  ),
+                  items: [
+                    for (final c in categories)
+                      DropdownMenuItem(
+                        value: c.id,
+                        child: Text(c.name),
+                      ),
+                  ],
+                  onChanged: (v) => setDialogState(() => selectedCategoryId = v),
+                ),
               ],
-            ],
+            ),
           );
         },
       ),
@@ -121,37 +195,30 @@ class _BonScreenState extends State<BonScreen> {
         QuestButton(
           label: 'Lunasi',
           icon: Icons.check_rounded,
-          onPressed: () => Navigator.pop(context, true),
+          onPressed: () {
+            final amt = Money.tryParseGroup(amountController.text) ?? (isUncalculated ? 0 : bon.amount);
+            if (amt <= 0) {
+              questSnack(context, 'Masukkan nominal pembayaran.');
+              return;
+            }
+            Navigator.pop(context, true);
+          },
         ),
       ],
     );
 
     if (shouldSettle != true || !mounted) return;
 
-    await widget.repository.updateBon(
-      bon.id,
-      BonsCompanion(settledAt: Value(DateTime.now())),
-    );
+    final finalAmount = Money.tryParseGroup(amountController.text) ?? (isUncalculated ? 0 : bon.amount);
+    if (finalAmount <= 0 || selectedAccountId == null || selectedCategoryId == null) return;
 
-    if (recordTx && selectedAccountId != null) {
-      final isLent = bon.direction == BonDirection.lent;
-      final otherCatId = (await widget.repository.getCategories())
-          .where((c) => c.name.toLowerCase() == 'lainnya')
-          .firstOrNull
-          ?.id;
-      await widget.repository.addManual(
-        amount: bon.amount,
-        direction: isLent ? Direction.incoming : Direction.outgoing,
-        kind: TxKind.payment,
-        counterparty: isLent
-            ? 'Pelunasan piutang: ${bon.person}'
-            : 'Bayar utang ke: ${bon.person}',
-        accountId: selectedAccountId,
-        categoryId: otherCatId,
-        occurredAt: DateTime.now(),
-      );
-      await widget.progress?.onTransactionRecorded();
-    }
+    await widget.repository.settleBon(
+      bonId: bon.id,
+      amount: finalAmount,
+      accountId: selectedAccountId!,
+      categoryId: selectedCategoryId!,
+    );
+    await widget.progress?.onTransactionRecorded();
 
     if (mounted) {
       questSnack(context, 'Bon ${bon.person} berhasil dilunasi!');
@@ -209,12 +276,17 @@ class _BonScreenState extends State<BonScreen> {
               stream: widget.repository.watchBons(),
               builder: (context, snapshot) {
                 final bons = snapshot.data ?? const [];
-                final piutangTotal = bons
+                final unpaidPiutang = bons
                     .where((b) => b.settledAt == null && b.direction == BonDirection.lent)
-                    .fold<int>(0, (sum, b) => sum + b.amount);
-                final utangTotal = bons
+                    .toList();
+                final piutangTotal = unpaidPiutang.fold<int>(0, (sum, b) => sum + b.amount);
+                final uncalcPiutang = unpaidPiutang.where((b) => b.amount <= 0).length;
+
+                final unpaidUtang = bons
                     .where((b) => b.settledAt == null && b.direction == BonDirection.borrowed)
-                    .fold<int>(0, (sum, b) => sum + b.amount);
+                    .toList();
+                final utangTotal = unpaidUtang.fold<int>(0, (sum, b) => sum + b.amount);
+                final uncalcUtang = unpaidUtang.where((b) => b.amount <= 0).length;
 
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: Spacing.xs),
@@ -270,10 +342,18 @@ class _BonScreenState extends State<BonScreen> {
                                   ),
                                 ),
                                 Text(
-                                  'Orang berutang ke kita',
+                                  uncalcPiutang > 0
+                                      ? 'Orang berutang (+ $uncalcPiutang open)'
+                                      : 'Orang berutang ke kita',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: context.qSmall(10.5),
+                                  style: uncalcPiutang > 0
+                                      ? TextStyle(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.amber.shade800,
+                                        )
+                                      : context.qSmall(10.5),
                                 ),
                               ],
                             ),
@@ -331,10 +411,18 @@ class _BonScreenState extends State<BonScreen> {
                                   ),
                                 ),
                                 Text(
-                                  'Kita berutang ke orang',
+                                  uncalcUtang > 0
+                                      ? 'Kita berutang (+ $uncalcUtang open)'
+                                      : 'Kita berutang ke orang',
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: context.qSmall(10.5),
+                                  style: uncalcUtang > 0
+                                      ? TextStyle(
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.amber.shade800,
+                                        )
+                                      : context.qSmall(10.5),
                                 ),
                               ],
                             ),
@@ -379,18 +467,42 @@ class _BonScreenState extends State<BonScreen> {
             Expanded(
               child: StreamBuilder<List<Bon>>(
                 stream: widget.repository.watchBons(),
-                builder: (context, snapshot) {
-                  final allBons = snapshot.data ?? const [];
-                  final unpaid = allBons.where((b) => b.settledAt == null).toList();
-                  final paid = allBons.where((b) => b.settledAt != null).toList();
+                builder: (context, bonSnap) {
+                  return StreamBuilder<List<Category>>(
+                    stream: widget.repository.watchCategories(),
+                    builder: (context, catSnap) {
+                      return StreamBuilder<List<Account>>(
+                        stream: widget.repository.watchAccounts(),
+                        builder: (context, accSnap) {
+                          final allBons = bonSnap.data ?? const [];
+                          final catMap = {for (final c in catSnap.data ?? const <Category>[]) c.id: c};
+                          final accMap = {for (final a in accSnap.data ?? const <Account>[]) a.id: a};
+                          final unpaid = allBons.where((b) => b.settledAt == null).toList();
+                          final paid = allBons.where((b) => b.settledAt != null).toList();
 
-                  return PageView(
-                    controller: _bonPageCtrl,
-                    onPageChanged: (page) => setState(() => _bonSubTab = page),
-                    children: [
-                      _buildBonList(unpaid, isLunas: false, key: const PageStorageKey('bon_unpaid')),
-                      _buildBonList(paid, isLunas: true, key: const PageStorageKey('bon_paid')),
-                    ],
+                          return PageView(
+                            controller: _bonPageCtrl,
+                            onPageChanged: (page) => setState(() => _bonSubTab = page),
+                            children: [
+                              _buildBonList(
+                                unpaid,
+                                isLunas: false,
+                                catMap: catMap,
+                                accMap: accMap,
+                                key: const PageStorageKey('bon_unpaid'),
+                              ),
+                              _buildBonList(
+                                paid,
+                                isLunas: true,
+                                catMap: catMap,
+                                accMap: accMap,
+                                key: const PageStorageKey('bon_paid'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
                   );
                 },
               ),
@@ -401,7 +513,13 @@ class _BonScreenState extends State<BonScreen> {
     );
   }
 
-  Widget _buildBonList(List<Bon> bons, {required bool isLunas, Key? key}) {
+  Widget _buildBonList(
+    List<Bon> bons, {
+    required bool isLunas,
+    required Map<int, Category> catMap,
+    required Map<int, Account> accMap,
+    Key? key,
+  }) {
     if (bons.isEmpty) {
       return QuestTabEnter(
         index: 4,
@@ -425,6 +543,8 @@ class _BonScreenState extends State<BonScreen> {
       itemBuilder: (context, i) {
         final bon = bons[i];
         final isPiutang = bon.direction == BonDirection.lent;
+        final cat = bon.categoryId != null ? catMap[bon.categoryId] : null;
+        final acc = bon.accountId != null ? accMap[bon.accountId] : null;
         final card = Container(
           margin: const EdgeInsets.only(bottom: Spacing.s),
           decoration: BoxDecoration(
@@ -477,9 +597,39 @@ class _BonScreenState extends State<BonScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                        Text(
-                          idDayMonth(bon.occurredAt),
-                          style: context.qSmall(10.5),
+                        const SizedBox(height: 2),
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
+                          runSpacing: 2,
+                          children: [
+                            if (cat != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: context.q.surface2,
+                                  borderRadius: BorderRadius.circular(AppRadius.cell),
+                                  border: Border.all(color: context.q.line),
+                                ),
+                                child: Text(
+                                  cat.name,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: context.q.text,
+                                  ),
+                                ),
+                              ),
+                            if (acc != null)
+                              Text(
+                                '· ${acc.name}',
+                                style: context.qSmall(10.5),
+                              ),
+                            Text(
+                              idDayMonth(bon.occurredAt),
+                              style: context.qSmall(10.5),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -487,23 +637,41 @@ class _BonScreenState extends State<BonScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 120),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerRight,
-                          child: QuestMoney(
-                            amount: bon.amount,
-                            alignment: Alignment.centerRight,
+                      if (bon.amount <= 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                            border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+                          ),
+                          child: Text(
+                            'Belum Dihitung',
                             style: TextStyle(
-                              fontSize: 14.5,
-                              fontWeight: FontWeight.w900,
-                              color: isPiutang ? context.q.good : context.q.bad,
-                              fontFeatures: const [FontFeature.tabularFigures()],
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.amber.shade800,
+                            ),
+                          ),
+                        )
+                      else
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 120),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerRight,
+                            child: QuestMoney(
+                              amount: bon.amount,
+                              alignment: Alignment.centerRight,
+                              style: TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w900,
+                                color: isPiutang ? context.q.good : context.q.bad,
+                                fontFeatures: const [FontFeature.tabularFigures()],
+                              ),
                             ),
                           ),
                         ),
-                      ),
                       const SizedBox(height: 4),
                       // Quick Settle Button
                       InkWell(
@@ -518,7 +686,9 @@ class _BonScreenState extends State<BonScreen> {
                             borderRadius: BorderRadius.circular(AppRadius.pill),
                           ),
                           child: Text(
-                            bon.settledAt == null ? 'Lunasi' : 'Batal Lunas',
+                            bon.settledAt == null
+                                ? (bon.amount <= 0 ? 'Hitung & Lunasi' : 'Lunasi')
+                                : 'Batal Lunas',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
@@ -575,6 +745,10 @@ class _BonSheetState extends State<BonSheet> {
   late final TextEditingController _noteCtrl;
   late BonDirection _direction;
   late DateTime _date;
+  int? _categoryId;
+  int? _accountId;
+  List<Category> _categories = [];
+  List<Account> _accounts = [];
 
   @override
   void initState() {
@@ -582,11 +756,36 @@ class _BonSheetState extends State<BonSheet> {
     final e = widget.existing;
     _personCtrl = TextEditingController(text: e?.person ?? '');
     _amountCtrl = TextEditingController(
-      text: e != null ? '${e.amount}' : '',
+      text: (e != null && e.amount > 0) ? '${e.amount}' : '',
     );
     _noteCtrl = TextEditingController(text: e?.note ?? '');
     _direction = e?.direction ?? BonDirection.lent;
     _date = e?.occurredAt ?? DateTime.now();
+    _categoryId = e?.categoryId;
+    _accountId = e?.accountId;
+    _loadMetadata();
+  }
+
+  Future<void> _loadMetadata() async {
+    final cats = await widget.repository.getCategories();
+    final accs = await widget.repository.getAccounts();
+    if (!mounted) return;
+    setState(() {
+      _categories = cats;
+      _accounts = accs;
+      if (_categoryId == null && cats.isNotEmpty) {
+        _categoryId = cats.firstWhere(
+          (c) {
+            final n = c.name.toLowerCase();
+            return n.contains('makan') || n.contains('belanja') || n.contains('lain');
+          },
+          orElse: () => cats.first,
+        ).id;
+      }
+      if (_accountId == null && accs.isNotEmpty) {
+        _accountId = accs.first.id;
+      }
+    });
   }
 
   @override
@@ -612,7 +811,10 @@ class _BonSheetState extends State<BonSheet> {
   Future<void> _save() async {
     final person = _personCtrl.text.trim();
     final amount = Money.tryParseGroup(_amountCtrl.text) ?? 0;
-    if (person.isEmpty || amount <= 0) return;
+    if (person.isEmpty) {
+      questSnack(context, 'Nama pihak atau warung tidak boleh kosong.');
+      return;
+    }
     final note = _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim();
 
     final existing = widget.existing;
@@ -625,6 +827,8 @@ class _BonSheetState extends State<BonSheet> {
           direction: Value(_direction),
           occurredAt: Value(_date),
           note: Value(note),
+          categoryId: Value(_categoryId),
+          accountId: Value(_accountId),
         ),
       );
     } else {
@@ -634,6 +838,8 @@ class _BonSheetState extends State<BonSheet> {
         direction: _direction,
         occurredAt: _date,
         note: note,
+        categoryId: _categoryId,
+        accountId: _accountId,
       );
     }
     if (mounted) Navigator.pop(context);
@@ -642,12 +848,14 @@ class _BonSheetState extends State<BonSheet> {
   Future<void> _delete() async {
     final existing = widget.existing;
     if (existing == null) return;
+    final isUncalc = existing.amount <= 0;
     final sure = await showQuestDialog<bool>(
       context,
       title: 'Hapus catatan bon?',
       content: Text(
-        'Bon ${existing.person} sebesar ${Money.format(existing.amount)} '
-        'akan dihapus permanen.',
+        isUncalc
+            ? 'Bon ${existing.person} (Belum Dihitung) akan dihapus permanen.'
+            : 'Bon ${existing.person} sebesar ${Money.format(existing.amount)} akan dihapus permanen.',
         style: context.qBody(13),
       ),
       actions: [
@@ -665,8 +873,71 @@ class _BonSheetState extends State<BonSheet> {
       ],
     );
     if (sure != true || !mounted) return;
-    await widget.repository.deleteBon(existing.id);
+    await widget.repository.deleteBon(existing.id, deleteLinkedTx: true);
     if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _settleDirectly() async {
+    final existing = widget.existing;
+    if (existing == null) return;
+
+    final person = _personCtrl.text.trim();
+    if (person.isEmpty) {
+      questSnack(context, 'Nama pihak atau warung tidak boleh kosong.');
+      return;
+    }
+    final amount = Money.tryParseGroup(_amountCtrl.text) ?? 0;
+    if (amount <= 0) {
+      questSnack(context, 'Masukkan nominal pembayaran.');
+      return;
+    }
+    if (_accountId == null) {
+      questSnack(context, 'Pilih sumber dana / akun.');
+      return;
+    }
+    if (_categoryId == null) {
+      questSnack(context, 'Pilih kategori.');
+      return;
+    }
+
+    final note = _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim();
+
+    await widget.repository.updateBon(
+      existing.id,
+      BonsCompanion(
+        person: Value(person),
+        amount: Value(amount),
+        direction: Value(_direction),
+        occurredAt: Value(_date),
+        note: Value(note),
+        categoryId: Value(_categoryId),
+        accountId: Value(_accountId),
+      ),
+    );
+
+    await widget.repository.settleBon(
+      bonId: existing.id,
+      amount: amount,
+      accountId: _accountId!,
+      categoryId: _categoryId!,
+      settledAt: DateTime.now(),
+    );
+
+    if (mounted) {
+      Navigator.pop(context);
+      questSnack(context, 'Bon $person berhasil dilunasi!');
+    }
+  }
+
+  Future<void> _unsettleDirectly() async {
+    final existing = widget.existing;
+    if (existing == null) return;
+
+    await widget.repository.unsettleBon(existing.id);
+    if (mounted) {
+      Navigator.pop(context);
+      questSnack(context, 'Status lunas dibatalkan dan transaksi kas dihapus.');
+    }
   }
 
   @override
@@ -730,7 +1001,7 @@ class _BonSheetState extends State<BonSheet> {
             controller: _personCtrl,
             textCapitalization: TextCapitalization.words,
             decoration: const InputDecoration(
-              labelText: 'Nama pihak',
+              labelText: 'Pihak / Warung',
               prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
               isDense: true,
             ),
@@ -748,6 +1019,48 @@ class _BonSheetState extends State<BonSheet> {
             ),
           ),
           const SizedBox(height: Spacing.s),
+          if (_categories.isNotEmpty) ...[
+            DropdownButtonFormField<int>(
+              key: ValueKey('bon_category_$_categoryId'),
+              initialValue: _categories.any((c) => c.id == _categoryId) ? _categoryId : null,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: 'Kategori',
+                prefixIcon: Icon(Icons.category_outlined, size: 20),
+                isDense: true,
+              ),
+              items: [
+                for (final c in _categories)
+                  DropdownMenuItem(
+                    value: c.id,
+                    child: Text(c.name),
+                  ),
+              ],
+              onChanged: (v) => setState(() => _categoryId = v),
+            ),
+            const SizedBox(height: Spacing.s),
+          ],
+          if (_accounts.isNotEmpty) ...[
+            DropdownButtonFormField<int>(
+              key: ValueKey('bon_account_$_accountId'),
+              initialValue: _accounts.any((a) => a.id == _accountId) ? _accountId : null,
+              isExpanded: true,
+              decoration: InputDecoration(
+                labelText: _direction == BonDirection.borrowed ? 'Sumber Dana' : 'Masuk ke Akun',
+                prefixIcon: const Icon(Icons.account_balance_wallet_outlined, size: 20),
+                isDense: true,
+              ),
+              items: [
+                for (final a in _accounts)
+                  DropdownMenuItem(
+                    value: a.id,
+                    child: Text(a.name),
+                  ),
+              ],
+              onChanged: (v) => setState(() => _accountId = v),
+            ),
+            const SizedBox(height: Spacing.s),
+          ],
           QuestPress(
             onTap: _pickDate,
             child: Container(
@@ -778,6 +1091,8 @@ class _BonSheetState extends State<BonSheet> {
           const SizedBox(height: Spacing.s),
           TextField(
             controller: _noteCtrl,
+            textCapitalization: TextCapitalization.sentences,
+            maxLines: 2,
             decoration: const InputDecoration(
               labelText: 'Catatan (opsional)',
               prefixIcon: Icon(Icons.notes_rounded, size: 20),
@@ -785,9 +1100,29 @@ class _BonSheetState extends State<BonSheet> {
             ),
           ),
           const SizedBox(height: Spacing.m),
+          if (editing && widget.existing?.settledAt == null) ...[
+            QuestButton(
+              label: _direction == BonDirection.lent ? 'Terima Pelunasan' : 'Lunasi Bon',
+              icon: Icons.check_circle_outline_rounded,
+              tone: QuestTone.primary,
+              onPressed: _settleDirectly,
+            ),
+            const SizedBox(height: Spacing.xs),
+          ] else if (editing && widget.existing?.settledAt != null) ...[
+            QuestButton(
+              label: 'Batalkan Status Lunas',
+              icon: Icons.undo_rounded,
+              tone: QuestTone.danger,
+              onPressed: _unsettleDirectly,
+            ),
+            const SizedBox(height: Spacing.xs),
+          ],
           QuestButton(
             label: editing ? 'Simpan Perubahan' : 'Simpan Bon',
             icon: Icons.check_rounded,
+            tone: (editing && widget.existing?.settledAt == null)
+                ? QuestTone.secondary
+                : QuestTone.primary,
             onPressed: _save,
           ),
         ],

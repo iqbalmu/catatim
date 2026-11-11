@@ -278,6 +278,87 @@ void main() {
     expect(bons, hasLength(1));
   });
 
+  test('bon alur: open tab (nominal 0), settleBon potong saldo, dan unsettleBon hapus transaksi', () async {
+    final accounts = await repo.getAccounts();
+    final cashAccount = accounts.first;
+    await repo.setOpeningBalance(cashAccount.id, 200000);
+    final categories = await repo.getCategories();
+    final foodCat = categories.first;
+
+    // 1. Catat bon warung open tab (belum dihitung / amount 0)
+    final bonId = await repo.addBon(
+      person: 'Warung Bu Tejo',
+      amount: 0,
+      direction: BonDirection.borrowed,
+      note: '2 bungkus nasi, kopi',
+    );
+
+    var bons = await repo.watchBons().first;
+    final bon = bons.firstWhere((b) => b.id == bonId);
+    expect(bon.amount, 0);
+    expect(bon.settledAt, isNull);
+    expect(bon.settlementTransactionId, isNull);
+
+    // Saldo kas TIDAK boleh berubah saat bon dibuat
+    var balances = await repo.watchAccountBalances().first;
+    expect(balances[cashAccount.id], 200000);
+
+    // 2. Lunasi bon (saat warung menagih Rp 35.000)
+    final txId = await repo.settleBon(
+      bonId: bonId,
+      amount: 35000,
+      accountId: cashAccount.id,
+      categoryId: foodCat.id,
+    );
+
+    // Saldo kas sekarang berkurang Rp 35.000
+    balances = await repo.watchAccountBalances().first;
+    expect(balances[cashAccount.id], 165000);
+
+    bons = await repo.watchBons().first;
+    final settled = bons.firstWhere((b) => b.id == bonId);
+    expect(settled.amount, 35000);
+    expect(settled.settledAt, isNotNull);
+    expect(settled.settlementTransactionId, txId);
+
+    // 3. Batalkan status lunas (unsettleBon)
+    await repo.unsettleBon(bonId);
+
+    // Saldo kembali utuh Rp 200.000 dan transaksi kas terhapus
+    balances = await repo.watchAccountBalances().first;
+    expect(balances[cashAccount.id], 200000);
+
+    bons = await repo.watchBons().first;
+    final unsettled = bons.firstWhere((b) => b.id == bonId);
+    expect(unsettled.settledAt, isNull);
+    expect(unsettled.settlementTransactionId, isNull);
+
+    // 4. Test deleteTransaction mereset bon kembali ke belum lunas
+    final txId2 = await repo.settleBon(
+      bonId: bonId,
+      amount: 40000,
+      accountId: cashAccount.id,
+      categoryId: foodCat.id,
+    );
+    expect((await repo.watchBons().first).firstWhere((b) => b.id == bonId).settledAt, isNotNull);
+
+    await repo.deleteTransaction(txId2);
+    final bonAfterTxDelete = (await repo.watchBons().first).firstWhere((b) => b.id == bonId);
+    expect(bonAfterTxDelete.settledAt, isNull);
+    expect(bonAfterTxDelete.settlementTransactionId, isNull);
+
+    // 5. Test deleteBon dengan deleteLinkedTx: true
+    final txId3 = await repo.settleBon(
+      bonId: bonId,
+      amount: 50000,
+      accountId: cashAccount.id,
+      categoryId: foodCat.id,
+    );
+    await repo.deleteBon(bonId, deleteLinkedTx: true);
+    final txRemaining = await repo.watchRecentWithCategory().first;
+    expect(txRemaining.any((t) => t.tx.id == txId3), isFalse);
+  });
+
   test('ubah nama akun dan duplikat ditolak', () async {
     final gopay = await repo.addAccount('GoPay', AccountKind.ewallet);
     await repo.updateAccount(gopay.id, 'Gopay Baru');

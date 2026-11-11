@@ -13,6 +13,7 @@ import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'add_account_sheet.dart';
+import 'bon_screen.dart';
 import 'ocr_screen.dart';
 import 'quest.dart';
 
@@ -89,6 +90,8 @@ class _TransactionSheetState extends State<TransactionSheet> {
   int? _accountId;
   int? _toAccountId;
   List<Account> _accounts = const [];
+  int? _linkedBonId;
+  List<Bon> _unpaidBons = const [];
   bool _userExplicitlySelectedCategory = false;
 
   bool get _isEdit => widget.existing != null;
@@ -109,6 +112,15 @@ class _TransactionSheetState extends State<TransactionSheet> {
     _currentStep = (_isEdit || _isDraft) ? 1 : 0;
     _loadCategories();
     _loadAccounts();
+    _loadBons();
+  }
+
+  Future<void> _loadBons() async {
+    final bons = await widget.repository.getBons();
+    if (!mounted) return;
+    setState(() {
+      _unpaidBons = bons.where((b) => b.settledAt == null).toList();
+    });
   }
 
   Future<void> _loadCategories() async {
@@ -340,8 +352,9 @@ class _TransactionSheetState extends State<TransactionSheet> {
       return;
     }
 
+    int? createdTxId;
     if (_isDraft) {
-      await widget.repository.confirmDraft(
+      createdTxId = await widget.repository.confirmDraft(
         widget.draft!,
         amount: _amount,
         direction: _direction,
@@ -370,7 +383,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
         await widget.progress?.onTransactionRecorded();
       }
     } else {
-      await widget.repository.addManual(
+      createdTxId = await widget.repository.addManual(
         amount: _amount,
         direction: _direction,
         kind: _kind,
@@ -380,6 +393,17 @@ class _TransactionSheetState extends State<TransactionSheet> {
         occurredAt: _occurredAt,
       );
       await widget.progress?.onTransactionRecorded();
+    }
+
+    if (createdTxId != null && _linkedBonId != null) {
+      await widget.repository.updateBon(
+        _linkedBonId!,
+        BonsCompanion(
+          amount: Value(_amount),
+          settledAt: Value(_occurredAt),
+          settlementTransactionId: Value(createdTxId),
+        ),
+      );
     }
     if (mounted) Navigator.pop(context);
   }
@@ -472,17 +496,27 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 style: context.qTitle(20),
               ),
             ),
-            if (!_isDraft && !_isEdit && widget.pipeline != null) ...[
+            if (!_isDraft && !_isEdit) ...[
               QuestIconButton(
-                icon: Icons.document_scanner_rounded,
-                tooltip: 'Foto Struk (OCR)',
-                onPressed: _openOcr,
+                icon: Icons.receipt_long_rounded,
+                tooltip: 'Catat Bon/Utang',
+                onPressed: () {
+                  Navigator.pop(context);
+                  BonSheet.show(context, widget.repository);
+                },
               ),
-              QuestIconButton(
-                icon: Icons.content_paste_rounded,
-                tooltip: 'Tempel Teks',
-                onPressed: _showPasteDialog,
-              ),
+              if (widget.pipeline != null) ...[
+                QuestIconButton(
+                  icon: Icons.document_scanner_rounded,
+                  tooltip: 'Foto Struk (OCR)',
+                  onPressed: _openOcr,
+                ),
+                QuestIconButton(
+                  icon: Icons.content_paste_rounded,
+                  tooltip: 'Tempel Teks',
+                  onPressed: _showPasteDialog,
+                ),
+              ],
             ],
             if (_isEdit || _isDraft)
               QuestIconButton(
@@ -891,6 +925,68 @@ class _TransactionSheetState extends State<TransactionSheet> {
                     onChanged: (v) => setState(() => _toAccountId = v),
                   ),
                 ],
+                () {
+                  final matchingBons = _unpaidBons.where((b) {
+                    return _direction == Direction.outgoing
+                        ? b.direction == BonDirection.borrowed
+                        : b.direction == BonDirection.lent;
+                  }).toList();
+                  if (!_isEdit && matchingBons.isNotEmpty) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: Spacing.s),
+                        DropdownButtonFormField<int?>(
+                          initialValue: _linkedBonId,
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            labelText: _direction == Direction.outgoing
+                                ? 'Lunasi Bon Utang (Opsional)'
+                                : 'Terima Pelunasan Piutang (Opsional)',
+                            prefixIcon: const Icon(Icons.link_rounded, size: 20),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.tile),
+                              borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.tile),
+                              borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                            ),
+                          ),
+                          items: [
+                            const DropdownMenuItem<int?>(
+                              value: null,
+                              child: Text('Tidak ditautkan ke bon mana pun'),
+                            ),
+                            for (final b in matchingBons)
+                              DropdownMenuItem<int?>(
+                                value: b.id,
+                                child: Text(
+                                  '${b.person} (${b.amount > 0 ? Money.format(b.amount) : "Belum Dihitung"})',
+                                ),
+                              ),
+                          ],
+                          onChanged: (v) {
+                            setState(() {
+                              _linkedBonId = v;
+                              if (v != null) {
+                                final selected = matchingBons.firstWhere((b) => b.id == v);
+                                if (_counterpartyCtrl.text.isEmpty) {
+                                  _counterpartyCtrl.text = 'Pelunasan bon: ${selected.person}';
+                                }
+                                if (_amount == 0 && selected.amount > 0) {
+                                  _amount = selected.amount;
+                                }
+                              }
+                            });
+                          },
+                        ),
+                      ],
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }(),
                 const SizedBox(height: Spacing.m),
                 Text(
                   'WAKTU TRANSAKSI',

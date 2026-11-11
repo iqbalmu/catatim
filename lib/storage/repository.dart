@@ -232,8 +232,18 @@ class LedgerRepository {
     )..where((t) => t.id.equals(id))).write(data);
   }
 
-  Future<void> deleteTransaction(int id) {
-    return (_db.delete(_db.transactions)..where((t) => t.id.equals(id))).go();
+  Future<void> deleteTransaction(int id) async {
+    return _db.transaction(() async {
+      await (_db.update(_db.bons)
+            ..where((b) => b.settlementTransactionId.equals(id)))
+          .write(
+        const BonsCompanion(
+          settledAt: Value(null),
+          settlementTransactionId: Value(null),
+        ),
+      );
+      await (_db.delete(_db.transactions)..where((t) => t.id.equals(id))).go();
+    });
   }
 
   // --- kategori -------------------------------------------------------------
@@ -1402,6 +1412,36 @@ class LedgerRepository {
     );
   }
 
+  Future<Map<int, int>> getAccountBalances() async {
+    final inSum = _db.transactions.amount.sum(
+      filter: _db.transactions.direction.equalsValue(Direction.incoming),
+    );
+    final outSum = _db.transactions.amount.sum(
+      filter: _db.transactions.direction.equalsValue(Direction.outgoing),
+    );
+    final query = _db.selectOnly(_db.accounts).join([
+      leftOuterJoin(
+        _db.transactions,
+        _db.transactions.accountId.equalsExp(_db.accounts.id),
+      ),
+    ]);
+    query.addColumns([
+      _db.accounts.id,
+      _db.accounts.openingBalance,
+      inSum,
+      outSum,
+    ]);
+    query.groupBy([_db.accounts.id]);
+    final rows = await query.get();
+    return {
+      for (final row in rows)
+        row.read(_db.accounts.id)!:
+            _intOf(row.read(_db.accounts.openingBalance)) +
+            _intOf(row.read(inSum)) -
+            _intOf(row.read(outSum)),
+    };
+  }
+
   static int _intOf(Object? value) => (value as num?)?.toInt() ?? 0;
 
   // --- kategori -----------------------------------------------------------------
@@ -1476,12 +1516,22 @@ class LedgerRepository {
         .watch();
   }
 
+  Future<List<Bon>> getBons() {
+    return (_db.select(_db.bons)..orderBy([
+          (b) => OrderingTerm.asc(b.settledAt),
+          (b) => OrderingTerm.desc(b.occurredAt),
+        ]))
+        .get();
+  }
+
   Future<int> addBon({
     required String person,
-    required int amount,
+    int amount = 0,
     required BonDirection direction,
     String? note,
     DateTime? occurredAt,
+    int? categoryId,
+    int? accountId,
   }) {
     final cleanNote = (note == null || note.trim().isEmpty)
         ? null
@@ -1492,10 +1542,12 @@ class LedgerRepository {
           BonsCompanion.insert(
             uuid: newUuid(),
             person: person.trim(),
-            amount: amount,
+            amount: Value(amount),
             direction: direction,
             note: Value(cleanNote),
             occurredAt: occurredAt ?? DateTime.now(),
+            categoryId: Value(categoryId),
+            accountId: Value(accountId),
           ),
         );
   }
@@ -1504,8 +1556,76 @@ class LedgerRepository {
     return (_db.update(_db.bons)..where((b) => b.id.equals(id))).write(data);
   }
 
-  Future<void> deleteBon(int id) {
-    return (_db.delete(_db.bons)..where((b) => b.id.equals(id))).go();
+  /// Lunasi bon: buat transaksi kas riil di akun dan kategori yang dipilih,
+  /// lalu tandai bon lunas dengan mereferensikan transaksi tersebut.
+  Future<int> settleBon({
+    required int bonId,
+    required int amount,
+    required int accountId,
+    required int categoryId,
+    DateTime? settledAt,
+  }) async {
+    return _db.transaction(() async {
+      final bon = await (_db.select(_db.bons)..where((b) => b.id.equals(bonId))).getSingle();
+      final date = settledAt ?? DateTime.now();
+      final isLent = bon.direction == BonDirection.lent;
+
+      final txId = await addManual(
+        amount: amount,
+        direction: isLent ? Direction.incoming : Direction.outgoing,
+        kind: TxKind.payment,
+        counterparty: isLent
+            ? 'Pelunasan piutang: ${bon.person}'
+            : 'Pelunasan bon: ${bon.person}',
+        accountId: accountId,
+        categoryId: categoryId,
+        occurredAt: date,
+      );
+
+      await updateBon(
+        bonId,
+        BonsCompanion(
+          amount: Value(amount),
+          accountId: Value(accountId),
+          categoryId: Value(categoryId),
+          settledAt: Value(date),
+          settlementTransactionId: Value(txId),
+        ),
+      );
+
+      return txId;
+    });
+  }
+
+  /// Batal lunas: putuskan tautan dan hapus transaksi pelunasan yang tercipta.
+  Future<void> unsettleBon(int bonId) async {
+    return _db.transaction(() async {
+      final bon = await (_db.select(_db.bons)..where((b) => b.id.equals(bonId))).getSingle();
+      final txId = bon.settlementTransactionId;
+      await updateBon(
+        bonId,
+        const BonsCompanion(
+          settledAt: Value(null),
+          settlementTransactionId: Value(null),
+        ),
+      );
+      if (txId != null) {
+        await (_db.delete(_db.transactions)..where((t) => t.id.equals(txId))).go();
+      }
+    });
+  }
+
+  /// Hapus bon. Jika bon sudah lunas dan deleteLinkedTx == true, transaksi pelunasan
+  /// ikut dihapus; jika false (default), transaksi pelunasan tetap dipertahankan.
+  Future<void> deleteBon(int id, {bool deleteLinkedTx = false}) async {
+    return _db.transaction(() async {
+      final bon = await (_db.select(_db.bons)..where((b) => b.id.equals(id))).getSingleOrNull();
+      final txId = bon?.settlementTransactionId;
+      await (_db.delete(_db.bons)..where((b) => b.id.equals(id))).go();
+      if (txId != null && deleteLinkedTx) {
+        await (_db.delete(_db.transactions)..where((t) => t.id.equals(txId))).go();
+      }
+    });
   }
 
   /// Ubah nama akun; melempar bila nama sudah dipakai (unique).

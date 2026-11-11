@@ -1,6 +1,7 @@
 import 'package:bukuduit/capture/capture_channel.dart';
 import 'package:bukuduit/capture/pipeline.dart';
 import 'package:bukuduit/game/progress.dart';
+import 'package:bukuduit/models.dart';
 import 'package:bukuduit/rules/engine.dart';
 import 'package:bukuduit/rules/rule_set.dart';
 import 'package:bukuduit/storage/database.dart';
@@ -84,6 +85,85 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(RencanaScreen), findsOneWidget);
       }
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 1));
+      await db.close();
+    },
+  );
+
+  testWidgets(
+    'Alur Bon Open Tab: input tanpa nominal, badge Belum Dihitung, dan pelunasan dengan input nominal',
+    (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final repo = LedgerRepository(db);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: QuestSchemes.light(),
+          home: Scaffold(
+            body: BonScreen(repository: repo),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Tambah bon warung open tab
+      await repo.addBon(
+        person: 'Warung Bu Tejo',
+        amount: 0,
+        direction: BonDirection.borrowed,
+        note: 'Kopi & rokok',
+      );
+      await tester.pumpAndSettle();
+
+      // Verifikasi badge Belum Dihitung dan ringkasan (+ 1 open)
+      expect(find.text('Warung Bu Tejo'), findsOneWidget);
+      expect(find.text('Belum Dihitung'), findsOneWidget);
+      expect(find.text('Kita berutang (+ 1 open)'), findsOneWidget);
+      expect(find.text('Hitung & Lunasi'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 1));
+      await db.close();
+    },
+  );
+
+  testWidgets(
+    'Bon dengan kategori dan rencana dompet tampil pada kartu dan terpakai saat pelunasan',
+    (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final repo = LedgerRepository(db);
+
+      final accounts = await repo.getAccounts();
+      final cashAccount = accounts.first;
+      await repo.setOpeningBalance(cashAccount.id, 500000);
+      final categories = await repo.getCategories();
+      final foodCat = categories.firstWhere((c) => c.name.toLowerCase().contains('makan'), orElse: () => categories.first);
+
+      await repo.addBon(
+        person: 'Warung Bu Tejo',
+        amount: 25000,
+        direction: BonDirection.borrowed,
+        note: 'Nasi bungkus',
+        categoryId: foodCat.id,
+        accountId: cashAccount.id,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: QuestSchemes.light(),
+          home: Scaffold(
+            body: BonScreen(repository: repo),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verifikasi nama kategori dan nama akun tampil pada kartu bon
+      expect(find.text('Warung Bu Tejo'), findsOneWidget);
+      expect(find.text(foodCat.name), findsOneWidget);
+      expect(find.text('· ${cashAccount.name}'), findsOneWidget);
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(seconds: 1));
