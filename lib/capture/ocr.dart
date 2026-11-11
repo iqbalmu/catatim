@@ -51,9 +51,9 @@ class OcrService {
       if (rawText.isEmpty) return null;
 
       return parseReceiptText(rawText, engine: engine);
-    } catch (e) {
-      debugPrint('OCR error: $e');
-      return null;
+    } catch (e, st) {
+      debugPrint('OCR error: $e\n$st');
+      rethrow;
     } finally {
       await textRecognizer.close();
     }

@@ -213,8 +213,13 @@ class _TransactionSheetState extends State<TransactionSheet> {
   Future<void> _openOcr() async {
     final p = widget.pipeline;
     if (p == null) return;
+    final nav = Navigator.of(context, rootNavigator: true);
     Navigator.pop(context);
-    await OcrScreen.start(context, pipeline: p);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (nav.context.mounted) {
+        OcrScreen.start(nav.context, pipeline: p);
+      }
+    });
   }
 
   Future<void> _showPasteDialog() async {

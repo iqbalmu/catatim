@@ -28,11 +28,114 @@ class OcrScreen extends StatefulWidget {
     ImageSource? pickSource,
   }) async {
     String? path = imagePath;
-    if (path == null && pickSource != null) {
+    if (path == null) {
+      final ImageSource? source;
+      if (pickSource != null) {
+        source = pickSource;
+      } else {
+        source = await showQuestSheet<ImageSource>(
+          context,
+          (ctx) => Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Spacing.m,
+              Spacing.s,
+              Spacing.m,
+              Spacing.m,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Pindai Struk / Bukti Transaksi',
+                  style: ctx.qTitle(17),
+                ),
+                const SizedBox(height: Spacing.xs),
+                Text(
+                  'Pilih sumber gambar untuk mengenali nominal & pihak secara otomatis.',
+                  style: ctx.qSmall(12).copyWith(color: ctx.q.muted),
+                ),
+                const SizedBox(height: Spacing.m),
+                QuestCard(
+                  onTap: () => Navigator.pop(ctx, ImageSource.camera),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: ctx.q.primaryLight,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.camera_alt_rounded,
+                          color: ctx.q.primary,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: Spacing.m),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Kamera', style: ctx.qTitle(14)),
+                            Text(
+                              'Foto langsung struk atau nota fisik',
+                              style: ctx.qSmall(11.5).copyWith(color: ctx.q.muted),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded, color: ctx.q.muted),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: Spacing.s),
+                QuestCard(
+                  onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: ctx.q.surface2,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.photo_library_rounded,
+                          color: ctx.q.text,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: Spacing.m),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Galeri / Screenshot', style: ctx.qTitle(14)),
+                            Text(
+                              'Pilih gambar bukti transfer atau struk digital',
+                              style: ctx.qSmall(11.5).copyWith(color: ctx.q.muted),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded, color: ctx.q.muted),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+      if (source == null) return;
+
       try {
         final picker = ImagePicker();
         final picked = await picker.pickImage(
-          source: pickSource,
+          source: source,
           maxWidth: 1920,
           maxHeight: 1920,
           imageQuality: 90,
@@ -49,7 +152,6 @@ class OcrScreen extends StatefulWidget {
         return;
       }
     }
-    if (path == null) return;
     if (!context.mounted) return;
 
     Navigator.push(
@@ -107,7 +209,14 @@ class _OcrScreenState extends State<OcrScreen> {
     });
 
     final ocr = const OcrService();
-    final data = await ocr.processImage(path, engine: widget.pipeline.engine);
+    OcrReceiptData? data;
+    String? errorReason;
+    try {
+      data = await ocr.processImage(path, engine: widget.pipeline.engine);
+    } catch (e) {
+      debugPrint('OCR processImage error: $e');
+      errorReason = e.toString();
+    }
 
     if (!mounted) return;
 
@@ -164,6 +273,110 @@ class _OcrScreenState extends State<OcrScreen> {
         _selectedAccountId = accId;
       }
     });
+
+    if (errorReason != null && mounted) {
+      questSnack(
+        context,
+        'Gagal membaca teks struk: $errorReason',
+        icon: Icons.warning_amber_rounded,
+      );
+    } else if (data == null && mounted) {
+      questSnack(
+        context,
+        'Teks struk tidak terdeteksi. Silakan lengkapi manual atau coba foto ulang.',
+        icon: Icons.info_outline_rounded,
+      );
+    }
+  }
+
+  Future<void> _pickNewImage() async {
+    final source = await showQuestSheet<ImageSource>(
+      context,
+      (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+          Spacing.m,
+          Spacing.s,
+          Spacing.m,
+          Spacing.m,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Ganti / Foto Ulang Struk', style: ctx.qTitle(17)),
+            const SizedBox(height: Spacing.s),
+            QuestCard(
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: ctx.q.primaryLight,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.camera_alt_rounded,
+                      color: ctx.q.primary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: Spacing.m),
+                  Expanded(
+                    child: Text('Kamera', style: ctx.qTitle(14)),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: ctx.q.muted),
+                ],
+              ),
+            ),
+            const SizedBox(height: Spacing.s),
+            QuestCard(
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: ctx.q.surface2,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.photo_library_rounded,
+                      color: ctx.q.text,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: Spacing.m),
+                  Expanded(
+                    child: Text('Galeri', style: ctx.qTitle(14)),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: ctx.q.muted),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: source,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 90,
+      );
+      if (picked != null) {
+        _processImage(picked.path);
+      }
+    } catch (e) {
+      if (mounted) {
+        questSnack(context, 'Tidak dapat membuka kamera/galeri: $e');
+      }
+    }
   }
 
   Future<void> _pickDateTime() async {
@@ -305,14 +518,62 @@ class _OcrScreenState extends State<OcrScreen> {
                 if (_imagePath != null && File(_imagePath!).existsSync()) ...[
                   ClipRRect(
                     borderRadius: BorderRadius.circular(AppRadius.card),
-                    child: Container(
-                      height: 180,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: q.surface2,
-                        border: Border.all(color: q.line),
+                    child: Stack(
+                      children: [
+                        Container(
+                          height: 180,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: q.surface2,
+                            border: Border.all(color: q.line),
+                          ),
+                          child: Image.file(
+                            File(_imagePath!),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Positioned(
+                          right: Spacing.s,
+                          bottom: Spacing.s,
+                          child: QuestButton(
+                            label: 'Ganti Foto',
+                            icon: Icons.camera_alt_rounded,
+                            tone: QuestTone.secondary,
+                            expanded: false,
+                            onPressed: _pickNewImage,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: Spacing.m),
+                ] else ...[
+                  QuestCard(
+                    onTap: _pickNewImage,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: Spacing.m,
                       ),
-                      child: Image.file(File(_imagePath!), fit: BoxFit.cover),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.add_a_photo_rounded,
+                            size: 36,
+                            color: q.primary,
+                          ),
+                          const SizedBox(height: Spacing.s),
+                          Text(
+                            'Pilih atau Foto Struk',
+                            style: context.qTitle(15),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Ketuk untuk membuka kamera atau galeri',
+                            style: context.qSmall(12).copyWith(color: q.muted),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: Spacing.m),
