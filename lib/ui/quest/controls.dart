@@ -33,15 +33,12 @@ class _QuestPressState extends State<QuestPress> {
         container: true,
         button: widget.onTap != null,
         child: GestureDetector(
-          // Opaque: seluruh area parent termasuk padding kosong ikut
-          // bisa ditap — bukan hanya piksel teks/ikon yang tergambar.
           behavior: HitTestBehavior.opaque,
           onTap: widget.onTap,
           onLongPress: widget.onLongPress,
           child: AnimatedScale(
             scale: _down ? widget.scale : 1,
             duration: QuestMotion.fast,
-            // Spring kenyal (ADR-010) — konsisten bob maskot.
             curve: QuestMotion.spring,
             child: widget.child,
           ),

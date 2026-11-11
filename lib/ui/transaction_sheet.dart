@@ -581,8 +581,11 @@ class _TransactionSheetState extends State<TransactionSheet> {
         ),
         const SizedBox(height: Spacing.s),
         Text(
-          'KATEGORI',
-          style: context.qEyebrow(10).copyWith(color: q.muted),
+          'Kategori',
+          style: context.qSmall(12).copyWith(
+            fontWeight: FontWeight.w700,
+            color: q.muted,
+          ),
         ),
         const SizedBox(height: Spacing.xs),
         _buildCategoryChips(),
@@ -744,8 +747,11 @@ class _TransactionSheetState extends State<TransactionSheet> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'KATEGORI',
-                  style: context.qEyebrow(10).copyWith(color: q.muted),
+                  'Kategori',
+                  style: context.qSmall(12).copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: q.muted,
+                  ),
                 ),
                 const SizedBox(height: Spacing.xs),
                 _buildCategoryChips(),
@@ -989,8 +995,11 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 }(),
                 const SizedBox(height: Spacing.m),
                 Text(
-                  'WAKTU TRANSAKSI',
-                  style: context.qEyebrow(10).copyWith(color: q.muted),
+                  'Waktu Transaksi',
+                  style: context.qSmall(12).copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: q.muted,
+                  ),
                 ),
                 const SizedBox(height: Spacing.xs),
                 QuestPress(
@@ -1031,8 +1040,11 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 ),
                 const SizedBox(height: Spacing.m),
                 Text(
-                  'KETERANGAN (OPSIONAL)',
-                  style: context.qEyebrow(10).copyWith(color: q.muted),
+                  'Keterangan (Opsional)',
+                  style: context.qSmall(12).copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: q.muted,
+                  ),
                 ),
                 const SizedBox(height: Spacing.xs),
                 TextFormField(

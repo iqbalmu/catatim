@@ -81,7 +81,7 @@ class QuestBottomNav extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 2),
                             child: Container(
                               decoration: BoxDecoration(
-                                color: SeedColors.primaryLight,
+                                color: context.q.primaryLight,
                                 borderRadius: BorderRadius.circular(
                                   AppRadius.tile,
                                 ),
@@ -122,49 +122,56 @@ class QuestBottomNav extends StatelessWidget {
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 2),
-        child: QuestPress(
-          onTap: () => onChanged(i),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            color: Colors.transparent,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedSlide(
-                  duration: QuestMotion.medium,
-                  curve: QuestMotion.spring,
-                  offset: selected ? const Offset(0, -0.08) : Offset.zero,
-                  child: AnimatedScale(
+        child: Semantics(
+          selected: selected,
+          button: true,
+          label: dest.label,
+          child: QuestPress(
+            onTap: () => onChanged(i),
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 48),
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              color: Colors.transparent,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedSlide(
                     duration: QuestMotion.medium,
                     curve: QuestMotion.spring,
-                    scale: selected ? 1.1 : 1.0,
-                    child: Badge(
-                      isLabelVisible: badges.contains(i),
-                      backgroundColor: context.q.bad,
-                      smallSize: 8,
-                      child: Icon(
-                        dest.icon,
-                        size: 21,
-                        color: selected ? context.q.primary : context.q.muted,
+                    offset: selected ? const Offset(0, -0.08) : Offset.zero,
+                    child: AnimatedScale(
+                      duration: QuestMotion.medium,
+                      curve: QuestMotion.spring,
+                      scale: selected ? 1.1 : 1.0,
+                      child: Badge(
+                        isLabelVisible: badges.contains(i),
+                        backgroundColor: context.q.bad,
+                        smallSize: 8,
+                        child: Icon(
+                          dest.icon,
+                          size: 21,
+                          color: selected ? context.q.primary : context.q.muted,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                AnimatedDefaultTextStyle(
-                  duration: QuestMotion.fast,
-                  curve: QuestMotion.easeOut,
-                  style: TextStyle(
-                    fontFamily: 'Nunito',
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                    fontSize: 10.5,
-                    color: selected ? context.q.primary : context.q.muted,
+                  const SizedBox(height: 2),
+                  AnimatedDefaultTextStyle(
+                    duration: QuestMotion.fast,
+                    curve: QuestMotion.easeOut,
+                    style: TextStyle(
+                      fontFamily: 'Nunito',
+                      fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                      fontSize: 10.5,
+                      color: selected ? context.q.primary : context.q.muted,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    child: Text(dest.label),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  child: Text(dest.label),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

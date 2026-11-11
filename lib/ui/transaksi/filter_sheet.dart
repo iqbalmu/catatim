@@ -82,8 +82,11 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
 
           // Section 1: Arah Transaksi
           Text(
-            'JENIS TRANSAKSI',
-            style: context.qEyebrow(10).copyWith(color: q.muted),
+            'Jenis Transaksi',
+            style: context.qSmall(12).copyWith(
+              fontWeight: FontWeight.w700,
+              color: q.muted,
+            ),
           ),
           const SizedBox(height: Spacing.xs),
           Row(
@@ -132,8 +135,11 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
             const SizedBox(height: Spacing.m),
             // Section 2: Rekening / Akun
             Text(
-              'AKUN / REKENING',
-              style: context.qEyebrow(10).copyWith(color: q.muted),
+              'Akun / Rekening',
+              style: context.qSmall(12).copyWith(
+                fontWeight: FontWeight.w700,
+                color: q.muted,
+              ),
             ),
             const SizedBox(height: Spacing.xs),
             Wrap(

@@ -512,7 +512,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                             height: 38,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: SeedColors.primaryLight,
+                              color: q.primaryLight,
                               shape: BoxShape.circle,
                             ),
                             child: Text(
@@ -626,8 +626,8 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                     height: 38,
                     decoration: BoxDecoration(
                       color: _listenerEnabled
-                          ? SeedColors.incomingTint
-                          : SeedColors.outgoingTint,
+                          ? q.incomingTint
+                          : q.outgoingTint,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
@@ -1616,7 +1616,7 @@ class _AppPickerSheetState extends State<_AppPickerSheet> {
                           height: 36,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            color: isOn ? SeedColors.incomingTint : q.surface2,
+                            color: isOn ? q.incomingTint : q.surface2,
                             shape: BoxShape.circle,
                           ),
                           child: Text(

@@ -20,7 +20,7 @@ class _ReportSectionHeader extends StatelessWidget {
         title,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: context.qEyebrow(11),
+        style: context.qTitle(14).copyWith(letterSpacing: -0.2),
       ),
     );
   }
@@ -80,8 +80,8 @@ class _ExecutiveSummaryCard extends StatelessWidget {
                           color: !metrics.hasAnyActivity
                               ? context.q.surface2
                               : isSurplus
-                                  ? SeedColors.incomingTint
-                                  : SeedColors.outgoingTint,
+                                  ? context.q.incomingTint
+                                  : context.q.outgoingTint,
                           borderRadius: BorderRadius.circular(AppRadius.pill),
                         ),
                         child: Text(
@@ -311,7 +311,10 @@ class _FlowHalfCell extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: context.qEyebrow(10),
+                  style: context.qSmall(11.5).copyWith(
+                    color: context.q.muted,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -345,8 +348,8 @@ class _FlowHalfCell extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                   decoration: BoxDecoration(
                     color: (isGood ?? true)
-                        ? SeedColors.incomingTint
-                        : SeedColors.outgoingTint,
+                        ? context.q.incomingTint
+                        : context.q.outgoingTint,
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(

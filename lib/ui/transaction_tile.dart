@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/dates_id.dart';
+import '../core/money.dart';
 import '../game/progress.dart';
 import '../models.dart';
 import '../storage/repository.dart';
@@ -88,58 +89,63 @@ class TransactionTile extends StatelessWidget {
         ? context.q.muted
         : SeedColors.categoryColor(category.colorIndex);
 
-    return QuestPress(
-      onTap: () => TransactionSheet.show(
-        context,
-        repository,
-        existing: item,
-        progress: progress,
-      ),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: Spacing.s),
-        padding: Insets.tile,
-        decoration: BoxDecoration(
-          color: context.q.surface,
-          borderRadius: BorderRadius.circular(AppRadius.tile),
-          border: Border.all(
-            color: context.q.line.withValues(alpha: 0.6),
-            width: 1,
-          ),
+    return Semantics(
+      button: true,
+      label: '$title, ${category?.name ?? tx.kind.label}, ${Money.format(tx.amount)}, ${incoming ? "pemasukan" : "pengeluaran"}',
+      child: QuestPress(
+        onTap: () => TransactionSheet.show(
+          context,
+          repository,
+          existing: item,
+          progress: progress,
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: dotColor.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(_iconFor(tx.kind), color: dotColor, size: 20),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 52),
+          margin: const EdgeInsets.only(bottom: Spacing.s),
+          padding: Insets.tile,
+          decoration: BoxDecoration(
+            color: context.q.surface,
+            borderRadius: BorderRadius.circular(AppRadius.tile),
+            border: Border.all(
+              color: context.q.line.withValues(alpha: 0.6),
+              width: 1,
             ),
-            const SizedBox(width: Spacing.m),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.qTitle(14.5),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${category?.name ?? tx.kind.label} · ${tx.bankId}',
-                    overflow: TextOverflow.ellipsis,
-                    style: context.qSmall(11.5).copyWith(color: context.q.muted),
-                  ),
-                ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: dotColor.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(_iconFor(tx.kind), color: dotColor, size: 20),
               ),
-            ),
-            const SizedBox(width: Spacing.s),
-            QuestAmount(amount: tx.amount, incoming: incoming),
-          ],
+              const SizedBox(width: Spacing.m),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.qTitle(14.5),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${category?.name ?? tx.kind.label} · ${tx.bankId}',
+                      overflow: TextOverflow.ellipsis,
+                      style: context.qSmall(11.5).copyWith(color: context.q.muted),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: Spacing.s),
+              QuestAmount(amount: tx.amount, incoming: incoming),
+            ],
+          ),
         ),
       ),
     );

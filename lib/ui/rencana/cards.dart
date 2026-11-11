@@ -279,7 +279,7 @@ class _BatasBulananCard extends StatelessWidget {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: SeedColors.primaryLight,
+                        color: q.primaryLight,
                         borderRadius: BorderRadius.circular(AppRadius.cell),
                       ),
                       child: Icon(
@@ -306,8 +306,8 @@ class _BatasBulananCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: hasLimit
                       ? (isOver
-                            ? SeedColors.outgoingTint
-                            : SeedColors.incomingTint)
+                            ? q.outgoingTint
+                            : q.incomingTint)
                       : q.surface2,
                   borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),

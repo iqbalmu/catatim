@@ -289,8 +289,11 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
       children: [
         // Preset selector bar
         Text(
-          'PILIH PRESET SKENARIO',
-          style: context.qEyebrow(10.5).copyWith(color: q.muted),
+          'Pilih Preset Skenario',
+          style: context.qSmall(12).copyWith(
+            fontWeight: FontWeight.w700,
+            color: q.muted,
+          ),
         ),
         const SizedBox(height: Spacing.xs),
         SingleChildScrollView(
@@ -318,8 +321,11 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
 
         // Editable Input Fields
         Text(
-          'DATA NOTIFIKASI',
-          style: context.qEyebrow(10.5).copyWith(color: q.muted),
+          'Data Notifikasi',
+          style: context.qSmall(12).copyWith(
+            fontWeight: FontWeight.w700,
+            color: q.muted,
+          ),
         ),
         const SizedBox(height: Spacing.xs),
         QuestCard(
@@ -413,13 +419,13 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
       (true, _, true) => (
         'Match Terverifikasi',
         q.good,
-        SeedColors.incomingTint,
+        q.incomingTint,
         q.good,
       ),
       (true, _, false) => (
         'Mismatched Skenario',
         q.bad,
-        SeedColors.outgoingTint,
+        q.outgoingTint,
         q.bad,
       ),
       (false, true, _) => (
@@ -585,8 +591,8 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
                     label: report.isAllPassed ? '100% Lulus' : 'Ada Ketidakcocokan',
                     color: report.isAllPassed ? q.good : q.bad,
                     bgColor: report.isAllPassed
-                        ? SeedColors.incomingTint
-                        : SeedColors.outgoingTint,
+                        ? q.incomingTint
+                        : q.outgoingTint,
                     dotColor: report.isAllPassed ? q.good : q.bad,
                   ),
                 ],
@@ -609,8 +615,11 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
         const SizedBox(height: Spacing.l),
 
         Text(
-          'RINCIAN HASIL SKENARIO',
-          style: context.qEyebrow(10.5).copyWith(color: q.muted),
+          'Rincian Hasil Skenario',
+          style: context.qSmall(12).copyWith(
+            fontWeight: FontWeight.w700,
+            color: q.muted,
+          ),
         ),
         const SizedBox(height: Spacing.xs),
 
@@ -640,8 +649,8 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
                         label: item.passedExpectation ? 'Lolos' : 'Gagal',
                         color: item.passedExpectation ? q.good : q.bad,
                         bgColor: item.passedExpectation
-                            ? SeedColors.incomingTint
-                            : SeedColors.outgoingTint,
+                            ? q.incomingTint
+                            : q.outgoingTint,
                         dotColor: item.passedExpectation ? q.good : q.bad,
                       ),
                     ],

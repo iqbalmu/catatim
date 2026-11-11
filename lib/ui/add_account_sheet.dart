@@ -308,7 +308,11 @@ class _AddAccountSheetState extends State<AddAccountSheet>
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Text(
                 'ATAU CATAT MANUAL',
-                style: context.qEyebrow(10.5).copyWith(color: context.q.muted),
+                style: context.qSmall(11).copyWith(
+                  color: context.q.muted,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
             Expanded(child: Divider(color: context.q.line)),
@@ -655,7 +659,7 @@ class _BankAvatar extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: SeedColors.primaryLight, shape: BoxShape.circle),
+      decoration: BoxDecoration(color: q.primaryLight, shape: BoxShape.circle),
       alignment: Alignment.center,
       child: Text(
         initial,
@@ -718,7 +722,7 @@ class _StepRow extends StatelessWidget {
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: SeedColors.primaryLight,
+              color: q.primaryLight,
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,

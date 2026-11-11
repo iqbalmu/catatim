@@ -86,7 +86,7 @@ class _TopExpenseRow extends StatelessWidget {
               height: 28,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: rank == 1 ? SeedColors.outgoingTint : context.q.surface2,
+                color: rank == 1 ? context.q.outgoingTint : context.q.surface2,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(

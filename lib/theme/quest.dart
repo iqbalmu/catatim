@@ -27,6 +27,8 @@ class QuestPalette {
     required this.primaryLight,
     required this.violet,
     required this.shadow,
+    this.incomingTint = SeedColors.incomingTint,
+    this.outgoingTint = SeedColors.outgoingTint,
   });
 
   final Color bg;
@@ -47,6 +49,8 @@ class QuestPalette {
   final Color primaryLight;
   final Color violet;
   final Color shadow;
+  final Color incomingTint;
+  final Color outgoingTint;
 
   static const light = QuestPalette(
     bg: SeedColors.bg,
@@ -67,6 +71,31 @@ class QuestPalette {
     primaryLight: SeedColors.primaryLight,
     violet: SeedColors.violet,
     shadow: Color(0x080F172A),
+    incomingTint: SeedColors.incomingTint,
+    outgoingTint: SeedColors.outgoingTint,
+  );
+
+  static const dark = QuestPalette(
+    bg: DarkColors.bg,
+    surface: DarkColors.surface,
+    surface2: DarkColors.surface2,
+    line: DarkColors.line,
+    text: DarkColors.ink,
+    body: DarkColors.body,
+    muted: DarkColors.muted,
+    good: DarkColors.incoming,
+    warn: DarkColors.warn,
+    warnTint: DarkColors.warnTint,
+    bad: DarkColors.outgoing,
+    honey: SeedColors.honey,
+    honeyInk: SeedColors.honeyBright,
+    primary: DarkColors.primary,
+    primaryDeep: DarkColors.primaryDeep,
+    primaryLight: DarkColors.primaryLight,
+    violet: DarkColors.violet,
+    shadow: Color(0x30000000),
+    incomingTint: DarkColors.incomingTint,
+    outgoingTint: DarkColors.outgoingTint,
   );
 
   /// Aksen mint (syal Pochy) — netral-aktif: segmented on, status tenang.
@@ -76,8 +105,10 @@ class QuestPalette {
 }
 /// Akses cepat palet + tipografi khas Quest dari BuildContext.
 extension QuestTheme on BuildContext {
-  /// Palet tunggal (tanpa dark mode — ADR-010).
-  QuestPalette get q => QuestPalette.light;
+  /// Palet dinamis mengikuti tema sistem (light/dark).
+  QuestPalette get q => Theme.of(this).brightness == Brightness.dark
+      ? QuestPalette.dark
+      : QuestPalette.light;
 
   /// Angka display besar, tabular agar digit sejajar.
   TextStyle qDisplay([double size = 40]) {
@@ -795,17 +826,18 @@ class _QuestTabEnterState extends State<QuestTabEnter>
 class QuestSchemes {
   QuestSchemes._();
 
-  static ThemeData light() => _base(QuestPalette.light);
+  static ThemeData light() => _base(QuestPalette.light, Brightness.light);
+  static ThemeData dark() => _base(QuestPalette.dark, Brightness.dark);
 
-  static ThemeData _base(QuestPalette p) {
+  static ThemeData _base(QuestPalette p, Brightness brightness) {
     final scheme = ColorScheme(
-      brightness: Brightness.light,
-      primary: p.honey,
-      onPrimary: p.honeyInk,
+      brightness: brightness,
+      primary: p.primary,
+      onPrimary: Colors.white,
       secondary: p.good,
-      onSecondary: p.honeyInk,
+      onSecondary: Colors.white,
       error: p.bad,
-      onError: p.honeyInk,
+      onError: Colors.white,
       surface: p.surface,
       onSurface: p.text,
       surfaceContainerLowest: p.surface,

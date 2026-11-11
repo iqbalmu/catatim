@@ -57,48 +57,54 @@ class QuestSegmented<T> extends StatelessWidget {
             children: [
               for (var i = 0; i < options.length; i++)
                 Expanded(
-                  child: QuestPress(
-                    onTap: () => onChanged(options[i].value),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 4,
-                      ),
-                      alignment: Alignment.center,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (options[i].icon != null) ...[
-                            Icon(
-                              options[i].icon,
-                              size: 16,
-                              color: i == selectedIndex
-                                  ? context.q.primary
-                                  : context.q.muted,
-                            ),
-                            const SizedBox(width: Spacing.xs),
-                          ],
-                          Flexible(
-                            child: AnimatedDefaultTextStyle(
-                              duration: QuestMotion.fast,
-                              curve: QuestMotion.easeOut,
-                              style: TextStyle(
-                                fontFamily: 'Nunito',
-                                fontSize: 12.5,
-                                fontWeight: i == selectedIndex
-                                    ? FontWeight.w800
-                                    : FontWeight.w600,
+                  child: Semantics(
+                    selected: i == selectedIndex,
+                    button: true,
+                    label: options[i].label,
+                    child: QuestPress(
+                      onTap: () => onChanged(options[i].value),
+                      child: Container(
+                        constraints: const BoxConstraints(minHeight: 44),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 10,
+                          horizontal: 4,
+                        ),
+                        alignment: Alignment.center,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (options[i].icon != null) ...[
+                              Icon(
+                                options[i].icon,
+                                size: 16,
                                 color: i == selectedIndex
-                                    ? context.q.text
+                                    ? context.q.primary
                                     : context.q.muted,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              child: Text(options[i].label),
+                              const SizedBox(width: Spacing.xs),
+                            ],
+                            Flexible(
+                              child: AnimatedDefaultTextStyle(
+                                duration: QuestMotion.fast,
+                                curve: QuestMotion.easeOut,
+                                style: TextStyle(
+                                  fontFamily: 'Nunito',
+                                  fontSize: 12.5,
+                                  fontWeight: i == selectedIndex
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
+                                  color: i == selectedIndex
+                                      ? context.q.text
+                                      : context.q.muted,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                child: Text(options[i].label),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),

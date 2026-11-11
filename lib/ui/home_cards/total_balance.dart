@@ -87,16 +87,18 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                       children: [
                         Text(
                           'TOTAL SALDO',
-                          style: context
-                              .qEyebrow(10.5)
-                              .copyWith(color: q.muted),
+                          style: context.qSmall(11.5).copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                                color: q.muted,
+                              ),
                         ),
                         AnimatedContainer(
                           duration: QuestMotion.medium,
                           curve: QuestMotion.easeOut,
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                            horizontal: 4,
+                            vertical: 2,
                           ),
                           decoration: BoxDecoration(
                             color: _obscured
@@ -113,8 +115,8 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                             visualDensity: VisualDensity.compact,
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(
-                              minWidth: 22,
-                              minHeight: 22,
+                              minWidth: 44,
+                              minHeight: 44,
                             ),
                             tooltip: _obscured
                                 ? 'Tampilkan saldo'
@@ -242,47 +244,53 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                                 accountId: accounts[i].id,
                               ),
                             ),
-                          QuestPress(
-                            onTap: () => AddAccountSheet.show(
-                              context,
-                              repository: widget.repository,
-                              pipeline: widget.pipeline,
-                              ruleSet: widget.ruleSet,
-                            ),
-                            child: Container(
-                              margin: const EdgeInsets.only(right: Spacing.xs),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 9,
+                          Semantics(
+                            button: true,
+                            label: 'Tambah akun',
+                            child: QuestPress(
+                              onTap: () => AddAccountSheet.show(
+                                context,
+                                repository: widget.repository,
+                                pipeline: widget.pipeline,
+                                ruleSet: widget.ruleSet,
                               ),
-                              decoration: BoxDecoration(
-                                color: q.surface2,
-                                borderRadius: BorderRadius.circular(
-                                  AppRadius.tile,
+                              child: Container(
+                                constraints: const BoxConstraints(minHeight: 44),
+                                margin: const EdgeInsets.only(right: Spacing.xs),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 9,
                                 ),
-                                border: Border.all(
-                                  color: q.primary.withValues(alpha: 0.25),
-                                  style: BorderStyle.solid,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.add_rounded,
-                                    size: 16,
-                                    color: q.primary,
+                                decoration: BoxDecoration(
+                                  color: q.surface2,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.tile,
                                   ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Tambah',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
+                                  border: Border.all(
+                                    color: q.primary.withValues(alpha: 0.25),
+                                    style: BorderStyle.solid,
+                                  ),
+                                ),
+                                alignment: Alignment.center,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.add_rounded,
+                                      size: 16,
                                       color: q.primary,
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Tambah',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                        color: q.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -325,17 +333,22 @@ class _AccountChip extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(right: Spacing.s),
-      child: QuestPress(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: q.surface2.withValues(alpha: 0.6),
-            borderRadius: BorderRadius.circular(AppRadius.tile),
-            border: Border.all(color: q.line),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+      child: Semantics(
+        button: true,
+        label: 'Akun ${account.name}',
+        child: QuestPress(
+          onTap: onTap,
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 44),
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+            decoration: BoxDecoration(
+              color: q.surface2.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(AppRadius.tile),
+              border: Border.all(color: q.line),
+            ),
+            alignment: Alignment.center,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, size: 16, color: q.text),
               const SizedBox(width: 6),
@@ -387,8 +400,9 @@ class _AccountChip extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 /// Transisi privasi saldo (Show/Hide): efek kabur kaca (frosted blur) +

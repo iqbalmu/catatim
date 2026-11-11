@@ -71,12 +71,12 @@ class GamificationSheet extends StatelessWidget {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: SeedColors.honey50,
+                        color: context.q.warnTint,
                         borderRadius: BorderRadius.circular(AppRadius.tile),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.emoji_events_rounded,
-                        color: SeedColors.honey,
+                        color: context.q.warn,
                         size: 20,
                       ),
                     ),
@@ -131,7 +131,7 @@ class GamificationSheet extends StatelessWidget {
                           vertical: Spacing.s,
                         ),
                         decoration: BoxDecoration(
-                          color: SeedColors.primaryLight,
+                          color: context.q.primaryLight,
                           borderRadius: BorderRadius.circular(AppRadius.pill),
                         ),
                         child: Text(
@@ -155,13 +155,10 @@ class GamificationSheet extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(Spacing.m),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [SeedColors.honey50, SeedColors.honey100],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    color: context.q.surface,
                     borderRadius: BorderRadius.circular(AppRadius.card),
-                    border: Border.all(color: SeedColors.honeyBright),
+                    border: Border.all(color: context.q.line),
+                    boxShadow: AppShadows.card,
                   ),
                   child: Row(
                     children: [
@@ -169,15 +166,8 @@ class GamificationSheet extends StatelessWidget {
                         width: 52,
                         height: 52,
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: context.q.warnTint,
                           borderRadius: BorderRadius.circular(AppRadius.tile),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x15F59E0B),
-                              blurRadius: 10,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
                         ),
                         child: Icon(
                           Icons.local_fire_department_rounded,
@@ -195,7 +185,7 @@ class GamificationSheet extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 16.5,
                                 fontWeight: FontWeight.w900,
-                                color: SeedColors.honeyText,
+                                color: context.q.text,
                                 letterSpacing: -0.3,
                               ),
                             ),
@@ -204,10 +194,10 @@ class GamificationSheet extends StatelessWidget {
                               isPaused
                                   ? 'Atur batas harian dulu yuk, biar hitungannya jalan lagi.'
                                   : 'Pengeluaran harianmu terjaga rapi dalam batas aman.',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
-                                color: SeedColors.honeyInk,
+                                color: context.q.muted,
                               ),
                             ),
                           ],
@@ -460,7 +450,7 @@ class _BadgeTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: badge.unlocked
-                  ? SeedColors.incomingTint
+                  ? context.q.incomingTint
                   : context.q.surface2,
               borderRadius: BorderRadius.circular(AppRadius.pill),
             ),

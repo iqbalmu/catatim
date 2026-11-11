@@ -32,7 +32,7 @@ class _AccountOptionTile extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: selected ? SeedColors.primaryLight : context.q.surface2,
+                color: selected ? context.q.primaryLight : context.q.surface2,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(

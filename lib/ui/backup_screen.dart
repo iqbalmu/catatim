@@ -212,7 +212,7 @@ class _ActionRow extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: SeedColors.primaryLight,
+                color: context.q.primaryLight,
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: context.q.primary),

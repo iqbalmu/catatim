@@ -55,30 +55,30 @@ class HomeTopBar extends StatelessWidget {
     final hour = DateTime.now().hour;
     if (hour >= 4 && hour < 11) {
       return (
-        title: 'Selamat pagi 👋',
+        title: 'Selamat pagi',
         subtitle: 'Awali hari dengan catatan rapi',
         icon: Icons.wb_sunny_rounded,
-        colors: [const Color(0xFFF59E0B), q.primary],
+        colors: [q.warn, q.primary],
       );
     }
     if (hour >= 11 && hour < 15) {
       return (
-        title: 'Selamat siang 👋',
+        title: 'Selamat siang',
         subtitle: 'Sudah catat pengeluaran hari ini?',
         icon: Icons.wb_sunny_rounded,
-        colors: [const Color(0xFF38BDF8), q.primary],
+        colors: [q.primary, q.primaryDeep],
       );
     }
     if (hour >= 15 && hour < 18) {
       return (
-        title: 'Selamat sore 👋',
+        title: 'Selamat sore',
         subtitle: 'Yuk rekap belanjaan hari ini',
         icon: Icons.wb_twilight_rounded,
-        colors: [const Color(0xFFFB923C), q.violet],
+        colors: [q.warn, q.violet],
       );
     }
     return (
-      title: 'Selamat malam 👋',
+      title: 'Selamat malam',
       subtitle: 'Waktunya cek sisa anggaranmu',
       icon: Icons.nightlight_round,
       colors: [q.primary, q.violet],

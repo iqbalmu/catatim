@@ -142,7 +142,7 @@ class _ReportMetrics {
             name: cat?.name ?? 'Tanpa Kategori',
             amount: sum,
             color: cat == null
-                ? const Color(0xFF94A3B8)
+                ? SeedColors.muted
                 : SeedColors.categoryColor(cat.colorIndex),
             icon: _iconForCategory(cat),
             items: sortedItems,

@@ -239,8 +239,8 @@ class _RencanaBatasState extends State<RencanaBatas> {
               child: Padding(
                 padding: const EdgeInsets.only(top: Spacing.s),
                 child: Text(
-                  'KATEGORI & ALOKASI ANGGARAN',
-                  style: context.qEyebrow(11),
+                  'Alokasi Anggaran Kategori',
+                  style: context.qTitle(15),
                 ),
               ),
             ),

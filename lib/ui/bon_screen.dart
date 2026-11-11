@@ -351,7 +351,7 @@ class _BonScreenState extends State<BonScreen> {
                                       ? TextStyle(
                                           fontSize: 10.5,
                                           fontWeight: FontWeight.w700,
-                                          color: Colors.amber.shade800,
+                                          color: context.q.warn,
                                         )
                                       : context.qSmall(10.5),
                                 ),
@@ -420,7 +420,7 @@ class _BonScreenState extends State<BonScreen> {
                                       ? TextStyle(
                                           fontSize: 10.5,
                                           fontWeight: FontWeight.w700,
-                                          color: Colors.amber.shade800,
+                                          color: context.q.warn,
                                         )
                                       : context.qSmall(10.5),
                                 ),
@@ -568,7 +568,7 @@ class _BonScreenState extends State<BonScreen> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: isPiutang ? SeedColors.incomingTint : SeedColors.outgoingTint,
+                      color: isPiutang ? context.q.incomingTint : context.q.outgoingTint,
                       borderRadius: BorderRadius.circular(AppRadius.cell),
                     ),
                     child: Icon(
@@ -641,16 +641,16 @@ class _BonScreenState extends State<BonScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                           decoration: BoxDecoration(
-                            color: Colors.amber.withValues(alpha: 0.15),
+                            color: context.q.warn.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(AppRadius.pill),
-                            border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
+                            border: Border.all(color: context.q.warn.withValues(alpha: 0.4)),
                           ),
                           child: Text(
                             'Belum Dihitung',
                             style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w800,
-                              color: Colors.amber.shade800,
+                              color: context.q.warn,
                             ),
                           ),
                         )
@@ -681,7 +681,7 @@ class _BonScreenState extends State<BonScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: bon.settledAt == null
-                                ? SeedColors.primaryLight
+                                ? context.q.primaryLight
                                 : context.q.surface2,
                             borderRadius: BorderRadius.circular(AppRadius.pill),
                           ),

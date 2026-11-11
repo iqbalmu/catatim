@@ -166,3 +166,43 @@ class SeedColors {
   static Color categoryColor(int index) =>
       categoryPalette[index % categoryPalette.length];
 }
+
+class DarkColors {
+  DarkColors._();
+
+  /// Latar app — Slate 950 deep.
+  static const Color bg = Color(0xFF0F172A);
+
+  /// Kartu/sheet — Slate 900.
+  static const Color surface = Color(0xFF1E293B);
+
+  /// Tint latar sekunder / strip — Slate 800.
+  static const Color surface2 = Color(0xFF334155);
+
+  /// Garis sekunder & border hairline — Slate 700.
+  static const Color line = Color(0xFF334155);
+  static const Color border = Color(0xFF334155);
+
+  /// Teks utama — Slate 50.
+  static const Color ink = Color(0xFFF8FAFC);
+
+  /// Teks body — Slate 200.
+  static const Color body = Color(0xFFE2E8F0);
+
+  /// Teks sekunder/muted — Slate 400.
+  static const Color muted = Color(0xFF94A3B8);
+
+  /// Brand Primary Indigo 400.
+  static const Color primary = Color(0xFF818CF8);
+  static const Color primaryDeep = Color(0xFF6366F1);
+  static const Color primaryLight = Color(0xFF312E81);
+  static const Color violet = Color(0xFFA78BFA);
+
+  /// Semantik
+  static const Color incoming = Color(0xFF34D399); // Emerald 400
+  static const Color incomingTint = Color(0xFF064E3B);
+  static const Color outgoing = Color(0xFFF87171); // Rose 400
+  static const Color outgoingTint = Color(0xFF450A0A);
+  static const Color warn = Color(0xFFFBBF24); // Amber 400
+  static const Color warnTint = Color(0xFF451A03);
+}

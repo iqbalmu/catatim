@@ -367,7 +367,7 @@ class SettingsScreen extends StatelessWidget {
                         leading: _SettingIcon(
                           icon: Icons.notifications_active_rounded,
                           color: q.good,
-                          bgColor: SeedColors.incomingTint,
+                          bgColor: q.incomingTint,
                         ),
                         title: Text(
                           'Capture Notifikasi Bank',
@@ -510,7 +510,7 @@ class SettingsScreen extends StatelessWidget {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: SeedColors.incomingTint,
+                      color: q.incomingTint,
                       borderRadius: BorderRadius.circular(AppRadius.tile),
                       border: Border.all(
                         color: q.good.withValues(alpha: 0.25),

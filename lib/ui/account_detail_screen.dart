@@ -381,7 +381,13 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('SALDO SEKARANG', style: context.qEyebrow(10)),
+                                  Text(
+                                    'Saldo Sekarang',
+                                    style: context.qSmall(12).copyWith(
+                                      color: q.muted,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                   const SizedBox(height: 2),
                                   QuestMoney(
                                     amount: balance,

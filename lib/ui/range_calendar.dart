@@ -232,7 +232,7 @@ class _DayCell extends StatelessWidget {
       bg = q.primary;
       fg = Colors.white;
     } else if (inRange) {
-      bg = SeedColors.primaryLight;
+      bg = q.primaryLight;
       fg = q.primary;
     } else {
       bg = Colors.transparent;

@@ -37,11 +37,10 @@ class _CashflowSummaryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'PEMASUKAN',
-                      style: context.qEyebrow(11.5).copyWith(
+                      'Pemasukan',
+                      style: context.qSmall(12).copyWith(
                         color: context.q.good,
-                        letterSpacing: 0.6,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -72,11 +71,10 @@ class _CashflowSummaryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'PENGELUARAN',
-                      style: context.qEyebrow(11.5).copyWith(
+                      'Pengeluaran',
+                      style: context.qSmall(12).copyWith(
                         color: context.q.bad,
-                        letterSpacing: 0.6,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -107,11 +105,10 @@ class _CashflowSummaryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'SELISIH',
-                      style: context.qEyebrow(11.5).copyWith(
+                      'Selisih',
+                      style: context.qSmall(12).copyWith(
                         color: context.q.muted,
-                        letterSpacing: 0.6,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 6),

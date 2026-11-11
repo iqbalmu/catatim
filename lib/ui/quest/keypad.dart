@@ -68,7 +68,7 @@ class QuestKeypad extends StatelessWidget {
   }) {
     final q = context.q;
     final cell = Container(
-      height: 46,
+      height: 50,
       decoration: BoxDecoration(
         color: q.surface2,
         borderRadius: BorderRadius.circular(AppRadius.tile),
