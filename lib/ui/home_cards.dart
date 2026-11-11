@@ -97,7 +97,7 @@ class HomeTopBar extends StatelessWidget {
         Spacing.m,
         Spacing.m,
         Spacing.m,
-        Spacing.xs,
+        Spacing.s,
       ),
       child: Row(
         children: [

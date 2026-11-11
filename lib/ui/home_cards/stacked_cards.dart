@@ -276,7 +276,7 @@ class _StackedHeroCardsState extends State<StackedHeroCards>
     );
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.xs, Spacing.m, 0),
+      padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.sm, Spacing.m, 0),
       child: GestureDetector(
         behavior: HitTestBehavior.translucent,
         onHorizontalDragStart: _onDragStart,
