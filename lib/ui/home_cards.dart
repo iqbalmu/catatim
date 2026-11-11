@@ -50,38 +50,29 @@ class HomeTopBar extends StatelessWidget {
   final VoidCallback onOpenAnggaran;
   final VoidCallback onOpenBon;
 
-  ({String title, String subtitle, IconData icon, List<Color> colors})
-      _getGreeting(QuestPalette q) {
+  ({String title, String subtitle}) _getGreeting() {
     final hour = DateTime.now().hour;
     if (hour >= 4 && hour < 11) {
       return (
         title: 'Selamat pagi',
         subtitle: 'Awali hari dengan catatan rapi',
-        icon: Icons.wb_sunny_rounded,
-        colors: [q.warn, q.primary],
       );
     }
     if (hour >= 11 && hour < 15) {
       return (
         title: 'Selamat siang',
         subtitle: 'Sudah catat pengeluaran hari ini?',
-        icon: Icons.wb_sunny_rounded,
-        colors: [q.primary, q.primaryDeep],
       );
     }
     if (hour >= 15 && hour < 18) {
       return (
         title: 'Selamat sore',
         subtitle: 'Yuk rekap belanjaan hari ini',
-        icon: Icons.wb_twilight_rounded,
-        colors: [q.warn, q.violet],
       );
     }
     return (
       title: 'Selamat malam',
       subtitle: 'Waktunya cek sisa anggaranmu',
-      icon: Icons.nightlight_round,
-      colors: [q.primary, q.violet],
     );
   }
 
@@ -90,7 +81,7 @@ class HomeTopBar extends StatelessWidget {
     final q = context.q;
     final summary = progress.latest;
     final streakDays = summary?.streakDays ?? 0;
-    final greeting = _getGreeting(q);
+    final greeting = _getGreeting();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -103,60 +94,29 @@ class HomeTopBar extends StatelessWidget {
         children: [
           // Greeting & Friendly Prompt
           Expanded(
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: greeting.colors,
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: greeting.colors.first.withValues(alpha: 0.25),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
+                Text(
+                  greeting.title,
+                  style: context.qTitle(17).copyWith(
+                    letterSpacing: -0.3,
+                    height: 1.15,
                   ),
-                  child: Icon(
-                    greeting.icon,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(width: Spacing.s),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        greeting.title,
-                        style: context.qTitle(16).copyWith(
-                          letterSpacing: -0.3,
-                          height: 1.15,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        greeting.subtitle,
-                        style: context.qSmall(11.5).copyWith(
-                          color: q.muted,
-                          fontWeight: FontWeight.w500,
-                          height: 1.1,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                const SizedBox(height: 2),
+                Text(
+                  greeting.subtitle,
+                  style: context.qSmall(12).copyWith(
+                    color: q.muted,
+                    fontWeight: FontWeight.w500,
+                    height: 1.1,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

@@ -92,45 +92,33 @@ class DailyPaceHeroCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header: Badge PACE HARIAN & Status Semantik
+                // Header: PACE HARIAN & Status Semantik
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3.5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: q.primaryLight,
-                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.speed_rounded, size: 13, color: q.primary),
-                          const SizedBox(width: 4),
-                          Text(
-                            'PACE HARIAN',
-                            style: context.qEyebrow(10).copyWith(
-                                  color: q.primary,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                          ),
-                        ],
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.speed_rounded, size: 15, color: q.muted),
+                        const SizedBox(width: 5),
+                        Text(
+                          'PACE HARIAN',
+                          style: context.qSmall(11.5).copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                                color: q.muted,
+                              ),
+                        ),
+                      ],
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 9,
-                        vertical: 3.5,
+                        horizontal: 8,
+                        vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.12),
+                        color: statusColor.withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(AppRadius.pill),
-                        border: Border.all(
-                          color: statusColor.withValues(alpha: 0.3),
-                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -139,10 +127,11 @@ class DailyPaceHeroCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             statusLabel,
-                            style: context.qSmall(11).copyWith(
-                                  color: statusColor,
-                                  fontWeight: FontWeight.w800,
-                                ),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: statusColor,
+                            ),
                           ),
                         ],
                       ),
@@ -154,7 +143,10 @@ class DailyPaceHeroCard extends StatelessWidget {
                 // Label Headline
                 Text(
                   isOver ? 'Defisit belanja hari ini' : 'Sisa aman hari ini',
-                  style: context.qSmall(11.5).copyWith(color: q.muted),
+                  style: context.qSmall(12).copyWith(
+                        color: q.muted,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
                 const SizedBox(height: Spacing.xxs),
 
@@ -178,7 +170,10 @@ class DailyPaceHeroCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         Text(
                           '/ hari',
-                          style: context.qSmall(13).copyWith(color: q.muted),
+                          style: context.qSmall(13).copyWith(
+                                color: q.muted,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ],
                     ],
@@ -186,51 +181,45 @@ class DailyPaceHeroCard extends StatelessWidget {
                 ),
                 const SizedBox(height: Spacing.s),
 
-                // Context Row: Pengeluaran Hari Ini & Tanggal Kalender
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: q.surface2.withValues(alpha: 0.55),
-                    borderRadius: BorderRadius.circular(AppRadius.tile),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.arrow_upward_rounded,
-                            size: 13,
-                            color: dayOut > 0 ? q.bad : q.muted,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Keluar hari ini: ${Money.format(dayOut)}',
-                            style: context.qSmall(11.5).copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: q.text,
-                                ),
-                          ),
-                        ],
-                      ),
-                      if (pace != null)
-                        Text(
-                          'Hari ${pace.dayOfMonth}/${pace.daysInMonth} · ideal ${pace.idealUsedPercent}%',
-                          style: context
-                              .qSmall(11)
-                              .copyWith(color: q.muted),
+                // Context Row: Pengeluaran Hari Ini & Tanggal Kalender (tanpa nested box)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.arrow_upward_rounded,
+                          size: 13,
+                          color: dayOut > 0 ? q.bad : q.muted,
                         ),
-                    ],
-                  ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Keluar hari ini: ${Money.format(dayOut)}',
+                          style: context.qSmall(11.5).copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: q.text,
+                              ),
+                        ),
+                      ],
+                    ),
+                    if (pace != null)
+                      Text(
+                        'Hari ${pace.dayOfMonth}/${pace.daysInMonth} · ideal ${pace.idealUsedPercent}%',
+                        style: context.qSmall(11).copyWith(color: q.muted),
+                      ),
+                  ],
                 ),
 
                 // Ringkasan Anggaran Bulanan (jika ada batas bulanan)
                 if (monthlyLimit != null && monthlyLimit > 0) ...[
                   const SizedBox(height: Spacing.m),
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: q.line.withValues(alpha: 0.6),
+                  ),
+                  const SizedBox(height: Spacing.s),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -254,6 +243,7 @@ class DailyPaceHeroCard extends StatelessWidget {
                     value: monthlyFraction,
                     color: monthProgressColor,
                     backgroundColor: q.surface2,
+                    minHeight: 6,
                   ),
                 ],
               ],
