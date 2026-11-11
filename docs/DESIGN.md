@@ -96,7 +96,7 @@ Dokumen ini adalah sumber kebenaran visual aplikasi; widget-kit terpusat di `lib
 - **Chip/pill**: `surface2` radius 999; status memakai tint (`incomingTint`/`outgoingTint`/`warnTint`).
 - **Segmented**: sel aktif `surface` dengan shadow halus, teks `text` w800.
 - **Tile transaksi**: ikon kategori 40px lingkaran tint 12%, nama w800, meta muted, nominal tabular berwarna arah.
-- **Nav bawah**: `surface` radius 28, elevated shadow, indikator geser `primaryLight`, tombol tengah aksi utama.
+- **Nav bawah**: `surface` radius 28, elevated shadow, perubahan state aktif pada warna teks dan ikon (`primary`), tanpa background pill, tombol tengah aksi utama.
 - **Keypad**: tombol 50dp, haptic feedback, pintasan nominal (000, Backspace, Clear).
 
 ## Motion

@@ -4,7 +4,7 @@ import 'package:bukuduit/theme/quest.dart';
 import 'package:bukuduit/ui/quest.dart';
 
 void main() {
-  testWidgets('QuestBottomNav slides indicator across tabs and center button gap', (tester) async {
+  testWidgets('QuestBottomNav switches active tabs across center button gap', (tester) async {
     int currentTab = 0;
 
     await tester.pumpWidget(
