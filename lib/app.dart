@@ -24,24 +24,31 @@ class BukuduitApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Bukuduit',
-      locale: const Locale('id'),
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [Locale('id')],
-      theme: QuestSchemes.light(),
-      darkTheme: QuestSchemes.dark(),
-      themeMode: ThemeMode.system,
-      home: HomeScreen(
-        repository: repository,
-        pipeline: pipeline,
-        progress: progress,
-        ruleSet: ruleSet,
-      ),
+    return StreamBuilder<ThemeMode>(
+      stream: repository.watchThemeMode(),
+      initialData: ThemeMode.system,
+      builder: (context, snapshot) {
+        final themeMode = snapshot.data ?? ThemeMode.system;
+        return MaterialApp(
+          title: 'Bukuduit',
+          locale: const Locale('id'),
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('id')],
+          theme: QuestSchemes.light(),
+          darkTheme: QuestSchemes.dark(),
+          themeMode: themeMode,
+          home: HomeScreen(
+            repository: repository,
+            pipeline: pipeline,
+            progress: progress,
+            ruleSet: ruleSet,
+          ),
+        );
+      },
     );
   }
 }

@@ -362,7 +362,63 @@ class SettingsScreen extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   child: Column(
                     children: [
-                      // 1. Capture Notifikasi Bank
+                      // 1. Tema Tampilan (Light / Dark / System)
+                      StreamBuilder<ThemeMode>(
+                        stream: repository.watchThemeMode(),
+                        initialData: ThemeMode.system,
+                        builder: (context, snapshot) {
+                          final currentMode =
+                              snapshot.data ?? ThemeMode.system;
+                          final modeTitle = switch (currentMode) {
+                            ThemeMode.system => 'Sistem',
+                            ThemeMode.light => 'Terang',
+                            ThemeMode.dark => 'Gelap',
+                          };
+                          final modeIcon = switch (currentMode) {
+                            ThemeMode.system => Icons.brightness_auto_rounded,
+                            ThemeMode.light => Icons.light_mode_rounded,
+                            ThemeMode.dark => Icons.dark_mode_rounded,
+                          };
+
+                          return QuestListTile(
+                            leading: _SettingIcon(
+                              icon: modeIcon,
+                              color: q.primary,
+                              bgColor: q.primaryLight,
+                            ),
+                            title: Text(
+                              'Tema Tampilan',
+                              style: context.qTitle(15),
+                            ),
+                            subtitle: Text(
+                              'Mode: $modeTitle · Pilih tema terang, gelap, atau sistem',
+                              style: context.qSmall(12),
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  modeTitle,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: q.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: q.muted,
+                                ),
+                              ],
+                            ),
+                            onTap: () => _openThemeSheet(context, currentMode),
+                          );
+                        },
+                      ),
+                      Divider(height: 1, thickness: 1, color: q.line),
+
+                      // 2. Capture Notifikasi Bank
                       QuestListTile(
                         leading: _SettingIcon(
                           icon: Icons.notifications_active_rounded,
@@ -394,7 +450,7 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       Divider(height: 1, thickness: 1, color: q.line),
 
-                      // 2. Backup & Pulihkan Data
+                      // 3. Backup & Pulihkan Data
                       QuestListTile(
                         leading: _SettingIcon(
                           icon: Icons.shield_outlined,
@@ -622,6 +678,213 @@ class SettingsScreen extends StatelessWidget {
         );
       }
     }
+  }
+
+  Future<void> _openThemeSheet(
+    BuildContext context,
+    ThemeMode currentMode,
+  ) async {
+    HapticFeedback.selectionClick();
+    await showQuestSheet<void>(
+      context,
+      (ctx) => _ThemePickerSheet(
+        initialMode: currentMode,
+        onModeSelected: (newMode) async {
+          HapticFeedback.selectionClick();
+          await repository.setThemeMode(newMode);
+          if (ctx.mounted) {
+            Future.delayed(const Duration(milliseconds: 180), () {
+              if (ctx.mounted) Navigator.pop(ctx);
+            });
+          }
+        },
+      ),
+    );
+  }
+}
+
+class _ThemePickerSheet extends StatefulWidget {
+  const _ThemePickerSheet({
+    required this.initialMode,
+    required this.onModeSelected,
+  });
+
+  final ThemeMode initialMode;
+  final ValueChanged<ThemeMode> onModeSelected;
+
+  @override
+  State<_ThemePickerSheet> createState() => _ThemePickerSheetState();
+}
+
+class _ThemePickerSheetState extends State<_ThemePickerSheet> {
+  late ThemeMode _selected = widget.initialMode;
+
+  @override
+  Widget build(BuildContext context) {
+    final options = const [
+      (
+        mode: ThemeMode.system,
+        title: 'Sistem (Otomatis)',
+        desc: 'Menyesuaikan otomatis dengan tema perangkat HP Anda',
+        icon: Icons.brightness_auto_rounded,
+      ),
+      (
+        mode: ThemeMode.light,
+        title: 'Terang',
+        desc: 'Tampilan bersih & cerah Slate-Clean khas Bukuduit',
+        icon: Icons.light_mode_rounded,
+      ),
+      (
+        mode: ThemeMode.dark,
+        title: 'Gelap',
+        desc: 'Tampilan gelap pekat yang nyaman di mata & hemat baterai',
+        icon: Icons.dark_mode_rounded,
+      ),
+    ];
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          Spacing.m,
+          Spacing.s,
+          Spacing.m,
+          Spacing.m,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Tema Tampilan', style: context.qTitle(18)),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Pilih tema tampilan yang nyaman untuk mata Anda',
+                        style: context.qSmall(12.5),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  tooltip: 'Tutup',
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: Spacing.m),
+            for (final opt in options) ...[
+              _ThemeOptionCard(
+                title: opt.title,
+                desc: opt.desc,
+                icon: opt.icon,
+                selected: _selected == opt.mode,
+                onTap: () {
+                  setState(() => _selected = opt.mode);
+                  widget.onModeSelected(opt.mode);
+                },
+              ),
+              const SizedBox(height: Spacing.s),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeOptionCard extends StatelessWidget {
+  const _ThemeOptionCard({
+    required this.title,
+    required this.desc,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final String desc;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+
+    return QuestPress(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: QuestMotion.fast,
+        curve: QuestMotion.easeOut,
+        padding: const EdgeInsets.all(Spacing.m),
+        decoration: BoxDecoration(
+          color: selected
+              ? q.primary.withValues(alpha: 0.08)
+              : q.surface,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(
+            color: selected
+                ? q.primary
+                : q.line.withValues(alpha: 0.6),
+            width: selected ? 1.6 : 1.0,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: selected
+                    ? q.primary.withValues(alpha: 0.16)
+                    : q.surface2,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: selected ? q.primary : q.muted,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: Spacing.m),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: context.qTitle(15).copyWith(
+                          color: selected ? q.primary : q.text,
+                          fontWeight: selected ? FontWeight.w800 : FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    desc,
+                    style: context.qSmall(12).copyWith(
+                          color: selected ? q.text : q.muted,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: Spacing.s),
+            Icon(
+              selected
+                  ? Icons.check_circle_rounded
+                  : Icons.radio_button_unchecked_rounded,
+              color: selected ? q.primary : q.muted.withValues(alpha: 0.4),
+              size: 22,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

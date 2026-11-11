@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/material.dart' show ThemeMode;
 
 import '../models.dart';
 import '../rules/engine.dart' show RuleEngine;
@@ -1132,6 +1133,44 @@ class LedgerRepository {
           if (text == null || text.isEmpty) return null;
           return int.tryParse(text);
         });
+  }
+
+  // --- tema tampilan -----------------------------------------------------------
+
+  static const themeModeKey = 'theme_mode';
+
+  /// Mode tema aplikasi: system, light, atau dark.
+  Future<ThemeMode> getThemeMode() async {
+    final raw = await getSetting(themeModeKey);
+    return switch (raw) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      _ => ThemeMode.system,
+    };
+  }
+
+  /// Stream reaktif mode tema aplikasi.
+  Stream<ThemeMode> watchThemeMode() {
+    return (_db.select(_db.appSettings)..where((s) => s.key.equals(themeModeKey)))
+        .watchSingleOrNull()
+        .map((row) {
+          final raw = row?.valueText;
+          return switch (raw) {
+            'light' => ThemeMode.light,
+            'dark' => ThemeMode.dark,
+            _ => ThemeMode.system,
+          };
+        });
+  }
+
+  /// Ubah dan simpan mode tema aplikasi.
+  Future<void> setThemeMode(ThemeMode mode) {
+    final val = switch (mode) {
+      ThemeMode.light => 'light',
+      ThemeMode.dark => 'dark',
+      ThemeMode.system => 'system',
+    };
+    return setSetting(themeModeKey, val);
   }
 
   // --- anggaran ---------------------------------------------------------------
