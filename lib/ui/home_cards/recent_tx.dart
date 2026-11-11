@@ -38,7 +38,7 @@ class RecentTransactionsCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     child: Text(
-                      'Lihat Semua →',
+                      'Lihat Semua',
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,

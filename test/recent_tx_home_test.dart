@@ -71,15 +71,15 @@ void main() {
 
       // 1. Verifikasi judul Transaksi Terbaru tampil di Beranda
       expect(find.text('Transaksi Terbaru'), findsOneWidget);
-      expect(find.text('Lihat Semua →'), findsOneWidget);
+      expect(find.text('Lihat Semua'), findsOneWidget);
 
       // 2. Verifikasi transaksi tampil sebagai TransactionTile di Beranda
       expect(find.text('Kopi Kenangan'), findsOneWidget);
       expect(find.text('Indomaret'), findsOneWidget);
       expect(find.byType(TransactionTile), findsNWidgets(2));
 
-      // 3. Tap 'Lihat Semua →' berpindah ke tab Transaksi
-      await tester.tap(find.text('Lihat Semua →'));
+      // 3. Tap 'Lihat Semua' berpindah ke tab Transaksi
+      await tester.tap(find.text('Lihat Semua'));
       await tester.pumpAndSettle();
 
       expect(find.byType(TransaksiScreen), findsOneWidget);
