@@ -62,7 +62,7 @@ class DailyPaceHeroCard extends StatelessWidget {
           final IconData statusIcon;
 
           if (isOver) {
-            statusLabel = 'Defisit Harian';
+            statusLabel = 'Defisit';
             statusColor = q.bad;
             statusIcon = Icons.warning_amber_rounded;
           } else if (monthlyLimit != null &&
@@ -140,48 +140,34 @@ class DailyPaceHeroCard extends StatelessWidget {
                 ),
                 const SizedBox(height: Spacing.s),
 
-                // Label Headline
+                // Hero Number
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: QuestMoney(
+                    amount: safe != null ? safe.abs() : 0,
+                    prefix: isOver ? '- ' : '',
+                    duration: const Duration(milliseconds: 500),
+                    style: context.qDisplay(32).copyWith(
+                          color: isOver ? q.bad : q.text,
+                        ),
+                  ),
+                ),
+                const SizedBox(height: Spacing.xxs),
+
+                // Penjelasan Sisa / Kelebihan Jatah
                 Text(
-                  isOver ? 'Defisit belanja hari ini' : 'Sisa aman hari ini',
+                  isOver
+                      ? 'Melebihi jatah belanja hari ini'
+                      : 'Sisa jatah belanja hari ini',
                   style: context.qSmall(12).copyWith(
                         color: q.muted,
                         fontWeight: FontWeight.w600,
                       ),
                 ),
-                const SizedBox(height: Spacing.xxs),
-
-                // Hero Number
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      QuestMoney(
-                        amount: safe != null ? safe.abs() : 0,
-                        prefix: isOver ? '- ' : '',
-                        duration: const Duration(milliseconds: 500),
-                        style: context.qDisplay(32).copyWith(
-                              color: isOver ? q.bad : q.text,
-                            ),
-                      ),
-                      if (!isOver) ...[
-                        const SizedBox(width: 6),
-                        Text(
-                          '/ hari',
-                          style: context.qSmall(13).copyWith(
-                                color: q.muted,
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
                 const SizedBox(height: Spacing.s),
 
-                // Context Row: Pengeluaran Hari Ini & Tanggal Kalender (tanpa nested box)
+                // Context Row: Pengeluaran Hari Ini & Tanggal Kalender
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -205,7 +191,7 @@ class DailyPaceHeroCard extends StatelessWidget {
                     ),
                     if (pace != null)
                       Text(
-                        'Hari ${pace.dayOfMonth}/${pace.daysInMonth} · ideal ${pace.idealUsedPercent}%',
+                        'Hari ${pace.dayOfMonth} dari ${pace.daysInMonth}',
                         style: context.qSmall(11).copyWith(color: q.muted),
                       ),
                   ],

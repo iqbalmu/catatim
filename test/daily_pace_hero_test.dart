@@ -61,7 +61,7 @@ void main() {
 
     expect(find.text('PACE HARIAN'), findsOneWidget);
     expect(find.text('Aman'), findsOneWidget);
-    expect(find.text('Sisa aman hari ini'), findsOneWidget);
+    expect(find.text('Sisa jatah belanja hari ini'), findsOneWidget);
     expect(find.text('Keluar hari ini: Rp0'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -69,7 +69,7 @@ void main() {
   });
 
   testWidgets(
-      'DailyPaceHeroCard tampilkan defisit dan status Defisit Harian saat pengeluaran over',
+      'DailyPaceHeroCard tampilkan defisit dan status Defisit saat pengeluaran over',
       (tester) async {
     await tester.runAsync(() async {
       await repo.setSetting(kKeyDailyLimit, '50000');
@@ -85,8 +85,8 @@ void main() {
     await tester.pumpWidget(buildHero());
     await tester.pumpAndSettle();
 
-    expect(find.text('Defisit Harian'), findsOneWidget);
-    expect(find.text('Defisit belanja hari ini'), findsOneWidget);
+    expect(find.text('Defisit'), findsOneWidget);
+    expect(find.text('Melebihi jatah belanja hari ini'), findsOneWidget);
     expect(find.text('Keluar hari ini: Rp75.000'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
