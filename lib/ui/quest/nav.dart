@@ -36,11 +36,17 @@ class QuestBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasCenter = centerAction != null;
     final half = destinations.length ~/ 2;
+    final hasBottomInset = MediaQuery.paddingOf(context).bottom > 0;
 
     return SafeArea(
       top: false,
       child: Container(
-        margin: const EdgeInsets.fromLTRB(Spacing.m, 0, Spacing.m, Spacing.m),
+        margin: EdgeInsets.fromLTRB(
+          Spacing.m,
+          0,
+          Spacing.m,
+          hasBottomInset ? Spacing.xs : Spacing.s,
+        ),
         child: Stack(
           clipBehavior: Clip.none,
           children: [
