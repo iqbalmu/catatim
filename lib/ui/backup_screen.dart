@@ -126,7 +126,8 @@ class _BackupScreenState extends State<BackupScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.q.bg,
-      appBar: const QuestHeader(
+      appBar: QuestHeader(
+        textScale: MediaQuery.textScalerOf(context).scale(1.0),
         title: 'Backup & pulihkan',
         subtitle: 'Simpan salinan datamu — aman di HP ini',
         showBack: true,

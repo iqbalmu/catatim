@@ -136,17 +136,15 @@ class QuestButton extends StatelessWidget {
             const SizedBox(width: Spacing.xs),
           ],
           Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                label,
-                maxLines: 1,
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
-                  letterSpacing: 0.1,
-                  color: fg,
-                ),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 14,
+                letterSpacing: 0.1,
+                color: fg,
               ),
             ),
           ),

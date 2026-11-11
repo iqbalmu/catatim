@@ -36,7 +36,8 @@ Dokumen ini adalah sumber kebenaran visual aplikasi; widget-kit terpusat di `lib
 | `line` / `border` | `#F1F5F9` | Garis pembatas hairline halus |
 | `text` / `ink` | `#0F172A` | Teks judul utama (Slate 900) |
 | `body` | `#334155` | Teks bacaan konten (Slate 700) |
-| `muted` | `#64748B` | Teks sekunder / keterangan (Slate 500) |
+| `muted` | `#64748B` | Teks sekunder / keterangan (Slate 500) — hanya di atas `surface`/`bg` |
+| `hint` | `#475569` | Teks di atas isian `surface2`: hint/label input, segmen tak aktif (Slate 600, 6,9:1) |
 | `primary` | `#6366F1` | Brand — ikon/aksen non-teks & ripple (Indigo 500; 3,99:1 sebagai teks kecil) |
 | `primarySolid` | `#4F46E5` | Isi CTA/chip terpilih/switch — pasangan `onPrimary` putih 6,29:1 (Indigo 600) |
 | `primaryText` | `#4F46E5` | Teks berwarna brand: link "Lihat Semua", label nav aktif (Indigo 600, 6,29:1) |
@@ -59,7 +60,8 @@ Dokumen ini adalah sumber kebenaran visual aplikasi; widget-kit terpusat di `lib
 | `line` / `border` | `#334155` | Garis pembatas hairline halus |
 | `text` / `ink` | `#F8FAFC` | Teks judul utama (Slate 50) |
 | `body` | `#E2E8F0` | Teks bacaan konten (Slate 200) |
-| `muted` | `#94A3B8` | Teks sekunder / keterangan (Slate 400) |
+| `muted` | `#94A3B8` | Teks sekunder / keterangan (Slate 400) — hanya di atas `surface`/`bg` |
+| `hint` | `#CBD5E1` | Teks di atas isian `surface2`: hint/label input, segmen tak aktif (Slate 300, 7,0:1) |
 | `primary` | `#818CF8` | Brand & ikon aksen (Indigo 400) |
 | `primarySolid` | `#818CF8` | Isi CTA — konten `onPrimary` tinta gelap 5,98:1 (Indigo 400) |
 | `primaryText` | `#A5B4FC` | Teks berwarna brand (Indigo 300; 5,7–9:1 di permukaan dark) |
@@ -102,7 +104,7 @@ Dokumen ini adalah sumber kebenaran visual aplikasi; widget-kit terpusat di `lib
 - **Kartu**: `surface`, radius 20–24, hairline border, padding 14–16.
 - **Tombol utama**: gradien `primarySolid → primaryGradientEnd`, teks `onPrimary`, radius pill. Sekunder: `surface2` teks ink. Danger: isi `bad`, teks `onPrimary`.
 - **Chip/pill**: `surface2` radius 999; status memakai tint (`incomingTint`/`outgoingTint`/`warnTint`).
-- **Segmented**: sel aktif `surface` dengan shadow halus, teks `text` w800.
+- **Segmented**: frame `surface2`; sel aktif `surface` dengan shadow halus, teks/ikon `text`/`primaryText`; tak aktif memakai `hint` (muted gagal 4,5:1 di `surface2`).
 - **Tile transaksi**: ikon kategori 40px lingkaran tint 12%, nama w800, meta muted, nominal tabular berwarna arah.
 - **Nav bawah**: `surface` radius 28, `elevatedShadow`, state aktif pada warna teks dan ikon (`primaryText`), tanpa background pill, tombol tengah aksi utama (gradien `primarySolid → primaryGradientEnd`, ikon `onPrimary`).
 - **Keypad**: tombol 50dp (save 48dp), haptic feedback, pintasan nominal (000, Backspace, Clear).

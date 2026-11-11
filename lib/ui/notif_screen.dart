@@ -126,6 +126,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         return Scaffold(
           backgroundColor: q.bg,
           appBar: QuestHeader(
+        textScale: MediaQuery.textScalerOf(context).scale(1.0),
             title: 'Notifikasi',
             subtitle: _selectedTab == 0
                 ? 'Pusat perhatian & pengingat'

@@ -312,7 +312,8 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
 
     return Scaffold(
       backgroundColor: q.bg,
-      appBar: const QuestHeader(
+      appBar: QuestHeader(
+        textScale: MediaQuery.textScalerOf(context).scale(1.0),
         title: 'Capture Notifikasi',
         subtitle: 'Pengaturan otomatisasi transaksi bank offline',
         showBack: true,

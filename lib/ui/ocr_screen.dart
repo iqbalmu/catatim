@@ -493,7 +493,8 @@ class _OcrScreenState extends State<OcrScreen> {
 
     return Scaffold(
       backgroundColor: q.bg,
-      appBar: const QuestHeader(
+      appBar: QuestHeader(
+        textScale: MediaQuery.textScalerOf(context).scale(1.0),
         title: 'Pindai Struk / Bukti',
         subtitle: 'On-device OCR · 100% Offline',
         showBack: true,

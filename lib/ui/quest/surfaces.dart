@@ -11,6 +11,7 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
     this.leading,
     this.actions = const [],
     this.compact = false,
+    this.textScale = 1.0,
   });
 
   final String title;
@@ -23,8 +24,14 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
   /// dipakai panggung Duit, jadi bagian atas harus lapang.
   final bool compact;
 
+  /// Faktor skala teks (`MediaQuery.textScalerOf(context).scale(1.0)`);
+  /// tinggi AppBar mengikuti agar judul+subjudul tak overflow pada
+  /// font scale besar (temuan device 1,3×: overflow 8px).
+  final double textScale;
+
   @override
-  Size get preferredSize => const Size.fromHeight(60);
+  Size get preferredSize =>
+      Size.fromHeight(60 * textScale.clamp(1.0, 2.0));
 
   @override
   Widget build(BuildContext context) {

@@ -59,4 +59,37 @@ void main() {
 
     handle.dispose();
   });
+
+  testWidgets(
+    'QuestButton: label tidak menyusut saat font scale naik (re-audit P2)',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: QuestSchemes.light(),
+          home: const Scaffold(
+            body: Center(
+              child: QuestButton(
+                label: 'Catat Transaksi Sekarang',
+                onPressed: null,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // FittedBox(scaleDown) memperkecil teks di bawah preferensi font
+      // pengguna — label kini ellipsis, ukuran tetap mengikuti textScaler.
+      expect(
+        find.descendant(
+          of: find.byType(QuestButton),
+          matching: find.byType(FittedBox),
+        ),
+        findsNothing,
+      );
+      final label =
+          tester.widget<Text>(find.text('Catat Transaksi Sekarang'));
+      expect(label.maxLines, 1);
+      expect(label.style?.fontSize, 14);
+    },
+  );
 }

@@ -74,7 +74,8 @@ class LockedScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.q.bg,
-      appBar: const QuestHeader(
+      appBar: QuestHeader(
+        textScale: MediaQuery.textScalerOf(context).scale(1.0),
         title: 'Data terkunci',
         subtitle: 'Catatanmu ada, tapi kuncinya tidak cocok',
         showBack: false,

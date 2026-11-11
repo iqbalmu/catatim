@@ -51,7 +51,8 @@ class BankAccountsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.q.bg,
-      appBar: const QuestHeader(
+      appBar: QuestHeader(
+        textScale: MediaQuery.textScalerOf(context).scale(1.0),
         title: 'Bank & Akun',
         subtitle: 'Akunmu & catat otomatis',
         showBack: true,

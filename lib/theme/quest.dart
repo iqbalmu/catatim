@@ -23,6 +23,7 @@ class QuestPalette {
     required this.primaryDeep,
     required this.primaryLight,
     required this.violet,
+    required this.hint,
     required this.primarySolid,
     required this.onPrimary,
     required this.primaryText,
@@ -48,6 +49,10 @@ class QuestPalette {
   final Color primaryDeep;
   final Color primaryLight;
   final Color violet;
+
+  /// Teks di atas isian `surface2` (hint/label input, segmen tak aktif) —
+  /// light Slate 600 / dark Slate 300; `muted` gagal 4,5:1 di surface2.
+  final Color hint;
 
   /// Isi brand yang lolos kontras WCAG AA untuk kontennya (audit
   /// 2026-11-11): light Indigo 600 + putih, dark Indigo 400 + tinta gelap
@@ -96,6 +101,7 @@ class QuestPalette {
     primaryDeep: SeedColors.primaryDeep,
     primaryLight: SeedColors.primaryLight,
     violet: SeedColors.violet,
+    hint: Color(0xFF475569),
     primarySolid: SeedColors.primaryDeep,
     onPrimary: Colors.white,
     primaryText: SeedColors.primaryDeep,
@@ -122,6 +128,7 @@ class QuestPalette {
     primaryDeep: DarkColors.primaryDeep,
     primaryLight: DarkColors.primaryLight,
     violet: DarkColors.violet,
+    hint: Color(0xFFCBD5E1),
     primarySolid: DarkColors.primary,
     onPrimary: DarkColors.bg,
     primaryText: Color(0xFFA5B4FC),
@@ -964,8 +971,8 @@ class QuestSchemes {
           horizontal: Spacing.m,
           vertical: 14,
         ),
-        labelStyle: TextStyle(color: p.muted, fontSize: 13),
-        hintStyle: TextStyle(color: p.muted.withValues(alpha: 0.7), fontSize: 13),
+        labelStyle: TextStyle(color: p.hint, fontSize: 13),
+        hintStyle: TextStyle(color: p.hint, fontSize: 13),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.tile),
           borderSide: BorderSide(color: p.line, width: 1),

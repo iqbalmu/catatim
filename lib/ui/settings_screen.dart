@@ -48,6 +48,7 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: q.bg,
       appBar: QuestHeader(
+        textScale: MediaQuery.textScalerOf(context).scale(1.0),
         title: 'Profil & Pengaturan',
         subtitle: 'Profil, laporan, preferensi & data sistem',
         showBack: showBack,

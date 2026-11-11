@@ -85,6 +85,13 @@ void main() {
       ('surface2', p.warn, SeedColors.surface2),
       ('warnTint', p.warn, SeedColors.warnTint),
     ], expectText);
+
+    // P2 re-audit: muted gagal 4,5:1 di surface2 (4,34) — hint menggantikan
+    // untuk teks di atas isian surface2 (input & segmen tak aktif).
+    checkAll('hint', [
+      ('surface2', p.hint, SeedColors.surface2),
+      ('white', p.hint, Colors.white),
+    ], expectText);
   });
 
   group('brand — pasangan solid/onPrimary/primaryText', () {
@@ -134,7 +141,12 @@ void main() {
       ('surface', p.warn, DarkColors.surface),
       ('warnTint', p.warn, DarkColors.warnTint),
     ], expectText);
-  });
+
+    checkAll('hint dark', [
+      ('surface2', p.hint, DarkColors.surface2),
+      ('surface', p.hint, DarkColors.surface),
+    ], expectText);
+   });
 
   test('grafik: warna batang vs permukaan kartu (non-teks)', () {
     for (final (name, p) in [

@@ -79,8 +79,8 @@ class QuestSegmented<T> extends StatelessWidget {
                                 options[i].icon,
                                 size: 16,
                                 color: i == selectedIndex
-                                    ? context.q.primary
-                                    : context.q.muted,
+                                    ? context.q.primaryText
+                                    : context.q.hint,
                               ),
                               const SizedBox(width: Spacing.xs),
                             ],
@@ -96,7 +96,7 @@ class QuestSegmented<T> extends StatelessWidget {
                                       : FontWeight.w600,
                                   color: i == selectedIndex
                                       ? context.q.text
-                                      : context.q.muted,
+                                      : context.q.hint,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,

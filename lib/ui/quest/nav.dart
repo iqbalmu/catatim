@@ -134,7 +134,7 @@ class QuestBottomNav extends StatelessWidget {
                       fontSize: 10.5,
                       color: selected ? context.q.primaryText : context.q.muted,
                     ),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     child: Text(dest.label),
                   ),

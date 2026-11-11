@@ -611,7 +611,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
             children: [
               Text(
                 'Nominal',
-                style: context.qSmall(13).copyWith(color: q.muted),
+                style: context.qSmall(13).copyWith(color: q.hint),
               ),
               Flexible(
                 child: FittedBox(
