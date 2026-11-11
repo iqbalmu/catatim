@@ -107,22 +107,57 @@ class _BonScreenState extends State<BonScreen> {
       title: isLent ? 'Terima Pelunasan' : 'Lunasi Bon',
       content: StatefulBuilder(
         builder: (context, setDialogState) {
+          final q = context.q;
           return SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (isUncalculated) ...[
+                  Text(
+                    'Nominal',
+                    style: context.qSmall(12).copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: q.muted,
+                    ),
+                  ),
+                  const SizedBox(height: Spacing.xs),
                   TextField(
                     controller: amountController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    decoration: const InputDecoration(
-                      labelText: 'Nominal',
+                    style: TextStyle(
+                      fontFamily: 'Nunito',
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: q.text,
+                    ),
+                    decoration: InputDecoration(
                       prefixText: 'Rp ',
+                      prefixStyle: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: q.text,
+                        fontSize: 13.5,
+                      ),
+                      isDense: true,
+                      filled: true,
+                      fillColor: q.surface2,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.tile),
+                        borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.tile),
+                        borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.tile),
+                        borderSide: BorderSide(color: q.primary, width: 1.4),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: Spacing.s),
+                  const SizedBox(height: Spacing.m),
                 ] else ...[
                   Container(
                     width: double.infinity,
@@ -146,37 +181,93 @@ class _BonScreenState extends State<BonScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: Spacing.s),
+                  const SizedBox(height: Spacing.m),
                 ],
+                Text(
+                  isLent ? 'Masuk ke Akun' : 'Sumber Dana',
+                  style: context.qSmall(12).copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: q.muted,
+                  ),
+                ),
+                const SizedBox(height: Spacing.xs),
                 DropdownButtonFormField<int>(
                   initialValue: selectedAccountId,
                   isExpanded: true,
+                  icon: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: q.muted,
+                    size: 20,
+                  ),
                   decoration: InputDecoration(
-                    labelText: isLent ? 'Masuk ke Akun' : 'Sumber Dana',
-                    prefixIcon: const Icon(Icons.account_balance_wallet_outlined, size: 20),
+                    prefixIcon: const Icon(Icons.account_balance_wallet_outlined, size: 18),
+                    isDense: true,
+                    filled: true,
+                    fillColor: q.surface2,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.tile),
+                      borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.tile),
+                      borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.tile),
+                      borderSide: BorderSide(color: q.primary, width: 1.4),
+                    ),
                   ),
                   items: [
                     for (final a in accounts)
                       DropdownMenuItem(
                         value: a.id,
-                        child: Text(a.name),
+                        child: Text(a.name, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
                       ),
                   ],
                   onChanged: (v) => setDialogState(() => selectedAccountId = v),
                 ),
-                const SizedBox(height: Spacing.s),
+                const SizedBox(height: Spacing.m),
+                Text(
+                  'Kategori',
+                  style: context.qSmall(12).copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: q.muted,
+                  ),
+                ),
+                const SizedBox(height: Spacing.xs),
                 DropdownButtonFormField<int>(
                   initialValue: selectedCategoryId,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Kategori',
-                    prefixIcon: Icon(Icons.category_outlined, size: 20),
+                  icon: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: q.muted,
+                    size: 20,
+                  ),
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.category_outlined, size: 18),
+                    isDense: true,
+                    filled: true,
+                    fillColor: q.surface2,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.tile),
+                      borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.tile),
+                      borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.tile),
+                      borderSide: BorderSide(color: q.primary, width: 1.4),
+                    ),
                   ),
                   items: [
                     for (final c in categories)
                       DropdownMenuItem(
                         value: c.id,
-                        child: Text(c.name),
+                        child: Text(c.name, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
                       ),
                   ],
                   onChanged: (v) => setDialogState(() => selectedCategoryId = v),
@@ -995,88 +1086,230 @@ class _BonSheetState extends State<BonSheet> {
               ),
             ],
           ),
-          const SizedBox(height: Spacing.s),
+          const SizedBox(height: Spacing.m),
+          Text(
+            'Pihak / Kontak',
+            style: context.qSmall(12).copyWith(
+              fontWeight: FontWeight.w700,
+              color: q.muted,
+            ),
+          ),
+          const SizedBox(height: Spacing.xs),
           TextField(
             controller: _personCtrl,
             textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
-              labelText: 'Pihak / Warung',
-              prefixIcon: Icon(Icons.person_outline_rounded, size: 20),
+            style: TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+              color: q.text,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Nama orang atau warung...',
+              hintStyle: TextStyle(
+                color: q.muted.withValues(alpha: 0.6),
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
+              ),
+              prefixIcon: const Icon(Icons.person_outline_rounded, size: 18),
               isDense: true,
+              filled: true,
+              fillColor: q.surface2,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.tile),
+                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.tile),
+                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.tile),
+                borderSide: BorderSide(color: q.primary, width: 1.4),
+              ),
             ),
           ),
-          const SizedBox(height: Spacing.s),
+          const SizedBox(height: Spacing.m),
+          Text(
+            'Nominal',
+            style: context.qSmall(12).copyWith(
+              fontWeight: FontWeight.w700,
+              color: q.muted,
+            ),
+          ),
+          const SizedBox(height: Spacing.xs),
           TextField(
             controller: _amountCtrl,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(
+            style: TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+              color: q.text,
+            ),
+            decoration: InputDecoration(
               prefixText: 'Rp ',
-              labelText: 'Nominal',
-              prefixIcon: Icon(Icons.payments_outlined, size: 20),
+              prefixStyle: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: q.text,
+                fontSize: 13.5,
+              ),
+              hintText: '0',
+              hintStyle: TextStyle(
+                color: q.muted.withValues(alpha: 0.6),
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
+              ),
+              prefixIcon: const Icon(Icons.payments_outlined, size: 18),
               isDense: true,
+              filled: true,
+              fillColor: q.surface2,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.tile),
+                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.tile),
+                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.tile),
+                borderSide: BorderSide(color: q.primary, width: 1.4),
+              ),
             ),
           ),
-          const SizedBox(height: Spacing.s),
           if (_categories.isNotEmpty) ...[
+            const SizedBox(height: Spacing.m),
+            Text(
+              'Kategori',
+              style: context.qSmall(12).copyWith(
+                fontWeight: FontWeight.w700,
+                color: q.muted,
+              ),
+            ),
+            const SizedBox(height: Spacing.xs),
             DropdownButtonFormField<int>(
               key: ValueKey('bon_category_$_categoryId'),
               initialValue: _categories.any((c) => c.id == _categoryId) ? _categoryId : null,
               isExpanded: true,
-              decoration: const InputDecoration(
-                labelText: 'Kategori',
-                prefixIcon: Icon(Icons.category_outlined, size: 20),
+              icon: Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: q.muted,
+                size: 20,
+              ),
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.category_outlined, size: 18),
                 isDense: true,
+                filled: true,
+                fillColor: q.surface2,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  borderSide: BorderSide(color: q.primary, width: 1.4),
+                ),
               ),
               items: [
                 for (final c in _categories)
                   DropdownMenuItem(
                     value: c.id,
-                    child: Text(c.name),
+                    child: Text(
+                      c.name,
+                      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
+                    ),
                   ),
               ],
               onChanged: (v) => setState(() => _categoryId = v),
             ),
-            const SizedBox(height: Spacing.s),
           ],
           if (_accounts.isNotEmpty) ...[
+            const SizedBox(height: Spacing.m),
+            Text(
+              _direction == BonDirection.borrowed ? 'Sumber Dana' : 'Masuk ke Akun',
+              style: context.qSmall(12).copyWith(
+                fontWeight: FontWeight.w700,
+                color: q.muted,
+              ),
+            ),
+            const SizedBox(height: Spacing.xs),
             DropdownButtonFormField<int>(
               key: ValueKey('bon_account_$_accountId'),
               initialValue: _accounts.any((a) => a.id == _accountId) ? _accountId : null,
               isExpanded: true,
+              icon: Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: q.muted,
+                size: 20,
+              ),
               decoration: InputDecoration(
-                labelText: _direction == BonDirection.borrowed ? 'Sumber Dana' : 'Masuk ke Akun',
-                prefixIcon: const Icon(Icons.account_balance_wallet_outlined, size: 20),
+                prefixIcon: const Icon(Icons.account_balance_wallet_outlined, size: 18),
                 isDense: true,
+                filled: true,
+                fillColor: q.surface2,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  borderSide: BorderSide(color: q.primary, width: 1.4),
+                ),
               ),
               items: [
                 for (final a in _accounts)
                   DropdownMenuItem(
                     value: a.id,
-                    child: Text(a.name),
+                    child: Text(
+                      a.name,
+                      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
+                    ),
                   ),
               ],
               onChanged: (v) => setState(() => _accountId = v),
             ),
-            const SizedBox(height: Spacing.s),
           ],
+          const SizedBox(height: Spacing.m),
+          Text(
+            'Tanggal Bon',
+            style: context.qSmall(12).copyWith(
+              fontWeight: FontWeight.w700,
+              color: q.muted,
+            ),
+          ),
+          const SizedBox(height: Spacing.xs),
           QuestPress(
             onTap: _pickDate,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
               decoration: BoxDecoration(
                 color: q.surface2,
                 borderRadius: BorderRadius.circular(AppRadius.tile),
-                border: Border.all(color: q.line),
+                border: Border.all(color: q.line.withValues(alpha: 0.5)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.event_outlined, size: 18, color: q.muted),
+                  Icon(Icons.event_outlined, size: 18, color: q.primary),
                   const SizedBox(width: Spacing.s),
                   Text(
                     idFullDate(_date),
                     style: TextStyle(
-                      fontSize: 13,
+                      fontFamily: 'Nunito',
+                      fontSize: 13.5,
                       fontWeight: FontWeight.w700,
                       color: q.text,
                     ),
@@ -1087,15 +1320,49 @@ class _BonSheetState extends State<BonSheet> {
               ),
             ),
           ),
-          const SizedBox(height: Spacing.s),
+          const SizedBox(height: Spacing.m),
+          Text(
+            'Catatan (Opsional)',
+            style: context.qSmall(12).copyWith(
+              fontWeight: FontWeight.w700,
+              color: q.muted,
+            ),
+          ),
+          const SizedBox(height: Spacing.xs),
           TextField(
             controller: _noteCtrl,
             textCapitalization: TextCapitalization.sentences,
             maxLines: 2,
-            decoration: const InputDecoration(
-              labelText: 'Catatan (opsional)',
-              prefixIcon: Icon(Icons.notes_rounded, size: 20),
+            style: TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+              color: q.text,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Tulis catatan bila perlu...',
+              hintStyle: TextStyle(
+                color: q.muted.withValues(alpha: 0.6),
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
+              ),
+              prefixIcon: const Icon(Icons.notes_rounded, size: 18),
               isDense: true,
+              filled: true,
+              fillColor: q.surface2,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.tile),
+                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.tile),
+                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.tile),
+                borderSide: BorderSide(color: q.primary, width: 1.4),
+              ),
             ),
           ),
           const SizedBox(height: Spacing.m),

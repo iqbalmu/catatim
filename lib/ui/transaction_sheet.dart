@@ -761,91 +761,165 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 const SizedBox(height: Spacing.xs),
                 _buildCategoryChips(),
                 const SizedBox(height: Spacing.m),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<int>(
-                        key: ValueKey('account_$_accountId'),
-                        initialValue: _accounts.any((a) => a.id == _accountId)
-                            ? _accountId
-                            : (_accounts.isNotEmpty ? _accounts.first.id : null),
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: _kind == TxKind.transfer
-                              ? 'Dari Akun'
-                              : (_direction == Direction.outgoing
-                                  ? 'Sumber Dana'
-                                  : 'Masuk ke Akun'),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.tile),
-                            borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                Text(
+                  _kind == TxKind.transfer
+                      ? 'Dari Akun'
+                      : (_direction == Direction.outgoing
+                          ? 'Sumber Dana'
+                          : 'Masuk ke Akun'),
+                  style: context.qSmall(12).copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: q.muted,
+                  ),
+                ),
+                const SizedBox(height: Spacing.xs),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          key: ValueKey('account_$_accountId'),
+                          initialValue: _accounts.any((a) => a.id == _accountId)
+                              ? _accountId
+                              : (_accounts.isNotEmpty ? _accounts.first.id : null),
+                          isExpanded: true,
+                          icon: Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: q.muted,
+                            size: 20,
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.tile),
-                            borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
-                          ),
-                        ),
-                        items: [
-                          for (final a in _accounts)
-                            DropdownMenuItem(
-                              value: a.id,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    switch (a.kind) {
-                                      AccountKind.bank =>
-                                        Icons.account_balance_rounded,
-                                      AccountKind.ewallet =>
-                                        Icons.phone_android_rounded,
-                                      AccountKind.cash =>
-                                        Icons.payments_outlined,
-                                    },
-                                    size: 16,
-                                    color: q.muted,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: Text(
-                                      a.name,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 13.5,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                          decoration: InputDecoration(
+                            isDense: true,
+                            filled: true,
+                            fillColor: q.surface2,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 11,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.tile),
+                              borderSide: BorderSide(
+                                color: q.line.withValues(alpha: 0.5),
                               ),
                             ),
-                        ],
-                        onChanged: (v) => setState(() => _accountId = v),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.tile),
+                              borderSide: BorderSide(
+                                color: q.line.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.tile),
+                              borderSide: BorderSide(
+                                color: q.primary,
+                                width: 1.4,
+                              ),
+                            ),
+                          ),
+                          items: [
+                            for (final a in _accounts)
+                              DropdownMenuItem(
+                                value: a.id,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      switch (a.kind) {
+                                        AccountKind.bank =>
+                                          Icons.account_balance_rounded,
+                                        AccountKind.ewallet =>
+                                          Icons.phone_android_rounded,
+                                        AccountKind.cash =>
+                                          Icons.payments_outlined,
+                                      },
+                                      size: 16,
+                                      color: q.muted,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        a.name,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                          onChanged: (v) => setState(() => _accountId = v),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: Spacing.xs),
-                    IconButton(
-                      icon: const Icon(Icons.add_circle_outline_rounded, size: 22),
-                      tooltip: 'Tambah akun baru',
-                      onPressed: _addAccount,
-                    ),
-                  ],
+                      const SizedBox(width: Spacing.xs),
+                      QuestPress(
+                        onTap: _addAccount,
+                        child: Container(
+                          width: 44,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: q.surface2,
+                            borderRadius: BorderRadius.circular(AppRadius.tile),
+                            border: Border.all(
+                              color: q.line.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.add_rounded,
+                            size: 20,
+                            color: q.muted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: Spacing.s),
+                const SizedBox(height: Spacing.m),
+                Text(
+                  'Jenis Transaksi',
+                  style: context.qSmall(12).copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: q.muted,
+                  ),
+                ),
+                const SizedBox(height: Spacing.xs),
                 DropdownButtonFormField<TxKind>(
                   initialValue: _kind,
                   isExpanded: true,
+                  icon: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: q.muted,
+                    size: 20,
+                  ),
                   decoration: InputDecoration(
-                    labelText: 'Jenis Transaksi',
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    isDense: true,
+                    filled: true,
+                    fillColor: q.surface2,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 11,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.tile),
-                      borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                      borderSide: BorderSide(
+                        color: q.line.withValues(alpha: 0.5),
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.tile),
-                      borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                      borderSide: BorderSide(
+                        color: q.line.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.tile),
+                      borderSide: BorderSide(
+                        color: q.primary,
+                        width: 1.4,
+                      ),
                     ),
                   ),
                   items: [
@@ -855,7 +929,10 @@ class _TransactionSheetState extends State<TransactionSheet> {
                         child: Text(
                           k.label,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 13),
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                   ],
@@ -875,7 +952,15 @@ class _TransactionSheetState extends State<TransactionSheet> {
                   },
                 ),
                 if (_kind == TxKind.transfer) ...[
-                  const SizedBox(height: Spacing.s),
+                  const SizedBox(height: Spacing.m),
+                  Text(
+                    'Ke Akun (Tujuan Transfer)',
+                    style: context.qSmall(12).copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: q.muted,
+                    ),
+                  ),
+                  const SizedBox(height: Spacing.xs),
                   DropdownButtonFormField<int>(
                     key: ValueKey('to_account_$_toAccountId'),
                     initialValue: _accounts.any((a) => a.id == _toAccountId)
@@ -887,17 +972,42 @@ class _TransactionSheetState extends State<TransactionSheet> {
                                 .id
                             : null),
                     isExpanded: true,
+                    icon: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: q.muted,
+                      size: 20,
+                    ),
                     decoration: InputDecoration(
-                      labelText: 'Ke Akun (Tujuan Transfer)',
-                      prefixIcon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      isDense: true,
+                      filled: true,
+                      fillColor: q.surface2,
+                      prefixIcon: Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 16,
+                        color: q.muted,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 11,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppRadius.tile),
-                        borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                        borderSide: BorderSide(
+                          color: q.line.withValues(alpha: 0.5),
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppRadius.tile),
-                        borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                        borderSide: BorderSide(
+                          color: q.line.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.tile),
+                        borderSide: BorderSide(
+                          color: q.primary,
+                          width: 1.4,
+                        ),
                       ),
                     ),
                     items: [
@@ -946,35 +1056,78 @@ class _TransactionSheetState extends State<TransactionSheet> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(height: Spacing.s),
+                        const SizedBox(height: Spacing.m),
+                        Text(
+                          _direction == Direction.outgoing
+                              ? 'Lunasi Bon Utang (Opsional)'
+                              : 'Terima Pelunasan Piutang (Opsional)',
+                          style: context.qSmall(12).copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: q.muted,
+                          ),
+                        ),
+                        const SizedBox(height: Spacing.xs),
                         DropdownButtonFormField<int?>(
                           initialValue: _linkedBonId,
                           isExpanded: true,
+                          icon: Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: q.muted,
+                            size: 20,
+                          ),
                           decoration: InputDecoration(
-                            labelText: _direction == Direction.outgoing
-                                ? 'Lunasi Bon Utang (Opsional)'
-                                : 'Terima Pelunasan Piutang (Opsional)',
-                            prefixIcon: const Icon(Icons.link_rounded, size: 20),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            isDense: true,
+                            filled: true,
+                            fillColor: q.surface2,
+                            prefixIcon: Icon(
+                              Icons.link_rounded,
+                              size: 18,
+                              color: q.muted,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 11,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(AppRadius.tile),
-                              borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                              borderSide: BorderSide(
+                                color: q.line.withValues(alpha: 0.5),
+                              ),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(AppRadius.tile),
-                              borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                              borderSide: BorderSide(
+                                color: q.line.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.tile),
+                              borderSide: BorderSide(
+                                color: q.primary,
+                                width: 1.4,
+                              ),
                             ),
                           ),
                           items: [
-                            const DropdownMenuItem<int?>(
+                            DropdownMenuItem<int?>(
                               value: null,
-                              child: Text('Tidak ditautkan ke bon mana pun'),
+                              child: Text(
+                                'Tidak ditautkan ke bon mana pun',
+                                style: TextStyle(
+                                  color: q.muted,
+                                  fontSize: 13.5,
+                                ),
+                              ),
                             ),
                             for (final b in matchingBons)
                               DropdownMenuItem<int?>(
                                 value: b.id,
                                 child: Text(
                                   '${b.person} (${b.amount > 0 ? Money.format(b.amount) : "Belum Dihitung"})',
+                                  style: const TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                           ],
@@ -1010,11 +1163,13 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 QuestPress(
                   onTap: _pickDate,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
                     decoration: BoxDecoration(
                       color: q.surface2,
                       borderRadius: BorderRadius.circular(AppRadius.tile),
-                      border: Border.all(color: q.line.withValues(alpha: 0.6)),
+                      border: Border.all(
+                        color: q.line.withValues(alpha: 0.5),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -1056,21 +1211,49 @@ class _TransactionSheetState extends State<TransactionSheet> {
                   controller: _counterpartyCtrl,
                   textCapitalization: TextCapitalization.words,
                   textInputAction: TextInputAction.done,
+                  style: TextStyle(
+                    fontFamily: 'Nunito',
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: q.text,
+                  ),
                   onChanged: _onCounterpartyChanged,
                   onEditingComplete: () {
                     _onCounterpartyChanged(_counterpartyCtrl.text);
                     FocusScope.of(context).unfocus();
                   },
                   decoration: InputDecoration(
+                    isDense: true,
+                    filled: true,
+                    fillColor: q.surface2,
                     hintText: 'Contoh: Kopi Kenangan, Beli Makan, dll...',
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    hintStyle: TextStyle(
+                      color: q.muted.withValues(alpha: 0.6),
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 11,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.tile),
-                      borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                      borderSide: BorderSide(
+                        color: q.line.withValues(alpha: 0.5),
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.tile),
-                      borderSide: BorderSide(color: q.line.withValues(alpha: 0.6)),
+                      borderSide: BorderSide(
+                        color: q.line.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.tile),
+                      borderSide: BorderSide(
+                        color: q.primary,
+                        width: 1.4,
+                      ),
                     ),
                   ),
                 ),
