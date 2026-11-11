@@ -103,6 +103,7 @@ Dokumen ini adalah sumber kebenaran visual aplikasi; widget-kit terpusat di `lib
 
 - **Kartu**: `surface`, radius 20–24, hairline border, padding 14–16.
 - **Tombol utama**: gradien `primarySolid → primaryGradientEnd`, teks `onPrimary`, radius pill. Sekunder: `surface2` teks ink. Danger: isi `bad`, teks `onPrimary`.
+- **Input teks**: satu gaya kanonik dari `inputDecorationTheme` — fill `surface2`, radius `tile`, border `line` → fokus `primary` 1.5px, label/hint `hint`. Situs lain dilarang menimpa border/fill/isDense; cukup `InputDecoration(labelText, hintText, prefixIcon, …)` (atribut konten saja). Referensi: drawer tambah akun.
 - **Chip/pill**: `surface2` radius 999; status memakai tint (`incomingTint`/`outgoingTint`/`warnTint`).
 - **Segmented**: frame `surface2`; sel aktif `surface` dengan shadow halus, teks/ikon `text`/`primaryText`; tak aktif memakai `hint` (muted gagal 4,5:1 di `surface2`).
 - **Tile transaksi**: ikon kategori 40px lingkaran tint 12%, nama w800, meta muted, nominal tabular berwarna arah.

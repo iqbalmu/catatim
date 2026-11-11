@@ -332,22 +332,12 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                 Spacing.m,
                 Spacing.xs,
               ),
-              child: Container(
-                height: 40,
-                decoration: BoxDecoration(
-                  color: context.q.surface,
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  border: Border.all(
-                    color: context.q.line.withValues(alpha: 0.6),
-                  ),
-                ),
-                child: TextField(
+              child: TextField(
                   controller: _searchCtrl,
                   autofocus: true,
                   onChanged: (val) => setState(() => _searchQuery = val),
                   style: context.qBody(13.5),
                   decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(vertical: 9),
                     prefixIcon: Icon(
                       Icons.search_rounded,
                       size: 18,
@@ -363,13 +353,8 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                           )
                         : null,
                     hintText: 'Cari transaksi, toko, nominal...',
-                    hintStyle: context.qSmall(12.5),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
                   ),
                 ),
-              ),
             ),
           ),
 

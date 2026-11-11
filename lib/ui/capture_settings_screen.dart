@@ -230,7 +230,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                 decoration: const InputDecoration(
                   labelText: 'Kata Kunci / Frasa',
                   hintText: 'Misal: promo, cashback, pinjaman',
-                  isDense: true,
                 ),
               ),
               const SizedBox(height: Spacing.s),
@@ -239,7 +238,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                 decoration: const InputDecoration(
                   labelText: 'Deskripsi / Label (opsional)',
                   hintText: 'Misal: Promo Cashback',
-                  isDense: true,
                 ),
               ),
               const SizedBox(height: Spacing.s),
@@ -248,7 +246,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                 isExpanded: true,
                 decoration: const InputDecoration(
                   labelText: 'Berlaku Untuk',
-                  isDense: true,
                 ),
                 items: [
                   const DropdownMenuItem(
@@ -401,33 +398,22 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
       ),
       children: [
         // Search Bar
-        Container(
-          height: 40,
-          decoration: BoxDecoration(
-            color: q.surface,
-            borderRadius: BorderRadius.circular(AppRadius.tile),
-            border: Border.all(color: q.line),
-          ),
-          child: TextField(
-            controller: _searchCtrl,
-            onChanged: (v) =>
-                setState(() => _searchQuery = v.trim().toLowerCase()),
-            decoration: InputDecoration(
-              hintText: 'Cari bank atau e-wallet…',
-              prefixIcon: Icon(Icons.search_rounded, size: 18, color: q.muted),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear_rounded, size: 16),
-                      onPressed: () {
-                        _searchCtrl.clear();
-                        setState(() => _searchQuery = '');
-                      },
-                    )
-                  : null,
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(vertical: 10),
-              border: InputBorder.none,
-            ),
+        TextField(
+          controller: _searchCtrl,
+          onChanged: (v) =>
+              setState(() => _searchQuery = v.trim().toLowerCase()),
+          decoration: InputDecoration(
+            hintText: 'Cari bank atau e-wallet…',
+            prefixIcon: Icon(Icons.search_rounded, size: 18, color: q.muted),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear_rounded, size: 16),
+                    onPressed: () {
+                      _searchCtrl.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                  )
+                : null,
           ),
         ),
         const SizedBox(height: Spacing.s),
@@ -1595,7 +1581,6 @@ class _AppPickerSheetState extends State<_AppPickerSheet> {
                   decoration: const InputDecoration(
                     hintText: 'Cari nama app…',
                     prefixIcon: Icon(Icons.search_rounded, size: 20),
-                    isDense: true,
                   ),
                 ),
               ],

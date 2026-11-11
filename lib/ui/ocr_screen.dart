@@ -615,11 +615,7 @@ class _OcrScreenState extends State<OcrScreen> {
                             horizontal: Spacing.m,
                             vertical: Spacing.s,
                           ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.tile),
-                            borderSide: BorderSide(color: q.line),
-                          ),
-                        ),
+                                                  ),
                       ),
                       const SizedBox(height: Spacing.m),
 
@@ -682,11 +678,7 @@ class _OcrScreenState extends State<OcrScreen> {
                             horizontal: Spacing.m,
                             vertical: Spacing.s,
                           ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.tile),
-                            borderSide: BorderSide(color: q.line),
-                          ),
-                        ),
+                                                  ),
                         onChanged: (_) => setState(() {}),
                       ),
 
@@ -745,13 +737,7 @@ class _OcrScreenState extends State<OcrScreen> {
                                 horizontal: Spacing.m,
                                 vertical: Spacing.s,
                               ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppRadius.tile,
-                                ),
-                                borderSide: BorderSide(color: q.line),
-                              ),
-                            ),
+                                                          ),
                             items: [
                               for (final c in categories)
                                 DropdownMenuItem(
@@ -785,13 +771,7 @@ class _OcrScreenState extends State<OcrScreen> {
                                 horizontal: Spacing.m,
                                 vertical: Spacing.s,
                               ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppRadius.tile,
-                                ),
-                                borderSide: BorderSide(color: q.line),
-                              ),
-                            ),
+                                                          ),
                             items: [
                               for (final a in accounts)
                                 DropdownMenuItem(
@@ -879,13 +859,7 @@ class _OcrScreenState extends State<OcrScreen> {
                           maxLines: 8,
                           style: context.qBody(12),
                           decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppRadius.cell,
-                              ),
-                            ),
-                            contentPadding: const EdgeInsets.all(Spacing.s),
-                          ),
+                                                      ),
                         ),
                       ],
                     ],

@@ -397,14 +397,9 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
                 labelText: 'Nama Template Aturan',
                 hintText: 'Contoh: Ollin Debit Belanja',
                 filled: true,
-                fillColor: q.surface,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: Spacing.m,
                   vertical: Spacing.s,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  borderSide: BorderSide(color: q.line),
                 ),
               ),
             ),
@@ -416,14 +411,9 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
               decoration: InputDecoration(
                 labelText: 'Bank / Akun Terkait',
                 filled: true,
-                fillColor: q.surface,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: Spacing.m,
                   vertical: Spacing.s,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  borderSide: BorderSide(color: q.line),
                 ),
               ),
               items: [
@@ -549,15 +539,9 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
                     decoration: InputDecoration(
                       hintText: 'Tambah kata kunci manual...',
                       filled: true,
-                      fillColor: q.surface,
-                      isDense: true,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: Spacing.m,
                         vertical: Spacing.s,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.tile),
-                        borderSide: BorderSide(color: q.line),
                       ),
                     ),
                     onSubmitted: (val) {

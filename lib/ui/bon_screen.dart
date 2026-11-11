@@ -147,22 +147,6 @@ class _BonScreenState extends State<BonScreen> {
                         color: q.text,
                         fontSize: 13.5,
                       ),
-                      isDense: true,
-                      filled: true,
-                      fillColor: q.surface2,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.tile),
-                        borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.tile),
-                        borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.tile),
-                        borderSide: BorderSide(color: q.primary, width: 1.4),
-                      ),
                     ),
                   ),
                   const SizedBox(height: Spacing.m),
@@ -209,22 +193,6 @@ class _BonScreenState extends State<BonScreen> {
                   ),
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.account_balance_wallet_outlined, size: 18),
-                    isDense: true,
-                    filled: true,
-                    fillColor: q.surface2,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.tile),
-                      borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.tile),
-                      borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.tile),
-                      borderSide: BorderSide(color: q.primary, width: 1.4),
-                    ),
                   ),
                   items: [
                     for (final a in accounts)
@@ -254,22 +222,6 @@ class _BonScreenState extends State<BonScreen> {
                   ),
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.category_outlined, size: 18),
-                    isDense: true,
-                    filled: true,
-                    fillColor: q.surface2,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.tile),
-                      borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.tile),
-                      borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.tile),
-                      borderSide: BorderSide(color: q.primary, width: 1.4),
-                    ),
                   ),
                   items: [
                     for (final c in categories)
@@ -949,27 +901,6 @@ class _BonSheetState extends State<BonSheet> {
             ),
             decoration: InputDecoration(
               hintText: 'Misalnya: Kopi, Langganan, Hobi...',
-              hintStyle: TextStyle(
-                color: q.muted.withValues(alpha: 0.6),
-                fontSize: 13.5,
-                fontWeight: FontWeight.w500,
-              ),
-              isDense: true,
-              filled: true,
-              fillColor: q.surface2,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.tile),
-                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.tile),
-                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.tile),
-                borderSide: BorderSide(color: q.primary, width: 1.4),
-              ),
             ),
           ),
         ],
@@ -1216,28 +1147,7 @@ class _BonSheetState extends State<BonSheet> {
             ),
             decoration: InputDecoration(
               hintText: 'Nama orang atau warung...',
-              hintStyle: TextStyle(
-                color: q.muted.withValues(alpha: 0.6),
-                fontSize: 13.5,
-                fontWeight: FontWeight.w500,
-              ),
               prefixIcon: const Icon(Icons.person_outline_rounded, size: 18),
-              isDense: true,
-              filled: true,
-              fillColor: q.surface2,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.tile),
-                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.tile),
-                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.tile),
-                borderSide: BorderSide(color: q.primary, width: 1.4),
-              ),
             ),
           ),
           const SizedBox(height: Spacing.m),
@@ -1267,28 +1177,7 @@ class _BonSheetState extends State<BonSheet> {
                 fontSize: 13.5,
               ),
               hintText: '0',
-              hintStyle: TextStyle(
-                color: q.muted.withValues(alpha: 0.6),
-                fontSize: 13.5,
-                fontWeight: FontWeight.w500,
-              ),
               prefixIcon: const Icon(Icons.payments_outlined, size: 18),
-              isDense: true,
-              filled: true,
-              fillColor: q.surface2,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.tile),
-                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.tile),
-                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.tile),
-                borderSide: BorderSide(color: q.primary, width: 1.4),
-              ),
             ),
           ),
           if (_categories.isNotEmpty) ...[
@@ -1335,22 +1224,6 @@ class _BonSheetState extends State<BonSheet> {
               ),
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.category_outlined, size: 18),
-                isDense: true,
-                filled: true,
-                fillColor: q.surface2,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  borderSide: BorderSide(color: q.primary, width: 1.4),
-                ),
               ),
               items: [
                 for (final c in _categories)
@@ -1386,22 +1259,6 @@ class _BonSheetState extends State<BonSheet> {
               ),
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.account_balance_wallet_outlined, size: 18),
-                isDense: true,
-                filled: true,
-                fillColor: q.surface2,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  borderSide: BorderSide(color: q.primary, width: 1.4),
-                ),
               ),
               items: [
                 for (final a in _accounts)
@@ -1474,28 +1331,7 @@ class _BonSheetState extends State<BonSheet> {
             ),
             decoration: InputDecoration(
               hintText: 'Tulis catatan bila perlu...',
-              hintStyle: TextStyle(
-                color: q.muted.withValues(alpha: 0.6),
-                fontSize: 13.5,
-                fontWeight: FontWeight.w500,
-              ),
               prefixIcon: const Icon(Icons.notes_rounded, size: 18),
-              isDense: true,
-              filled: true,
-              fillColor: q.surface2,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.tile),
-                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.tile),
-                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.tile),
-                borderSide: BorderSide(color: q.primary, width: 1.4),
-              ),
             ),
           ),
           const SizedBox(height: Spacing.m),

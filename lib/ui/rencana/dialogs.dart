@@ -109,22 +109,8 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
               ),
               decoration: InputDecoration(
                 hintText: 'Contoh: Makanan',
-                isDense: true,
                 filled: true,
-                fillColor: q.surface2,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  borderSide: BorderSide(color: q.primary, width: 1.4),
-                ),
               ),
             ),
             const SizedBox(height: Spacing.m),
@@ -154,22 +140,8 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
                   fontSize: 13.5,
                 ),
                 hintText: 'Kosongkan jika tanpa batas',
-                isDense: true,
                 filled: true,
-                fillColor: q.surface2,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  borderSide: BorderSide(color: q.primary, width: 1.4),
-                ),
               ),
             ),
             const SizedBox(height: Spacing.m),
@@ -190,22 +162,8 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
                 size: 20,
               ),
               decoration: InputDecoration(
-                isDense: true,
                 filled: true,
-                fillColor: q.surface2,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  borderSide: BorderSide(color: q.primary, width: 1.4),
-                ),
               ),
               items: [
                 const DropdownMenuItem<int?>(
@@ -318,22 +276,8 @@ class _NewCategoryFormState extends State<_NewCategoryForm> {
               fontSize: 13.5,
               fontWeight: FontWeight.w500,
             ),
-            isDense: true,
             filled: true,
-            fillColor: q.surface2,
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadius.tile),
-              borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadius.tile),
-              borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadius.tile),
-              borderSide: BorderSide(color: q.primary, width: 1.4),
-            ),
           ),
         ),
         const SizedBox(height: Spacing.m),
@@ -368,22 +312,8 @@ class _NewCategoryFormState extends State<_NewCategoryForm> {
               fontSize: 13.5,
               fontWeight: FontWeight.w500,
             ),
-            isDense: true,
             filled: true,
-            fillColor: q.surface2,
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadius.tile),
-              borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadius.tile),
-              borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadius.tile),
-              borderSide: BorderSide(color: q.primary, width: 1.4),
-            ),
           ),
         ),
       ],

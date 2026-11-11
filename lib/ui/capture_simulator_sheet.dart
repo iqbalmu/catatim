@@ -340,10 +340,6 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
                   labelText: 'Package Name',
                   labelStyle: context.qSmall(12).copyWith(color: q.muted),
                   prefixIcon: const Icon(Icons.apps_rounded, size: 18),
-                  isDense: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.tile),
-                  ),
                 ),
               ),
               const SizedBox(height: Spacing.s),
@@ -354,10 +350,6 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
                   labelText: 'Judul Notifikasi (Title)',
                   labelStyle: context.qSmall(12).copyWith(color: q.muted),
                   prefixIcon: const Icon(Icons.title_rounded, size: 18),
-                  isDense: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.tile),
-                  ),
                 ),
               ),
               const SizedBox(height: Spacing.s),
@@ -372,10 +364,6 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
                   prefixIcon: const Padding(
                     padding: EdgeInsets.only(bottom: 36),
                     child: Icon(Icons.message_rounded, size: 18),
-                  ),
-                  isDense: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.tile),
                   ),
                 ),
               ),

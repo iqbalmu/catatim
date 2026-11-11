@@ -235,7 +235,6 @@ class _TransactionSheetState extends State<TransactionSheet> {
         maxLines: 4,
         decoration: const InputDecoration(
           hintText: 'Tempel pesan SMS atau notifikasi transfer di sini...',
-          border: OutlineInputBorder(),
         ),
       ),
       actions: [
@@ -326,22 +325,8 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 fontSize: 13.5,
                 fontWeight: FontWeight.w500,
               ),
-              isDense: true,
               filled: true,
-              fillColor: q.surface2,
               contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.tile),
-                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.tile),
-                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.tile),
-                borderSide: BorderSide(color: q.primary, width: 1.4),
-              ),
             ),
           ),
         ],
@@ -842,31 +827,10 @@ class _TransactionSheetState extends State<TransactionSheet> {
                             size: 20,
                           ),
                           decoration: InputDecoration(
-                            isDense: true,
                             filled: true,
-                            fillColor: q.surface2,
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 14,
                               vertical: 11,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.tile),
-                              borderSide: BorderSide(
-                                color: q.line.withValues(alpha: 0.5),
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.tile),
-                              borderSide: BorderSide(
-                                color: q.line.withValues(alpha: 0.5),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.tile),
-                              borderSide: BorderSide(
-                                color: q.primary,
-                                width: 1.4,
-                              ),
                             ),
                           ),
                           items: [
@@ -947,31 +911,10 @@ class _TransactionSheetState extends State<TransactionSheet> {
                     size: 20,
                   ),
                   decoration: InputDecoration(
-                    isDense: true,
                     filled: true,
-                    fillColor: q.surface2,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 11,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.tile),
-                      borderSide: BorderSide(
-                        color: q.line.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.tile),
-                      borderSide: BorderSide(
-                        color: q.line.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.tile),
-                      borderSide: BorderSide(
-                        color: q.primary,
-                        width: 1.4,
-                      ),
                     ),
                   ),
                   items: [
@@ -1030,9 +973,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
                       size: 20,
                     ),
                     decoration: InputDecoration(
-                      isDense: true,
                       filled: true,
-                      fillColor: q.surface2,
                       prefixIcon: Icon(
                         Icons.arrow_forward_rounded,
                         size: 16,
@@ -1041,25 +982,6 @@ class _TransactionSheetState extends State<TransactionSheet> {
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 14,
                         vertical: 11,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.tile),
-                        borderSide: BorderSide(
-                          color: q.line.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.tile),
-                        borderSide: BorderSide(
-                          color: q.line.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.tile),
-                        borderSide: BorderSide(
-                          color: q.primary,
-                          width: 1.4,
-                        ),
                       ),
                     ),
                     items: [
@@ -1128,9 +1050,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
                             size: 20,
                           ),
                           decoration: InputDecoration(
-                            isDense: true,
                             filled: true,
-                            fillColor: q.surface2,
                             prefixIcon: Icon(
                               Icons.link_rounded,
                               size: 18,
@@ -1139,25 +1059,6 @@ class _TransactionSheetState extends State<TransactionSheet> {
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 14,
                               vertical: 11,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.tile),
-                              borderSide: BorderSide(
-                                color: q.line.withValues(alpha: 0.5),
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.tile),
-                              borderSide: BorderSide(
-                                color: q.line.withValues(alpha: 0.5),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.tile),
-                              borderSide: BorderSide(
-                                color: q.primary,
-                                width: 1.4,
-                              ),
                             ),
                           ),
                           items: [
@@ -1275,9 +1176,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
                     FocusScope.of(context).unfocus();
                   },
                   decoration: InputDecoration(
-                    isDense: true,
                     filled: true,
-                    fillColor: q.surface2,
                     hintText: 'Contoh: Kopi Kenangan, Beli Makan, dll...',
                     hintStyle: TextStyle(
                       color: q.muted.withValues(alpha: 0.6),
@@ -1287,25 +1186,6 @@ class _TransactionSheetState extends State<TransactionSheet> {
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 11,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.tile),
-                      borderSide: BorderSide(
-                        color: q.line.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.tile),
-                      borderSide: BorderSide(
-                        color: q.line.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.tile),
-                      borderSide: BorderSide(
-                        color: q.primary,
-                        width: 1.4,
-                      ),
                     ),
                   ),
                 ),
