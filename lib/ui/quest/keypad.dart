@@ -107,7 +107,7 @@ class QuestKeypad extends StatelessWidget {
   Widget _saveCell(BuildContext context) {
     final q = context.q;
     final enabled = amount > 0 && onSave != null;
-    final fg = enabled ? Colors.white : q.muted;
+    final fg = enabled ? q.onPrimary : q.muted;
     return Expanded(
       flex: 2,
       child: Padding(
@@ -119,11 +119,11 @@ class QuestKeypad extends StatelessWidget {
           child: QuestPress(
             onTap: enabled ? onSave : null,
             child: Container(
-              height: 46,
+              height: 48,
               decoration: BoxDecoration(
-                color: enabled ? q.primary : q.surface2,
+              color: enabled ? q.primarySolid : q.surface2,
                 borderRadius: BorderRadius.circular(AppRadius.tile),
-                boxShadow: enabled ? AppShadows.card : null,
+                boxShadow: enabled ? q.cardShadow : null,
               ),
               alignment: Alignment.center,
               child: Row(

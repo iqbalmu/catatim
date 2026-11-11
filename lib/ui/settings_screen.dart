@@ -78,7 +78,7 @@ class SettingsScreen extends StatelessWidget {
                           height: 52,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [q.primary, q.violet],
+                              colors: [q.primarySolid, q.violet],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -91,10 +91,10 @@ class SettingsScreen extends StatelessWidget {
                               ),
                             ],
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Icon(
                               Icons.person_rounded,
-                              color: Colors.white,
+                              color: q.onPrimary,
                               size: 28,
                             ),
                           ),
@@ -522,7 +522,7 @@ class SettingsScreen extends StatelessWidget {
                         height: 42,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [q.primary, q.violet],
+                            colors: [q.primarySolid, q.violet],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -535,9 +535,9 @@ class SettingsScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.account_balance_wallet_rounded,
-                          color: Colors.white,
+                          color: q.onPrimary,
                           size: 22,
                         ),
                       ),

@@ -552,9 +552,9 @@ class _AddAccountSheetState extends State<AddAccountSheet>
             width: 64,
             height: 64,
             decoration: BoxDecoration(color: q.good, shape: BoxShape.circle),
-            child: const Icon(
+            child: Icon(
               Icons.check_rounded,
-              color: Colors.white,
+              color: q.onPrimary,
               size: 36,
             ),
           ),
@@ -664,7 +664,7 @@ class _BankAvatar extends StatelessWidget {
       child: Text(
         initial,
         style: TextStyle(
-          color: q.primary,
+          color: q.primaryText,
           fontWeight: FontWeight.w800,
           fontSize: size >= 40 ? 17 : 15,
         ),
@@ -729,7 +729,7 @@ class _StepRow extends StatelessWidget {
             child: Text(
               number,
               style: TextStyle(
-                color: q.primary,
+          color: q.primaryText,
                 fontWeight: FontWeight.w800,
                 fontSize: 14,
               ),

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 /// Token desain — satu sumber kebenaran untuk spacing, radius, dan warna.
 ///
-/// Nilai warna = palet v2.1 "Pastel Pochy", 100% diturunkan dari piksel
-/// maskot (tubuh burlap, koin, syal teal, mulut, bintang pastel) —
-/// lihat docs/DESIGN.md + ADR-010. Satu tema; tanpa dark mode.
+/// Palet v3.0 "Slate-Indigo Clean": bersih, tenang, berbobot finansial —
+/// lihat docs/DESIGN.md. Dua tema (light/dark); aksen semantik light
+/// memakai varian 700 agar lolos WCAG AA (audit 2026-11-11).
 class Spacing {
   Spacing._();
 
@@ -56,32 +56,9 @@ class AppRadius {
   static const double pill = 999;
 }
 
-class AppShadows {
-  AppShadows._();
-
-  static const List<BoxShadow> card = [
-    BoxShadow(
-      offset: Offset(0, 4),
-      blurRadius: 16,
-      color: Color(0x080F172A),
-    ),
-  ];
-  static const List<BoxShadow> raised = [
-    BoxShadow(
-      offset: Offset(0, 6),
-      blurRadius: 18,
-      color: Color(0x0C0F172A),
-    ),
-  ];
-
-  static const List<BoxShadow> elevated = [
-    BoxShadow(
-      offset: Offset(0, 8),
-      blurRadius: 24,
-      color: Color(0x0D0F172A),
-    ),
-  ];
-}
+/// Elevasi kini hidup di QuestPalette (`cardShadow`/`elevatedShadow`) —
+/// warna shadow ikut tema (light 3% slate / dark 48% hitam), menggantikan
+/// AppShadows statis yang tak pernah flip di dark (audit T-01).
 
 class SeedColors {
 
@@ -113,40 +90,33 @@ class SeedColors {
   static const Color primaryDeep = Color(0xFF4F46E5); // Indigo 600
   static const Color primaryLight = Color(0xFFEEF2FF); // Indigo 50
   static const Color violet = Color(0xFF8B5CF6); // Violet 500
-  static const Color lilacBg = Color(0xFFF3E8FF);
-  static const Color lilacText = Color(0xFF7E22CE);
+
 
   // ── Emas & Amber ───────────────────────────────────────────────
   static const Color honeyBright = Color(0xFFFDE68A);
-  static const Color honey = Color(0xFFF59E0B);
+
   static const Color honeyDeep = Color(0xFFD97706);
-  static const Color honeyInk = Color(0xFFB45309);
-  static const Color honeyText = Color(0xFF78350F);
-  static const Color honey50 = Color(0xFFFFFBEB);
+
   static const Color honey100 = Color(0xFFFEF3C7);
 
-  // ── Mint / Cyan ────────────────────────────────────────────────
-  static const Color mint = Color(0xFF06B6D4);
-  static const Color mintDeep = Color(0xFF0891B2);
-  static const Color mintInk = Color(0xFF0E7490);
-  static const Color mintTint = Color(0xFFECFEFF);
 
   // ── Semantik arah & status ──────────────────────────────────────
-  /// Masuk / aman — Emerald 500.
-  static const Color incoming = Color(0xFF10B981);
+  /// Masuk / aman — Emerald 700 (WCAG AA on surface & tint, audit
+  /// 2026-11-11: Emerald 500 hanya 2,54:1 di putih).
+  static const Color incoming = Color(0xFF047857);
 
-  /// Keluar / OVER — Rose/Red 500.
-  static const Color outgoing = Color(0xFFEF4444);
+  /// Keluar / OVER — Rose 700 (Rose 500 hanya 3,76:1, Rose 600 4,41 di tint).
+  static const Color outgoing = Color(0xFFB91C1C);
 
-  /// Peringatan / mendekati batas (75-99%) — Amber 500.
-  static const Color warn = Color(0xFFF59E0B);
+  /// Peringatan / mendekati batas (75-99%) — Amber 700 (Amber 500
+  /// hanya 1,93:1 di warnTint).
+  static const Color warn = Color(0xFFB45309);
   static const Color warnTint = Color(0xFFFEF3C7);
 
   /// Tint semantik (chip status).
   static const Color incomingTint = Color(0xFFECFDF5);
   static const Color outgoingTint = Color(0xFFFEF2F2);
-  /// Netral finansial lama.
-  static const Color seed = primary;
+
 
   /// Warna kategori — BAHASA DATA (ADR-010): diindeks via
   /// Categories.colorIndex, tidak berubah, tidak dipakai di luar
@@ -170,13 +140,13 @@ class SeedColors {
 class DarkColors {
   DarkColors._();
 
-  /// Latar app — Slate 950 deep.
+  /// Latar app — Slate 900.
   static const Color bg = Color(0xFF0F172A);
 
-  /// Kartu/sheet — Slate 900.
+  /// Kartu/sheet — Slate 800.
   static const Color surface = Color(0xFF1E293B);
 
-  /// Tint latar sekunder / strip — Slate 800.
+  /// Tint latar sekunder / strip — Slate 700.
   static const Color surface2 = Color(0xFF334155);
 
   /// Garis sekunder & border hairline — Slate 700.

@@ -60,6 +60,55 @@ void main() {
     expect(find.text('Screen A'), findsOneWidget);
     expect(find.text('Screen B'), findsNothing);
   });
+
+  testWidgets(
+    'reduce motion: QuestPageTransitionsBuilder memotong instan (audit M-01)',
+    (tester) async {
+      Widget buildApp({required bool reduced}) => MaterialApp(
+            key: ValueKey('reduced-$reduced'),
+            theme: ThemeData(
+              pageTransitionsTheme: const PageTransitionsTheme(
+                builders: {
+                  TargetPlatform.android: QuestPageTransitionsBuilder(),
+                },
+              ),
+            ),
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(disableAnimations: reduced),
+              child: child!,
+            ),
+            home: const Scaffold(body: Center(child: Text('Screen A'))),
+          );
+
+      // Kontrol: normal → transisi slide hadir.
+      await tester.pumpWidget(buildApp(reduced: false));
+      Navigator.push(
+        tester.element(find.text('Screen A')),
+        MaterialPageRoute(
+          builder: (_) => const Scaffold(body: Center(child: Text('Screen B'))),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(SlideTransition), findsWidgets);
+      await tester.pumpAndSettle();
+
+      // Reduce motion → tanpa slide/parallax; halaman langsung tampil.
+      await tester.pumpWidget(buildApp(reduced: true));
+      Navigator.push(
+        tester.element(find.text('Screen A')),
+        MaterialPageRoute(
+          builder: (_) => const Scaffold(body: Center(child: Text('Screen B'))),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.byType(SlideTransition), findsNothing);
+      expect(find.text('Screen B'), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 class _ParallaxQuestPageTransitionsBuilder extends PageTransitionsBuilder {

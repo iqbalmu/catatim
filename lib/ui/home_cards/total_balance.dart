@@ -115,8 +115,8 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                             visualDensity: VisualDensity.compact,
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(
-                              minWidth: 44,
-                              minHeight: 44,
+                              minWidth: 48,
+                              minHeight: 48,
                             ),
                             tooltip: _obscured
                                 ? 'Tampilkan saldo'
@@ -195,7 +195,7 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                                 Icon(
                                   Icons.lock_rounded,
                                   size: 12,
-                                  color: q.primary,
+                                  color: q.primaryText,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -203,7 +203,7 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                                   style: context
                                       .qSmall(12)
                                       .copyWith(
-                                        color: q.primary,
+                                        color: q.primaryText,
                                         fontWeight: FontWeight.w700,
                                       ),
                                 ),
@@ -255,7 +255,7 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                                 ruleSet: widget.ruleSet,
                               ),
                               child: Container(
-                                constraints: const BoxConstraints(minHeight: 44),
+                                constraints: const BoxConstraints(minHeight: 48),
                                 margin: const EdgeInsets.only(right: Spacing.xs),
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
@@ -278,7 +278,7 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                                     Icon(
                                       Icons.add_rounded,
                                       size: 16,
-                                      color: q.primary,
+                                      color: q.primaryText,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
@@ -286,7 +286,7 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w700,
-                                        color: q.primary,
+                                        color: q.primaryText,
                                       ),
                                     ),
                                   ],
@@ -339,7 +339,7 @@ class _AccountChip extends StatelessWidget {
         child: QuestPress(
           onTap: onTap,
           child: Container(
-            constraints: const BoxConstraints(minHeight: 44),
+            constraints: const BoxConstraints(minHeight: 48),
             padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
             decoration: BoxDecoration(
               color: q.surface2.withValues(alpha: 0.6),
@@ -389,7 +389,7 @@ class _AccountChip extends StatelessWidget {
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1.5,
-                        color: q.primary,
+                        color: q.primaryText,
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),

@@ -61,8 +61,8 @@ class QuestCard extends StatelessWidget {
     final List<BoxShadow>? effectiveShadow =
         shadow ??
         switch (variant) {
-          QuestCardVariant.card => AppShadows.card,
-          QuestCardVariant.hero => AppShadows.elevated,
+          QuestCardVariant.card => q.cardShadow,
+          QuestCardVariant.hero => q.elevatedShadow,
           QuestCardVariant.flat => null,
         };
 
@@ -117,11 +117,11 @@ class QuestChip extends StatelessWidget {
         child: AnimatedContainer(
           duration: QuestMotion.fast,
           curve: QuestMotion.easeOut,
-          constraints: const BoxConstraints(minHeight: 40),
+          constraints: const BoxConstraints(minHeight: 48),
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: selected ? q.primary : q.surface2,
+          color: selected ? q.primarySolid : q.surface2,
             borderRadius: BorderRadius.circular(AppRadius.pill),
           ),
           child: AnimatedDefaultTextStyle(
@@ -131,7 +131,7 @@ class QuestChip extends StatelessWidget {
               fontFamily: 'Nunito',
               fontWeight: FontWeight.w800,
               fontSize: 13,
-              color: selected ? Colors.white : q.text,
+              color: selected ? q.onPrimary : q.text,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,

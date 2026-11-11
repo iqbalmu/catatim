@@ -41,7 +41,7 @@ class _InteractiveTrendCard extends StatelessWidget {
         color: context.q.surface,
         borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: context.q.line),
-        boxShadow: AppShadows.card,
+        boxShadow: context.q.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,7 +137,14 @@ class _InteractiveTrendCard extends StatelessWidget {
                 const yAxisWidth = 46.0;
                 final plotWidth = math.max(1.0, constraints.maxWidth - yAxisWidth);
 
-                return GestureDetector(
+                return Semantics(
+                  container: true,
+                  label: 'Grafik ${isMonthlyGranularity ? 'bulanan' : 'mingguan'}, '
+                      '${buckets.length} periode. Terpilih '
+                      '${activeBucket.label}: masuk '
+                      '${Money.format(activeBucket.incoming)}, keluar '
+                      '${Money.format(activeBucket.outgoing)}',
+                  child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTapDown: (details) {
                     final dx = details.localPosition.dx - yAxisWidth;
@@ -165,11 +172,12 @@ class _InteractiveTrendCard extends StatelessWidget {
                         outColor: context.q.bad,
                         gridColor: context.q.line,
                         highlightColor:
-                            SeedColors.primaryLight.withValues(alpha: 0.7),
+                            context.q.primaryLight.withValues(alpha: 0.7),
                         labelColor: context.q.muted,
-                        activeLabelColor: context.q.primary,
+                        activeLabelColor: context.q.primaryText,
                       ),
                     ),
+                  ),
                   ),
                 );
               },

@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import '../core/money.dart';
 import 'tokens.dart';
 
-/// Palet identitas "Mainan Hangat" v2.1 — hangat, empuk, dari piksel
-/// Pochy (ADR-010). Satu tema; tanpa dark mode. Semua widget custom
-/// membaca warna dari sini, bukan dari default Material, supaya
-/// identitas tidak bocor ke mana-mana.
+/// Palet "Slate-Indigo Clean" v3.0 (docs/DESIGN.md) — dua tema, light/dark;
+/// pasangan solid/onPrimary lolos WCAG AA. Semua widget custom membaca
+/// warna dari sini, bukan default Material, supaya identitas tidak bocor.
 class QuestPalette {
   const QuestPalette({
     required this.bg,
@@ -20,12 +19,14 @@ class QuestPalette {
     required this.warn,
     required this.warnTint,
     required this.bad,
-    required this.honey,
-    required this.honeyInk,
     required this.primary,
     required this.primaryDeep,
     required this.primaryLight,
     required this.violet,
+    required this.primarySolid,
+    required this.onPrimary,
+    required this.primaryText,
+    required this.primaryGradientEnd,
     required this.shadow,
     this.incomingTint = SeedColors.incomingTint,
     this.outgoingTint = SeedColors.outgoingTint,
@@ -42,13 +43,39 @@ class QuestPalette {
   final Color warn;
   final Color warnTint;
   final Color bad;
-  final Color honey;
-  final Color honeyInk;
+
   final Color primary;
   final Color primaryDeep;
   final Color primaryLight;
   final Color violet;
+
+  /// Isi brand yang lolos kontras WCAG AA untuk kontennya (audit
+  /// 2026-11-11): light Indigo 600 + putih, dark Indigo 400 + tinta gelap
+  /// (putih di atas Indigo 400 hanya 2,98:1).
+  final Color primarySolid;
+
+  /// Teks/ikon di atas [primarySolid] / gradien brand.
+  final Color onPrimary;
+
+  /// Teks berwarna brand (link, label CTA inline) — light Indigo 600,
+  /// dark Indigo 300; `primary` murni gagal 4,5:1 sebagai teks kecil.
+  final Color primaryText;
+
+  /// Ujung kedua gradien CTA — light Indigo 700, dark Indigo 300.
+  final Color primaryGradientEnd;
+
   final Color shadow;
+
+  /// Elevasi kartu — offset/blur tetap, warna mengikuti [shadow]:
+  /// light 3% slate (halus), dark 48% hitam (terlihat di permukaan gelap).
+  /// Menggantikan AppShadows statis yang tak pernah flip di dark (audit T-01).
+  List<BoxShadow> get cardShadow => [
+        BoxShadow(offset: const Offset(0, 4), blurRadius: 16, color: shadow),
+      ];
+
+  List<BoxShadow> get elevatedShadow => [
+        BoxShadow(offset: const Offset(0, 8), blurRadius: 24, color: shadow),
+      ];
   final Color incomingTint;
   final Color outgoingTint;
 
@@ -64,12 +91,15 @@ class QuestPalette {
     warn: SeedColors.warn,
     warnTint: SeedColors.warnTint,
     bad: SeedColors.outgoing,
-    honey: SeedColors.honey,
-    honeyInk: SeedColors.honeyInk,
+
     primary: SeedColors.primary,
     primaryDeep: SeedColors.primaryDeep,
     primaryLight: SeedColors.primaryLight,
     violet: SeedColors.violet,
+    primarySolid: SeedColors.primaryDeep,
+    onPrimary: Colors.white,
+    primaryText: SeedColors.primaryDeep,
+    primaryGradientEnd: Color(0xFF4338CA),
     shadow: Color(0x080F172A),
     incomingTint: SeedColors.incomingTint,
     outgoingTint: SeedColors.outgoingTint,
@@ -87,21 +117,21 @@ class QuestPalette {
     warn: DarkColors.warn,
     warnTint: DarkColors.warnTint,
     bad: DarkColors.outgoing,
-    honey: SeedColors.honey,
-    honeyInk: SeedColors.honeyBright,
+
     primary: DarkColors.primary,
     primaryDeep: DarkColors.primaryDeep,
     primaryLight: DarkColors.primaryLight,
     violet: DarkColors.violet,
+    primarySolid: DarkColors.primary,
+    onPrimary: DarkColors.bg,
+    primaryText: Color(0xFFA5B4FC),
+    primaryGradientEnd: Color(0xFFA5B4FC),
     shadow: Color(0x30000000),
     incomingTint: DarkColors.incomingTint,
     outgoingTint: DarkColors.outgoingTint,
   );
 
-  /// Aksen mint (syal Pochy) — netral-aktif: segmented on, status tenang.
-  static const mint = SeedColors.mintDeep;
-  static const mintTint = SeedColors.mintTint;
-  static const mintInk = SeedColors.mintInk;
+
 }
 /// Akses cepat palet + tipografi khas Quest dari BuildContext.
 extension QuestTheme on BuildContext {
@@ -209,6 +239,11 @@ class QuestPageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
+    // Reduce Motion (audit M-01): potong instan tanpa slide/parallax —
+    // satu-satunya gerak layar-penuh yang belum tergated.
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
+      return child;
+    }
     final slideIn = Tween<Offset>(
       begin: const Offset(1, 0),
       end: Offset.zero,
@@ -750,6 +785,8 @@ class QuestTabEnter extends StatefulWidget {
 class _QuestTabEnterState extends State<QuestTabEnter>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(vsync: this);
+  late Animation<double> _opacity;
+  late Animation<Offset> _slide;
   int _seenToken = -1;
   bool _initialized = false;
   int _delayMs = 0;
@@ -758,12 +795,27 @@ class _QuestTabEnterState extends State<QuestTabEnter>
   void _restart({bool animate = true}) {
     if (!animate) {
       _controller.value = 1.0;
+      _opacity = const AlwaysStoppedAnimation<double>(1.0);
+      _slide = const AlwaysStoppedAnimation<Offset>(Offset.zero);
       return;
     }
     _delayMs =
         widget.index.clamp(0, 20) * QuestMotion.staggerStep.inMilliseconds;
     _animMs = QuestMotion.enter.inMilliseconds;
     _controller.duration = Duration(milliseconds: _delayMs + _animMs);
+    final totalMs = _delayMs + _animMs;
+    _opacity = _controller.drive(
+      CurveTween(
+        curve: Interval(
+          (_delayMs / totalMs).clamp(0.0, 0.92),
+          1.0,
+          curve: QuestMotion.easeOut,
+        ),
+      ),
+    );
+    _slide = _opacity.drive(
+      Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero),
+    );
     _controller.forward(from: 0);
   }
 
@@ -808,22 +860,12 @@ class _QuestTabEnterState extends State<QuestTabEnter>
     }
     return QuestEnterScope(
       delayMs: _delayMs,
-      child: AnimatedBuilder(
-        animation: _controller,
-        child: widget.child,
-        builder: (context, child) {
-          final totalMs = _delayMs + _animMs;
-          final raw = ((_controller.value * totalMs - _delayMs) / _animMs)
-              .clamp(0.0, 1.0);
-          final eased = QuestMotion.easeOut.transform(raw);
-          return Opacity(
-            opacity: eased,
-            child: Transform.translate(
-              offset: Offset(0, 16 * (1 - eased)),
-              child: child,
-            ),
-          );
-        },
+      child: FadeTransition(
+        opacity: _opacity,
+        child: SlideTransition(
+          position: _slide,
+          child: widget.child,
+        ),
       ),
     );
   }
@@ -841,11 +883,11 @@ class QuestSchemes {
     final scheme = ColorScheme(
       brightness: brightness,
       primary: p.primary,
-      onPrimary: Colors.white,
+      onPrimary: p.onPrimary,
       secondary: p.good,
-      onSecondary: Colors.white,
+      onSecondary: p.onPrimary,
       error: p.bad,
-      onError: Colors.white,
+      onError: p.onPrimary,
       surface: p.surface,
       onSurface: p.text,
       surfaceContainerLowest: p.surface,
@@ -950,16 +992,8 @@ class QuestSchemes {
           side: BorderSide(color: p.line, width: 1),
         ),
       ),
-      switchTheme: SwitchThemeData(
-        thumbColor: WidgetStatePropertyAll(p.surface),
-        trackColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return p.primary;
-          }
-          return p.muted.withValues(alpha: 0.4);
-        }),
-        trackOutlineColor: WidgetStatePropertyAll(p.line),
-      ),
+      // switchTheme dihapus (audit T-03): app memakai QuestSwitch custom
+      // di seluruh layar; Material Switch tak pernah dirender.
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: p.primary,
         linearTrackColor: p.surface2,

@@ -46,7 +46,7 @@ class QuestSegmented<T> extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: context.q.surface,
                       borderRadius: BorderRadius.circular(12),
-                      boxShadow: AppShadows.card,
+                      boxShadow: context.q.cardShadow,
                     ),
                   ),
                 ),
@@ -64,7 +64,7 @@ class QuestSegmented<T> extends StatelessWidget {
                     child: QuestPress(
                       onTap: () => onChanged(options[i].value),
                       child: Container(
-                        constraints: const BoxConstraints(minHeight: 44),
+                        constraints: const BoxConstraints(minHeight: 48),
                         padding: const EdgeInsets.symmetric(
                           vertical: 10,
                           horizontal: 4,

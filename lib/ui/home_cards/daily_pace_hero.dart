@@ -297,12 +297,12 @@ class DailyPaceHeroCard extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.tune_rounded, size: 14, color: q.primary),
+                Icon(Icons.tune_rounded, size: 14, color: q.primaryText),
                 const SizedBox(width: 6),
                 Text(
                   'Atur Batas Anggaran',
                   style: context.qSmall(12).copyWith(
-                        color: q.primary,
+                        color: q.primaryText,
                         fontWeight: FontWeight.w700,
                       ),
                 ),

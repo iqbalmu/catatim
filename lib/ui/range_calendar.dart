@@ -151,7 +151,7 @@ class _QuestRangeCalendarState extends State<QuestRangeCalendar> {
                       builder: (context) {
                         final index = row * 7 + col - weekdayOffset;
                         if (index < 0 || index >= daysInMonth) {
-                          return const SizedBox(height: 38);
+                          return const SizedBox(height: 44);
                         }
                         final day = DateTime(
                           _month.year,
@@ -229,35 +229,46 @@ class _DayCell extends StatelessWidget {
     final Color bg;
     final Color fg;
     if (isEdge) {
-      bg = q.primary;
-      fg = Colors.white;
+      bg = q.primarySolid;
+      fg = q.onPrimary;
     } else if (inRange) {
       bg = q.primaryLight;
-      fg = q.primary;
+      fg = q.primaryText;
     } else {
       bg = Colors.transparent;
       fg = q.text;
     }
 
-    return QuestPress(
-      onTap: onTap,
-      child: Container(
-        height: 38,
-        margin: const EdgeInsets.all(1),
-        decoration: BoxDecoration(
-          color: bg,
-          shape: isEdge ? BoxShape.circle : BoxShape.rectangle,
-          borderRadius: isEdge ? null : BorderRadius.circular(AppRadius.cell),
-          border: Border.all(color: q.line, width: isEdge ? 2 : 0),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          '${day.day}',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: isEdge ? FontWeight.w800 : FontWeight.w400,
-            color: fg,
-            fontFeatures: const [FontFeature.tabularFigures()],
+    final dateLabel =
+        '${day.day}/${day.month}/${day.year}';
+    return Semantics(
+      button: true,
+      selected: isEdge,
+      label: isEdge
+          ? dateLabel
+          : inRange
+              ? '$dateLabel, dalam rentang'
+              : dateLabel,
+      child: QuestPress(
+        onTap: onTap,
+        child: Container(
+          height: 44,
+          margin: const EdgeInsets.all(1),
+          decoration: BoxDecoration(
+            color: bg,
+            shape: isEdge ? BoxShape.circle : BoxShape.rectangle,
+            borderRadius: isEdge ? null : BorderRadius.circular(AppRadius.cell),
+            border: Border.all(color: q.line, width: isEdge ? 2 : 0),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            '${day.day}',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: isEdge ? FontWeight.w800 : FontWeight.w400,
+              color: fg,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
         ),
       ),

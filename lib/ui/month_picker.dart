@@ -102,22 +102,27 @@ class _MonthCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final q = context.q;
-    return QuestPress(
-      onTap: onTap,
-      child: Container(
-        height: 40,
-        margin: const EdgeInsets.all(Spacing.xxs),
-        decoration: BoxDecoration(
-          color: selected ? q.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadius.cell),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: selected ? FontWeight.w800 : FontWeight.w400,
-            color: selected ? Colors.white : q.text,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: QuestPress(
+        onTap: onTap,
+        child: Container(
+          height: 44,
+          margin: const EdgeInsets.all(Spacing.xxs),
+          decoration: BoxDecoration(
+            color: selected ? q.primarySolid : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadius.cell),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: selected ? FontWeight.w800 : FontWeight.w400,
+              color: selected ? q.onPrimary : q.text,
+            ),
           ),
         ),
       ),

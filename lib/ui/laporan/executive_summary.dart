@@ -51,7 +51,7 @@ class _ExecutiveSummaryCard extends StatelessWidget {
         color: context.q.surface,
         borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: context.q.line),
-        boxShadow: AppShadows.card,
+        boxShadow: context.q.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

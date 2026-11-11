@@ -193,7 +193,7 @@ class HomeTopBar extends StatelessWidget {
                         color: q.surface,
                         shape: BoxShape.circle,
                         border: Border.all(color: q.line),
-                        boxShadow: AppShadows.card,
+                        boxShadow: q.cardShadow,
                       ),
                       child: Stack(
                         alignment: Alignment.center,
@@ -254,7 +254,7 @@ class HomeTopBar extends StatelessWidget {
                     color: q.surface,
                     shape: BoxShape.circle,
                     border: Border.all(color: q.line),
-                    boxShadow: AppShadows.card,
+                    boxShadow: q.cardShadow,
                   ),
                   child: Icon(
                     Icons.person_outline_rounded,

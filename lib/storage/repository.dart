@@ -1042,69 +1042,68 @@ class LedgerRepository {
     );
   }
 
-  /// Jumlah transaksi per hari lokal, sejak [since] — sumber kebenaran
-  /// untuk streak di ProgressService.
+  /// Jumlah transaksi per hari (UTC; drift menyimpan occurred_at sebagai
+  /// epoch-ms UTC dan pembacaan lama juga mengelompokkan lewat field UTC)
+  /// sejak [since] — sumber kebenaran streak di ProgressService.
+  /// Diagregasi di SQLite (audit O-03), bukan menarik baris mentah.
+  /// Bucket = hari LOKAL (modifier offset perangkat) — semantik sama
+  /// dengan pembacaan Dart lama; drift menyimpan occurred_at epoch-detik.
+  static String get _localTzModifier {
+    final m = DateTime.now().timeZoneOffset.inMinutes;
+    return m >= 0 ? '+$m minutes' : '-${-m} minutes';
+  }
+
   Future<Map<DateTime, int>> txCountByDaySince(DateTime since) async {
-    final rows = await (_db.select(
-      _db.transactions,
-    )..where((t) => t.occurredAt.isBiggerOrEqualValue(since))).get();
-    final map = <DateTime, int>{};
-    for (final t in rows) {
-      final d = DateTime(
-        t.occurredAt.year,
-        t.occurredAt.month,
-        t.occurredAt.day,
-      );
-      map.update(d, (v) => v + 1, ifAbsent: () => 1);
-    }
-    return map;
+    final rows = await _db.customSelect(
+      "SELECT date(occurred_at, 'unixepoch', '$_localTzModifier') AS day, COUNT(*) AS c "
+      'FROM transactions WHERE occurred_at >= ? GROUP BY day',
+      variables: [
+        Variable.withInt(since.millisecondsSinceEpoch ~/ 1000),
+      ],
+      readsFrom: {_db.transactions},
+    ).get();
+    return {
+      for (final r in rows) DateTime.parse(r.read<String>('day')): r.read<int>('c'),
+    };
   }
 
-  /// Total keluar per hari lokal sejak [since] (inklusif) — bahan
-  /// sparkline insight beranda. Re-emit tiap tabel transaksi berubah.
+  /// Total keluar per hari sejak [since] (inklusif) — bahan sparkline
+  /// insight beranda. Diagregasi di SQLite (audit O-03); re-emit tiap
+  /// tabel transaksi berubah.
   Stream<Map<DateTime, int>> watchOutSumByDaySince(DateTime since) {
-    final query = (_db.select(_db.transactions)
-      ..where(
-        (t) =>
-            t.direction.equalsValue(Direction.outgoing) &
-            t.occurredAt.isBiggerOrEqualValue(since),
-      ));
-    return query.watch().map((rows) {
-      final map = <DateTime, int>{};
-      for (final t in rows) {
-        final d = DateTime(
-          t.occurredAt.year,
-          t.occurredAt.month,
-          t.occurredAt.day,
-        );
-        map.update(d, (v) => v + t.amount, ifAbsent: () => t.amount);
-      }
-      return map;
-    });
+    return _db
+        .customSelect(
+          "SELECT date(occurred_at, 'unixepoch', '$_localTzModifier') AS day, "
+          'SUM(amount) AS s FROM transactions '
+          "WHERE direction = 'outgoing' AND occurred_at >= ? GROUP BY day",
+          variables: [
+            Variable.withInt(since.millisecondsSinceEpoch ~/ 1000),
+          ],
+          readsFrom: {_db.transactions},
+        )
+        .watch()
+        .map((rows) => {
+              for (final r in rows)
+                DateTime.parse(r.read<String>('day')): r.read<int>('s'),
+            });
   }
 
-  /// Total belanja MURNI per hari lokal sejak [since] (inklusif) —
-  /// kunci tengah-malam lokal seperti [txCountByDaySince]. Transfer
-  /// tidak ikut.
+  /// Total belanja MURNI per hari sejak [since] (inklusif); transfer
+  /// tidak ikut. Diagregasi di SQLite (audit O-03).
   Future<Map<DateTime, int>> outSpendByDaySince(DateTime since) async {
-    final rows =
-        await (_db.select(_db.transactions)..where(
-              (t) =>
-                  t.direction.equalsValue(Direction.outgoing) &
-                  t.kind.equalsValue(TxKind.transfer).not() &
-                  t.occurredAt.isBiggerOrEqualValue(since),
-            ))
-            .get();
-    final map = <DateTime, int>{};
-    for (final t in rows) {
-      final d = DateTime(
-        t.occurredAt.year,
-        t.occurredAt.month,
-        t.occurredAt.day,
-      );
-      map.update(d, (v) => v + t.amount, ifAbsent: () => t.amount);
-    }
-    return map;
+    final rows = await _db.customSelect(
+      "SELECT date(occurred_at, 'unixepoch', '$_localTzModifier') AS day, SUM(amount) AS s "
+          'FROM transactions '
+          "WHERE direction = 'outgoing' AND kind != 'transfer' "
+          'AND occurred_at >= ? GROUP BY day',
+      variables: [
+        Variable.withInt(since.millisecondsSinceEpoch ~/ 1000),
+      ],
+      readsFrom: {_db.transactions},
+    ).get();
+    return {
+      for (final r in rows) DateTime.parse(r.read<String>('day')): r.read<int>('s'),
+    };
   }
 
   // --- settings -----------------------------------------------------------------

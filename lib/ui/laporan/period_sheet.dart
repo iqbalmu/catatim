@@ -21,10 +21,14 @@ class _AccountOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.tile),
-      child: Padding(
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '$label, $subtitle',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.tile),
+        child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
         child: Row(
           children: [
@@ -38,7 +42,7 @@ class _AccountOptionTile extends StatelessWidget {
               child: Icon(
                 icon,
                 size: 18,
-                color: selected ? context.q.primary : context.q.muted,
+                color: selected ? context.q.primaryText : context.q.muted,
               ),
             ),
             const SizedBox(width: 12),
@@ -66,8 +70,9 @@ class _AccountOptionTile extends StatelessWidget {
               ),
             ),
             if (selected)
-              Icon(Icons.check_circle_rounded, color: context.q.primary, size: 20),
+              Icon(Icons.check_circle_rounded, color: context.q.primaryText, size: 20),
           ],
+        ),
         ),
       ),
     );

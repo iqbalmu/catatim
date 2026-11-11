@@ -177,13 +177,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return PopScope(
       canPop: _tab == 0,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
         if (_tab != 0) _switchTab(0);
       },
-      child: Scaffold(
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        // Edge-to-edge (audit A-03): ikon status bar kontras dengan tema.
+        value: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness:
+              isDark ? Brightness.light : Brightness.dark, // Android
+          statusBarBrightness:
+              isDark ? Brightness.dark : Brightness.light, // iOS
+        ),
+        child: Scaffold(
         backgroundColor: context.q.bg,
         extendBody: true,
         body: IndexedStack(
@@ -254,6 +264,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             );
           },
         ),
+      ),
       ),
     );
   }

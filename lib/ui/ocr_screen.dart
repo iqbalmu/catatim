@@ -630,7 +630,11 @@ class _OcrScreenState extends State<OcrScreen> {
                             .copyWith(color: q.muted, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: Spacing.xs),
-                      InkWell(
+                      Semantics(
+                        button: true,
+                        label:
+                            'Tanggal & waktu transaksi, ${idFullDate(_occurredAt)} ${idDateTime(_occurredAt)}',
+                        child: InkWell(
                         onTap: _pickDateTime,
                         borderRadius: BorderRadius.circular(AppRadius.tile),
                         child: Container(
@@ -648,7 +652,7 @@ class _OcrScreenState extends State<OcrScreen> {
                               Icon(
                                 Icons.calendar_today_rounded,
                                 size: 18,
-                                color: q.primary,
+                                color: q.primaryText,
                               ),
                               const SizedBox(width: Spacing.s),
                               Expanded(
@@ -660,6 +664,7 @@ class _OcrScreenState extends State<OcrScreen> {
                               Icon(Icons.edit_rounded, size: 16, color: q.muted),
                             ],
                           ),
+                        ),
                         ),
                       ),
                       const SizedBox(height: Spacing.m),
@@ -839,7 +844,12 @@ class _OcrScreenState extends State<OcrScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      InkWell(
+                      Semantics(
+                        button: true,
+                        toggled: _showRawText,
+                        label:
+                            'Teks Mentah Hasil OCR, ${_showRawText ? 'terbuka' : 'tertutup'}',
+                        child: InkWell(
                         onTap: () =>
                             setState(() => _showRawText = !_showRawText),
                         child: Row(
@@ -858,6 +868,7 @@ class _OcrScreenState extends State<OcrScreen> {
                               ),
                             ),
                           ],
+                      ),
                         ),
                       ),
                       if (_showRawText) ...[

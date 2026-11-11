@@ -32,7 +32,7 @@ class _LimitMiniCard extends StatelessWidget {
           color: over ? q.bad.withValues(alpha: 0.12) : q.surface,
           borderRadius: BorderRadius.circular(AppRadius.tile),
           border: Border.all(color: q.line),
-          boxShadow: AppShadows.card,
+          boxShadow: q.cardShadow,
         ),
         child: Container(
           // Transparan tapi opaque untuk hit-test: seluruh permukaan
@@ -158,7 +158,7 @@ class _AllocationRow extends StatelessWidget {
         color: over ? q.bad.withValues(alpha: 0.12) : q.surface,
         borderRadius: BorderRadius.circular(AppRadius.tile),
         border: Border.all(color: q.line),
-        boxShadow: AppShadows.card,
+        boxShadow: q.cardShadow,
       ),
       child: QuestPress(
         onTap: onTap,

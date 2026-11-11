@@ -41,7 +41,8 @@ dependencies:
     sdk: flutter
 
   # Audit I-02/G-02: cupertino_icons & dynamic_color dihapus — tidak
-  # terpakai di lib/ (Material icons + satu tema terang, ADR-010).
+  # terpakai (Material icons + tema statis Slate-Indigo light/dark;
+  # dynamic color memang tidak diinginkan, ADR-010).
   drift: ^2.35.2
   path_provider: ^2.1.6
   flutter_secure_storage: ^11.2.0

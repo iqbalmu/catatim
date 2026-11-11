@@ -50,7 +50,7 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
                     color: context.q.surface,
                     shape: BoxShape.circle,
                     border: Border.all(color: context.q.line),
-                    boxShadow: AppShadows.card,
+                    boxShadow: context.q.cardShadow,
                   ),
                   child: IconButton(
                     visualDensity: VisualDensity.compact,

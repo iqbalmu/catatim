@@ -237,7 +237,7 @@ class _AccountTile extends StatelessWidget {
           color: q.surface,
           borderRadius: BorderRadius.circular(AppRadius.tile),
           border: Border.all(color: q.line, width: 1),
-          boxShadow: AppShadows.card,
+          boxShadow: q.cardShadow,
         ),
         child: Row(
           children: [

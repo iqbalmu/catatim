@@ -20,7 +20,7 @@ class _TopExpensesTableCard extends StatelessWidget {
         color: context.q.surface,
         borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: context.q.line),
-        boxShadow: AppShadows.card,
+        boxShadow: context.q.cardShadow,
       ),
       child: Column(
         children: [
@@ -74,7 +74,11 @@ class _TopExpenseRow extends StatelessWidget {
     final catName = item.category?.name ?? 'Tanpa Kategori';
     final sharePct = totalOut > 0 ? ((tx.amount / totalOut) * 100).round() : 0;
 
-    return InkWell(
+    return Semantics(
+      button: true,
+      label:
+          '$party, $catName, ${Money.format(tx.amount)}, $sharePct% dari pengeluaran',
+      child: InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadius.card),
       child: Padding(
@@ -144,6 +148,7 @@ class _TopExpenseRow extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

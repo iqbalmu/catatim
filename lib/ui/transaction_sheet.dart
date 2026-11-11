@@ -617,7 +617,11 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerRight,
-                  child: Text(
+                  child: Semantics(
+                    liveRegion: true,
+                    label:
+                        'Nominal ${_amount > 0 ? Money.format(_amount) : 'nol'}',
+                    child: Text(
                     _amount > 0 ? Money.format(_amount) : 'Rp0',
                     style: TextStyle(
                       fontFamily: 'Nunito',
@@ -629,6 +633,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
                       fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
+                    ),
                 ),
               ),
             ],
@@ -698,9 +703,6 @@ class _TransactionSheetState extends State<TransactionSheet> {
         Row(
           children: [
             IconButton(
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
               icon: const Icon(Icons.arrow_back_rounded, size: 22),
               tooltip: 'Ubah Nominal',
               onPressed: () {

@@ -518,7 +518,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                             child: Text(
                               app.label.characters.first.toUpperCase(),
                               style: TextStyle(
-                                color: q.primary,
+                                color: q.primaryText,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
@@ -1062,7 +1062,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: q.primary,
+            color: q.primaryText,
           ),
         ),
         const SizedBox(height: 4),
@@ -1221,14 +1221,14 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.add_rounded, size: 14, color: q.primary),
+                    Icon(Icons.add_rounded, size: 14, color: q.primaryText),
                     const SizedBox(width: 4),
                     Text(
                       'Tambah',
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w700,
-                        color: q.primary,
+                        color: q.primaryText,
                       ),
                     ),
                   ],
@@ -1558,12 +1558,16 @@ class _AppPickerSheetState extends State<_AppPickerSheet> {
         )
         .toList();
     final connectedPkgs = widget.connected.map((c) => c.package).toSet();
-    return Container(
-      height: MediaQuery.sizeOf(context).height * 0.75,
-      decoration: BoxDecoration(
-        color: q.bg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+    final bottomInset = MediaQuery.viewInsetsOf(context);
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset.bottom),
+      child: Container(
+        height: (MediaQuery.sizeOf(context).height * 0.75 - bottomInset.bottom)
+            .clamp(180.0, double.infinity),
+        decoration: BoxDecoration(
+          color: q.bg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
       child: Column(
         children: [
           const QuestGrabber(),
@@ -1640,6 +1644,7 @@ class _AppPickerSheetState extends State<_AppPickerSheet> {
                   ),
           ),
         ],
+      ),
       ),
     );
   }

@@ -33,7 +33,7 @@ class _CategoryStructureCard extends StatelessWidget {
         color: context.q.surface,
         borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: context.q.line),
-        boxShadow: AppShadows.card,
+        boxShadow: context.q.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,7 +187,11 @@ class _CategoryTableRow extends StatelessWidget {
     final share = grandTotal > 0 ? (stat.amount / grandTotal).clamp(0.0, 1.0) : 0.0;
     final pct = (share * 100).round();
 
-    return InkWell(
+    return Semantics(
+      button: true,
+      label:
+          '${stat.name}, ${Money.format(stat.amount)}, $pct% dari total pengeluaran',
+      child: InkWell(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: 12),
@@ -285,6 +289,7 @@ class _CategoryTableRow extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

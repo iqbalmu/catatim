@@ -185,7 +185,7 @@ class DraftAttentionBanner extends StatelessWidget {
                                   width: 32,
                                   height: 32,
                                   decoration: BoxDecoration(
-                                    color: q.primary,
+                                    color: q.primarySolid,
                                     borderRadius: BorderRadius.circular(
                                       AppRadius.cell,
                                     ),
@@ -194,7 +194,7 @@ class DraftAttentionBanner extends StatelessWidget {
                                     hasPair
                                         ? Icons.swap_horiz_rounded
                                         : Icons.bolt_rounded,
-                                    color: Colors.white,
+                                    color: q.onPrimary,
                                     size: 18,
                                   ),
                                 ),

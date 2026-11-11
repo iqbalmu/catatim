@@ -80,9 +80,11 @@ class QuestButton extends StatelessWidget {
     switch (tone) {
       case QuestTone.primary:
         fill = Colors.transparent;
-        fg = Colors.white;
+        fg = q.onPrimary;
         border = null;
-        gradient = LinearGradient(colors: [q.primary, q.primaryDeep]);
+        gradient = LinearGradient(
+          colors: [q.primarySolid, q.primaryGradientEnd],
+        );
         shadow = [
           BoxShadow(
             color: q.primary.withValues(alpha: 0.28),
@@ -95,10 +97,10 @@ class QuestButton extends StatelessWidget {
         fg = q.text;
         border = Border.all(color: q.line);
         gradient = null;
-        shadow = AppShadows.card;
+        shadow = q.cardShadow;
       case QuestTone.danger:
         fill = q.bad;
-        fg = Colors.white;
+        fg = q.onPrimary;
         border = null;
         gradient = null;
         shadow = [
@@ -116,7 +118,7 @@ class QuestButton extends StatelessWidget {
         shadow = null;
     }
     final button = Container(
-      constraints: const BoxConstraints(minHeight: 46),
+      constraints: const BoxConstraints(minHeight: 48),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: gradient == null ? fill : null,
@@ -156,7 +158,15 @@ class QuestButton extends StatelessWidget {
     final wrapped = onPressed == null
         ? Opacity(opacity: 0.45, child: button)
         : button;
-    return QuestPress(onTap: onPressed, child: wrapped);
+    return QuestPress(
+      onTap: onPressed,
+      child: Semantics(
+        button: true,
+        enabled: onPressed != null,
+        label: label,
+        child: wrapped,
+      ),
+    );
   }
 }
 
@@ -186,20 +196,24 @@ class QuestIconButton extends StatelessWidget {
         color: q.surface,
         shape: BoxShape.circle,
         border: Border.all(color: q.line),
-        boxShadow: AppShadows.card,
+        boxShadow: q.cardShadow,
       ),
       child: Icon(icon, color: q.text, size: 20),
     );
     return Tooltip(
       message: tooltip ?? '',
       child: Semantics(
-        label: tooltip,
+        label: tooltip == null
+            ? null
+            : badge
+                ? '$tooltip, ada pemberitahuan'
+                : tooltip,
         button: true,
         enabled: onPressed != null,
         child: QuestPress(
           onTap: onPressed,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
             child: Center(
               child: Badge(
                 isLabelVisible: badge,
@@ -238,7 +252,7 @@ class QuestSwitch extends StatelessWidget {
       child: QuestPress(
         onTap: () => onChanged(!value),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 44, minWidth: 56),
+          constraints: const BoxConstraints(minHeight: 48, minWidth: 56),
           child: Center(
             child: AnimatedContainer(
               duration: QuestMotion.fast,
@@ -247,7 +261,7 @@ class QuestSwitch extends StatelessWidget {
               height: 32,
               padding: const EdgeInsets.all(Spacing.xs),
               decoration: BoxDecoration(
-                color: value ? q.primary : q.surface2,
+                color: value ? q.primarySolid : q.surface2,
                 borderRadius: BorderRadius.circular(AppRadius.pill),
               ),
               child: AnimatedAlign(
@@ -257,10 +271,12 @@ class QuestSwitch extends StatelessWidget {
                 child: Container(
                   width: 22,
                   height: 22,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
+                  decoration: BoxDecoration(
+                    color: q.onPrimary,
                     shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: Color(0x1F000000), blurRadius: 4)],
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x1F000000), blurRadius: 4),
+                    ],
                   ),
                 ),
               ),

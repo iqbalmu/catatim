@@ -495,7 +495,7 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
                   '${_selectedKeywords.length} terpilih',
                   style: context
                       .qSmall(11.5)
-                      .copyWith(color: q.primary, fontWeight: FontWeight.w800),
+                      .copyWith(color: q.primaryText, fontWeight: FontWeight.w800),
                 ),
               ],
             ),

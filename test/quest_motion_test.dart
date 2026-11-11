@@ -320,7 +320,7 @@ void main() {
       ),
     );
 
-    double opacity() => tester.widget<Opacity>(find.byType(Opacity)).opacity;
+    double opacity() => tester.widget<FadeTransition>(find.byType(FadeTransition)).opacity.value;
 
     await tester.pump();
     expect(opacity(), lessThan(1.0)); // menetas, belum penuh
@@ -377,7 +377,7 @@ void main() {
     double factor() => tester
         .widget<FractionallySizedBox>(find.byType(FractionallySizedBox))
         .widthFactor!;
-    double opacity() => tester.widget<Opacity>(find.byType(Opacity)).opacity;
+    double opacity() => tester.widget<FadeTransition>(find.byType(FadeTransition)).opacity.value;
 
     // Buka tab Anggaran (bar) — seperti _onTabChanged: tab + token.
     setOuter(() {
@@ -448,8 +448,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 160));
       final opacities = tester
-          .widgetList<Opacity>(find.byType(Opacity))
-          .map((o) => o.opacity)
+          .widgetList<FadeTransition>(find.byType(FadeTransition))
+          .map((o) => o.opacity.value)
           .toList();
       expect(opacities[0], greaterThan(0.3));
       expect(opacities[0], greaterThan(opacities[1]));
@@ -467,9 +467,9 @@ void main() {
       setOuter(() => token++);
       await tester.pump();
       final replayFirst = tester
-          .widgetList<Opacity>(find.byType(Opacity))
+          .widgetList<FadeTransition>(find.byType(FadeTransition))
           .first
-          .opacity;
+          .opacity.value;
       expect(replayFirst, equals(0.0));
       expect(find.text('Item 0: 1'), findsOneWidget);
 
@@ -571,15 +571,15 @@ void main() {
 
       // Di tengah animasi, kartu masih menetas (opacity < 1.0).
       final cardOpacity = tester
-          .widget<Opacity>(
+          .widget<FadeTransition>(
             find
                 .ancestor(
                   of: find.text('PIUTANG'),
-                  matching: find.byType(Opacity),
+                  matching: find.byType(FadeTransition),
                 )
                 .first,
           )
-          .opacity;
+          .opacity.value;
       expect(cardOpacity, lessThan(1.0));
 
       await tester.pumpAndSettle();

@@ -59,7 +59,7 @@ class QuestBottomNav extends StatelessWidget {
                 color: context.q.surface,
                 borderRadius: BorderRadius.circular(AppRadius.nav),
                 border: Border.all(color: context.q.line, width: 1),
-                boxShadow: AppShadows.elevated,
+                boxShadow: context.q.elevatedShadow,
               ),
               child: Row(
                 children: [
@@ -91,7 +91,9 @@ class QuestBottomNav extends StatelessWidget {
         child: Semantics(
           selected: selected,
           button: true,
-          label: dest.label,
+          label: badges.contains(i)
+              ? '${dest.label}, ada item perlu perhatian'
+              : dest.label,
           child: QuestPress(
             onTap: () => onChanged(i),
             child: Container(
@@ -117,7 +119,7 @@ class QuestBottomNav extends StatelessWidget {
                         child: Icon(
                           dest.icon,
                           size: 21,
-                          color: selected ? context.q.primary : context.q.muted,
+                          color: selected ? context.q.primaryText : context.q.muted,
                         ),
                       ),
                     ),
@@ -130,7 +132,7 @@ class QuestBottomNav extends StatelessWidget {
                       fontFamily: 'Nunito',
                       fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                       fontSize: 10.5,
-                      color: selected ? context.q.primary : context.q.muted,
+                      color: selected ? context.q.primaryText : context.q.muted,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -157,7 +159,7 @@ class QuestBottomNav extends StatelessWidget {
           height: 58,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [context.q.primary, context.q.primaryDeep],
+              colors: [context.q.primarySolid, context.q.primaryGradientEnd],
             ),
             borderRadius: BorderRadius.circular(AppRadius.pill),
             boxShadow: const [
@@ -179,7 +181,7 @@ class QuestBottomNav extends StatelessWidget {
             child: Icon(
               action.icon ?? Icons.add_rounded,
               key: ValueKey(action.icon ?? Icons.add_rounded),
-              color: Colors.white,
+              color: context.q.onPrimary,
               size: 30,
             ),
           ),

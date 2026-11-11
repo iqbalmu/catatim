@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app.dart';
 import 'ui/locked_screen.dart';
@@ -16,6 +17,9 @@ import 'theme/quest.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Edge-to-edge (audit A-03): konten mengalir di belakang status bar;
+  // gaya ikonnya diatur per-tema lewat AnnotatedRegion di HomeScreen.
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   // Frame pertama tampil SEKARANG; init berat jalan di belakang splash
   // (audit F-01 — dulu buka DB + seed menahan startup 2,6–3,2 dtk).
   runApp(const BukuduitBootstrap());

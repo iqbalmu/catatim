@@ -89,6 +89,12 @@ class TransaksiScreenState extends State<TransaksiScreen> {
   int? _selectedAccountId;
   Direction? _selectedDirection;
 
+  // Stream bulan di-cache di state (audit O-01): tanpa ini tiap setState
+  // (termasuk tiap keystroke pencarian) membangun stream Drift baru →
+  // unsubscribe + re-query + skeleton berkedip.
+  Stream<List<TxWithCategory>>? _txStream;
+  (DateTime, int?)? _txStreamKey;
+
   @override
   void initState() {
     super.initState();
@@ -188,8 +194,15 @@ class TransaksiScreenState extends State<TransaksiScreen> {
   }
 
   Widget _buildTransactionsView() {
-    final startOfMonth = DateTime(_selectedMonth.year, _selectedMonth.month);
-    final endOfMonth = DateTime(_selectedMonth.year, _selectedMonth.month + 1);
+    final streamKey = (_selectedMonth, _selectedAccountId);
+    if (_txStream == null || streamKey != _txStreamKey) {
+      _txStreamKey = streamKey;
+      _txStream = widget.repository.watchBetweenWithCategory(
+        DateTime(_selectedMonth.year, _selectedMonth.month),
+        DateTime(_selectedMonth.year, _selectedMonth.month + 1),
+        accountId: _selectedAccountId,
+      );
+    }
 
     return Column(
       children: [
@@ -395,7 +408,10 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                         onPressed: () => _shiftMonth(-1),
                       ),
                       Expanded(
-                        child: InkWell(
+                        child: Semantics(
+                          button: true,
+                          label: 'Pilih bulan',
+                          child: InkWell(
                           onTap: _openMonthPicker,
                           borderRadius: BorderRadius.circular(AppRadius.cell),
                           child: Center(
@@ -407,7 +423,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                                   Icon(
                                     Icons.calendar_today_rounded,
                                     size: 14,
-                                    color: context.q.primary,
+                                    color: context.q.primaryText,
                                   ),
                                   const SizedBox(width: 7),
                                   Flexible(
@@ -435,7 +451,8 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                               ),
                             ),
                           ),
-                        ),
+                            ),
+                          ),
                       ),
                       IconButton(
                         visualDensity: VisualDensity.compact,
@@ -521,11 +538,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
         // Transactions Stream List & Monthly Cashflow Summary
         Expanded(
           child: StreamBuilder<List<TxWithCategory>>(
-            stream: widget.repository.watchBetweenWithCategory(
-              startOfMonth,
-              endOfMonth,
-              accountId: _selectedAccountId,
-            ),
+            stream: _txStream,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                 return const Padding(

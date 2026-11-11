@@ -157,34 +157,34 @@ void main() {
 
       // Dapatkan Opacity widget di dalam QuestTabEnter untuk item 0 vs item 11
       final tile0 = find.widgetWithText(TransactionTile, 'Item Belanja 0');
-      final opacityTile0 = tester.widget<Opacity>(
+      final opacityTile0 = tester.widget<FadeTransition>(
         find.descendant(
           of: find.ancestor(of: tile0, matching: find.byType(QuestTabEnter)).first,
-          matching: find.byType(Opacity),
+          matching: find.byType(FadeTransition),
         ).first,
       );
-      final opacityTile11 = tester.widget<Opacity>(
+      final opacityTile11 = tester.widget<FadeTransition>(
         find.descendant(
           of: find.ancestor(of: tile11, matching: find.byType(QuestTabEnter)).first,
-          matching: find.byType(Opacity),
+          matching: find.byType(FadeTransition),
         ).first,
       );
 
       // Item 0 sudah mulai muncul
-      expect(opacityTile0.opacity, greaterThan(0.0));
+      expect(opacityTile0.opacity.value, greaterThan(0.0));
       // Item 11 di bawah dekat navbar masih antre (belum langsung tampil)
-      expect(opacityTile11.opacity, equals(0.0));
+      expect(opacityTile11.opacity.value, equals(0.0));
 
       await tester.pumpAndSettle();
 
       // Setelah animasi selesai, semua item ber-opacity 1.0
-      final finalOpacityTile11 = tester.widget<Opacity>(
+      final finalOpacityTile11 = tester.widget<FadeTransition>(
         find.descendant(
           of: find.ancestor(of: tile11, matching: find.byType(QuestTabEnter)).first,
-          matching: find.byType(Opacity),
+          matching: find.byType(FadeTransition),
         ).first,
       );
-      expect(finalOpacityTile11.opacity, equals(1.0));
+      expect(finalOpacityTile11.opacity.value, equals(1.0));
 
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pump(const Duration(seconds: 1));

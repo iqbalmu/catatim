@@ -76,6 +76,7 @@ class _ReportMetrics {
     required List<TxWithCategory> prevRows,
     required DateTime start,
     required DateTime endExclusive,
+    required Color uncategorizedColor,
   }) {
     var totalIn = 0;
     var totalOut = 0;
@@ -142,7 +143,7 @@ class _ReportMetrics {
             name: cat?.name ?? 'Tanpa Kategori',
             amount: sum,
             color: cat == null
-                ? SeedColors.muted
+                ? uncategorizedColor
                 : SeedColors.categoryColor(cat.colorIndex),
             icon: _iconForCategory(cat),
             items: sortedItems,

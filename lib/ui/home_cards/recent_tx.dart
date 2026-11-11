@@ -32,7 +32,9 @@ class RecentTransactionsCard extends StatelessWidget {
                 ),
                 QuestPress(
                   onTap: onSeeAll,
-                  child: Padding(
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 48),
+                    alignment: Alignment.center,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 6,
                       vertical: 4,
@@ -42,7 +44,7 @@ class RecentTransactionsCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,
-                        color: q.primary,
+                        color: q.primaryText,
                       ),
                     ),
                   ),

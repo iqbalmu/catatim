@@ -265,7 +265,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
                             Icon(
                               Icons.add_rounded,
                               size: 15,
-                              color: context.q.primary,
+                              color: context.q.primaryText,
                             ),
                             const SizedBox(width: 3),
                             Text(
@@ -273,7 +273,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: context.q.primary,
+                                color: context.q.primaryText,
                               ),
                             ),
                           ],
@@ -401,7 +401,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
                                           Icon(
                                             Icons.add_circle_outline_rounded,
                                             size: 18,
-                                            color: context.q.primary,
+                                            color: context.q.primaryText,
                                           ),
                                           const SizedBox(width: Spacing.xs),
                                           Text(
@@ -409,7 +409,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
                                             style: TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w700,
-                                              color: context.q.primary,
+                                              color: context.q.primaryText,
                                             ),
                                           ),
                                         ],

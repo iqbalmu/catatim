@@ -41,6 +41,14 @@ class _BonScreenState extends State<BonScreen> {
   int _bonSubTab = 0; // 0 = Belum Lunas, 1 = Lunas
   late final PageController _bonPageCtrl = PageController(initialPage: _bonSubTab);
 
+  // Stream di-hoist dari build (audit O-02): tanpa ini tiap geser
+  // PageView / ganti sub-tab membuat ulang 4 stream Drift sekaligus.
+  late final Stream<List<Bon>> _bonsStream = widget.repository.watchBons();
+  late final Stream<List<Category>> _categoriesStream =
+      widget.repository.watchCategories();
+  late final Stream<List<Account>> _accountsStream =
+      widget.repository.watchAccounts();
+
   @override
   void dispose() {
     _bonPageCtrl.dispose();
@@ -364,7 +372,7 @@ class _BonScreenState extends State<BonScreen> {
 
             // Piutang vs Utang Summary Cards
             StreamBuilder<List<Bon>>(
-              stream: widget.repository.watchBons(),
+              stream: _bonsStream,
               builder: (context, snapshot) {
                 final bons = snapshot.data ?? const [];
                 final unpaidPiutang = bons
@@ -392,7 +400,7 @@ class _BonScreenState extends State<BonScreen> {
                               color: context.q.surface,
                               borderRadius: BorderRadius.circular(AppRadius.card),
                               border: Border.all(color: context.q.line),
-                              boxShadow: AppShadows.card,
+                              boxShadow: context.q.cardShadow,
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -461,7 +469,7 @@ class _BonScreenState extends State<BonScreen> {
                               color: context.q.surface,
                               borderRadius: BorderRadius.circular(AppRadius.card),
                               border: Border.all(color: context.q.line),
-                              boxShadow: AppShadows.card,
+                              boxShadow: context.q.cardShadow,
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -557,13 +565,13 @@ class _BonScreenState extends State<BonScreen> {
             // Bon List via PageView for smooth horizontal slide transitions
             Expanded(
               child: StreamBuilder<List<Bon>>(
-                stream: widget.repository.watchBons(),
+                stream: _bonsStream,
                 builder: (context, bonSnap) {
                   return StreamBuilder<List<Category>>(
-                    stream: widget.repository.watchCategories(),
+                    stream: _categoriesStream,
                     builder: (context, catSnap) {
                       return StreamBuilder<List<Account>>(
-                        stream: widget.repository.watchAccounts(),
+                        stream: _accountsStream,
                         builder: (context, accSnap) {
                           final allBons = bonSnap.data ?? const [];
                           final catMap = {for (final c in catSnap.data ?? const <Category>[]) c.id: c};
@@ -642,9 +650,14 @@ class _BonScreenState extends State<BonScreen> {
             color: context.q.surface,
             borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(color: context.q.line),
-            boxShadow: AppShadows.card,
+            boxShadow: context.q.cardShadow,
           ),
-          child: InkWell(
+          child: Semantics(
+            button: true,
+            label:
+                '${bon.person}, ${bon.amount > 0 ? Money.format(bon.amount) : 'nominal belum dihitung'}'
+                '${bon.settledAt != null ? ', sudah lunas' : ''}',
+            child: InkWell(
             onTap: () => BonSheet.show(
               context,
               widget.repository,
@@ -765,10 +778,16 @@ class _BonScreenState extends State<BonScreen> {
                         ),
                       const SizedBox(height: 4),
                       // Quick Settle Button
-                      InkWell(
+                      Semantics(
+                        button: true,
+                        label:
+                            '${bon.settledAt == null ? (bon.amount <= 0 ? 'Hitung & Lunasi' : 'Lunasi') : 'Batal Lunas'} ${bon.person}',
+                        child: InkWell(
                         onTap: () => _settleBon(bon),
                         borderRadius: BorderRadius.circular(AppRadius.pill),
                         child: Container(
+                          constraints: const BoxConstraints(minHeight: 48),
+                          alignment: Alignment.center,
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: bon.settledAt == null
@@ -784,17 +803,19 @@ class _BonScreenState extends State<BonScreen> {
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                               color: bon.settledAt == null
-                                  ? context.q.primary
+                                  ? context.q.primaryText
                                   : context.q.muted,
                             ),
                           ),
                         ),
+                      ),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
+          ),
           ),
         );
         return QuestTabEnter(
@@ -1287,14 +1308,14 @@ class _BonSheetState extends State<BonSheet> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.add_rounded, size: 14, color: q.primary),
+                      Icon(Icons.add_rounded, size: 14, color: q.primaryText),
                       const SizedBox(width: 2),
                       Text(
                         'Tambah',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: q.primary,
+                          color: q.primaryText,
                         ),
                       ),
                     ],
@@ -1415,7 +1436,7 @@ class _BonSheetState extends State<BonSheet> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.event_outlined, size: 18, color: q.primary),
+                  Icon(Icons.event_outlined, size: 18, color: q.primaryText),
                   const SizedBox(width: Spacing.s),
                   Text(
                     idFullDate(_date),

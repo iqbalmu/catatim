@@ -21,7 +21,7 @@ Future<T?> showQuestSheet<T>(
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(AppRadius.sheet),
         ),
-        boxShadow: AppShadows.elevated,
+        boxShadow: context.q.elevatedShadow,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -66,7 +66,7 @@ Future<T?> showQuestDialog<T>(
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(AppRadius.sheet),
             ),
-            boxShadow: AppShadows.elevated,
+            boxShadow: q.elevatedShadow,
           ),
           child: SafeArea(
             top: false,

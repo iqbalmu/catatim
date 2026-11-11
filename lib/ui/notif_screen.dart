@@ -140,7 +140,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     color: q.surface,
                     shape: BoxShape.circle,
                     border: Border.all(color: q.line),
-                    boxShadow: AppShadows.card,
+                    boxShadow: q.cardShadow,
                   ),
                   child: IconButton(
                     visualDensity: VisualDensity.compact,

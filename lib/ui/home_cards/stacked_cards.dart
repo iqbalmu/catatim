@@ -797,7 +797,7 @@ class _BackCardPeekState extends State<_BackCardPeek> {
           child: Icon(
             Icons.account_balance_wallet_rounded,
             size: 12,
-            color: q.primary,
+            color: q.primaryText,
           ),
         ),
         const SizedBox(width: 7),
@@ -860,7 +860,7 @@ class _BackCardPeekState extends State<_BackCardPeek> {
           child: Icon(
             Icons.speed_rounded,
             size: 12,
-            color: q.primary,
+            color: q.primaryText,
           ),
         ),
         const SizedBox(width: 7),

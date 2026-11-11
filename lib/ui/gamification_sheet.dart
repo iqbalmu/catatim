@@ -106,7 +106,7 @@ class GamificationSheet extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+          Divider(height: 1, thickness: 1, color: context.q.line),
 
           // Scrollable Body
           Expanded(
@@ -139,7 +139,7 @@ class GamificationSheet extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: context.q.primary,
+                            color: context.q.primaryText,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -158,7 +158,7 @@ class GamificationSheet extends StatelessWidget {
                     color: context.q.surface,
                     borderRadius: BorderRadius.circular(AppRadius.card),
                     border: Border.all(color: context.q.line),
-                    boxShadow: AppShadows.card,
+                    boxShadow: context.q.cardShadow,
                   ),
                   child: Row(
                     children: [
@@ -219,7 +219,7 @@ class GamificationSheet extends StatelessWidget {
                       color: context.q.surface,
                       borderRadius: BorderRadius.circular(AppRadius.card),
                       border: Border.all(color: context.q.line),
-                      boxShadow: AppShadows.card,
+                      boxShadow: context.q.cardShadow,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,15 +238,15 @@ class GamificationSheet extends StatelessWidget {
                                         vertical: 3,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: context.q.primary,
+                                      color: context.q.primarySolid,
                                         borderRadius: BorderRadius.circular(AppRadius.pill),
                                       ),
                                       child: Text(
                                         'Level ${stats.level}',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w800,
-                                          color: Colors.white,
+                                          color: context.q.onPrimary,
                                         ),
                                       ),
                                     ),
@@ -266,7 +266,7 @@ class GamificationSheet extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
-                                  color: context.q.primary,
+                                  color: context.q.primaryText,
                                   fontFeatures: const [
                                     FontFeature.tabularFigures(),
                                   ],
@@ -336,7 +336,7 @@ class GamificationSheet extends StatelessWidget {
                       color: context.q.surface,
                       borderRadius: BorderRadius.circular(AppRadius.card),
                       border: Border.all(color: context.q.line),
-                      boxShadow: AppShadows.card,
+                      boxShadow: context.q.cardShadow,
                     ),
                     child: Wrap(
                       spacing: 6,
@@ -352,24 +352,30 @@ class GamificationSheet extends StatelessWidget {
                         }
                         return Tooltip(
                           message: 'Tgl ${d.day.day}: ${d.future ? "Belum lewat" : d.within ? "Aman" : "Lewat batas"}',
-                          child: Container(
-                            width: 28,
-                            height: 28,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: dotColor.withValues(alpha: d.future ? 0.5 : 0.2),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: dotColor.withValues(alpha: 0.6),
-                                width: 1,
-                              ),
-                            ),
-                            child: Text(
-                              '${d.day.day}',
-                              style: TextStyle(
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w700,
-                                color: d.future ? context.q.muted : dotColor,
+                          child: SizedBox(
+                            width: 44,
+                            height: 44,
+                            child: Center(
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: dotColor.withValues(alpha: d.future ? 0.5 : 0.2),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: dotColor.withValues(alpha: 0.6),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  '${d.day.day}',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: d.future ? context.q.muted : dotColor,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -405,7 +411,7 @@ class _BadgeTile extends StatelessWidget {
         color: context.q.surface,
         borderRadius: BorderRadius.circular(AppRadius.tile),
         border: Border.all(
-          color: badge.unlocked ? const Color(0xFFFDE68A) : context.q.line,
+          color: badge.unlocked ? SeedColors.honeyBright : context.q.line,
         ),
       ),
       child: Row(
@@ -415,13 +421,13 @@ class _BadgeTile extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: badge.unlocked
-                  ? const Color(0xFFFEF3C7)
+                  ? SeedColors.honey100
                   : context.q.surface2,
               borderRadius: BorderRadius.circular(AppRadius.cell),
             ),
             child: Icon(
               badge.icon,
-              color: badge.unlocked ? const Color(0xFFD97706) : context.q.muted,
+              color: badge.unlocked ? SeedColors.honeyDeep : context.q.muted,
               size: 22,
             ),
           ),

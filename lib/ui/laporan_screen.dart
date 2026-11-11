@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../core/buckets.dart' show AmountPoint, TrendBucket;
 import '../core/buckets.dart' as bkt;
 import '../core/dates_id.dart';
+import '../core/money.dart';
 import '../game/progress.dart';
 import '../models.dart';
 import '../storage/database.dart';
@@ -433,6 +434,7 @@ class LaporanScreenState extends State<LaporanScreen> {
                       prevRows: prevRows,
                       start: win.start,
                       endExclusive: win.end,
+                      uncategorizedColor: context.q.muted,
                     );
 
                     final isPushed = widget.showBack || Navigator.canPop(context);
@@ -461,7 +463,7 @@ class LaporanScreenState extends State<LaporanScreen> {
                                     color: context.q.surface,
                                     shape: BoxShape.circle,
                                     border: Border.all(color: context.q.line),
-                                    boxShadow: AppShadows.card,
+                                    boxShadow: context.q.cardShadow,
                                   ),
                                   child: IconButton(
                                     visualDensity: VisualDensity.compact,
@@ -497,7 +499,11 @@ class LaporanScreenState extends State<LaporanScreen> {
                               child: Material(
                                 color: context.q.surface,
                                 borderRadius: BorderRadius.circular(AppRadius.pill),
-                                child: InkWell(
+                                child: Semantics(
+                                  button: true,
+                                  label:
+                                      'Filter akun, ${activeAccount?.name ?? 'semua akun'}',
+                                  child: InkWell(
                                   onTap: () => _openAccountPicker(accounts),
                                   borderRadius: BorderRadius.circular(AppRadius.pill),
                                   child: Container(
@@ -549,6 +555,7 @@ class LaporanScreenState extends State<LaporanScreen> {
                                   ),
                                 ),
                               ),
+                              ),
                             ),
                           ],
                         ),
@@ -565,7 +572,7 @@ class LaporanScreenState extends State<LaporanScreen> {
                             color: context.q.surface,
                             borderRadius: BorderRadius.circular(AppRadius.tile),
                             border: Border.all(color: context.q.line),
-                            boxShadow: AppShadows.card,
+                            boxShadow: context.q.cardShadow,
                           ),
                           child: Row(
                             children: [
@@ -580,7 +587,10 @@ class LaporanScreenState extends State<LaporanScreen> {
                                 onPressed: () => _shiftMonth(-1),
                               ),
                               Expanded(
-                                child: InkWell(
+                                child: Semantics(
+                                  button: true,
+                                  label: 'Pilih periode laporan',
+                                  child: InkWell(
                                   onTap: _openPeriodPicker,
                                   borderRadius: BorderRadius.circular(AppRadius.cell),
                                   child: Center(
@@ -592,7 +602,7 @@ class LaporanScreenState extends State<LaporanScreen> {
                                           Icon(
                                             Icons.calendar_today_rounded,
                                             size: 14,
-                                            color: context.q.primary,
+                                            color: context.q.primaryText,
                                           ),
                                           const SizedBox(width: 7),
                                           Flexible(
@@ -621,6 +631,7 @@ class LaporanScreenState extends State<LaporanScreen> {
                                     ),
                                   ),
                                 ),
+                              ),
                               ),
                               IconButton(
                                 visualDensity: VisualDensity.compact,
