@@ -350,8 +350,6 @@ const List<String> defaultCategoryNames = [
   'Transportasi',
   'Tagihan',
   'Belanja',
-  'Hiburan',
-  'Kesehatan',
   'Gaji',
   'Transfer',
   'Lainnya',

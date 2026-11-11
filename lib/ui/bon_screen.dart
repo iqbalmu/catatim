@@ -898,6 +898,95 @@ class _BonSheetState extends State<BonSheet> {
     }
   }
 
+  Future<void> _addCategory() async {
+    final ctrl = TextEditingController();
+    final q = context.q;
+    final name = await showQuestDialog<String>(
+      context,
+      title: 'Tambah Kategori Baru',
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Nama Kategori',
+            style: context.qSmall(12).copyWith(
+              fontWeight: FontWeight.w700,
+              color: q.muted,
+            ),
+          ),
+          const SizedBox(height: Spacing.xs),
+          TextField(
+            controller: ctrl,
+            autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            style: TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+              color: q.text,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Misalnya: Kopi, Langganan, Hobi...',
+              hintStyle: TextStyle(
+                color: q.muted.withValues(alpha: 0.6),
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
+              ),
+              isDense: true,
+              filled: true,
+              fillColor: q.surface2,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.tile),
+                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.tile),
+                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.tile),
+                borderSide: BorderSide(color: q.primary, width: 1.4),
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        QuestButton(
+          label: 'Batal',
+          tone: QuestTone.secondary,
+          onPressed: () => Navigator.pop(context),
+        ),
+        QuestButton(
+          label: 'Tambah',
+          icon: Icons.add_rounded,
+          onPressed: () => Navigator.pop(context, ctrl.text),
+        ),
+      ],
+    );
+    if (name == null || name.trim().isEmpty) return;
+    try {
+      final cat = await widget.repository.addCategory(name);
+      final cats = await widget.repository.getCategories();
+      if (mounted) {
+        setState(() {
+          _categories = cats;
+          _categoryId = cat.id;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        questSnack(
+          context,
+          'Kategori "$name" sudah ada.',
+          icon: Icons.info_outline_rounded,
+        );
+      }
+    }
+  }
+
   Future<void> _save() async {
     final person = _personCtrl.text.trim();
     final amount = Money.tryParseGroup(_amountCtrl.text) ?? 0;
@@ -1183,12 +1272,35 @@ class _BonSheetState extends State<BonSheet> {
           ),
           if (_categories.isNotEmpty) ...[
             const SizedBox(height: Spacing.m),
-            Text(
-              'Kategori',
-              style: context.qSmall(12).copyWith(
-                fontWeight: FontWeight.w700,
-                color: q.muted,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Kategori',
+                  style: context.qSmall(12).copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: q.muted,
+                  ),
+                ),
+                QuestPress(
+                  onTap: _addCategory,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add_rounded, size: 14, color: q.primary),
+                      const SizedBox(width: 2),
+                      Text(
+                        'Tambah',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: q.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: Spacing.xs),
             DropdownButtonFormField<int>(

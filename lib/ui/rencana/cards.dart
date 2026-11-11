@@ -98,8 +98,10 @@ class _LimitMiniCard extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     over
-                        ? 'over · plafon ${_ringkasRp(limit!)}'
-                        : '/ ${_ringkasRp(limit!)}',
+                        ? 'lewat ${_ringkasRp(used - limit!)} · batas ${_ringkasRp(limit!)}'
+                        : (used > 0
+                            ? 'sisa ${_ringkasRp(limit! - used)} · batas ${_ringkasRp(limit!)}'
+                            : 'batas ${_ringkasRp(limit!)}'),
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: over ? FontWeight.w700 : FontWeight.w500,
@@ -109,8 +111,12 @@ class _LimitMiniCard extends StatelessWidget {
                 ),
               ] else
                 Text(
-                  'Tap untuk atur',
-                  style: TextStyle(fontSize: 10.5, color: q.muted),
+                  'Atur batas',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: q.muted,
+                  ),
                 ),
             ],
           ),
@@ -180,7 +186,7 @@ class _AllocationRow extends StatelessWidget {
               ),
               if (line == null && used <= 0)
                 Text(
-                  'Belum dialokasikan',
+                  'Belum ada pengeluaran & batas',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w400,
@@ -194,18 +200,29 @@ class _AllocationRow extends StatelessWidget {
                 QuestCountUp(
                   value: used,
                   builder: (context, currentUsed) {
-                    final currentPct = limit != null && limit! > 0
-                        ? ((currentUsed * 100) / limit!).round()
-                        : 0;
+                    if (line == null) {
+                      return Text(
+                        'Terpakai ${_ringkasRp(currentUsed)} · belum ada batas',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w400,
+                          color: q.muted,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    }
+                    final isOver = currentUsed > limit!;
+                    final info = isOver
+                        ? 'lewat ${_ringkasRp(currentUsed - limit!)}'
+                        : 'sisa ${_ringkasRp(limit! - currentUsed)}';
                     return Text(
-                      line == null
-                          ? 'Terpakai ${_ringkasRp(currentUsed)} · belum ada batas'
-                          : '${_ringkasRp(currentUsed)} / ${_ringkasRp(limit!)}'
-                                ' · $currentPct%${over ? ' over' : ''}',
+                      '${_ringkasRp(currentUsed)} dari ${_ringkasRp(limit!)} · $info',
                       style: TextStyle(
                         fontSize: 11,
-                        fontWeight: over ? FontWeight.w700 : FontWeight.w400,
-                        color: over ? q.bad : q.muted,
+                        fontWeight: isOver ? FontWeight.w700 : FontWeight.w400,
+                        color: isOver ? q.bad : q.muted,
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                       maxLines: 1,
@@ -314,7 +331,7 @@ class _BatasBulananCard extends StatelessWidget {
                 child: hasLimit
                     ? QuestMoney(
                         amount: isOver ? used - limit! : sisa,
-                        prefix: isOver ? 'Over ' : 'Sisa ',
+                        prefix: isOver ? 'Lewat ' : 'Sisa ',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
@@ -345,7 +362,7 @@ class _BatasBulananCard extends StatelessWidget {
                   child: hasLimit
                       ? QuestMoney(
                           amount: used,
-                          suffix: ' / ${Money.format(limit!)}',
+                          suffix: ' dari ${Money.format(limit!)}',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
@@ -354,7 +371,7 @@ class _BatasBulananCard extends StatelessWidget {
                           ),
                         )
                       : Text(
-                          'Tap untuk mengatur batas bulanan',
+                          'Ketuk untuk atur batas bulanan',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,

@@ -84,49 +84,145 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
     context,
     title: 'Kelola Kategori & Anggaran',
     content: StatefulBuilder(
-      builder: (context, setDialogState) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TextField(
-            controller: nameCtrl,
-            textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
-              labelText: 'Nama kategori',
-              hintText: 'Contoh: Makanan',
-            ),
-          ),
-          const SizedBox(height: Spacing.s),
-          TextField(
-            controller: limitCtrl,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: const InputDecoration(
-              prefixText: 'Rp ',
-              labelText: 'Batas bulanan',
-              hintText: 'Kosongkan jika tanpa batas',
-            ),
-          ),
-          const SizedBox(height: Spacing.s),
-          DropdownButtonFormField<int?>(
-            initialValue: scope,
-            isExpanded: true,
-            decoration: const InputDecoration(labelText: 'Berlaku di akun'),
-            items: [
-              const DropdownMenuItem<int?>(
-                value: null,
-                child: Text('Semua akun'),
+      builder: (context, setDialogState) {
+        final q = context.q;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Nama Kategori',
+              style: context.qSmall(12).copyWith(
+                fontWeight: FontWeight.w700,
+                color: q.muted,
               ),
-              for (final a in accounts)
-                DropdownMenuItem<int?>(
-                  value: a.id,
-                  child: Text(a.name, overflow: TextOverflow.ellipsis),
+            ),
+            const SizedBox(height: Spacing.xs),
+            TextField(
+              controller: nameCtrl,
+              textCapitalization: TextCapitalization.words,
+              style: TextStyle(
+                fontFamily: 'Nunito',
+                fontSize: 13.5,
+                fontWeight: FontWeight.w600,
+                color: q.text,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Contoh: Makanan',
+                isDense: true,
+                filled: true,
+                fillColor: q.surface2,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
                 ),
-            ],
-            onChanged: (v) => setDialogState(() => scope = v),
-          ),
-        ],
-      ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  borderSide: BorderSide(color: q.primary, width: 1.4),
+                ),
+              ),
+            ),
+            const SizedBox(height: Spacing.m),
+            Text(
+              'Batas Bulanan',
+              style: context.qSmall(12).copyWith(
+                fontWeight: FontWeight.w700,
+                color: q.muted,
+              ),
+            ),
+            const SizedBox(height: Spacing.xs),
+            TextField(
+              controller: limitCtrl,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              style: TextStyle(
+                fontFamily: 'Nunito',
+                fontSize: 13.5,
+                fontWeight: FontWeight.w600,
+                color: q.text,
+              ),
+              decoration: InputDecoration(
+                prefixText: 'Rp ',
+                prefixStyle: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: q.text,
+                  fontSize: 13.5,
+                ),
+                hintText: 'Kosongkan jika tanpa batas',
+                isDense: true,
+                filled: true,
+                fillColor: q.surface2,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  borderSide: BorderSide(color: q.primary, width: 1.4),
+                ),
+              ),
+            ),
+            const SizedBox(height: Spacing.m),
+            Text(
+              'Berlaku di Akun',
+              style: context.qSmall(12).copyWith(
+                fontWeight: FontWeight.w700,
+                color: q.muted,
+              ),
+            ),
+            const SizedBox(height: Spacing.xs),
+            DropdownButtonFormField<int?>(
+              initialValue: scope,
+              isExpanded: true,
+              icon: Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: q.muted,
+                size: 20,
+              ),
+              decoration: InputDecoration(
+                isDense: true,
+                filled: true,
+                fillColor: q.surface2,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                  borderSide: BorderSide(color: q.primary, width: 1.4),
+                ),
+              ),
+              items: [
+                const DropdownMenuItem<int?>(
+                  value: null,
+                  child: Text('Semua akun'),
+                ),
+                for (final a in accounts)
+                  DropdownMenuItem<int?>(
+                    value: a.id,
+                    child: Text(a.name, overflow: TextOverflow.ellipsis),
+                  ),
+              ],
+              onChanged: (v) => setDialogState(() => scope = v),
+            ),
+          ],
+        );
+      },
     ),
     actions: [
       QuestButton(
@@ -192,27 +288,102 @@ class _NewCategoryFormState extends State<_NewCategoryForm> {
 
   @override
   Widget build(BuildContext context) {
+    final q = context.q;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Text(
+          'Nama Kategori',
+          style: context.qSmall(12).copyWith(
+            fontWeight: FontWeight.w700,
+            color: q.muted,
+          ),
+        ),
+        const SizedBox(height: Spacing.xs),
         TextField(
           controller: nameCtrl,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(
-            labelText: 'Nama kategori',
-            hintText: 'Contoh: Makanan',
+          style: TextStyle(
+            fontFamily: 'Nunito',
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: q.text,
+          ),
+          decoration: InputDecoration(
+            hintText: 'Contoh: Kopi, Langganan, Hobi...',
+            hintStyle: TextStyle(
+              color: q.muted.withValues(alpha: 0.6),
+              fontSize: 13.5,
+              fontWeight: FontWeight.w500,
+            ),
+            isDense: true,
+            filled: true,
+            fillColor: q.surface2,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.tile),
+              borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.tile),
+              borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.tile),
+              borderSide: BorderSide(color: q.primary, width: 1.4),
+            ),
           ),
         ),
         const SizedBox(height: Spacing.m),
+        Text(
+          'Alokasi Bulanan (Opsional)',
+          style: context.qSmall(12).copyWith(
+            fontWeight: FontWeight.w700,
+            color: q.muted,
+          ),
+        ),
+        const SizedBox(height: Spacing.xs),
         TextField(
           controller: limitCtrl,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: const InputDecoration(
-            labelText: 'Alokasi bulanan (opsional)',
-            hintText: 'Contoh: 2000000',
+          style: TextStyle(
+            fontFamily: 'Nunito',
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: q.text,
+          ),
+          decoration: InputDecoration(
+            prefixText: 'Rp ',
+            prefixStyle: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: q.text,
+              fontSize: 13.5,
+            ),
+            hintText: 'Kosongkan jika tanpa batas',
+            hintStyle: TextStyle(
+              color: q.muted.withValues(alpha: 0.6),
+              fontSize: 13.5,
+              fontWeight: FontWeight.w500,
+            ),
+            isDense: true,
+            filled: true,
+            fillColor: q.surface2,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.tile),
+              borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.tile),
+              borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.tile),
+              borderSide: BorderSide(color: q.primary, width: 1.4),
+            ),
           ),
         ),
       ],

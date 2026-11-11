@@ -198,10 +198,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             icon: Icons.warning_amber_rounded,
                             color: q.bad,
                             title:
-                                'Batas ${critical?.label ?? 'harian'} terlampaui',
+                                'Batas ${critical?.label.toLowerCase() ?? 'harian'} sudah terlewati',
                             subtitle:
-                                'Yuk cek batas pengeluaranmu di Anggaran',
-                            actionLabel: 'Anggaran',
+                                'Pengeluaranmu sudah melebihi batas yang ditentukan',
+                            actionLabel: 'Lihat Anggaran',
                             onTap: () => _goTo(widget.onOpenAnggaran),
                           )
                         else if (level == BudgetLevel.warning)
@@ -209,11 +209,10 @@ class _NotificationScreenState extends State<NotificationScreen> {
                             icon: Icons.error_outline_rounded,
                             color: q.warn,
                             title:
-                                'Batas ${critical?.label ?? 'harian'} '
-                                'mendekati plafon',
+                                'Batas ${critical?.label.toLowerCase() ?? 'harian'} hampir habis',
                             subtitle:
-                                'Yuk cek batas pengeluaranmu di Anggaran',
-                            actionLabel: 'Anggaran',
+                                'Pengeluaranmu sudah mendekati batas yang ditentukan',
+                            actionLabel: 'Lihat Anggaran',
                             onTap: () => _goTo(widget.onOpenAnggaran),
                           ),
                         if (aging > 0)

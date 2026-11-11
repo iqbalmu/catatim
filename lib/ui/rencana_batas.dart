@@ -238,9 +238,49 @@ class _RencanaBatasState extends State<RencanaBatas> {
               index: 4,
               child: Padding(
                 padding: const EdgeInsets.only(top: Spacing.s),
-                child: Text(
-                  'Alokasi Anggaran Kategori',
-                  style: context.qTitle(15),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Alokasi Anggaran Kategori',
+                      style: context.qTitle(15),
+                    ),
+                    QuestPress(
+                      onTap: () => showAddCategoryFlow(
+                        context,
+                        widget.repository,
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: context.q.primaryLight,
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.add_rounded,
+                              size: 15,
+                              color: context.q.primary,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              'Tambah',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: context.q.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -262,8 +302,11 @@ class _RencanaBatasState extends State<RencanaBatas> {
                           // menggerogoti alokasi Jenis.
                           stream: _outPairs,
                           builder: (context, usedSnap) {
-                            final categories =
+                            final rawCategories =
                                 catSnap.data ?? const <Category>[];
+                            final categories = rawCategories
+                                .where((c) => c.name != 'Transfer')
+                                .toList();
                             final budgets = budgetSnap.data ?? const <Budget>[];
                             final accounts = accSnap.data ?? const <Account>[];
                             final used =
@@ -329,6 +372,51 @@ class _RencanaBatasState extends State<RencanaBatas> {
                                   QuestTabEnter(index: 5 + i, child: cards[i]),
                                   const SizedBox(height: Spacing.s),
                                 ],
+                                const SizedBox(height: Spacing.xs),
+                                QuestTabEnter(
+                                  index: 5 + cards.length,
+                                  child: QuestPress(
+                                    onTap: () => showAddCategoryFlow(
+                                      context,
+                                      widget.repository,
+                                    ),
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: context.q.surface2,
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.tile,
+                                        ),
+                                        border: Border.all(
+                                          color: context.q.line.withValues(alpha: 0.6),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.add_circle_outline_rounded,
+                                            size: 18,
+                                            color: context.q.primary,
+                                          ),
+                                          const SizedBox(width: Spacing.xs),
+                                          Text(
+                                            'Tambah Kategori Baru',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w700,
+                                              color: context.q.primary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ],
                             );
                           },

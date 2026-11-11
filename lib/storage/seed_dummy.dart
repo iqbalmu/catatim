@@ -159,7 +159,7 @@ List<_SeedTx> _seedSpecs(DateTime now) {
           'Makanan', 'Ayam Geprek Bakar', TxSource.manual),
     if (week(5, 20, 0) case final d?)
       _SeedTx('seed-dummy-10', d, 25000, Direction.outgoing, TxKind.payment,
-          'Hiburan', 'Nonton bioskop', TxSource.manual),
+          'Lainnya', 'Nonton bioskop', TxSource.manual),
 
     // ── Bulan berjalan (dipatok tanggal) ──
     if (month(3, 10, 0) case final d?)
@@ -173,13 +173,13 @@ List<_SeedTx> _seedSpecs(DateTime now) {
           'Gaji', 'Gaji bulanan', TxSource.manual),
     if (month(11, 13, 0) case final d?)
       _SeedTx('seed-dummy-14', d, 90000, Direction.outgoing, TxKind.payment,
-          'Kesehatan', 'Apotek Kimia Farma', TxSource.manual),
+          'Lainnya', 'Apotek Kimia Farma', TxSource.manual),
     if (month(14, 15, 0) case final d?)
       _SeedTx('seed-dummy-15', d, 180000, Direction.outgoing, TxKind.payment,
           'Belanja', 'Shopee: rak sepatu', TxSource.manual),
     if (month(18, 20, 0) case final d?)
       _SeedTx('seed-dummy-16', d, 120000, Direction.outgoing, TxKind.payment,
-          'Hiburan', 'Langganan streaming', TxSource.manual),
+          'Tagihan', 'Langganan streaming', TxSource.manual),
     if (month(19, 19, 0) case final d?)
       _SeedTx('seed-dummy-17', d, 1000000, Direction.incoming, TxKind.transfer,
           'Transfer', 'Bayaran freelance artikel', TxSource.manual),
@@ -269,11 +269,7 @@ Future<void> _seedLimitsAccountsBudgets(LedgerRepository repo) async {
     int? catId(String name) =>
         cats.where((c) => c.name == name).map((c) => c.id).firstOrNull;
     final seed = <String, int>{
-      'Makanan': 600000,
-      'Transportasi': 300000,
-      'Tagihan': 400000,
-      'Belanja': 500000,
-      'Hiburan': 200000,
+      'Makanan': 500000,
     };
     for (final e in seed.entries) {
       final id = catId(e.key);

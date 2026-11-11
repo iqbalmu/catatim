@@ -293,14 +293,58 @@ class _TransactionSheetState extends State<TransactionSheet> {
 
   Future<void> _addCategory() async {
     final ctrl = TextEditingController();
+    final q = context.q;
     final name = await showQuestDialog<String>(
       context,
-      title: 'Kategori baru',
-      content: TextField(
-        controller: ctrl,
-        autofocus: true,
-        textCapitalization: TextCapitalization.words,
-        decoration: const InputDecoration(labelText: 'Nama kategori'),
+      title: 'Tambah Kategori Baru',
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Nama Kategori',
+            style: context.qSmall(12).copyWith(
+              fontWeight: FontWeight.w700,
+              color: q.muted,
+            ),
+          ),
+          const SizedBox(height: Spacing.xs),
+          TextField(
+            controller: ctrl,
+            autofocus: true,
+            textCapitalization: TextCapitalization.words,
+            style: TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+              color: q.text,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Misalnya: Kopi, Langganan, Hobi...',
+              hintStyle: TextStyle(
+                color: q.muted.withValues(alpha: 0.6),
+                fontSize: 13.5,
+                fontWeight: FontWeight.w500,
+              ),
+              isDense: true,
+              filled: true,
+              fillColor: q.surface2,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.tile),
+                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.tile),
+                borderSide: BorderSide(color: q.line.withValues(alpha: 0.5)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.tile),
+                borderSide: BorderSide(color: q.primary, width: 1.4),
+              ),
+            ),
+          ),
+        ],
       ),
       actions: [
         QuestButton(
@@ -451,11 +495,16 @@ class _TransactionSheetState extends State<TransactionSheet> {
 
   Widget _buildCategoryChips() {
     final q = context.q;
+    final cats = _categories.where((c) {
+      if (_direction == Direction.outgoing && c.name == 'Transfer') return false;
+      return true;
+    }).toList();
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
       child: Row(
         children: [
-          for (final c in _categories) ...[
+          for (final c in cats) ...[
             QuestChip(
               label: c.name,
               selected: _categoryId == c.id,
@@ -475,10 +524,11 @@ class _TransactionSheetState extends State<TransactionSheet> {
             ),
             const SizedBox(width: Spacing.s),
           ],
-          QuestIconButton(
-            icon: Icons.add_rounded,
-            tooltip: 'Kategori baru',
-            onPressed: _addCategory,
+          QuestChip(
+            label: '+ Kategori',
+            selected: false,
+            onTap: _addCategory,
+            leading: Icon(Icons.add_rounded, size: 16, color: q.primary),
           ),
         ],
       ),
@@ -585,12 +635,35 @@ class _TransactionSheetState extends State<TransactionSheet> {
           ),
         ),
         const SizedBox(height: Spacing.s),
-        Text(
-          'Kategori',
-          style: context.qSmall(12).copyWith(
-            fontWeight: FontWeight.w700,
-            color: q.muted,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Kategori',
+              style: context.qSmall(12).copyWith(
+                fontWeight: FontWeight.w700,
+                color: q.muted,
+              ),
+            ),
+            QuestPress(
+              onTap: _addCategory,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add_rounded, size: 14, color: q.primary),
+                  const SizedBox(width: 2),
+                  Text(
+                    'Tambah Kategori',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: q.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: Spacing.xs),
         _buildCategoryChips(),
@@ -751,12 +824,35 @@ class _TransactionSheetState extends State<TransactionSheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Kategori',
-                  style: context.qSmall(12).copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: q.muted,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Kategori',
+                      style: context.qSmall(12).copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: q.muted,
+                      ),
+                    ),
+                    QuestPress(
+                      onTap: _addCategory,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.add_rounded, size: 14, color: q.primary),
+                          const SizedBox(width: 2),
+                          Text(
+                            'Tambah Kategori',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: q.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: Spacing.xs),
                 _buildCategoryChips(),
