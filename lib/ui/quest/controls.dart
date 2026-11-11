@@ -116,7 +116,8 @@ class QuestButton extends StatelessWidget {
         shadow = null;
     }
     final button = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      constraints: const BoxConstraints(minHeight: 46),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: gradient == null ? fill : null,
         gradient: gradient,
@@ -197,11 +198,16 @@ class QuestIconButton extends StatelessWidget {
         enabled: onPressed != null,
         child: QuestPress(
           onTap: onPressed,
-          child: Badge(
-            isLabelVisible: badge,
-            backgroundColor: q.bad,
-            smallSize: 12,
-            child: button,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            child: Center(
+              child: Badge(
+                isLabelVisible: badge,
+                backgroundColor: q.bad,
+                smallSize: 12,
+                child: button,
+              ),
+            ),
           ),
         ),
       ),
@@ -231,27 +237,32 @@ class QuestSwitch extends StatelessWidget {
       label: label,
       child: QuestPress(
         onTap: () => onChanged(!value),
-        child: AnimatedContainer(
-          duration: QuestMotion.fast,
-          curve: QuestMotion.easeOut,
-          width: 56,
-          height: 32,
-          padding: const EdgeInsets.all(Spacing.xs),
-          decoration: BoxDecoration(
-            color: value ? q.primary : q.surface2,
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-          ),
-          child: AnimatedAlign(
-            duration: QuestMotion.fast,
-            curve: QuestMotion.easeOut,
-            alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-            child: Container(
-              width: 22,
-              height: 22,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: Color(0x1F000000), blurRadius: 4)],
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44, minWidth: 56),
+          child: Center(
+            child: AnimatedContainer(
+              duration: QuestMotion.fast,
+              curve: QuestMotion.easeOut,
+              width: 56,
+              height: 32,
+              padding: const EdgeInsets.all(Spacing.xs),
+              decoration: BoxDecoration(
+                color: value ? q.primary : q.surface2,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+              child: AnimatedAlign(
+                duration: QuestMotion.fast,
+                curve: QuestMotion.easeOut,
+                alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+                child: Container(
+                  width: 22,
+                  height: 22,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [BoxShadow(color: Color(0x1F000000), blurRadius: 4)],
+                  ),
+                ),
               ),
             ),
           ),

@@ -165,72 +165,76 @@ class DraftAttentionBanner extends StatelessWidget {
                           Spacing.m,
                           0,
                         ),
-                        child: QuestCard(
-                          color: q.primaryLight,
-                          border: Border.all(
-                            color: q.primary.withValues(alpha: 0.25),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          shadow: null,
-                          onTap: onTap,
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  color: q.primary,
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadius.cell,
+                        child: Semantics(
+                          button: true,
+                          label: '$titleText. $subtitleText',
+                          child: QuestCard(
+                            color: q.primaryLight,
+                            border: Border.all(
+                              color: q.primary.withValues(alpha: 0.25),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
+                            shadow: null,
+                            onTap: onTap,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: q.primary,
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.cell,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    hasPair
+                                        ? Icons.swap_horiz_rounded
+                                        : Icons.bolt_rounded,
+                                    color: Colors.white,
+                                    size: 18,
                                   ),
                                 ),
-                                child: Icon(
-                                  hasPair
-                                      ? Icons.swap_horiz_rounded
-                                      : Icons.bolt_rounded,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                              ),
-                              const SizedBox(width: Spacing.s),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      titleText,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w800,
-                                        color: q.primaryDeep,
+                                const SizedBox(width: Spacing.s),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        titleText,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w800,
+                                          color: q.primaryDeep,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 1),
-                                    Text(
-                                      subtitleText,
-                                      style: context.qSmall(11),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
+                                      const SizedBox(height: 1),
+                                      Text(
+                                        subtitleText,
+                                        style: context.qSmall(11),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: Spacing.s),
-                              amountWidget,
-                              const SizedBox(width: 2),
-                              Icon(
-                                Icons.chevron_right_rounded,
-                                color: q.primaryDeep,
-                                size: 19,
-                              ),
-                            ],
+                                const SizedBox(width: Spacing.s),
+                                amountWidget,
+                                const SizedBox(width: 2),
+                                Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: q.primaryDeep,
+                                  size: 19,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       );

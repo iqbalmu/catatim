@@ -117,6 +117,8 @@ class QuestChip extends StatelessWidget {
         child: AnimatedContainer(
           duration: QuestMotion.fast,
           curve: QuestMotion.easeOut,
+          constraints: const BoxConstraints(minHeight: 40),
+          alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: selected ? q.primary : q.surface2,

@@ -57,10 +57,9 @@ Future<T?> showQuestDialog<T>(
     ),
     builder: (context) {
       final q = context.q;
+      final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
       return Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(context).bottom,
-        ),
+        padding: EdgeInsets.only(bottom: bottomInset),
         child: Container(
           decoration: BoxDecoration(
             color: q.surface,
@@ -69,71 +68,75 @@ Future<T?> showQuestDialog<T>(
             ),
             boxShadow: AppShadows.elevated,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: Spacing.s),
-              const QuestGrabber(),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  Spacing.l,
-                  Spacing.s,
-                  Spacing.l,
-                  Spacing.xs,
-                ),
-                child: Text(title, style: context.qTitle(18)),
-              ),
-              Divider(
-                height: 1,
-                thickness: 1,
-                color: q.line.withValues(alpha: 0.5),
-              ),
-              Flexible(
-                child: SingleChildScrollView(
+          child: SafeArea(
+            top: false,
+            bottom: bottomInset == 0,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: Spacing.s),
+                const QuestGrabber(),
+                Padding(
                   padding: const EdgeInsets.fromLTRB(
                     Spacing.l,
-                    Spacing.m,
+                    Spacing.s,
+                    Spacing.l,
+                    Spacing.xs,
+                  ),
+                  child: Text(title, style: context.qTitle(18)),
+                ),
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: q.line.withValues(alpha: 0.5),
+                ),
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(
+                      Spacing.l,
+                      Spacing.m,
+                      Spacing.l,
+                      Spacing.s,
+                    ),
+                    child: content,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
                     Spacing.l,
                     Spacing.s,
+                    Spacing.l,
+                    Spacing.m,
                   ),
-                  child: content,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  Spacing.l,
-                  Spacing.s,
-                  Spacing.l,
-                  Spacing.m,
-                ),
-                child: actions.length <= 2
-                    ? Row(
-                        children: [
-                          for (var i = 0; i < actions.length; i++) ...[
-                            if (i > 0) const SizedBox(width: Spacing.s),
-                            Expanded(child: actions[i]),
-                          ],
-                        ],
-                      )
-                    : Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          actions.last,
-                          const SizedBox(height: Spacing.s),
-                          Row(
-                            children: [
-                              for (var i = 0; i < actions.length - 1; i++) ...[
-                                if (i > 0) const SizedBox(width: Spacing.s),
-                                Expanded(child: actions[i]),
-                              ],
+                  child: actions.length <= 2
+                      ? Row(
+                          children: [
+                            for (var i = 0; i < actions.length; i++) ...[
+                              if (i > 0) const SizedBox(width: Spacing.s),
+                              Expanded(child: actions[i]),
                             ],
-                          ),
-                        ],
-                      ),
-              ),
-            ],
+                          ],
+                        )
+                      : Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            actions.last,
+                            const SizedBox(height: Spacing.s),
+                            Row(
+                              children: [
+                                for (var i = 0; i < actions.length - 1; i++) ...[
+                                  if (i > 0) const SizedBox(width: Spacing.s),
+                                  Expanded(child: actions[i]),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                ),
+              ],
+            ),
           ),
         ),
       );
