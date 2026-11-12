@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../capture/pipeline.dart';
-import '../core/money.dart';
 import '../models.dart';
 import '../rules/rule_set.dart';
 import '../storage/database.dart';
@@ -407,14 +406,32 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                                   borderRadius: BorderRadius.circular(AppRadius.pill),
                                   border: Border.all(color: q.line),
                                 ),
-                                child: Text(
-                                  'Awal: ${Money.format(account.openingBalance)}',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: q.muted,
-                                    fontFeatures: const [FontFeature.tabularFigures()],
-                                  ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Awal: ',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: q.muted,
+                                        fontFeatures: const [
+                                          FontFeature.tabularFigures(),
+                                        ],
+                                      ),
+                                    ),
+                                    QuestMoney(
+                                      amount: account.openingBalance,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: q.muted,
+                                        fontFeatures: const [
+                                          FontFeature.tabularFigures(),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],

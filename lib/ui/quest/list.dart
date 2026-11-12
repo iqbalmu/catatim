@@ -77,7 +77,7 @@ class QuestAmount extends StatelessWidget {
       fit: BoxFit.scaleDown,
       child: QuestMoney(
         amount: amount,
-        prefix: incoming ? '+' : '−',
+        tone: incoming ? MoneyTone.incoming : MoneyTone.outgoing,
         alignment: Alignment.centerRight,
         style: context.qAmount(size, incoming: incoming),
       ),

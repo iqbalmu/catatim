@@ -102,7 +102,7 @@ class _InteractiveTrendCard extends StatelessWidget {
                   children: [
                     QuestMoney(
                       amount: activeBucket.incoming,
-                      prefix: '+',
+                      tone: MoneyTone.incoming,
                       duration: QuestMotion.medium,
                       style: TextStyle(
                         fontSize: 12,
@@ -113,7 +113,7 @@ class _InteractiveTrendCard extends StatelessWidget {
                     ),
                     QuestMoney(
                       amount: activeBucket.outgoing,
-                      prefix: '−',
+                      tone: MoneyTone.outgoing,
                       duration: QuestMotion.medium,
                       style: TextStyle(
                         fontSize: 12,

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../capture/pipeline.dart';
 import '../core/dates_id.dart';
+import '../core/money.dart';
 import '../game/progress.dart';
 import '../models.dart';
 import '../rules/rule_set.dart';
@@ -588,7 +589,9 @@ class _DraftInboxViewState extends State<DraftInboxView> {
                     else
                       QuestMoney(
                         amount: draft.amount,
-                        prefix: incoming ? '+ ' : '− ',
+                        tone: incoming
+                            ? MoneyTone.incoming
+                            : MoneyTone.outgoing,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
@@ -1013,7 +1016,7 @@ class _DraftTile extends StatelessWidget {
               else
                 QuestMoney(
                   amount: draft.amount,
-                  prefix: incoming ? '+' : '−',
+                  tone: incoming ? MoneyTone.incoming : MoneyTone.outgoing,
                   alignment: Alignment.centerRight,
                   style: TextStyle(
                     fontSize: 15.5,

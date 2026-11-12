@@ -103,7 +103,9 @@ class DraftAttentionBanner extends StatelessWidget {
                             '$bank${party != null ? ' · $party' : ''}';
                         amountWidget = QuestMoney(
                           amount: draft.amount,
-                          prefix: isIncoming ? '+' : '−',
+                          tone: isIncoming
+                              ? MoneyTone.incoming
+                              : MoneyTone.outgoing,
                           alignment: Alignment.centerRight,
                           style: TextStyle(
                             fontSize: 13.5,

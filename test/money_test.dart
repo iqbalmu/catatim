@@ -36,12 +36,34 @@ void main() {
       expect(Money.format(500), 'Rp500');
     });
 
-    test('negatif', () {
-      expect(Money.format(-5000), '-Rp5.000');
+    test('negatif memakai minus tipografis U+2212', () {
+      expect(Money.format(-5000), '−Rp5.000');
     });
 
     test('nol', () {
       expect(Money.format(0), 'Rp0');
+    });
+  });
+
+  group('Money.formatAbs', () {
+    test('tanpa tanda arah', () {
+      expect(Money.formatAbs(840000), 'Rp840.000');
+      expect(Money.formatAbs(-840000), 'Rp840.000');
+      expect(Money.formatAbs(0), 'Rp0');
+    });
+  });
+
+  group('Money.signOf', () {
+    test('tone menentukan arah', () {
+      expect(Money.signOf(840000, MoneyTone.incoming), '+');
+      expect(Money.signOf(840000, MoneyTone.outgoing), '−');
+    });
+
+    test('tanpa tone mengikuti tanda nilai', () {
+      expect(Money.signOf(-840000, null), '−');
+      expect(Money.signOf(840000, null), isNull);
+      expect(Money.signOf(-840000, MoneyTone.neutral), '−');
+      expect(Money.signOf(840000, MoneyTone.neutral), isNull);
     });
   });
 }

@@ -781,7 +781,10 @@ class _BackCardPeekState extends State<_BackCardPeek> {
     QuestPalette q,
     int total,
   ) {
-    final valueText = widget.balanceObscured ? '••••••' : Money.format(total);
+    final mutedStyle = context.qSmall(11.5).copyWith(
+      color: q.muted,
+      fontWeight: FontWeight.w600,
+    );
 
     return Row(
       key: const ValueKey<String>('peek-balance'),
@@ -802,27 +805,26 @@ class _BackCardPeekState extends State<_BackCardPeek> {
         ),
         const SizedBox(width: 7),
         Flexible(
-          child: RichText(
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: 'Total Saldo',
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  'Total Saldo',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: context.qSmall(11.5).copyWith(
                         color: q.text,
                         fontWeight: FontWeight.w800,
                       ),
                 ),
-                TextSpan(
-                  text: '  ·  $valueText',
-                  style: context.qSmall(11.5).copyWith(
-                        color: q.muted,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ],
-            ),
+              ),
+              Text('  ·  ', style: mutedStyle),
+              if (widget.balanceObscured)
+                Text('••••••', style: mutedStyle)
+              else
+                QuestMoney(amount: total, style: mutedStyle),
+            ],
           ),
         ),
       ],

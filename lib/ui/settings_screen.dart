@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -6,6 +7,7 @@ import '../game/progress.dart';
 import '../rules/rule_set.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
+import '../storage/seed_dummy.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'backup_screen.dart';
@@ -480,7 +482,32 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       Divider(height: 1, thickness: 1, color: q.line),
 
-                      // 3. Kosongkan Data Aplikasi (Danger Zone di bagian paling akhir)
+                      // 4. Isi Data Contoh (hanya build debug)
+                      if (kDebugMode) ...[
+                        Divider(height: 1, thickness: 1, color: q.line),
+                        QuestListTile(
+                          leading: _SettingIcon(
+                            icon: Icons.auto_awesome_rounded,
+                            color: q.primary,
+                            bgColor: q.primaryLight,
+                          ),
+                          title: Text(
+                            'Isi Data Contoh',
+                            style: context.qTitle(15),
+                          ),
+                          subtitle: Text(
+                            'Isi transaksi, batas anggaran, dan saldo contoh',
+                            style: context.qSmall(12),
+                          ),
+                          trailing: Icon(
+                            Icons.chevron_right_rounded,
+                            color: q.muted,
+                          ),
+                          onTap: () => _seedDemoData(context),
+                        ),
+                      ],
+
+                      // 5. Kosongkan Data Aplikasi (Danger Zone di bagian paling akhir)
                       QuestListTile(
                         leading: _SettingIcon(
                           icon: Icons.delete_forever_rounded,
@@ -612,6 +639,48 @@ class SettingsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _seedDemoData(BuildContext context) async {
+    final confirmed = await showQuestDialog<bool>(
+      context,
+      title: 'Isi Data Contoh?',
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Transaksi contoh, batas harian/mingguan/bulanan, saldo awal akun, dan alokasi kategori akan diisi. Data yang sudah ada tidak dihapus.',
+            style: context.qBody(13),
+          ),
+        ],
+      ),
+      actions: [
+        QuestButton(
+          label: 'Batal',
+          tone: QuestTone.secondary,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        QuestButton(
+          label: 'Isi Data',
+          tone: QuestTone.primary,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
+    );
+
+    if (confirmed == true && context.mounted) {
+      HapticFeedback.mediumImpact();
+      await reseedDummyData(repository.db, repository);
+      await progress?.refresh();
+      if (context.mounted) {
+        questSnack(
+          context,
+          'Data contoh berhasil diisi.',
+          icon: Icons.check_circle_outline_rounded,
+        );
+      }
+    }
   }
 
   Future<void> _confirmResetData(BuildContext context) async {

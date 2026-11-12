@@ -108,9 +108,11 @@ class _ExecutiveSummaryCard extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: QuestMoney(
                     amount: metrics.net.abs(),
-                    prefix: metrics.net == 0
-                        ? ''
-                        : (isSurplus ? '+' : '−'),
+                    tone: metrics.net == 0
+                        ? null
+                        : (isSurplus
+                              ? MoneyTone.incoming
+                              : MoneyTone.outgoing),
                     style: context.qDisplay(28).copyWith(
                       color: metrics.net == 0
                           ? context.q.text

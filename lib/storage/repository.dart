@@ -22,6 +22,10 @@ class LedgerRepository {
 
   final AppDatabase _db;
 
+  /// Akses database untuk kebutuhan di luar repository (mis. seeder data
+  /// contoh pada build debug).
+  AppDatabase get db => _db;
+
   /// Dua notifikasi dari bank+nominal+arah yang sama dalam jendela ini
   /// dianggap duplikat (bank sering kirim ganda / push+SMS).
   static const dedupWindow = Duration(seconds: 120);

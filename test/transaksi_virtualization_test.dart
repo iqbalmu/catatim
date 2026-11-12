@@ -1,4 +1,3 @@
-import 'package:bukuduit/core/money.dart';
 import 'package:bukuduit/game/progress.dart';
 import 'package:bukuduit/models.dart';
 import 'package:bukuduit/storage/database.dart';
@@ -80,9 +79,13 @@ void main() {
     expect(find.text('Makan Siang'), findsOneWidget);
     expect(find.text('Kopi Pagi'), findsOneWidget);
 
-    // Verifikasi ringkasan pemasukan & pengeluaran bulanan (nominal pemasukan ada di header & tile)
-    expect(find.text('+${Money.format(4000000)}'), findsNWidgets(2));
-    expect(find.text('-${Money.format(85000)}'), findsOneWidget);
+    // Verifikasi ringkasan pemasukan & pengeluaran bulanan.
+    // Tanda arah digambar terpisah dari nominal sebagai marker minimalis,
+    // jadi tidak lagi menyatu dalam satu string.
+    expect(find.text('Rp4.000.000'), findsNWidgets(2));
+    expect(find.text('Rp85.000'), findsOneWidget);
+    expect(find.text('+'), findsWidgets);
+    expect(find.text('−'), findsWidgets);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 1));

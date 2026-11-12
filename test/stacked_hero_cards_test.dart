@@ -118,10 +118,18 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // Nominal di dalam kartu Total Saldo: angka hero + chip akun pertama.
+    // Baris peek kartu bawah ikut menampilkan nominal, tapi ikut teranimasi
+    // saat swipe — karena itu finder-nya dikunci ke TotalBalanceCard.
+    Finder saldoDiKartu() => find.descendant(
+          of: find.byType(TotalBalanceCard),
+          matching: find.text('Rp1.500.000'),
+        );
+
     // Simpan referensi State awal dari TotalBalanceCard
     final initialBalanceState = tester.state(find.byType(TotalBalanceCard));
     // 2 widget: 1 pada angka hero Total Saldo + 1 pada chip akun pertama
-    expect(find.text('Rp1.500.000'), findsNWidgets(2));
+    expect(saldoDiKartu(), findsNWidgets(2));
 
     // Simulasikan drag frame-per-frame (16ms) dan pastikan State tidak pernah
     // di-recreate serta saldo Rp1.500.000 tidak pernah hilang/berkedip ke Rp0
@@ -134,7 +142,7 @@ void main() {
         tester.state(find.byType(TotalBalanceCard)),
         same(initialBalanceState),
       );
-      expect(find.text('Rp1.500.000'), findsNWidgets(2));
+      expect(saldoDiKartu(), findsNWidgets(2));
     }
     await gesture.up();
 
@@ -145,7 +153,7 @@ void main() {
         tester.state(find.byType(TotalBalanceCard)),
         same(initialBalanceState),
       );
-      expect(find.text('Rp1.500.000'), findsNWidgets(2));
+      expect(saldoDiKartu(), findsNWidgets(2));
     }
     await tester.pumpAndSettle();
 
@@ -153,7 +161,7 @@ void main() {
       tester.state(find.byType(TotalBalanceCard)),
       same(initialBalanceState),
     );
-    expect(find.text('Rp1.500.000'), findsNWidgets(2));
+    expect(saldoDiKartu(), findsNWidgets(2));
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 1));

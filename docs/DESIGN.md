@@ -84,6 +84,25 @@ Dokumen ini adalah sumber kebenaran visual aplikasi; widget-kit terpusat di `lib
 | `qBody` | 13–14 / w500–w600 | Teks konten, keterangan input |
 | `qSmall` | 11–12.5 / w500–w700 | Metadata baris, subjudul, status badge |
 
+### Tanda arah nominal (+/−) — "minimalis"
+
+Tanda arah **bukan** elemen seberat angka; ia marker subordinat di samping
+angka ("Angka adalah Raja"). Semua nominal bertanda memakai `QuestMoney`
+(`lib/theme/quest.dart`) dengan parameter `QuestSignStyle`:
+
+| Aspek | Nilai | Catatan |
+|---|---|---|
+| Glyph | `−` U+2212 & `+` | Bukan hyphen ASCII (pendek & menggantung); Nunito menyediakan keduanya |
+| Ukuran | 62% ukuran angka (80% bila angka < 16px) | Konstan: `QuestSignStyle.sizeRatio` / `smallRatio` |
+| Bobot | 1 tingkat lebih ringan di tangga bundel w400→w600→w700→w800 | ExtraBold terdaftar sebagai w800 |
+| Opasitas | 55% warna angka (65% untuk nominal kecil) | Warna arah tetap terbaca, angka tetap dominan |
+| Posisi | dinaikkan 0.18 em dari baseline | Center digit `0` = +0.3525 em, center `−` = +0.2870 em → tanpa kompensasi tanda duduk di bawah tengah digit |
+| Jarak | 0.05 em | Optik, bukan spasi |
+
+Aturan: **tanda hanya lewat `MoneyTone`**, tidak boleh digambar manual per
+call site. `Money.format` (string data) memakai glyph U+2212 yang sama
+supaya satu nominal tidak pernah punya dua bentuk tanda.
+
 ## Bentuk & Elevasi
 
 - **Radius (`AppRadius`)**:
@@ -106,7 +125,8 @@ Dokumen ini adalah sumber kebenaran visual aplikasi; widget-kit terpusat di `lib
 - **Input teks**: satu gaya kanonik dari `inputDecorationTheme` — fill `surface2`, radius `tile`, border `line` → fokus `primary` 1.5px, label/hint `hint`. Situs lain dilarang menimpa border/fill/isDense; cukup `InputDecoration(labelText, hintText, prefixIcon, …)` (atribut konten saja). Referensi: drawer tambah akun.
 - **Chip/pill**: `surface2` radius 999; status memakai tint (`incomingTint`/`outgoingTint`/`warnTint`).
 - **Segmented**: frame `surface2`; sel aktif `surface` dengan shadow halus, teks/ikon `text`/`primaryText`; tak aktif memakai `hint` (muted gagal 4,5:1 di `surface2`).
-- **Tile transaksi**: ikon kategori 40px lingkaran tint 12%, nama w800, meta muted, nominal tabular berwarna arah.
+- **Tile transaksi**: ikon kategori 40px lingkaran tint 12%, nama w800, meta muted, nominal tabular berwarna arah. Tanda `+`/`−` memakai `QuestMoney` + `MoneyTone` (lihat Tipografi) — bukan prefiks manual.
+- **Nominal (`QuestMoney`)**: satu-satunya cara menampilkan nominal bertanda; angka tabular + `FontFeature.tabularFigures()`, tanda arah digambar terpisah sebagai marker subordinat.
 - **Nav bawah**: `surface` radius 28, `elevatedShadow`, state aktif pada warna teks dan ikon (`primaryText`), tanpa background pill, tombol tengah aksi utama (gradien `primarySolid → primaryGradientEnd`, ikon `onPrimary`).
 - **Keypad**: tombol 50dp (save 48dp), haptic feedback, pintasan nominal (000, Backspace, Clear).
 

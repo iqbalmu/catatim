@@ -47,8 +47,9 @@ class _CashflowSummaryCard extends StatelessWidget {
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
-                      child: Text(
-                        '+${Money.format(totalIn)}',
+                      child: QuestMoney(
+                        amount: totalIn,
+                        tone: MoneyTone.incoming,
                         style: TextStyle(
                           fontSize: 18.5,
                           fontWeight: FontWeight.w900,
@@ -81,8 +82,9 @@ class _CashflowSummaryCard extends StatelessWidget {
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
-                      child: Text(
-                        '-${Money.format(totalOut)}',
+                      child: QuestMoney(
+                        amount: totalOut,
+                        tone: MoneyTone.outgoing,
                         style: TextStyle(
                           fontSize: 18.5,
                           fontWeight: FontWeight.w900,
@@ -115,12 +117,19 @@ class _CashflowSummaryCard extends StatelessWidget {
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
-                      child: Text(
-                        (netCashflow >= 0 ? '+' : '') + Money.format(netCashflow),
+                      child: QuestMoney(
+                        amount: netCashflow,
+                        tone: netCashflow > 0
+                            ? MoneyTone.incoming
+                            : (netCashflow < 0
+                                  ? MoneyTone.outgoing
+                                  : null),
                         style: TextStyle(
                           fontSize: 18.5,
                           fontWeight: FontWeight.w900,
-                          color: netCashflow >= 0 ? context.q.text : context.q.bad,
+                          color: netCashflow >= 0
+                              ? context.q.text
+                              : context.q.bad,
                           fontFeatures: const [FontFeature.tabularFigures()],
                         ),
                       ),

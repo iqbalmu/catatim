@@ -42,7 +42,7 @@ class TransactionDayHeader extends StatelessWidget {
               fit: BoxFit.scaleDown,
               child: QuestMoney(
                 amount: totalOut!,
-                prefix: '-',
+                tone: MoneyTone.outgoing,
                 alignment: Alignment.centerRight,
                 style: context.qSmall(11).copyWith(color: context.q.bad),
               ),

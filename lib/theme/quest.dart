@@ -611,12 +611,107 @@ class QuestCountUp extends StatelessWidget {
   }
 }
 
-/// Tampilan nominal Rupiah dengan angka tabular langsung tanpa animasi count-up dari 0.
+/// Perlakuan visual tanda arah (+/−) pada nominal.
+///
+/// Tanda **minimalis**: bukan lagi sejajar berat dengan angka, melainkan
+/// marker subordinat di sampingnya — angka tetap jadi fokus
+/// ("Angka adalah Raja", docs/DESIGN.md).
+///
+/// Angka & bobot diturunkan dari metrik Nunito yang dipakai app:
+/// center vertikal digit `0` = +0.3525 em, center `−` U+2212 = +0.2870 em,
+/// center `+` = +0.2840 em. Karena `−` duduk sedikit di bawah tengah
+/// digit, tanda dinaikkan agar tetap pas di tengah tinggi angka.
+class QuestSignStyle {
+  const QuestSignStyle._();
+
+  /// Di bawah ukuran ini (em) perlakuan dibuat lebih ringan: bar tanda
+  /// akan thinner dari 1px dan hilang kalau diterjemahkan opacity.
+  static const double smallThreshold = 16;
+
+  /// Rasio ukuran tanda terhadap ukuran angka, nominal besar.
+  static const double largeRatio = 0.62;
+
+  /// Rasio ukuran tanda terhadap ukuran angka, nominal kecil.
+  static const double smallRatio = 0.80;
+
+  /// Opasitas tanda terhadap warna angka, nominal besar.
+  static const double largeOpacity = 0.55;
+
+  /// Opasitas tanda terhadap warna angka, nominal kecil.
+  static const double smallOpacity = 0.65;
+
+  /// Jarak tipis antara tanda dan angka (em).
+  static const double gapEm = 0.05;
+
+  /// Center vertikal digit `0` di Nunito (em dari baseline).
+  static const double _digitCenterEm = 0.3525;
+
+  /// Center vertikal glyph tanda `−` & `+` di Nunito (em dari baseline).
+  static const double _signCenterEm = 0.2855;
+
+  /// Tangga bobot yang benar-benar dibundel (w500 & w900 tidak ada —
+  /// ExtraBold terdaftar sebagai w800).
+  static const List<FontWeight> _ladder = [
+    FontWeight.w400,
+    FontWeight.w600,
+    FontWeight.w700,
+    FontWeight.w800,
+  ];
+
+  /// Rasio ukuran tanda untuk angka seukuran [baseSize].
+  static double ratioFor(double baseSize) =>
+      baseSize >= smallThreshold ? largeRatio : smallRatio;
+
+  /// Opasitas tanda untuk angka seukuran [baseSize].
+  static double opacityFor(double baseSize) =>
+      baseSize >= smallThreshold ? largeOpacity : smallOpacity;
+
+  /// Bobot tanda: satu tingkat lebih ringan di tangga bobot bundel.
+  ///
+  /// w500 & w900 tidak ada di bundel — dinormalkan ke tetangga terdekat
+  /// supaya pilihan font-nya deterministik.
+  static FontWeight weightFor(FontWeight? weight) {
+    final normalized = switch (weight ?? FontWeight.w400) {
+      FontWeight.w900 => FontWeight.w800,
+      FontWeight.w500 => FontWeight.w400,
+      final w => w,
+    };
+    final i = _ladder.indexOf(normalized);
+    if (i <= 0) return FontWeight.w400;
+    return _ladder[i - 1];
+  }
+
+  /// Kompensasi optik (em) agar center tanda = center digit.
+  static double riseEmFor(double ratio) =>
+      _digitCenterEm - _signCenterEm * ratio;
+
+  /// Gaya tanda untuk nominal berukuran [base] seukuran [baseSize].
+  static TextStyle styleFor(TextStyle base, double baseSize) {
+    final ratio = ratioFor(baseSize);
+    final color = base.color;
+    final sign = base.copyWith(
+      fontSize: baseSize * ratio,
+      fontWeight: weightFor(base.fontWeight),
+      letterSpacing: 0,
+    );
+    if (color == null) return sign;
+    return sign.copyWith(
+      color: color.withValues(alpha: color.a * opacityFor(baseSize)),
+    );
+  }
+}
+
+/// Tampilan nominal Rupiah dengan angka tabular langsung tanpa animasi
+/// count-up dari 0.
+///
+/// Tanda arah digambar terpisah dari angka sebagai marker subordinat
+/// (lihat [QuestSignStyle]): `−`/`+` kecil, lebih tipis, dan transparan.
 class QuestMoney extends StatelessWidget {
   const QuestMoney({
     super.key,
     required this.amount,
     this.style,
+    this.tone,
     this.prefix = '',
     this.suffix = '',
     this.alignment = Alignment.centerLeft,
@@ -626,8 +721,17 @@ class QuestMoney extends StatelessWidget {
 
   final int amount;
   final TextStyle? style;
+
+  /// Arah tampilan nominal. Null → tanda mengikuti tanda nilai [amount]
+  /// (negatif = `−`, selain itu tanpa tanda).
+  final MoneyTone? tone;
+
+  /// Teks biasa sebelum nominal — bukan tanda arah.
   final String prefix;
+
+  /// Teks biasa setelah nominal — bukan tanda arah.
   final String suffix;
+
   final AlignmentGeometry alignment;
   final Object? replayKey;
   final Duration? duration;
@@ -638,16 +742,42 @@ class QuestMoney extends StatelessWidget {
     final effectiveStyle = baseStyle.copyWith(
       fontFeatures: const [FontFeature.tabularFigures()],
     );
-    final finalText = '$prefix${Money.format(amount)}$suffix';
+    final sign = Money.signOf(amount, tone);
+    final baseSize = effectiveStyle.fontSize ?? 16;
 
     return Align(
       alignment: alignment,
       widthFactor: 1.0,
       heightFactor: 1.0,
-      child: Text(
-        finalText,
-        maxLines: 1,
-        style: effectiveStyle,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          if (prefix.isNotEmpty)
+            Text(prefix, maxLines: 1, style: effectiveStyle),
+          if (sign != null) ...[
+            Transform.translate(
+              offset: Offset(
+                0,
+                -baseSize * QuestSignStyle.riseEmFor(
+                  QuestSignStyle.ratioFor(baseSize),
+                ),
+              ),
+              child: Text(
+                sign,
+                maxLines: 1,
+                style: QuestSignStyle.styleFor(effectiveStyle, baseSize),
+              ),
+            ),
+            SizedBox(width: baseSize * QuestSignStyle.gapEm),
+          ],
+          Text(
+            '${Money.formatAbs(amount)}$suffix',
+            maxLines: 1,
+            style: effectiveStyle,
+          ),
+        ],
       ),
     );
   }

@@ -14,12 +14,20 @@ import 'repository.dart';
 /// transaksi tapi belum punya batas ikut hidup tanpa hapus data.
 /// Hanya berjalan di debug build; rilis tidak tersentuh.
 ///
+/// [force] mengganti baris demo yang sudah ada (uuid `seed-dummy-*`) —
+/// dipakai aksi "Isi Data Contoh" di Pengaturan. Baris uuid demo tidak
+/// pernah dipakai data user, jadi aman dihapus.
+///
 /// Tanggal transaksi demo **relatif ke "sekarang"**: [refreshSeedDemoDates]
 /// dipanggil setiap start debug untuk menggeser tanggal baris demo
 /// (diidentifikasi uuid deterministik `seed-dummy-*`) sehingga meter
 /// harian/mingguan/bulanan selalu terisi. Baris yang dihapus pengguna
 /// tidak dihidupkan ulang.
-Future<void> seedDummyIfEmpty(AppDatabase db, LedgerRepository repo) async {
+Future<void> seedDummyIfEmpty(
+  AppDatabase db,
+  LedgerRepository repo, {
+  bool force = false,
+}) async {
   if (!kDebugMode) return;
   if (await repo.getSetting('demo_seed_disabled') == '1') return;
   await _seedLimitsAccountsBudgets(repo);
@@ -29,14 +37,30 @@ Future<void> seedDummyIfEmpty(AppDatabase db, LedgerRepository repo) async {
   final existingSeed = await (db.select(db.transactions)
         ..where((t) => t.uuid.like('seed-dummy-%')))
       .get();
-  if (existingSeed.isNotEmpty) return;
+  if (existingSeed.isNotEmpty) {
+    if (!force) return;
+    await (db.delete(db.transactions)
+          ..where((t) => t.uuid.like('seed-dummy-%')))
+        .go();
+  }
 
   final cats = await repo.getCategories();
   if (cats.isEmpty) return;
   int cat(String name) => cats.firstWhere((c) => c.name == name).id;
 
+  // Semua transaksi demo masuk ke rekening utama supaya saldo di Beranda
+  // ikut bergerak — transaksi tanpa akun tidak memengaruhi saldo.
+  final accounts = await repo.getAccounts();
+  final mainAccount = accounts
+      .firstWhere(
+        (a) => a.name == 'blu by BCA',
+        orElse: () => accounts.first,
+      )
+      .id;
+
   final rows = <TransactionsCompanion>[
-    for (final s in _seedSpecs(DateTime.now())) s.toCompanion(cat),
+    for (final s in _seedSpecs(DateTime.now()))
+      s.toCompanion(cat, mainAccount),
   ];
 
   await db.batch((b) => b.insertAll(db.transactions, rows));
@@ -50,6 +74,19 @@ Future<void> seedDummyIfEmpty(AppDatabase db, LedgerRepository repo) async {
       postedAt: DateTime.now(),
     ),
   );
+}
+
+/// Isi ulang data contoh — untuk app yang datanya sudah dikosongkan lewat
+/// "Kosongkan Data Aplikasi". Tindakan itu menandai `demo_seed_disabled`,
+/// sehingga seeder di start berikutnya dilewati dan app tetap kosong.
+///
+/// Menghidupkan kembali flag tersebut, lalu mengganti baris demo lama
+/// (uuid `seed-dummy-*`) dengan yang baru. Hanya berjalan di debug build.
+Future<void> reseedDummyData(AppDatabase db, LedgerRepository repo) async {
+  if (!kDebugMode) return;
+  await repo.setSetting('demo_seed_disabled', '0');
+  await seedDummyIfEmpty(db, repo, force: true);
+  await refreshSeedDemoDates(db);
 }
 
 /// Geser tanggal transaksi demo mengikuti hari berjalan. Dipanggil
@@ -86,7 +123,10 @@ class _SeedTx {
   final String counterparty;
   final TxSource source;
 
-  TransactionsCompanion toCompanion(int Function(String name) cat) =>
+  TransactionsCompanion toCompanion(
+    int Function(String name) cat,
+    int accountId,
+  ) =>
       TransactionsCompanion.insert(
         uuid: uuid,
         bankId: source == TxSource.notification ? 'blu' : 'manual',
@@ -97,6 +137,7 @@ class _SeedTx {
         occurredAt: when,
         source: source,
         categoryId: drift.Value(cat(category)),
+        accountId: drift.Value(accountId),
       );
 }
 
@@ -108,6 +149,10 @@ class _SeedTx {
 /// * **Bulan berjalan** dipatok ke tanggal (3, 7, 11, 14, 18, 21) untuk
 ///   tagihan/belanana bulanan; tanggal yang belum tercapai dilewati.
 /// * Pemasukan (gaji, freelance, proyek) menyeimbangi kartu arus.
+/// * Pemasukan demo memakai `TxKind.payment`, bukan `transfer`: transfer
+///   dihitung sebagai perpindahan internal dan dikecualikan dari arus kas
+///   riil — kalau gaji demo ikut `transfer`, ringkasan arus kas akan
+///   selalu baca "Pemasukan Rp0" meski ada gaji masuk.
 List<_SeedTx> _seedSpecs(DateTime now) {
   final today = DateTime(now.year, now.month, now.day);
   final monday = today.subtract(Duration(days: now.weekday - 1));
@@ -137,7 +182,7 @@ List<_SeedTx> _seedSpecs(DateTime now) {
       _SeedTx('seed-dummy-02', d, 20000, Direction.outgoing, TxKind.payment,
           'Makanan', 'Kopi Kenangan', TxSource.manual),
     if (week(0, 20, 15) case final d?)
-      _SeedTx('seed-dummy-03', d, 2500000, Direction.incoming, TxKind.transfer,
+      _SeedTx('seed-dummy-03', d, 2500000, Direction.incoming, TxKind.payment,
           'Transfer', 'Proyek desain logo', TxSource.manual),
     if (week(1, 12, 30) case final d?)
       _SeedTx('seed-dummy-04', d, 25000, Direction.outgoing, TxKind.payment,
@@ -169,7 +214,7 @@ List<_SeedTx> _seedSpecs(DateTime now) {
       _SeedTx('seed-dummy-12', d, 220000, Direction.outgoing, TxKind.payment,
           'Belanja', 'Belanja bulanan pasar', TxSource.manual),
     if (month(10, 9, 15) case final d?)
-      _SeedTx('seed-dummy-13', d, 8500000, Direction.incoming, TxKind.transfer,
+      _SeedTx('seed-dummy-13', d, 8500000, Direction.incoming, TxKind.payment,
           'Gaji', 'Gaji bulanan', TxSource.manual),
     if (month(11, 13, 0) case final d?)
       _SeedTx('seed-dummy-14', d, 90000, Direction.outgoing, TxKind.payment,
@@ -181,7 +226,7 @@ List<_SeedTx> _seedSpecs(DateTime now) {
       _SeedTx('seed-dummy-16', d, 120000, Direction.outgoing, TxKind.payment,
           'Tagihan', 'Langganan streaming', TxSource.manual),
     if (month(19, 19, 0) case final d?)
-      _SeedTx('seed-dummy-17', d, 1000000, Direction.incoming, TxKind.transfer,
+      _SeedTx('seed-dummy-17', d, 1000000, Direction.incoming, TxKind.payment,
           'Transfer', 'Bayaran freelance artikel', TxSource.manual),
     if (month(5, 8, 30) case final d?)
       _SeedTx('seed-dummy-18', d, 100000, Direction.outgoing, TxKind.payment,

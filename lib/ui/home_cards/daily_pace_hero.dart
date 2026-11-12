@@ -146,7 +146,7 @@ class DailyPaceHeroCard extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: QuestMoney(
                     amount: safe != null ? safe.abs() : 0,
-                    prefix: isOver ? '- ' : '',
+                    tone: isOver ? MoneyTone.outgoing : null,
                     duration: const Duration(milliseconds: 500),
                     style: context.qDisplay(32).copyWith(
                           color: isOver ? q.bad : q.text,

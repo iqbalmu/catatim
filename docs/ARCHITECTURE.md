@@ -138,6 +138,8 @@ draf + tautan akun↔bank; v10 membuang `user_rules` dan menambah
 | [007](decisions/007-gamifikasi-berbasis-kondisi.md) | Gamifikasi = cermin kondisi nyata; XP/level dihapus |
 | [008](decisions/008-quest-design-system.md) | Design system Quest sendiri, tanpa state library |
 | [009](decisions/009-pensiun-target-sisihkan.md) | Target/Sisihkan dipensiunkan; Rencana = Batas, belanja murni tunggal |
+| [010](decisions/010-palet-dari-piksel-maskot.md) | Palet turunan piksel maskot Pochy |
+| [011](decisions/011-notasi-tanda-nominal.md) | Tanda arah nominal digambar minimalis (bukan seberat angka) |
 
 ## Pengujian
 

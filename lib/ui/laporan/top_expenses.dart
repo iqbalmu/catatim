@@ -135,7 +135,7 @@ class _TopExpenseRow extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 child: QuestMoney(
                   amount: tx.amount,
-                  prefix: '−',
+                  tone: MoneyTone.outgoing,
                   alignment: Alignment.centerRight,
                   style: TextStyle(
                     fontSize: 13.5,
