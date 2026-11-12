@@ -52,7 +52,6 @@ class SettingsScreen extends StatelessWidget {
       appBar: QuestHeader(
         textScale: MediaQuery.textScalerOf(context).scale(1.0),
         title: 'Profil & Pengaturan',
-        subtitle: 'Profil, laporan, preferensi & data sistem',
         showBack: showBack,
       ),
       body: ListView(
@@ -63,7 +62,7 @@ class SettingsScreen extends StatelessWidget {
           (showBack ? Spacing.xl : 104) + MediaQuery.paddingOf(context).bottom,
         ),
         children: [
-          // ── Hero Card Profil & Disiplin ──
+          // Ringkasan disiplin mencatat; tap membuka lembar progres.
           QuestTabEnter(
             index: 1,
             child: QuestPress(
@@ -71,151 +70,35 @@ class SettingsScreen extends StatelessWidget {
                   ? () => GamificationSheet.show(context, progress!)
                   : null,
               child: QuestCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [q.primarySolid, q.primaryGradientEnd],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Center(
-                            child: Icon(
-                              Icons.person_rounded,
-                              color: q.onPrimary,
-                              size: 28,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: Spacing.m),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      stats?.title ?? 'Pribadi & Disiplin',
-                                      style: context.qTitle(16.5),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  if (stats != null) ...[
-                                    const SizedBox(width: Spacing.xs),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 7,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: q.primaryLight,
-                                        borderRadius: BorderRadius.circular(
-                                          AppRadius.pill,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        'Lv. ${stats.level}',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w800,
-                                          color: q.primary,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  if (streakDays > 0) ...[
-                                    Icon(
-                                      Icons.local_fire_department_rounded,
-                                      size: 15,
-                                      color: q.primary,
-                                    ),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      '$streakDays hari streak',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: q.primary,
-                                      ),
-                                    ),
-                                    Text(
-                                      ' · ',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: q.muted,
-                                      ),
-                                    ),
-                                  ],
-                                  Expanded(
-                                    child: Text(
-                                      streakDays > 0
-                                          ? 'Pencatatan disiplin'
-                                          : 'Catat rutin untuk tingkatkan level',
-                                      style: context.qSmall(12),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (progress != null) ...[
-                          const SizedBox(width: Spacing.xs),
-                          Icon(Icons.chevron_right_rounded, color: q.muted),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: Spacing.s),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: q.surface2,
-                        borderRadius: BorderRadius.circular(AppRadius.tile),
-                      ),
-                      child: Row(
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.military_tech_rounded,
-                            size: 16,
-                            color: q.violet,
+                          Text(
+                            stats?.title ?? 'Disiplin mencatat',
+                            style: context.qTitle(17),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              'Tap untuk lembar gamifikasi, badge & progres',
-                              style: context.qSmall(11.5).copyWith(
-                                    color: q.muted,
-                                  ),
-                            ),
-                          ),
-                          Icon(
-                            Icons.arrow_forward_rounded,
-                            size: 13,
-                            color: q.muted,
+                          const SizedBox(height: 4),
+                          Text(
+                            [
+                              if (stats != null) 'Level ${stats.level}',
+                              if (streakDays > 0) '$streakDays hari berturut-turut',
+                              if (stats == null && streakDays == 0)
+                                'Catat rutin untuk naik level',
+                            ].join(' · '),
+                            style: context.qSmall(12.5),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
+                    if (progress != null)
+                      Icon(Icons.chevron_right_rounded, color: q.muted),
                   ],
                 ),
               ),
@@ -240,17 +123,13 @@ class SettingsScreen extends StatelessWidget {
                         builder: (context, snapshot) {
                           final accounts = snapshot.data ?? const [];
                           return QuestListTile(
-                            leading: _SettingIcon(
-                              icon: Icons.account_balance_wallet_rounded,
-                              color: q.primary,
-                              bgColor: q.primaryLight,
-                            ),
+                            leading: _SettingIcon(icon: Icons.account_balance_wallet_rounded),
                             title: Text(
                               'Akun Bank & Dompet',
                               style: context.qTitle(15),
                             ),
                             subtitle: Text(
-                              '${accounts.length} akun terdaftar · Rekening bank, e-wallet & tunai',
+                              '${accounts.length} akun',
                               style: context.qSmall(12),
                             ),
                             trailing: Icon(
@@ -278,17 +157,13 @@ class SettingsScreen extends StatelessWidget {
                         builder: (context, snapshot) {
                           final categories = snapshot.data ?? const [];
                           return QuestListTile(
-                            leading: _SettingIcon(
-                              icon: Icons.pie_chart_outline_rounded,
-                              color: q.violet,
-                              bgColor: q.violet.withValues(alpha: 0.12),
-                            ),
+                            leading: _SettingIcon(icon: Icons.pie_chart_outline_rounded),
                             title: Text(
                               'Anggaran & Kategori',
                               style: context.qTitle(15),
                             ),
                             subtitle: Text(
-                              '${categories.length} kategori · Atur batas & alokasi bulanan',
+                              '${categories.length} kategori, batas bulanan',
                               style: context.qSmall(12),
                             ),
                             trailing: Icon(
@@ -311,17 +186,13 @@ class SettingsScreen extends StatelessWidget {
 
                       // 3. Laporan Finansial
                       QuestListTile(
-                        leading: _SettingIcon(
-                          icon: Icons.bar_chart_rounded,
-                          color: q.primary,
-                          bgColor: q.primaryLight,
-                        ),
+                        leading: _SettingIcon(icon: Icons.bar_chart_rounded),
                         title: Text(
                           'Laporan Finansial',
                           style: context.qTitle(15),
                         ),
                         subtitle: Text(
-                          'Evaluasi arus kas, tren bulanan & komposisi pengeluaran',
+                          'Arus kas, tren, dan komposisi pengeluaran',
                           style: context.qSmall(12),
                         ),
                         trailing: Icon(
@@ -377,18 +248,10 @@ class SettingsScreen extends StatelessWidget {
                           };
 
                           return QuestListTile(
-                            leading: _SettingIcon(
-                              icon: modeIcon,
-                              color: q.primary,
-                              bgColor: q.primaryLight,
-                            ),
+                            leading: _SettingIcon(icon: modeIcon),
                             title: Text(
                               'Tema Tampilan',
                               style: context.qTitle(15),
-                            ),
-                            subtitle: Text(
-                              'Mode: $modeTitle · Pilih tema terang, gelap, atau sistem',
-                              style: context.qSmall(12),
                             ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -416,17 +279,13 @@ class SettingsScreen extends StatelessWidget {
 
                       // 2. Capture Notifikasi Bank
                       QuestListTile(
-                        leading: _SettingIcon(
-                          icon: Icons.notifications_active_rounded,
-                          color: q.good,
-                          bgColor: q.incomingTint,
-                        ),
+                        leading: _SettingIcon(icon: Icons.notifications_active_rounded),
                         title: Text(
                           'Capture Notifikasi Bank',
                           style: context.qTitle(15),
                         ),
                         subtitle: Text(
-                          'Izin sistem, bank terhubung, aturan abaikan & simulator',
+                          'Izin, bank terhubung, dan aturan',
                           style: context.qSmall(12),
                         ),
                         trailing: Icon(
@@ -448,17 +307,13 @@ class SettingsScreen extends StatelessWidget {
 
                       // 3. Backup & Pulihkan Data
                       QuestListTile(
-                        leading: _SettingIcon(
-                          icon: Icons.shield_outlined,
-                          color: q.primary,
-                          bgColor: q.primaryLight,
-                        ),
+                        leading: _SettingIcon(icon: Icons.shield_outlined),
                         title: Text(
                           'Backup & Pulihkan Data',
                           style: context.qTitle(15),
                         ),
                         subtitle: Text(
-                          'Salinan database terenkripsi PIN lokal di perangkat HP',
+                          'Salinan data terenkripsi PIN',
                           style: context.qSmall(12),
                         ),
                         trailing: Icon(
@@ -479,17 +334,13 @@ class SettingsScreen extends StatelessWidget {
                       if (kDebugMode) ...[
                         Divider(height: 1, thickness: 1, color: q.line),
                         QuestListTile(
-                          leading: _SettingIcon(
-                            icon: Icons.dataset_outlined,
-                            color: q.primary,
-                            bgColor: q.primaryLight,
-                          ),
+                          leading: _SettingIcon(icon: Icons.dataset_outlined),
                           title: Text(
                             'Isi Data Contoh',
                             style: context.qTitle(15),
                           ),
                           subtitle: Text(
-                            'Isi transaksi, batas anggaran, dan saldo contoh',
+                            'Transaksi, anggaran, dan saldo contoh',
                             style: context.qSmall(12),
                           ),
                           trailing: Icon(
@@ -502,17 +353,13 @@ class SettingsScreen extends StatelessWidget {
 
                       // 5. Kosongkan Data Aplikasi (Danger Zone di bagian paling akhir)
                       QuestListTile(
-                        leading: _SettingIcon(
-                          icon: Icons.delete_forever_rounded,
-                          color: q.bad,
-                          bgColor: q.bad.withValues(alpha: 0.12),
-                        ),
+                        leading: _SettingIcon(icon: Icons.delete_forever_rounded, danger: true),
                         title: Text(
                           'Kosongkan Data Aplikasi',
                           style: context.qTitle(15).copyWith(color: q.bad),
                         ),
                         subtitle: Text(
-                          'Hapus semua transaksi, saldo, bon, dan mulai dari awal',
+                          'Hapus semua data dan mulai dari awal',
                           style: context.qSmall(12),
                         ),
                         trailing: Icon(
@@ -529,97 +376,19 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: Spacing.m),
 
-          // ── Tentang Bukuduit (Terpisah di Paling Bawah) ──
-          QuestTabEnter(
-            index: 4,
-            child: QuestCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [q.primarySolid, q.primaryGradientEnd],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.account_balance_wallet_rounded,
-                          color: q.onPrimary,
-                          size: 22,
-                        ),
-                      ),
-                      const SizedBox(width: Spacing.s),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('bukuduit', style: context.qTitle(16)),
-                          Text(
-                            'Versi 1.0.0 · Offline Personal Finance',
-                            style: context.qSmall(12),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: Spacing.s),
-                  Text(
-                    'Pencatat keuangan pribadi offline dengan capture notifikasi bank lokal di perangkat Android.',
-                    style: context.qBody(12.5),
-                  ),
-                  const SizedBox(height: Spacing.s),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: q.incomingTint,
-                      borderRadius: BorderRadius.circular(AppRadius.tile),
-                      border: Border.all(
-                        color: q.good.withValues(alpha: 0.25),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.cloud_off_rounded,
-                          color: q.good,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            '100% Offline & Privat · Data tersimpan lokal di HP tanpa internet, tanpa server eksternal, dan tanpa pelacak analitik.',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                              color: q.good,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: Spacing.m),
-
-          // ── Footer Copyright & Offline Info ──
-          Center(
-            child: Text(
-              'Bukuduit v1.0.0 · Penyimpanan Lokal SQLite Terenkripsi',
-              style: context.qSmall(11.5).copyWith(
-                    color: q.muted.withValues(alpha: 0.7),
-                  ),
+          // Tentang: teks biasa, tanpa kartu.
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('bukuduit', style: context.qTitle(14)),
+                const SizedBox(height: 2),
+                Text(
+                  'Versi 1.0.0. Data tersimpan terenkripsi di perangkat ini.',
+                  style: context.qSmall(12),
+                ),
+              ],
             ),
           ),
         ],
@@ -780,20 +549,20 @@ class _ThemePickerSheetState extends State<_ThemePickerSheet> {
     final options = const [
       (
         mode: ThemeMode.system,
-        title: 'Sistem (Otomatis)',
-        desc: 'Menyesuaikan otomatis dengan tema perangkat HP Anda',
+        title: 'Sistem',
+        desc: 'Ikuti tema perangkat',
         icon: Icons.brightness_auto_rounded,
       ),
       (
         mode: ThemeMode.light,
         title: 'Terang',
-        desc: 'Tampilan bersih & cerah Slate-Clean khas Bukuduit',
+        desc: 'Latar terang',
         icon: Icons.light_mode_rounded,
       ),
       (
         mode: ThemeMode.dark,
         title: 'Gelap',
-        desc: 'Tampilan gelap pekat yang nyaman di mata & hemat baterai',
+        desc: 'Latar gelap',
         icon: Icons.dark_mode_rounded,
       ),
     ];
@@ -817,11 +586,6 @@ class _ThemePickerSheetState extends State<_ThemePickerSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Tema Tampilan', style: context.qTitle(18)),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Pilih tema tampilan yang nyaman untuk mata Anda',
-                        style: context.qSmall(12.5),
-                      ),
                     ],
                   ),
                 ),
@@ -945,26 +709,22 @@ class _ThemeOptionCard extends StatelessWidget {
 }
 
 class _SettingIcon extends StatelessWidget {
-  const _SettingIcon({
-    required this.icon,
-    required this.color,
-    required this.bgColor,
-  });
+  const _SettingIcon({required this.icon, this.danger = false});
 
   final IconData icon;
-  final Color color;
-  final Color bgColor;
+  final bool danger;
 
   @override
   Widget build(BuildContext context) {
+    final q = context.q;
     return Container(
       width: 36,
       height: 36,
       decoration: BoxDecoration(
-        color: bgColor,
+        color: q.surface2,
         borderRadius: BorderRadius.circular(10),
       ),
-      child: Icon(icon, color: color, size: 20),
+      child: Icon(icon, color: danger ? q.bad : q.primary, size: 20),
     );
   }
 }

@@ -79,8 +79,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verifikasi opsi-opsi tema di bottom sheet
-      expect(find.text('Pilih tema tampilan yang nyaman untuk mata Anda'), findsOneWidget);
-      expect(find.text('Sistem (Otomatis)'), findsOneWidget);
+      // 'Sistem' tampil di baris pengaturan dan di opsi lembar.
+      expect(find.text('Sistem'), findsNWidgets(2));
       expect(find.text('Terang'), findsOneWidget);
       expect(find.text('Gelap'), findsOneWidget);
 

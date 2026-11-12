@@ -67,20 +67,6 @@ class GamificationSheet extends StatelessWidget {
                 const SizedBox(height: Spacing.s),
                 Row(
                   children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: context.q.warnTint,
-                        borderRadius: BorderRadius.circular(AppRadius.tile),
-                      ),
-                      child: Icon(
-                        Icons.emoji_events_rounded,
-                        color: context.q.warn,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: Spacing.s),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,24 +111,10 @@ class GamificationSheet extends StatelessWidget {
                         glowStrength: 0.7,
                       ),
                       const SizedBox(height: Spacing.s),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: Spacing.m,
-                          vertical: Spacing.s,
-                        ),
-                        decoration: BoxDecoration(
-                          color: context.q.primaryLight,
-                          borderRadius: BorderRadius.circular(AppRadius.pill),
-                        ),
-                        child: Text(
-                          summary?.moodLine ?? 'Pochy memantau keuanganmu',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: context.q.primaryText,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
+                      Text(
+                        summary?.moodLine ?? 'Pochy memantau keuanganmu',
+                        style: context.qTitle(14),
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),

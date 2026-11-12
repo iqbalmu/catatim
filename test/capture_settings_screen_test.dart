@@ -100,14 +100,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('KESEHATAN PENANGKAP (LAMPU SEHAT)'), findsOneWidget);
-    expect(find.text('Layanan Terhenti'), findsOneWidget);
-    expect(find.text('Detak Listener'), findsOneWidget);
-    expect(find.text('Notif Bank Terakhir'), findsOneWidget);
-    expect(find.text('Bank Terpantau'), findsOneWidget);
+    expect(find.text('Tidak aktif'), findsOneWidget);
+    expect(find.text('Aktivitas terakhir'), findsOneWidget);
+    expect(find.text('Notifikasi terakhir'), findsOneWidget);
+    expect(find.text('Bank terhubung'), findsOneWidget);
     expect(find.text('Akses Notifikasi Belum Aktif'), findsOneWidget);
     expect(find.text('Optimasi Baterai HP'), findsOneWidget);
     expect(find.text('Panduan Khusus per Merk HP'), findsOneWidget);
-    expect(find.textContaining('100% Offline & Privat'), findsOneWidget);
+    expect(find.textContaining('100% Offline'), findsNothing);
 
     // Expand & collapse Panduan Khusus Vendor HP (pastikan tidak crash PageStorage cast double to bool)
     await tester.tap(find.text('Panduan Khusus per Merk HP'));

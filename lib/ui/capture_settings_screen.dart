@@ -314,7 +314,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
       appBar: QuestHeader(
         textScale: MediaQuery.textScalerOf(context).scale(1.0),
         title: 'Capture Notifikasi',
-        subtitle: 'Pengaturan otomatisasi transaksi bank offline',
         showBack: true,
       ),
       body: StreamBuilder<Set<String>>(
@@ -666,8 +665,8 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                         const SizedBox(height: 2),
                         Text(
                           _listenerEnabled
-                              ? 'Bukuduit diizinkan membaca notifikasi masuk secara lokal di perangkat.'
-                              : 'Android membutuhkan izin akses notifikasi agar Bukuduit dapat mendeteksi transaksi secara otomatis.',
+                              ? 'Bukuduit bisa membaca notifikasi bank.'
+                              : 'Izin ini diperlukan untuk mendeteksi transaksi dari notifikasi.',
                           style: context.qSmall(12).copyWith(color: q.muted),
                         ),
                       ],
@@ -737,7 +736,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
               ),
               const SizedBox(height: Spacing.xs),
               Text(
-                'Setel optimasi baterai ke "Tidak Dibatasi" (Unrestricted) agar sistem Android tidak mematikan service capture secara agresif saat layar mati.',
+                'Setel baterai ke "Tidak Dibatasi" agar Android tidak mematikan layanan saat layar mati.',
                 style: context.qSmall(12).copyWith(color: q.muted),
               ),
               const SizedBox(height: Spacing.s),
@@ -755,33 +754,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         // 3. Panduan Khusus per Merk HP (Vendor Tips)
         const QuestSectionHeader(title: 'Panduan Khusus Vendor HP'),
         _buildVendorGuideCard(q),
-        const SizedBox(height: Spacing.m),
-
-        // 4. Jaminan Privasi
-        Container(
-          padding: const EdgeInsets.all(Spacing.m),
-          decoration: BoxDecoration(
-            color: q.surface2.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            border: Border.all(color: q.line),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.lock_outline_rounded,
-                color: q.primary,
-                size: 20,
-              ),
-              const SizedBox(width: Spacing.s),
-              Expanded(
-                child: Text(
-                  '100% Offline & Privat. Bukuduit memproses teks notifikasi murni di perangkat HP tanpa koneksi internet dan tanpa analitik.',
-                  style: context.qSmall(11.5).copyWith(color: q.muted),
-                ),
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }
@@ -803,38 +775,33 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                     now.difference(_lastHeartbeat!).inDays >= 7));
 
         final Color statusColor;
-        final String statusBadge;
         final String statusTitle;
         final String statusDesc;
         final IconData statusIcon;
 
         if (!_listenerEnabled) {
           statusColor = q.bad;
-          statusBadge = 'TIDAK AKTIF';
-          statusTitle = 'Layanan Terhenti';
+          statusTitle = 'Tidak aktif';
           statusDesc =
-              'Akses notifikasi di sistem Android belum diaktifkan sehingga Bukuduit tidak dapat menangkap mutasi.';
+              'Akses notifikasi belum diaktifkan di Android.';
           statusIcon = Icons.error_outline_rounded;
         } else if (isStale) {
           statusColor = q.warn;
-          statusBadge = 'PERIKSA';
-          statusTitle = 'Perlu Pemeriksaan';
+          statusTitle = 'Perlu diperiksa';
           statusDesc =
-              'Bank terhubung aktif tetapi 0 notifikasi masuk selama ${daysSinceCapture ?? '>7'} hari. Kemungkinan service tertidur oleh optimasi baterai HP.';
+              'Belum ada notifikasi masuk selama ${daysSinceCapture ?? '>7'} hari. Layanan mungkin dimatikan oleh penghemat baterai.';
           statusIcon = Icons.warning_amber_rounded;
         } else if (_lastHeartbeat == null && latestLog == null) {
           statusColor = q.primary;
-          statusBadge = 'MENUNGGU';
-          statusTitle = 'Siap & Menunggu';
+          statusTitle = 'Menunggu';
           statusDesc =
-              'Service aktif di latar belakang dan siap menerima notifikasi transaksi pertama masuk.';
+              'Aktif. Menunggu notifikasi transaksi pertama.';
           statusIcon = Icons.hourglass_empty_rounded;
         } else {
           statusColor = q.good;
-          statusBadge = 'OPTIMAL';
-          statusTitle = 'Kondisi Optimal';
+          statusTitle = 'Berjalan normal';
           statusDesc =
-              'Sistem penangkap aktif normal dan siap mendeteksi transaksi secara realtime.';
+              'Notifikasi bank terbaca normal.';
           statusIcon = Icons.check_circle_outline_rounded;
         }
 
@@ -867,31 +834,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                                     color: statusColor,
                                   ),
                             ),
-                            const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 7,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: statusColor.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(AppRadius.pill),
-                                border: Border.all(
-                                  color: statusColor.withValues(alpha: 0.4),
-                                  width: 0.8,
-                                ),
-                              ),
-                              child: Text(
-                                statusBadge,
-                                style: TextStyle(
-                                  fontFamily: 'Nunito',
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 0.5,
-                                  color: statusColor,
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                         const SizedBox(height: 3),
@@ -905,50 +847,33 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                 ],
               ),
               const SizedBox(height: Spacing.m),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Spacing.m,
-                  vertical: Spacing.s,
-                ),
-                decoration: BoxDecoration(
-                  color: q.surface2.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(AppRadius.tile),
-                  border: Border.all(color: q.line.withValues(alpha: 0.6)),
-                ),
-                child: Column(
+              Column(
                   children: [
                     _buildHealthMetricRow(
                       q: q,
-                      label: 'Detak Listener',
+                      label: 'Aktivitas terakhir',
                       value: _lastHeartbeat != null
                           ? idTimeAgo(_lastHeartbeat!, now)
                           : 'Belum tercatat',
-                      icon: Icons.favorite_rounded,
-                      iconColor: _lastHeartbeat != null ? q.good : q.muted,
                     ),
                     Divider(height: Spacing.m, color: q.line.withValues(alpha: 0.4)),
                     _buildHealthMetricRow(
                       q: q,
-                      label: 'Notif Bank Terakhir',
+                      label: 'Notifikasi terakhir',
                       value: latestLog != null
                           ? '${latestLog.packageName.split('.').last} • ${idTimeAgo(latestLog.postedAt, now)}'
                           : 'Belum ada',
-                      icon: Icons.receipt_long_rounded,
-                      iconColor: latestLog != null ? q.primary : q.muted,
                     ),
                     Divider(height: Spacing.m, color: q.line.withValues(alpha: 0.4)),
                     _buildHealthMetricRow(
                       q: q,
-                      label: 'Bank Terpantau',
+                      label: 'Bank terhubung',
                       value: hasConnected
                           ? '${connected.length} bank aktif'
                           : 'Belum ada bank terhubung',
-                      icon: Icons.account_balance_rounded,
-                      iconColor: hasConnected ? q.good : q.warn,
                     ),
                   ],
                 ),
-              ),
             ],
           ),
         );
@@ -960,13 +885,9 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     required QuestPalette q,
     required String label,
     required String value,
-    required IconData icon,
-    required Color iconColor,
   }) {
     return Row(
       children: [
-        Icon(icon, size: 15, color: iconColor),
-        const SizedBox(width: Spacing.xs),
         Text(
           label,
           style: TextStyle(

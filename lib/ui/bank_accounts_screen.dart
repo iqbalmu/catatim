@@ -279,41 +279,14 @@ class _AccountTile extends StatelessWidget {
                         account.kind.label,
                         style: context.qSmall(11.5).copyWith(color: q.muted),
                       ),
-                      if (connected) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                          decoration: BoxDecoration(
-                            color: q.good.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(AppRadius.pill),
-                          ),
-                          child: Text(
-                            'Terhubung',
-                            style: TextStyle(
-                              color: q.good,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
+                      if (connected || account.bankId != null)
+                        Text(
+                          connected ? ' · Terhubung' : ' · Belum terhubung',
+                          style: context.qSmall(11.5).copyWith(
+                                color: connected ? q.good : q.muted,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
-                      ] else if (account.bankId != null) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                          decoration: BoxDecoration(
-                            color: q.surface2,
-                            borderRadius: BorderRadius.circular(AppRadius.pill),
-                          ),
-                          child: Text(
-                            'Belum terhubung',
-                            style: TextStyle(
-                              color: q.muted,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ],

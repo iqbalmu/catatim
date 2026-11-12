@@ -129,7 +129,6 @@ class _BackupScreenState extends State<BackupScreen>
       appBar: QuestHeader(
         textScale: MediaQuery.textScalerOf(context).scale(1.0),
         title: 'Backup & pulihkan',
-        subtitle: 'Simpan salinan datamu, aman di HP ini',
         showBack: true,
       ),
       body: ListView(
@@ -160,8 +159,8 @@ class _BackupScreenState extends State<BackupScreen>
                 ),
                 Divider(
                   height: 1,
-                  thickness: 2,
-                  color: context.q.line.withValues(alpha: 0.35),
+                  thickness: 1,
+                  color: context.q.line,
                 ),
                 _ActionRow(
                   icon: Icons.restore_outlined,
