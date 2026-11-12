@@ -610,16 +610,6 @@ class _TransactionSheetState extends State<TransactionSheet> {
             ],
           ),
         ),
-        const SizedBox(height: Spacing.s),
-        Text(
-          'Kategori',
-          style: context.qSmall(12).copyWith(
-            fontWeight: FontWeight.w700,
-            color: q.muted,
-          ),
-        ),
-        const SizedBox(height: Spacing.xs),
-        _buildCategoryChips(),
         const SizedBox(height: Spacing.m),
         Container(height: 1, color: q.line.withValues(alpha: 0.5)),
         const SizedBox(height: Spacing.xs),
