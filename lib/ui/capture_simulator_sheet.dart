@@ -416,7 +416,7 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
         q.bad,
       ),
       (false, true, _) => (
-        'Mode Tebak Cerdas',
+        'Pola Heuristik (Fallback)',
         q.warn,
         q.warnTint,
         q.warn,

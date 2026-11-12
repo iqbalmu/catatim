@@ -283,7 +283,7 @@ class GamificationSheet extends StatelessWidget {
                         ),
                         const SizedBox(height: Spacing.xs),
                         Text(
-                          'Catat pengeluaran & jaga batas harianmu — poinnya jalan sendiri.',
+                          'Catat pengeluaran & jaga batas harianmu, poinnya jalan sendiri.',
                           style: context.qSmall(11.5),
                         ),
                       ],

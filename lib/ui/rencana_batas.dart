@@ -73,7 +73,7 @@ Future<void> showAddCategoryFlow(
     if (!context.mounted) return;
     questSnack(
       context,
-      'Nama kategori "${result.name}" sudah dipakai — coba nama lain.',
+      'Nama kategori "${result.name}" sudah dipakai, coba nama lain.',
       icon: Icons.info_outline_rounded,
     );
   }
@@ -546,7 +546,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
       if (lainnya.isEmpty) {
         questSnack(
           context,
-          'Kategori "Lainnya" belum ada — transaksi butuh tempat pindah.',
+          'Kategori "Lainnya" belum ada. Transaksi butuh tempat pindah.',
           icon: Icons.info_outline_rounded,
         );
         return;
@@ -581,7 +581,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
       if (!mounted) return;
       questSnack(
         context,
-        'Kategori "${category.name}" dihapus — transaksi dipindah ke Lainnya.',
+        'Kategori "${category.name}" dihapus. Transaksi dipindah ke Lainnya.',
         icon: Icons.check_rounded,
       );
       return;
@@ -595,7 +595,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
         if (!mounted) return;
         questSnack(
           context,
-          'Nama "${result.name}" sudah dipakai — nama tidak diubah.',
+          'Nama "${result.name}" sudah dipakai, nama tidak diubah.',
           icon: Icons.info_outline_rounded,
         );
       }

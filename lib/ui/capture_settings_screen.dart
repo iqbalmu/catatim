@@ -169,7 +169,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         questSnack(
           context,
           'Berhasil membuat $created draf dari notifikasi lampau.',
-          icon: Icons.auto_awesome_rounded,
+          icon: Icons.history_toggle_off_rounded,
         );
       } else {
         questSnack(
@@ -475,7 +475,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         ],
 
         // 3. Mode Belajar (App Lain dari HP)
-        const QuestSectionHeader(title: 'App Lain — Mode Belajar'),
+        const QuestSectionHeader(title: 'App Lain: Mode Belajar'),
         QuestCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1573,7 +1573,7 @@ class _AppPickerSheetState extends State<_AppPickerSheet> {
                 Text('Hubungkan App', style: context.qTitle(15)),
                 const SizedBox(height: Spacing.xs),
                 Text(
-                  'Pilih app bank/e-wallet — notifikasinya akan jadi draf '
+                  'Pilih app bank/e-wallet. Notifikasinya akan jadi draf '
                   'yang kamu putuskan.',
                   style: context.qSmall(12).copyWith(color: q.muted),
                 ),

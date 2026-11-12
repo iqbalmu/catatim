@@ -434,7 +434,7 @@ class _OcrScreenState extends State<OcrScreen> {
         Navigator.pop(context);
         questSnack(
           context,
-          'Draf transaksi struk berhasil disimpan — periksa di Notifikasi!',
+          'Draf transaksi struk berhasil disimpan. Periksa di Notifikasi!',
           icon: Icons.check_circle_outline_rounded,
         );
       }
@@ -587,13 +587,13 @@ class _OcrScreenState extends State<OcrScreen> {
                       Row(
                         children: [
                           Icon(
-                            Icons.auto_awesome_rounded,
+                            Icons.document_scanner_rounded,
                             color: q.primary,
                             size: 18,
                           ),
                           const SizedBox(width: Spacing.xs),
                           Text(
-                            'Hasil Pembacaan Cerdas',
+                            'Hasil Pindai Struk',
                             style: context.qTitle(15),
                           ),
                         ],

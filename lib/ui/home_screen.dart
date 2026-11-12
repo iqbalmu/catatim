@@ -326,7 +326,7 @@ class _BerandaTabState extends State<_BerandaTab> {
       HapticFeedback.lightImpact();
       questSnack(
         context,
-        '$milestone hari disiplin — mantap!',
+        '$milestone hari disiplin: mantap!',
         icon: Icons.local_fire_department_rounded,
       );
     }

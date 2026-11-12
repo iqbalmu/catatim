@@ -408,12 +408,12 @@ class ProgressService extends ChangeNotifier {
         final prev = prevLevels[line.label];
         final now = line.level;
         if (prev == BudgetLevel.over && now != BudgetLevel.over) {
-          recovery ??= '${line.label} kembali dalam batas — Duit lega!';
+          recovery ??= '${line.label} kembali dalam batas. Duit lega!';
         } else if (now.index > (prev ?? BudgetLevel.ok).index) {
           alert ??= now == BudgetLevel.over
-              ? '${line.label} terlampaui — Duit khawatir '
+              ? '${line.label} terlampaui. Duit khawatir '
                     '(${Money.format(line.used)})'
-              : '${line.label} ${line.usedPercent}% terpakai — Duit '
+              : '${line.label} ${line.usedPercent}% terpakai. Duit '
                     'mulai waspada';
         }
       }
@@ -490,29 +490,29 @@ class ProgressService extends ChangeNotifier {
   ) {
     final critical = snap.criticalLine;
     if (critical != null && critical.level == BudgetLevel.over) {
-      return 'Yah, ${critical.label} lewat batas (${critical.usedPercent}%) — '
-          'tarik napas, rapikan pelan-pelan ya';
+      return 'Yah, ${critical.label} lewat batas (${critical.usedPercent}%). '
+          'Tarik napas, rapikan pelan-pelan ya';
     }
     if (critical != null) {
-      return '${critical.label} sudah ${critical.usedPercent}% terpakai — '
-          'masih sempat dijaga kok';
+      return '${critical.label} sudah ${critical.usedPercent}% terpakai. '
+          'Masih sempat dijaga kok';
     }
     if (streakPaused) {
       return 'Atur batas harian dulu yuk, biar semangatmu nyala lagi';
     }
     if (!snap.hasData) {
-      return 'Bulan ini masih sepi — ayo catat transaksi pertamamu';
+      return 'Bulan ini masih sepi. Ayo catat transaksi pertamamu';
     }
     if (snap.outTrend == TrendDirection.worse) {
-      return 'Keluaran naik dibanding bulan lalu — yuk kita rapikan '
+      return 'Keluaran naik dibanding bulan lalu. Yuk kita rapikan '
           'pelan-pelan';
     }
     if (recordedToday) {
       final praise = snap.outTrend == TrendDirection.better
-          ? 'Hebat! Anggaran aman, keluaran turun — '
-          : 'Keren! Masih dalam batas — ';
+          ? 'Hebat! Anggaran aman, keluaran turun. '
+          : 'Keren! Masih dalam batas. ';
       return '$praise$streak hari berturut-turut';
     }
-    return 'Tenang, semua masih dalam batas — jaga jatah harianmu ya';
+    return 'Tenang, semua masih dalam batas, jaga jatah harianmu ya';
   }
 }

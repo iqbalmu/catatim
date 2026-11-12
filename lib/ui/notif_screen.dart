@@ -300,7 +300,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
           child: QuestEmpty(
             title: 'Tidak ada peringatan',
             hint:
-                'Semua aman — anggaran terkendali, bon lancar, dan izin capture aktif.',
+                'Semua aman: anggaran terkendali, bon lancar, dan izin capture aktif.',
           ),
         ),
       );

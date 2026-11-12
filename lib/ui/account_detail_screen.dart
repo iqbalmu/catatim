@@ -231,7 +231,7 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
       context,
       title: 'Hapus akun ini?',
       content: Text(
-        'Transaksinya tetap aman — hanya lepas dari akun ini.'
+        'Transaksinya tetap aman, hanya lepas dari akun ini.'
         '${account.bankId != null ? ' Baca notifikasinya juga diputus.' : ''}',
         style: context.qBody(13),
       ),

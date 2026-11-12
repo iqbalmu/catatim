@@ -647,7 +647,7 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
               label: _isSaving
                   ? 'Menyimpan & Memproses...'
                   : 'Simpan Template & Buat Draf',
-              icon: Icons.auto_awesome_rounded,
+              icon: Icons.rule_folder_outlined,
               tone: QuestTone.primary,
               onPressed: (_isSaving || _selectedKeywords.isEmpty)
                   ? null

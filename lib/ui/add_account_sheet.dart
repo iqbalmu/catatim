@@ -186,9 +186,9 @@ class _AddAccountSheetState extends State<AddAccountSheet>
     final name = _cashNameCtrl.text.trim();
     if (name.isEmpty) {
       final hint = switch (kind) {
-        AccountKind.bank => 'Beri nama bank, ya — misalnya BCA.',
-        AccountKind.ewallet => 'Beri nama e-wallet, ya — misalnya GoPay.',
-        AccountKind.cash => 'Beri nama dulu, ya — misalnya Dompet.',
+        AccountKind.bank => 'Beri nama bank, ya. Misalnya BCA.',
+        AccountKind.ewallet => 'Beri nama e-wallet, ya. Misalnya GoPay.',
+        AccountKind.cash => 'Beri nama dulu, ya. Misalnya Dompet.',
       };
       setState(() => _cashError = hint);
       return;
@@ -466,7 +466,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
         ),
         _FactRow(
           icon: Icons.edit_note_rounded,
-          text: 'Langsung jadi draf — baru tersimpan saat kamu menekan '
+          text: 'Langsung jadi draf, baru tersimpan saat kamu menekan '
               'Catat',
         ),
         _FactRow(
@@ -523,7 +523,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
         ),
         _StepRow(
           number: '3',
-          text: 'Balik ke sini — ${bank.displayName} tersambung otomatis',
+          text: 'Balik ke sini: ${bank.displayName} tersambung otomatis',
         ),
         if (_returnedWithoutPermission) ...[
           const SizedBox(height: Spacing.s),
@@ -572,7 +572,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
         const SizedBox(height: Spacing.xs),
         Text(
           'Setiap notifikasi transaksinya otomatis muncul sebagai draf '
-          'konfirmasi di Beranda — tinggal pilih Catat atau Abaikan.',
+          'konfirmasi di Beranda, tinggal pilih Catat atau Abaikan.',
           style: context.qSmall(),
           textAlign: TextAlign.center,
         ),

@@ -81,18 +81,11 @@ class SettingsScreen extends StatelessWidget {
                           height: 52,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [q.primarySolid, q.violet],
+                              colors: [q.primarySolid, q.primaryGradientEnd],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: q.primary.withValues(alpha: 0.28),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
                           ),
                           child: Center(
                             child: Icon(
@@ -487,7 +480,7 @@ class SettingsScreen extends StatelessWidget {
                         Divider(height: 1, thickness: 1, color: q.line),
                         QuestListTile(
                           leading: _SettingIcon(
-                            icon: Icons.auto_awesome_rounded,
+                            icon: Icons.dataset_outlined,
                             color: q.primary,
                             bgColor: q.primaryLight,
                           ),
@@ -550,18 +543,11 @@ class SettingsScreen extends StatelessWidget {
                         height: 42,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [q.primarySolid, q.violet],
+                            colors: [q.primarySolid, q.primaryGradientEnd],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: q.primary.withValues(alpha: 0.25),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
                         ),
                         child: Icon(
                           Icons.account_balance_wallet_rounded,

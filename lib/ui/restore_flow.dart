@@ -27,7 +27,7 @@ Future<String?> askBackupPin(BuildContext context, {required bool repeat}) async
         Text(
           repeat
               ? 'Masukkan PIN yang kamu buat saat menyimpan backup ini.'
-              : 'Buat PIN untuk mengunci file backup. Ingat baik-baik — '
+              : 'Buat PIN untuk mengunci file backup. Ingat baik-baik, '
                     'tanpa PIN ini backup tidak bisa dibuka.',
           style: context.qBody(13),
         ),
@@ -112,7 +112,7 @@ Future<void> startRestoreFlow(BuildContext context) async {
     title: 'Pulihkan backup?',
     content: Text(
       'Semua data di HP ini akan diganti dengan isi file "${picked.name}". '
-      'App-nya akan menutup sendiri — buka lagi setelahnya, ya.',
+      'App-nya akan menutup sendiri. Buka lagi setelahnya, ya.',
       style: context.qBody(),
     ),
     actions: [
@@ -153,7 +153,7 @@ Future<void> startRestoreFlow(BuildContext context) async {
     if (!context.mounted) return;
     questSnack(
       context,
-      'PIN-nya tidak cocok atau filenya rusak — coba lagi, ya.',
+      'PIN-nya tidak cocok atau filenya rusak. Coba lagi, ya.',
       icon: Icons.error_outline_rounded,
     );
     return;

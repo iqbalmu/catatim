@@ -89,7 +89,7 @@ class BankAccountsScreen extends StatelessWidget {
                           index: 1,
                           child: QuestEmpty(
                             title: 'Belum ada akun',
-                            hint: 'Yuk mulai — tambahkan dompet tunai, '
+                            hint: 'Yuk mulai dengan menambahkan dompet tunai, '
                                 'atau hubungkan bank dan e-walletmu.',
                             actionLabel: 'Tambah akun',
                             onAction: () => _openAddSheet(context),

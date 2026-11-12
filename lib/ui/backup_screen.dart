@@ -109,7 +109,7 @@ class _BackupScreenState extends State<BackupScreen>
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(path)],
-          text: 'Backup data Bukuduit — simpan + ingat PIN-nya!',
+          text: 'Backup data Bukuduit: simpan dan ingat PIN-nya!',
         ),
       );
     } finally {
@@ -117,7 +117,7 @@ class _BackupScreenState extends State<BackupScreen>
       final tmp = File(path);
       if (tmp.existsSync()) await tmp.delete();
     }
-    _snack('Backup tersimpan — ingat PIN-nya!', icon: Icons.backup_outlined);
+    _snack('Backup tersimpan: ingat PIN-nya!', icon: Icons.backup_outlined);
   });
 
   Future<void> _restore() => _run(() => startRestoreFlow(context));
@@ -129,7 +129,7 @@ class _BackupScreenState extends State<BackupScreen>
       appBar: QuestHeader(
         textScale: MediaQuery.textScalerOf(context).scale(1.0),
         title: 'Backup & pulihkan',
-        subtitle: 'Simpan salinan datamu — aman di HP ini',
+        subtitle: 'Simpan salinan datamu, aman di HP ini',
         showBack: true,
       ),
       body: ListView(
@@ -178,7 +178,7 @@ class _BackupScreenState extends State<BackupScreen>
             index: 1,
             child: Text(
               'Backup berisi seluruh catatanmu. Simpan file-nya di tempat aman '
-              'dan ingat PIN-nya — tanpa PIN backup tidak bisa dibuka.',
+              'dan ingat PIN-nya. Tanpa PIN, backup tidak bisa dibuka.',
               style: context.qSmall(),
             ),
           ),

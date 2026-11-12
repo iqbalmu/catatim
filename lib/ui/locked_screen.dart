@@ -103,7 +103,7 @@ class LockedScreen extends StatelessWidget {
                     const SizedBox(height: Spacing.m),
                     Text(
                       'Data di HP ini disimpan terkunci, dan kuncinya '
-                      'tidak ada di HP ini — biasanya terjadi kalau data '
+                      'tidak ada di HP ini. Biasanya terjadi kalau data '
                       'dipindahkan dari HP lain.',
                       style: context.qBody(13),
                       textAlign: TextAlign.center,
