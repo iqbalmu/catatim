@@ -38,10 +38,10 @@ void main() {
     await tester.pumpWidget(buildHero(onTap: () => tapped = true));
     await tester.pumpAndSettle();
 
-    expect(find.text('Pace Harian Belum Aktif'), findsOneWidget);
+    expect(find.text('Jatah hari ini belum diatur'), findsOneWidget);
     expect(find.text('Atur Batas Anggaran'), findsOneWidget);
 
-    await tester.tap(find.text('Pace Harian Belum Aktif'));
+    await tester.tap(find.text('Jatah hari ini belum diatur'));
     expect(tapped, isTrue);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -59,9 +59,9 @@ void main() {
     await tester.pumpWidget(buildHero());
     await tester.pumpAndSettle();
 
-    expect(find.text('PACE HARIAN'), findsOneWidget);
+    expect(find.text('Jatah hari ini'), findsOneWidget);
     expect(find.text('Aman'), findsOneWidget);
-    expect(find.text('Sisa jatah belanja hari ini'), findsOneWidget);
+    expect(find.text('Sisa yang boleh dipakai hari ini'), findsOneWidget);
     expect(find.text('Keluar hari ini: Rp0'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -86,7 +86,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Defisit'), findsOneWidget);
-    expect(find.text('Melebihi jatah belanja hari ini'), findsOneWidget);
+    expect(find.text('Melebihi jatah hari ini'), findsOneWidget);
     expect(find.text('Keluar hari ini: Rp75.000'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());

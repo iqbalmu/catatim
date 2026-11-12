@@ -43,28 +43,28 @@ void main() {
     // Pastikan tidak ada tab pill teks seperti sebelumnya
     expect(find.text('Geser kartu'), findsNothing);
 
-    // 1. Awalnya Pace Harian aktif di atas, dan kartu belakang menampilkan info Total Saldo
-    expect(find.text('Pace Harian Belum Aktif'), findsOneWidget);
+    // 1. Awalnya Jatah hari ini aktif di atas, dan kartu belakang menampilkan info Total Saldo
+    expect(find.text('Jatah hari ini belum diatur'), findsOneWidget);
     expect(
       find.bySemanticsLabel(RegExp(r'Kartu di belakang: Total Saldo')),
       findsOneWidget,
     );
 
-    // 2. Swipe kiri (drag left) menukar ke Total Saldo, dan kartu belakang menampilkan info Pace Harian
+    // 2. Swipe kiri (drag left) menukar ke Total Saldo, dan kartu belakang menampilkan info Jatah hari ini
     await tester.drag(find.byType(StackedHeroCards), const Offset(-250, 0), warnIfMissed: false);
     await tester.pumpAndSettle();
 
     expect(find.text('TOTAL SALDO'), findsOneWidget);
     expect(
-      find.bySemanticsLabel(RegExp(r'Kartu di belakang: Pace Harian')),
+      find.bySemanticsLabel(RegExp(r'Kartu di belakang: Jatah hari ini')),
       findsOneWidget,
     );
 
-    // 3. Swipe kiri LAGI (bebas arah kiri/kanan) menukar kembali ke Pace Harian
+    // 3. Swipe kiri LAGI (bebas arah kiri/kanan) menukar kembali ke Jatah hari ini
     await tester.drag(find.byType(StackedHeroCards), const Offset(-250, 0), warnIfMissed: false);
     await tester.pumpAndSettle();
 
-    expect(find.text('Pace Harian Belum Aktif'), findsOneWidget);
+    expect(find.text('Jatah hari ini belum diatur'), findsOneWidget);
 
     // 4. Swipe kanan (drag right) menukar ke Total Saldo
     await tester.drag(find.byType(StackedHeroCards), const Offset(250, 0), warnIfMissed: false);
@@ -72,11 +72,11 @@ void main() {
 
     expect(find.text('TOTAL SALDO'), findsOneWidget);
 
-    // 5. Swipe kanan LAGI menukar kembali ke Pace Harian
+    // 5. Swipe kanan LAGI menukar kembali ke Jatah hari ini
     await tester.drag(find.byType(StackedHeroCards), const Offset(250, 0), warnIfMissed: false);
     await tester.pumpAndSettle();
 
-    expect(find.text('Pace Harian Belum Aktif'), findsOneWidget);
+    expect(find.text('Jatah hari ini belum diatur'), findsOneWidget);
 
     // 6. Tap bagian bawah kartu pasif yang mengintip juga menukar kartu
     final rect = tester.getRect(find.byType(StackedHeroCards));

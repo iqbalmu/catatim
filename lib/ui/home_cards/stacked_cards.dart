@@ -670,7 +670,7 @@ class _BackCardPeekState extends State<_BackCardPeek> {
       button: true,
       label: widget.backCardIndex == 1
           ? 'Kartu di belakang: Total Saldo. Ketuk atau geser untuk menampilkan.'
-          : 'Kartu di belakang: Pace Harian. Ketuk atau geser untuk menampilkan.',
+          : 'Kartu di belakang: Jatah hari ini. Ketuk atau geser untuk menampilkan.',
       child: GestureDetector(
         onTap: widget.onTap,
         behavior: HitTestBehavior.opaque,
@@ -873,7 +873,7 @@ class _BackCardPeekState extends State<_BackCardPeek> {
             text: TextSpan(
               children: [
                 TextSpan(
-                  text: 'Pace Harian',
+                  text: 'Jatah hari ini',
                   style: context.qSmall(11.5).copyWith(
                         color: q.text,
                         fontWeight: FontWeight.w800,
