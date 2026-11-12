@@ -774,120 +774,75 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 const SizedBox(height: Spacing.xs),
                 _buildCategoryChips(),
                 const SizedBox(height: Spacing.m),
-                IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<int>(
-                          key: ValueKey('account_$_accountId'),
-                          initialValue: _accounts.any((a) => a.id == _accountId)
-                              ? _accountId
-                              : (_accounts.isNotEmpty ? _accounts.first.id : null),
-                          isExpanded: true,
-                          icon: Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            color: q.muted,
-                            size: 20,
-                          ),
-                          decoration: InputDecoration(
-                            labelText: _kind == TxKind.transfer
-                                ? 'Dari Akun'
-                                : (_direction == Direction.outgoing
-                                    ? 'Sumber Dana'
-                                    : 'Masuk ke Akun'),
-                          ),
-                          items: [
-                            for (final a in _accounts)
-                              DropdownMenuItem(
-                                value: a.id,
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      switch (a.kind) {
-                                        AccountKind.bank =>
-                                          Icons.account_balance_rounded,
-                                        AccountKind.ewallet =>
-                                          Icons.phone_android_rounded,
-                                        AccountKind.cash =>
-                                          Icons.payments_outlined,
-                                      },
-                                      size: 16,
-                                      color: q.muted,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Flexible(
-                                      child: Text(
-                                        a.name,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 13.5,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                          ],
-                          onChanged: (v) => setState(() => _accountId = v),
-                        ),
+                QuestSelectField<int>(
+                  key: ValueKey('account_$_accountId'),
+                  labelText: _kind == TxKind.transfer
+                      ? 'Dari Akun'
+                      : (_direction == Direction.outgoing
+                          ? 'Sumber Dana'
+                          : 'Masuk ke Akun'),
+                  sheetTitle: _kind == TxKind.transfer
+                      ? 'Pilih Akun Asal'
+                      : (_direction == Direction.outgoing
+                          ? 'Pilih Sumber Dana'
+                          : 'Pilih Akun Masuk'),
+                  value: _accounts.any((a) => a.id == _accountId)
+                      ? _accountId
+                      : (_accounts.isNotEmpty ? _accounts.first.id : null),
+                  options: [
+                    for (final a in _accounts)
+                      QuestSelectOption(
+                        value: a.id,
+                        label: a.name,
+                        subtitle: switch (a.kind) {
+                          AccountKind.bank => 'Rekening Bank',
+                          AccountKind.ewallet => 'E-Wallet',
+                          AccountKind.cash => 'Dompet Tunai',
+                        },
+                        icon: switch (a.kind) {
+                          AccountKind.bank => Icons.account_balance_rounded,
+                          AccountKind.ewallet => Icons.phone_android_rounded,
+                          AccountKind.cash => Icons.payments_outlined,
+                        },
                       ),
-                      const SizedBox(width: Spacing.xs),
-                      QuestPress(
-                        onTap: _addAccount,
-                        child: Container(
-                          width: 44,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: q.surface2,
-                            borderRadius: BorderRadius.circular(AppRadius.tile),
-                            border: Border.all(
-                              color: q.line.withValues(alpha: 0.5),
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.add_rounded,
-                            size: 20,
-                            color: q.muted,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) setState(() => _accountId = v);
+                  },
+                  onAdd: _addAccount,
+                  addLabel: 'Tambah Akun Baru',
                 ),
                 const SizedBox(height: Spacing.m),
-                DropdownButtonFormField<TxKind>(
-                  initialValue: _kind,
-                  isExpanded: true,
-                  icon: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: q.muted,
-                    size: 20,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Jenis Transaksi',
-                  ),
-                  items: [
+                QuestSelectField<TxKind>(
+                  labelText: 'Jenis Transaksi',
+                  sheetTitle: 'Pilih Jenis Transaksi',
+                  value: _kind,
+                  options: [
                     for (final k in TxKind.values)
-                      DropdownMenuItem(
+                      QuestSelectOption(
                         value: k,
-                        child: Text(
-                          k.label,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        label: k.label,
+                        subtitle: switch (k) {
+                          TxKind.payment => 'Belanja, tagihan, atau kebutuhan harian',
+                          TxKind.transfer => 'Pindah dana antar rekening / e-wallet',
+                          TxKind.topup => 'Isi saldo e-wallet atau uang elektronik',
+                          TxKind.withdrawal => 'Tarik tunai dari ATM atau kasir',
+                          TxKind.other => 'Transaksi jenis lainnya',
+                        },
+                        icon: switch (k) {
+                          TxKind.payment => Icons.payment_rounded,
+                          TxKind.transfer => Icons.swap_horiz_rounded,
+                          TxKind.topup => Icons.add_circle_outline_rounded,
+                          TxKind.withdrawal => Icons.local_atm_outlined,
+                          TxKind.other => Icons.more_horiz_rounded,
+                        },
                       ),
                   ],
                   onChanged: (k) {
-                    final newKind = k ?? TxKind.payment;
+                    if (k == null) return;
                     setState(() {
-                      _kind = newKind;
-                      if (newKind == TxKind.transfer &&
+                      _kind = k;
+                      if (k == TxKind.transfer &&
                           _toAccountId == null &&
                           _accounts.length > 1) {
                         _toAccountId = _accounts
@@ -900,9 +855,16 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 ),
                 if (_kind == TxKind.transfer) ...[
                   const SizedBox(height: Spacing.m),
-                  DropdownButtonFormField<int>(
+                  QuestSelectField<int>(
                     key: ValueKey('to_account_$_toAccountId'),
-                    initialValue: _accounts.any((a) => a.id == _toAccountId)
+                    labelText: 'Ke Akun (Tujuan Transfer)',
+                    sheetTitle: 'Pilih Akun Tujuan',
+                    prefixIcon: Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 16,
+                      color: q.muted,
+                    ),
+                    value: _accounts.any((a) => a.id == _toAccountId)
                         ? _toAccountId
                         : (_accounts.length > 1
                             ? _accounts
@@ -910,54 +872,28 @@ class _TransactionSheetState extends State<TransactionSheet> {
                                     orElse: () => _accounts.last)
                                 .id
                             : null),
-                    isExpanded: true,
-                    icon: Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: q.muted,
-                      size: 20,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: 'Ke Akun (Tujuan Transfer)',
-                      prefixIcon: Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 16,
-                        color: q.muted,
-                      ),
-                    ),
-                    items: [
+                    options: [
                       for (final a in _accounts)
-                        DropdownMenuItem(
+                        QuestSelectOption(
                           value: a.id,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                switch (a.kind) {
-                                  AccountKind.bank =>
-                                    Icons.account_balance_rounded,
-                                  AccountKind.ewallet =>
-                                    Icons.phone_android_rounded,
-                                  AccountKind.cash => Icons.payments_outlined,
-                                },
-                                size: 16,
-                                color: q.muted,
-                              ),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  a.name,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 13.5,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                          label: a.name,
+                          subtitle: switch (a.kind) {
+                            AccountKind.bank => 'Rekening Bank',
+                            AccountKind.ewallet => 'E-Wallet',
+                            AccountKind.cash => 'Dompet Tunai',
+                          },
+                          icon: switch (a.kind) {
+                            AccountKind.bank => Icons.account_balance_rounded,
+                            AccountKind.ewallet => Icons.phone_android_rounded,
+                            AccountKind.cash => Icons.payments_outlined,
+                          },
                         ),
                     ],
-                    onChanged: (v) => setState(() => _toAccountId = v),
+                    onChanged: (v) {
+                      if (v != null) setState(() => _toAccountId = v);
+                    },
+                    onAdd: _addAccount,
+                    addLabel: 'Tambah Akun Baru',
                   ),
                 ],
                 () {
@@ -971,45 +907,35 @@ class _TransactionSheetState extends State<TransactionSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: Spacing.m),
-                        DropdownButtonFormField<int?>(
-                          initialValue: _linkedBonId,
-                          isExpanded: true,
-                          icon: Icon(
-                            Icons.keyboard_arrow_down_rounded,
+                        QuestSelectField<int?>(
+                          labelText: _direction == Direction.outgoing
+                              ? 'Lunasi Bon Utang (Opsional)'
+                              : 'Terima Pelunasan Piutang (Opsional)',
+                          sheetTitle: _direction == Direction.outgoing
+                              ? 'Pilih Bon yang Dilunasi'
+                              : 'Pilih Pelunasan Piutang',
+                          prefixIcon: Icon(
+                            Icons.link_rounded,
+                            size: 18,
                             color: q.muted,
-                            size: 20,
                           ),
-                          decoration: InputDecoration(
-                            labelText: _direction == Direction.outgoing
-                                ? 'Lunasi Bon Utang (Opsional)'
-                                : 'Terima Pelunasan Piutang (Opsional)',
-                            prefixIcon: Icon(
-                              Icons.link_rounded,
-                              size: 18,
-                              color: q.muted,
-                            ),
-                          ),
-                          items: [
-                            DropdownMenuItem<int?>(
+                          value: _linkedBonId,
+                          options: [
+                            const QuestSelectOption<int?>(
                               value: null,
-                              child: Text(
-                                'Tidak ditautkan ke bon mana pun',
-                                style: TextStyle(
-                                  color: q.muted,
-                                  fontSize: 13.5,
-                                ),
-                              ),
+                              label: 'Tidak ditautkan ke bon mana pun',
+                              subtitle: 'Catat sebagai transaksi mandiri',
+                              icon: Icons.link_off_rounded,
                             ),
                             for (final b in matchingBons)
-                              DropdownMenuItem<int?>(
+                              QuestSelectOption<int?>(
                                 value: b.id,
-                                child: Text(
-                                  '${b.person} (${b.amount > 0 ? Money.format(b.amount) : "Belum Dihitung"})',
-                                  style: const TextStyle(
-                                    fontSize: 13.5,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                                label:
+                                    '${b.person} (${b.amount > 0 ? Money.format(b.amount) : "Belum Dihitung"})',
+                                subtitle: b.note?.isNotEmpty == true
+                                    ? b.note
+                                    : 'Bon aktif',
+                                icon: Icons.receipt_long_rounded,
                               ),
                           ],
                           onChanged: (v) {

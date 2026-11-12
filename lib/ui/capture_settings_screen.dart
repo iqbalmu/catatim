@@ -241,21 +241,21 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                 ),
               ),
               const SizedBox(height: Spacing.s),
-              DropdownButtonFormField<String?>(
-                initialValue: selectedBankId,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Berlaku Untuk',
-                ),
-                items: [
-                  const DropdownMenuItem(
+              QuestSelectField<String?>(
+                value: selectedBankId,
+                labelText: 'Berlaku Untuk',
+                sheetTitle: 'Pilih Bank / E-Wallet',
+                options: [
+                  const QuestSelectOption<String?>(
                     value: null,
-                    child: Text('Semua Bank & E-Wallet'),
+                    label: 'Semua Bank & E-Wallet',
+                    icon: Icons.all_inclusive_rounded,
                   ),
                   for (final b in allBanks)
-                    DropdownMenuItem(
+                    QuestSelectOption<String?>(
                       value: b.id,
-                      child: Text(b.displayName),
+                      label: b.displayName,
+                      icon: Icons.account_balance_rounded,
                     ),
                 ],
                 onChanged: (val) => setDialogState(() => selectedBankId = val),

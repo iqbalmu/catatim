@@ -720,17 +720,25 @@ class _OcrScreenState extends State<OcrScreen> {
                         stream: widget.pipeline.repository.watchCategories(),
                         builder: (context, catSnap) {
                           final categories = catSnap.data ?? const <Category>[];
-                          return DropdownButtonFormField<int>(
-                            initialValue: _selectedCategoryId,
-                            decoration: const InputDecoration(
-                              labelText: 'Kategori Pengeluaran',
-                              prefixIcon: Icon(Icons.category_rounded),
-                            ),
-                            items: [
+                          return QuestSelectField<int>(
+                            value: _selectedCategoryId,
+                            labelText: 'Kategori Pengeluaran',
+                            sheetTitle: 'Pilih Kategori Pengeluaran',
+                            prefixIcon: const Icon(Icons.category_rounded),
+                            options: [
                               for (final c in categories)
-                                DropdownMenuItem(
+                                QuestSelectOption(
                                   value: c.id,
-                                  child: Text(c.name),
+                                  label: c.name,
+                                  leading: Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      color: SeedColors.categoryColor(c.colorIndex),
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: context.q.line, width: 1.5),
+                                    ),
+                                  ),
                                 ),
                             ],
                             onChanged: (val) {
@@ -748,21 +756,28 @@ class _OcrScreenState extends State<OcrScreen> {
                         stream: widget.pipeline.repository.watchAccounts(),
                         builder: (context, accSnap) {
                           final accounts = accSnap.data ?? const <Account>[];
-                          return DropdownButtonFormField<int>(
-                            initialValue: _selectedAccountId,
-                            decoration: const InputDecoration(
-                              labelText: 'Akun Sumber Pembayaran',
-                              prefixIcon: Icon(
-                                Icons.account_balance_wallet_rounded,
-                              ),
+                          return QuestSelectField<int>(
+                            value: _selectedAccountId,
+                            labelText: 'Akun Sumber Pembayaran',
+                            sheetTitle: 'Pilih Akun Sumber Pembayaran',
+                            prefixIcon: const Icon(
+                              Icons.account_balance_wallet_rounded,
                             ),
-                            items: [
+                            options: [
                               for (final a in accounts)
-                                DropdownMenuItem(
+                                QuestSelectOption(
                                   value: a.id,
-                                  child: Text(
-                                    '${a.name} (${a.kind == AccountKind.cash ? 'Tunai' : (a.kind == AccountKind.bank ? 'Bank' : 'E-Wallet')})',
-                                  ),
+                                  label: a.name,
+                                  subtitle: switch (a.kind) {
+                                    AccountKind.bank => 'Rekening Bank',
+                                    AccountKind.ewallet => 'E-Wallet',
+                                    AccountKind.cash => 'Dompet Tunai',
+                                  },
+                                  icon: switch (a.kind) {
+                                    AccountKind.bank => Icons.account_balance_rounded,
+                                    AccountKind.ewallet => Icons.phone_android_rounded,
+                                    AccountKind.cash => Icons.payments_outlined,
+                                  },
                                 ),
                             ],
                             onChanged: (val) {

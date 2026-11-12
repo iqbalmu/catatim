@@ -168,45 +168,50 @@ class _BonScreenState extends State<BonScreen> {
                   ),
                   const SizedBox(height: Spacing.m),
                 ],
-                DropdownButtonFormField<int>(
-                  initialValue: selectedAccountId,
-                  isExpanded: true,
-                  icon: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: q.muted,
-                    size: 20,
-                  ),
-                  decoration: InputDecoration(
-                    labelText: isLent ? 'Masuk ke Akun' : 'Sumber Dana',
-                    prefixIcon: const Icon(Icons.account_balance_wallet_outlined, size: 18),
-                  ),
-                  items: [
+                QuestSelectField<int>(
+                  labelText: isLent ? 'Masuk ke Akun' : 'Sumber Dana',
+                  sheetTitle: 'Pilih Akun',
+                  prefixIcon: const Icon(Icons.account_balance_wallet_outlined, size: 18),
+                  value: selectedAccountId,
+                  options: [
                     for (final a in accounts)
-                      DropdownMenuItem(
+                      QuestSelectOption(
                         value: a.id,
-                        child: Text(a.name, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
+                        label: a.name,
+                        subtitle: switch (a.kind) {
+                          AccountKind.bank => 'Rekening Bank',
+                          AccountKind.ewallet => 'E-Wallet',
+                          AccountKind.cash => 'Dompet Tunai',
+                        },
+                        icon: switch (a.kind) {
+                          AccountKind.bank => Icons.account_balance_rounded,
+                          AccountKind.ewallet => Icons.phone_android_rounded,
+                          AccountKind.cash => Icons.payments_outlined,
+                        },
                       ),
                   ],
                   onChanged: (v) => setDialogState(() => selectedAccountId = v),
                 ),
                 const SizedBox(height: Spacing.m),
-                DropdownButtonFormField<int>(
-                  initialValue: selectedCategoryId,
-                  isExpanded: true,
-                  icon: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: q.muted,
-                    size: 20,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Kategori',
-                    prefixIcon: Icon(Icons.category_outlined, size: 18),
-                  ),
-                  items: [
+                QuestSelectField<int>(
+                  labelText: 'Kategori',
+                  sheetTitle: 'Pilih Kategori',
+                  prefixIcon: const Icon(Icons.category_outlined, size: 18),
+                  value: selectedCategoryId,
+                  options: [
                     for (final c in categories)
-                      DropdownMenuItem(
+                      QuestSelectOption(
                         value: c.id,
-                        child: Text(c.name, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
+                        label: c.name,
+                        leading: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: SeedColors.categoryColor(c.colorIndex),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: q.line, width: 1.5),
+                          ),
+                        ),
                       ),
                   ],
                   onChanged: (v) => setDialogState(() => selectedCategoryId = v),
@@ -1140,84 +1145,56 @@ class _BonSheetState extends State<BonSheet> {
           ),
           if (_categories.isNotEmpty) ...[
             const SizedBox(height: Spacing.m),
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<int>(
-                      key: ValueKey('bon_category_$_categoryId'),
-                      initialValue: _categories.any((c) => c.id == _categoryId) ? _categoryId : null,
-                      isExpanded: true,
-                      icon: Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: q.muted,
-                        size: 20,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Kategori',
-                        prefixIcon: Icon(Icons.category_outlined, size: 18),
-                      ),
-                      items: [
-                        for (final c in _categories)
-                          DropdownMenuItem(
-                            value: c.id,
-                            child: Text(
-                              c.name,
-                              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                      ],
-                      onChanged: (v) => setState(() => _categoryId = v),
-                    ),
-                  ),
-                  const SizedBox(width: Spacing.xs),
-                  QuestPress(
-                    onTap: _addCategory,
-                    child: Container(
-                      width: 44,
-                      alignment: Alignment.center,
+            QuestSelectField<int>(
+              key: ValueKey('bon_category_$_categoryId'),
+              labelText: 'Kategori',
+              sheetTitle: 'Pilih Kategori',
+              prefixIcon: const Icon(Icons.category_outlined, size: 18),
+              value: _categories.any((c) => c.id == _categoryId) ? _categoryId : null,
+              options: [
+                for (final c in _categories)
+                  QuestSelectOption(
+                    value: c.id,
+                    label: c.name,
+                    leading: Container(
+                      width: 12,
+                      height: 12,
                       decoration: BoxDecoration(
-                        color: q.surface2,
-                        borderRadius: BorderRadius.circular(AppRadius.tile),
-                        border: Border.all(
-                          color: q.line.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      child: Icon(
-                        Icons.add_rounded,
-                        size: 20,
-                        color: q.muted,
+                        color: SeedColors.categoryColor(c.colorIndex),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: q.line, width: 1.5),
                       ),
                     ),
                   ),
-                ],
-              ),
+              ],
+              onChanged: (v) => setState(() => _categoryId = v),
+              onAdd: _addCategory,
+              addLabel: 'Tambah Kategori Baru',
             ),
           ],
           if (_accounts.isNotEmpty) ...[
             const SizedBox(height: Spacing.m),
-            DropdownButtonFormField<int>(
+            QuestSelectField<int>(
               key: ValueKey('bon_account_$_accountId'),
-              initialValue: _accounts.any((a) => a.id == _accountId) ? _accountId : null,
-              isExpanded: true,
-              icon: Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: q.muted,
-                size: 20,
-              ),
-              decoration: InputDecoration(
-                labelText: _direction == BonDirection.borrowed ? 'Sumber Dana' : 'Masuk ke Akun',
-                prefixIcon: const Icon(Icons.account_balance_wallet_outlined, size: 18),
-              ),
-              items: [
+              labelText: _direction == BonDirection.borrowed ? 'Sumber Dana' : 'Masuk ke Akun',
+              sheetTitle: 'Pilih Akun',
+              prefixIcon: const Icon(Icons.account_balance_wallet_outlined, size: 18),
+              value: _accounts.any((a) => a.id == _accountId) ? _accountId : null,
+              options: [
                 for (final a in _accounts)
-                  DropdownMenuItem(
+                  QuestSelectOption(
                     value: a.id,
-                    child: Text(
-                      a.name,
-                      style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
-                    ),
+                    label: a.name,
+                    subtitle: switch (a.kind) {
+                      AccountKind.bank => 'Rekening Bank',
+                      AccountKind.ewallet => 'E-Wallet',
+                      AccountKind.cash => 'Dompet Tunai',
+                    },
+                    icon: switch (a.kind) {
+                      AccountKind.bank => Icons.account_balance_rounded,
+                      AccountKind.ewallet => Icons.phone_android_rounded,
+                      AccountKind.cash => Icons.payments_outlined,
+                    },
                   ),
               ],
               onChanged: (v) => setState(() => _accountId = v),

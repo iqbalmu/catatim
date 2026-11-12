@@ -401,14 +401,13 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
             const SizedBox(height: Spacing.m),
 
             // Pilihan Bank
-            DropdownButtonFormField<String>(
-              initialValue: _selectedBankId,
-              decoration: const InputDecoration(
-                labelText: 'Bank / Akun Terkait',
-              ),
-              items: [
+            QuestSelectField<String>(
+              value: _selectedBankId,
+              labelText: 'Bank / Akun Terkait',
+              sheetTitle: 'Pilih Bank / Akun Terkait',
+              options: [
                 for (final opt in bankOptions)
-                  DropdownMenuItem(value: opt.id, child: Text(opt.label)),
+                  QuestSelectOption(value: opt.id, label: opt.label),
               ],
               onChanged: (val) {
                 if (val != null) setState(() => _selectedBankId = val);

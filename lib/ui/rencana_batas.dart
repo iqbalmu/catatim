@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../core/budget.dart';
 import '../core/money.dart';
 import '../game/progress.dart';
+import '../models.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';

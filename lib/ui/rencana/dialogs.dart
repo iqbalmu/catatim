@@ -127,26 +127,31 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
               ),
             ),
             const SizedBox(height: Spacing.m),
-            DropdownButtonFormField<int?>(
-              initialValue: scope,
-              isExpanded: true,
-              icon: Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: q.muted,
-                size: 20,
-              ),
-              decoration: const InputDecoration(
-                labelText: 'Berlaku di Akun',
-              ),
-              items: [
-                const DropdownMenuItem<int?>(
+            QuestSelectField<int?>(
+              value: scope,
+              labelText: 'Berlaku di Akun',
+              sheetTitle: 'Pilih Akun',
+              options: [
+                const QuestSelectOption<int?>(
                   value: null,
-                  child: Text('Semua akun'),
+                  label: 'Semua akun',
+                  subtitle: 'Berlaku untuk seluruh rekening & dompet',
+                  icon: Icons.all_inclusive_rounded,
                 ),
                 for (final a in accounts)
-                  DropdownMenuItem<int?>(
+                  QuestSelectOption<int?>(
                     value: a.id,
-                    child: Text(a.name, overflow: TextOverflow.ellipsis),
+                    label: a.name,
+                    subtitle: switch (a.kind) {
+                      AccountKind.bank => 'Rekening Bank',
+                      AccountKind.ewallet => 'E-Wallet',
+                      AccountKind.cash => 'Dompet Tunai',
+                    },
+                    icon: switch (a.kind) {
+                      AccountKind.bank => Icons.account_balance_rounded,
+                      AccountKind.ewallet => Icons.phone_android_rounded,
+                      AccountKind.cash => Icons.payments_outlined,
+                    },
                   ),
               ],
               onChanged: (v) => setDialogState(() => scope = v),

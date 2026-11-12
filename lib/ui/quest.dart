@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../core/money.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 
@@ -18,3 +19,4 @@ part 'quest/list.dart';
 part 'quest/sheet.dart';
 part 'quest/feedback.dart';
 part 'quest/keypad.dart';
+part 'quest/select.dart';
