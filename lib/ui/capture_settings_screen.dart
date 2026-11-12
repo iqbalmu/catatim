@@ -224,23 +224,25 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                 style: context.qBody(13),
               ),
               const SizedBox(height: Spacing.m),
+              const QuestFieldLabel('Kata Kunci / Frasa'),
+              const SizedBox(height: Spacing.xs),
               TextField(
                 controller: patternCtrl,
                 autofocus: true,
                 decoration: const InputDecoration(
-                  labelText: 'Kata Kunci / Frasa',
                   hintText: 'Misal: promo, cashback, pinjaman',
                 ),
               ),
-              const SizedBox(height: Spacing.s),
+              const SizedBox(height: Spacing.m),
+              const QuestFieldLabel('Deskripsi / Label (Opsional)'),
+              const SizedBox(height: Spacing.xs),
               TextField(
                 controller: labelCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Deskripsi / Label (opsional)',
                   hintText: 'Misal: Promo Cashback',
                 ),
               ),
-              const SizedBox(height: Spacing.s),
+              const SizedBox(height: Spacing.m),
               QuestSelectField<String?>(
                 value: selectedBankId,
                 labelText: 'Berlaku Untuk',

@@ -333,35 +333,34 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const QuestFieldLabel('Package Name'),
+              const SizedBox(height: Spacing.xs),
               TextField(
                 controller: _packageCtrl,
                 style: context.qBody(13),
-                decoration: InputDecoration(
-                  labelText: 'Package Name',
-                  labelStyle: context.qSmall(12).copyWith(color: q.muted),
-                  prefixIcon: const Icon(Icons.apps_rounded, size: 18),
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.apps_rounded, size: 18),
                 ),
               ),
-              const SizedBox(height: Spacing.s),
+              const SizedBox(height: Spacing.m),
+              const QuestFieldLabel('Judul Notifikasi (Title)'),
+              const SizedBox(height: Spacing.xs),
               TextField(
                 controller: _titleCtrl,
                 style: context.qBody(13),
-                decoration: InputDecoration(
-                  labelText: 'Judul Notifikasi (Title)',
-                  labelStyle: context.qSmall(12).copyWith(color: q.muted),
-                  prefixIcon: const Icon(Icons.title_rounded, size: 18),
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.title_rounded, size: 18),
                 ),
               ),
-              const SizedBox(height: Spacing.s),
+              const SizedBox(height: Spacing.m),
+              const QuestFieldLabel('Isi Notifikasi (Body)'),
+              const SizedBox(height: Spacing.xs),
               TextField(
                 controller: _bodyCtrl,
                 maxLines: 3,
                 style: context.qBody(13),
-                decoration: InputDecoration(
-                  labelText: 'Isi Notifikasi (Body)',
-                  labelStyle: context.qSmall(12).copyWith(color: q.muted),
-                  alignLabelWithHint: true,
-                  prefixIcon: const Padding(
+                decoration: const InputDecoration(
+                  prefixIcon: Padding(
                     padding: EdgeInsets.only(bottom: 36),
                     child: Icon(Icons.message_rounded, size: 18),
                   ),

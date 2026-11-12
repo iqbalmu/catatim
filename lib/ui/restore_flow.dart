@@ -32,6 +32,8 @@ Future<String?> askBackupPin(BuildContext context, {required bool repeat}) async
           style: context.qBody(13),
         ),
         const SizedBox(height: Spacing.m),
+        const QuestFieldLabel('PIN (6–12 angka)'),
+        const SizedBox(height: Spacing.xs),
         TextField(
           controller: firstCtrl,
           autofocus: true,
@@ -40,12 +42,14 @@ Future<String?> askBackupPin(BuildContext context, {required bool repeat}) async
           obscureText: true,
           maxLength: 12,
           decoration: const InputDecoration(
-            labelText: 'PIN (6–12 angka)',
+            hintText: 'Masukkan 6–12 angka PIN',
             counterText: '',
           ),
         ),
         if (!repeat) ...[
-          const SizedBox(height: Spacing.s),
+          const SizedBox(height: Spacing.m),
+          const QuestFieldLabel('Ulangi PIN'),
+          const SizedBox(height: Spacing.xs),
           TextField(
             controller: secondCtrl,
             keyboardType: TextInputType.number,
@@ -53,7 +57,7 @@ Future<String?> askBackupPin(BuildContext context, {required bool repeat}) async
             obscureText: true,
             maxLength: 12,
             decoration: const InputDecoration(
-              labelText: 'Ulangi PIN',
+              hintText: 'Ketik ulang PIN yang sama',
               counterText: '',
             ),
           ),

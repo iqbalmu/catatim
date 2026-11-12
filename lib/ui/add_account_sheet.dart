@@ -348,22 +348,24 @@ class _AddAccountSheetState extends State<AddAccountSheet>
         ),
       ),
       const SizedBox(height: Spacing.s),
+      QuestFieldLabel(isBank ? 'Nama Bank' : 'Nama E-Wallet'),
+      const SizedBox(height: Spacing.xs),
       TextField(
         controller: _cashNameCtrl,
         textCapitalization: TextCapitalization.words,
         decoration: InputDecoration(
-          labelText: isBank ? 'Nama Bank' : 'Nama E-Wallet',
           hintText: isBank ? 'Misalnya: BCA atau Mandiri' : 'Misalnya: GoPay',
           errorText: _cashError,
         ),
       ),
-      const SizedBox(height: Spacing.s),
+      const SizedBox(height: Spacing.m),
+      const QuestFieldLabel('Saldo awal (opsional)'),
+      const SizedBox(height: Spacing.xs),
       TextField(
         controller: _cashOpeningCtrl,
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         decoration: const InputDecoration(
-          labelText: 'Saldo awal (opsional)',
           hintText: 'Misalnya: 500000',
         ),
       ),
@@ -392,23 +394,25 @@ class _AddAccountSheetState extends State<AddAccountSheet>
 
   List<Widget> _buildCashForm() {
     return [
+      const QuestFieldLabel('Nama Akun'),
+      const SizedBox(height: Spacing.xs),
       TextField(
         controller: _cashNameCtrl,
         autofocus: true,
         textCapitalization: TextCapitalization.words,
         decoration: InputDecoration(
-          labelText: 'Nama akun',
           hintText: 'Misalnya: Dompet',
           errorText: _cashError,
         ),
       ),
       const SizedBox(height: Spacing.m),
+      const QuestFieldLabel('Saldo awal (opsional)'),
+      const SizedBox(height: Spacing.xs),
       TextField(
         controller: _cashOpeningCtrl,
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         decoration: const InputDecoration(
-          labelText: 'Saldo awal (opsional)',
           hintText: 'Misalnya: 250000',
         ),
       ),
@@ -573,12 +577,13 @@ class _AddAccountSheetState extends State<AddAccountSheet>
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: Spacing.m),
+        const QuestFieldLabel('Saldo awal (opsional)'),
+        const SizedBox(height: Spacing.xs),
         TextField(
           controller: _openingCtrl,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           decoration: const InputDecoration(
-            labelText: 'Saldo awal (opsional)',
             helperText: 'Isi supaya saldomu langsung pas',
             hintText: 'Misalnya: 250000',
           ),

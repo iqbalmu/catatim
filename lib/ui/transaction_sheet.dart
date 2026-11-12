@@ -181,12 +181,21 @@ class _TransactionSheetState extends State<TransactionSheet> {
       final name = await showQuestDialog<String>(
         context,
         title: 'Akun baru',
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          textCapitalization: TextCapitalization.words,
-          decoration:
-              const InputDecoration(labelText: 'Nama akun (mis. Dompet)'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const QuestFieldLabel('Nama Akun'),
+            const SizedBox(height: Spacing.xs),
+            TextField(
+              controller: ctrl,
+              autofocus: true,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(
+                hintText: 'Misalnya: Dompet, Kas Kecil...',
+              ),
+            ),
+          ],
         ),
         actions: [
           QuestButton(
@@ -300,6 +309,8 @@ class _TransactionSheetState extends State<TransactionSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const QuestFieldLabel('Nama Kategori'),
+          const SizedBox(height: Spacing.xs),
           TextField(
             controller: ctrl,
             autofocus: true,
@@ -311,7 +322,6 @@ class _TransactionSheetState extends State<TransactionSheet> {
               color: q.text,
             ),
             decoration: const InputDecoration(
-              labelText: 'Nama Kategori',
               hintText: 'Misalnya: Kopi, Langganan, Hobi...',
             ),
           ),
@@ -764,13 +774,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Kategori',
-                  style: context.qSmall(12).copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: q.muted,
-                  ),
-                ),
+                const QuestFieldLabel('Kategori'),
                 const SizedBox(height: Spacing.xs),
                 _buildCategoryChips(),
                 const SizedBox(height: Spacing.m),
@@ -959,6 +963,8 @@ class _TransactionSheetState extends State<TransactionSheet> {
                   return const SizedBox.shrink();
                 }(),
                 const SizedBox(height: Spacing.m),
+                const QuestFieldLabel('Waktu Transaksi'),
+                const SizedBox(height: Spacing.xs),
                 TextFormField(
                   key: ValueKey(_occurredAt),
                   initialValue: _dateLabel(_occurredAt),
@@ -971,11 +977,12 @@ class _TransactionSheetState extends State<TransactionSheet> {
                     color: q.text,
                   ),
                   decoration: const InputDecoration(
-                    labelText: 'Waktu Transaksi',
                     prefixIcon: Icon(Icons.event_outlined),
                   ),
                 ),
                 const SizedBox(height: Spacing.m),
+                const QuestFieldLabel('Keterangan (Opsional)'),
+                const SizedBox(height: Spacing.xs),
                 TextFormField(
                   controller: _counterpartyCtrl,
                   textCapitalization: TextCapitalization.words,
@@ -992,7 +999,6 @@ class _TransactionSheetState extends State<TransactionSheet> {
                     FocusScope.of(context).unfocus();
                   },
                   decoration: const InputDecoration(
-                    labelText: 'Keterangan (Opsional)',
                     hintText: 'Contoh: Kopi Kenangan, Beli Makan, dll...',
                   ),
                 ),

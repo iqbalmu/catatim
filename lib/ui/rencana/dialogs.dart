@@ -30,15 +30,22 @@ Future<int?> _askAmount(
   return showQuestDialog<int>(
     context,
     title: title,
-    content: TextField(
-      controller: ctrl,
-      autofocus: true,
-      keyboardType: TextInputType.number,
-      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      decoration: const InputDecoration(
-        labelText: 'Nominal (rupiah)',
-        hintText: 'Kosongkan kalau mau menghapus batas ini',
-      ),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const QuestFieldLabel('Nominal (Rupiah)'),
+        const SizedBox(height: Spacing.xs),
+        TextField(
+          controller: ctrl,
+          autofocus: true,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: const InputDecoration(
+            hintText: 'Kosongkan kalau mau menghapus batas ini',
+          ),
+        ),
+      ],
     ),
     actions: [
       QuestButton(
@@ -90,6 +97,8 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const QuestFieldLabel('Nama Kategori'),
+            const SizedBox(height: Spacing.xs),
             TextField(
               controller: nameCtrl,
               textCapitalization: TextCapitalization.words,
@@ -100,11 +109,12 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
                 color: q.text,
               ),
               decoration: const InputDecoration(
-                labelText: 'Nama Kategori',
                 hintText: 'Contoh: Makanan',
               ),
             ),
             const SizedBox(height: Spacing.m),
+            const QuestFieldLabel('Batas Bulanan'),
+            const SizedBox(height: Spacing.xs),
             TextField(
               controller: limitCtrl,
               keyboardType: TextInputType.number,
@@ -116,7 +126,6 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
                 color: q.text,
               ),
               decoration: InputDecoration(
-                labelText: 'Batas Bulanan',
                 prefixText: 'Rp ',
                 prefixStyle: TextStyle(
                   fontWeight: FontWeight.w700,
@@ -229,6 +238,8 @@ class _NewCategoryFormState extends State<_NewCategoryForm> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const QuestFieldLabel('Nama Kategori'),
+        const SizedBox(height: Spacing.xs),
         TextField(
           controller: nameCtrl,
           autofocus: true,
@@ -240,11 +251,12 @@ class _NewCategoryFormState extends State<_NewCategoryForm> {
             color: q.text,
           ),
           decoration: const InputDecoration(
-            labelText: 'Nama Kategori',
             hintText: 'Contoh: Kopi, Langganan, Hobi...',
           ),
         ),
         const SizedBox(height: Spacing.m),
+        const QuestFieldLabel('Alokasi Bulanan (Opsional)'),
+        const SizedBox(height: Spacing.xs),
         TextField(
           controller: limitCtrl,
           keyboardType: TextInputType.number,
@@ -256,7 +268,6 @@ class _NewCategoryFormState extends State<_NewCategoryForm> {
             color: q.text,
           ),
           decoration: InputDecoration(
-            labelText: 'Alokasi Bulanan (Opsional)',
             prefixText: 'Rp ',
             prefixStyle: TextStyle(
               fontWeight: FontWeight.w700,

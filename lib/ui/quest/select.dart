@@ -35,6 +35,7 @@ class QuestSelectField<T> extends StatelessWidget {
     this.onAdd,
     this.addLabel,
     this.enabled = true,
+    this.showLabel = true,
   });
 
   final String labelText;
@@ -47,6 +48,7 @@ class QuestSelectField<T> extends StatelessWidget {
   final VoidCallback? onAdd;
   final String? addLabel;
   final bool enabled;
+  final bool showLabel;
 
   QuestSelectOption<T>? get _selectedOption {
     for (final opt in options) {
@@ -206,7 +208,7 @@ class QuestSelectField<T> extends StatelessWidget {
     final q = context.q;
     final selected = _selectedOption;
 
-    return Semantics(
+    final fieldWidget = Semantics(
       button: true,
       enabled: enabled,
       label: '$labelText: ${selected?.label ?? hintText ?? 'Belum dipilih'}',
@@ -214,7 +216,6 @@ class QuestSelectField<T> extends StatelessWidget {
         onTap: enabled ? () => _openPicker(context) : null,
         child: InputDecorator(
           decoration: InputDecoration(
-            labelText: labelText,
             prefixIcon: prefixIcon,
             suffixIcon: Icon(
               Icons.keyboard_arrow_down_rounded,
@@ -256,6 +257,20 @@ class QuestSelectField<T> extends StatelessWidget {
         ),
       ),
     );
+
+    if (showLabel && labelText.isNotEmpty) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          QuestFieldLabel(labelText),
+          const SizedBox(height: Spacing.xs),
+          fieldWidget,
+        ],
+      );
+    }
+
+    return fieldWidget;
   }
 }
 

@@ -606,22 +606,19 @@ class _OcrScreenState extends State<OcrScreen> {
                       const SizedBox(height: Spacing.m),
 
                       // Nama Toko / Merchant
+                      const QuestFieldLabel('Nama Toko / Pihak'),
+                      const SizedBox(height: Spacing.xs),
                       TextField(
                         controller: _merchantCtrl,
                         decoration: const InputDecoration(
-                          labelText: 'Nama Toko / Pihak',
+                          hintText: 'Contoh: Indomaret, Kopi Kenangan...',
                           prefixIcon: Icon(Icons.storefront_rounded),
                         ),
                       ),
                       const SizedBox(height: Spacing.m),
 
                       // Tanggal & Waktu Struk
-                      Text(
-                        'Tanggal & Waktu Transaksi',
-                        style: context
-                            .qSmall(12)
-                            .copyWith(color: q.muted, fontWeight: FontWeight.w700),
-                      ),
+                      const QuestFieldLabel('Tanggal & Waktu Transaksi'),
                       const SizedBox(height: Spacing.xs),
                       Semantics(
                         button: true,
@@ -663,11 +660,12 @@ class _OcrScreenState extends State<OcrScreen> {
                       const SizedBox(height: Spacing.m),
 
                       // Nominal
+                      const QuestFieldLabel('Total Nominal (Rupiah)'),
+                      const SizedBox(height: Spacing.xs),
                       TextField(
                         controller: _amountCtrl,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(
-                          labelText: 'Total Nominal (Rupiah)',
                           hintText: 'Misal: 54000',
                           prefixIcon: Icon(Icons.payments_rounded),
                         ),

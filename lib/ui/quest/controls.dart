@@ -285,3 +285,22 @@ class QuestSwitch extends StatelessWidget {
     );
   }
 }
+
+/// Label konsisten di atas field input (seperti label "Kategori"),
+/// bukan melayang atau menempel di garis border input.
+class QuestFieldLabel extends StatelessWidget {
+  const QuestFieldLabel(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: context.qSmall(12).copyWith(
+        fontWeight: FontWeight.w700,
+        color: context.q.muted,
+      ),
+    );
+  }
+}

@@ -453,16 +453,19 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                         // ── Form Input Langsung & Padat ──
                         if (_loaded) ...[
                           const SizedBox(height: Spacing.m),
+                          const QuestFieldLabel('Nama Tampilan'),
+                          const SizedBox(height: Spacing.xs),
                           TextField(
                             controller: _nameCtrl,
                             textCapitalization: TextCapitalization.words,
                             decoration: const InputDecoration(
-                              labelText: 'Nama tampilan',
                               hintText: 'Contoh: Tabungan Utama',
                               prefixIcon: Icon(Icons.edit_outlined, size: 18),
                             ),
                           ),
-                          const SizedBox(height: Spacing.s),
+                          const SizedBox(height: Spacing.m),
+                          const QuestFieldLabel('Saldo Awal'),
+                          const SizedBox(height: Spacing.xs),
                           TextField(
                             controller: _openingCtrl,
                             keyboardType: TextInputType.number,
@@ -470,7 +473,6 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                               FilteringTextInputFormatter.digitsOnly,
                             ],
                             decoration: const InputDecoration(
-                              labelText: 'Saldo awal',
                               prefixText: 'Rp ',
                               prefixIcon: Icon(Icons.account_balance_wallet_outlined, size: 18),
                             ),

@@ -391,10 +391,11 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
             const SizedBox(height: Spacing.s),
 
             // Nama Aturan
+            const QuestFieldLabel('Nama Template Aturan'),
+            const SizedBox(height: Spacing.xs),
             TextField(
               controller: _nameController,
               decoration: const InputDecoration(
-                labelText: 'Nama Template Aturan',
                 hintText: 'Contoh: Ollin Debit Belanja',
               ),
             ),

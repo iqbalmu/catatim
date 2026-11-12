@@ -122,6 +122,8 @@ class _BonScreenState extends State<BonScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (isUncalculated) ...[
+                  const QuestFieldLabel('Nominal'),
+                  const SizedBox(height: Spacing.xs),
                   TextField(
                     controller: amountController,
                     keyboardType: TextInputType.number,
@@ -133,13 +135,13 @@ class _BonScreenState extends State<BonScreen> {
                       color: q.text,
                     ),
                     decoration: InputDecoration(
-                      labelText: 'Nominal',
                       prefixText: 'Rp ',
                       prefixStyle: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: q.text,
                         fontSize: 13.5,
                       ),
+                      hintText: '0',
                     ),
                   ),
                   const SizedBox(height: Spacing.m),
@@ -865,6 +867,8 @@ class _BonSheetState extends State<BonSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const QuestFieldLabel('Nama Kategori'),
+          const SizedBox(height: Spacing.xs),
           TextField(
             controller: ctrl,
             autofocus: true,
@@ -876,7 +880,6 @@ class _BonSheetState extends State<BonSheet> {
               color: q.text,
             ),
             decoration: const InputDecoration(
-              labelText: 'Nama Kategori',
               hintText: 'Misalnya: Kopi, Langganan, Hobi...',
             ),
           ),
@@ -1105,6 +1108,8 @@ class _BonSheetState extends State<BonSheet> {
             ],
           ),
           const SizedBox(height: Spacing.m),
+          const QuestFieldLabel('Pihak / Kontak'),
+          const SizedBox(height: Spacing.xs),
           TextField(
             controller: _personCtrl,
             textCapitalization: TextCapitalization.words,
@@ -1115,12 +1120,13 @@ class _BonSheetState extends State<BonSheet> {
               color: q.text,
             ),
             decoration: const InputDecoration(
-              labelText: 'Pihak / Kontak',
               hintText: 'Nama orang atau warung...',
               prefixIcon: Icon(Icons.person_outline_rounded, size: 18),
             ),
           ),
           const SizedBox(height: Spacing.m),
+          const QuestFieldLabel('Nominal'),
+          const SizedBox(height: Spacing.xs),
           TextField(
             controller: _amountCtrl,
             keyboardType: TextInputType.number,
@@ -1132,7 +1138,6 @@ class _BonSheetState extends State<BonSheet> {
               color: q.text,
             ),
             decoration: InputDecoration(
-              labelText: 'Nominal',
               prefixText: 'Rp ',
               prefixStyle: TextStyle(
                 fontWeight: FontWeight.w700,
@@ -1201,6 +1206,8 @@ class _BonSheetState extends State<BonSheet> {
             ),
           ],
           const SizedBox(height: Spacing.m),
+          const QuestFieldLabel('Tanggal Bon'),
+          const SizedBox(height: Spacing.xs),
           TextFormField(
             key: ValueKey(_date),
             initialValue: idFullDate(_date),
@@ -1213,11 +1220,12 @@ class _BonSheetState extends State<BonSheet> {
               color: q.text,
             ),
             decoration: const InputDecoration(
-              labelText: 'Tanggal Bon',
               prefixIcon: Icon(Icons.event_outlined),
             ),
           ),
           const SizedBox(height: Spacing.m),
+          const QuestFieldLabel('Catatan (Opsional)'),
+          const SizedBox(height: Spacing.xs),
           TextField(
             controller: _noteCtrl,
             textCapitalization: TextCapitalization.sentences,
@@ -1229,7 +1237,6 @@ class _BonSheetState extends State<BonSheet> {
               color: q.text,
             ),
             decoration: const InputDecoration(
-              labelText: 'Catatan (Opsional)',
               hintText: 'Tulis catatan bila perlu...',
               prefixIcon: Icon(Icons.notes_rounded, size: 18),
             ),

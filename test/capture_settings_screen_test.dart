@@ -143,10 +143,11 @@ void main() {
     expect(find.text('Tambah Pola Abaikan'), findsOneWidget);
 
     // Isi form dialog
-    final patternField = find.widgetWithText(TextField, 'Kata Kunci / Frasa');
-    final labelField = find.widgetWithText(TextField, 'Deskripsi / Label (opsional)');
-    expect(patternField, findsOneWidget);
-    expect(labelField, findsOneWidget);
+    expect(find.text('Kata Kunci / Frasa'), findsOneWidget);
+    expect(find.text('Deskripsi / Label (Opsional)'), findsOneWidget);
+    final textFields = find.byType(TextField);
+    final patternField = textFields.first;
+    final labelField = textFields.at(1);
 
     await tester.enterText(patternField, 'promo cashback');
     await tester.enterText(labelField, 'Spam Promo');
