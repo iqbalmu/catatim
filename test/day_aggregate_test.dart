@@ -58,7 +58,7 @@ void main() {
     await addTx(DateTime(2026, 11, 2, 5),
         direction: Direction.incoming, amount: 9000);
     await addTx(DateTime(2026, 11, 2, 6),
-        direction: Direction.outgoing, amount: 7000, kind: TxKind.transfer);
+        direction: Direction.outgoing, amount: 7000, kind: TxKind.internal);
 
     final sums = await repo.outSpendByDaySince(since);
     expect(sums[DateTime(2026, 11, 2)], 8000);

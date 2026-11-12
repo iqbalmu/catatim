@@ -526,11 +526,11 @@ void main() {
   });
 
   group('belanja murni', () {
-    test('transfer biasa bukan belanja', () async {
+    test('transfer antar-akun bukan belanja', () async {
       await repo.addManual(
         amount: 5000000,
         direction: Direction.outgoing,
-        kind: TxKind.transfer,
+        kind: TxKind.internal,
         occurredAt: DateTime(2026, 10, 10, 9),
       );
       final day = DateTime(2026, 10, 10);
@@ -565,7 +565,7 @@ void main() {
       await repo.addManual(
         amount: 50000,
         direction: Direction.outgoing,
-        kind: TxKind.transfer,
+        kind: TxKind.internal,
         categoryId: makanan.id,
         accountId: blu.id,
         occurredAt: DateTime(now.year, now.month, now.day, 11),
@@ -593,7 +593,7 @@ void main() {
       await repo.addManual(
         amount: 9000,
         direction: Direction.outgoing,
-        kind: TxKind.transfer,
+        kind: TxKind.internal,
         occurredAt: today.add(const Duration(hours: 11)),
       );
       final map = await repo.outSpendByDaySince(yesterday);
@@ -1121,7 +1121,7 @@ void main() {
       // 2. Transaksi baru harus tercatat dengan kind transfer
       final txs = await db.select(db.transactions).get();
       expect(txs, hasLength(2));
-      expect(txs.every((t) => t.kind == TxKind.transfer), isTrue);
+      expect(txs.every((t) => t.kind == TxKind.internal), isTrue);
 
       // 3. Saldo akun terupdate: BCA berkurang 100k, GoPay bertambah 100k
       final balances = await repo.watchAccountBalances().first;
@@ -1158,12 +1158,12 @@ void main() {
 
       expect(outTx.accountId, accBca.id);
       expect(outTx.amount, 250000);
-      expect(outTx.kind, TxKind.transfer);
+      expect(outTx.kind, TxKind.internal);
       expect(outTx.counterparty, 'Tarik tunai ATM (ke Dompet)');
 
       expect(inTx.accountId, accCash.id);
       expect(inTx.amount, 250000);
-      expect(inTx.kind, TxKind.transfer);
+      expect(inTx.kind, TxKind.internal);
       expect(inTx.counterparty, 'Tarik tunai ATM (dari BCA)');
 
       final balances = await repo.watchAccountBalances().first;
@@ -1197,11 +1197,11 @@ void main() {
         occurredAt: now,
       );
 
-      // 2. Transfer masuk -> tidak boleh dihitung
+      // 2. Transfer masuk antar rekening -> tidak boleh dihitung
       await repo.addManual(
         amount: 1000000,
         direction: Direction.incoming,
-        kind: TxKind.transfer,
+        kind: TxKind.internal,
         counterparty: 'Transfer Masuk Antar Rekening',
         accountId: acc.id,
         occurredAt: now,
@@ -1220,6 +1220,83 @@ void main() {
         Direction.incoming,
       );
       expect(rawIncoming, 6000000);
+    });
+  
+    test('auto-linking tarik tunai otomatis membuat mutasi masuk di akun tunai', () async {
+      final accBca = await repo.addAccount('BCA', AccountKind.bank);
+      final accounts = await repo.getAccounts();
+      final accCash = accounts.firstWhere((a) => a.kind == AccountKind.cash);
+      await repo.setOpeningBalance(accBca.id, 1000000);
+      await repo.setOpeningBalance(accCash.id, 50000);
+
+      // Simulasikan draf capture tarik tunai dari ATM
+      final draftId = await db.into(db.drafts).insert(
+        DraftsCompanion.insert(
+          bankId: 'bca',
+          kind: TxKind.withdrawal,
+          direction: Direction.outgoing,
+          amount: 200000,
+          occurredAt: DateTime.now(),
+          accountId: Value(accBca.id),
+        ),
+      );
+
+      final ok = await repo.autoConfirmDraft(draftId);
+      expect(ok, isTrue);
+
+      final balances = await repo.watchAccountBalances().first;
+      expect(balances[accBca.id], 800000);
+      expect(balances[accCash.id], 250000);
+
+      final txs = await db.select(db.transactions).get();
+      expect(txs, hasLength(2));
+      final inCash = txs.firstWhere((t) => t.accountId == accCash.id);
+      expect(inCash.direction, Direction.incoming);
+      expect(inCash.kind, TxKind.withdrawal);
+      expect(inCash.amount, 200000);
+    });
+
+    test('auto-linking transfer berpasangan otomatis menjadi internal dan bukan pengeluaran', () async {
+      final accBca = await repo.addAccount('BCA', AccountKind.bank);
+      final accGopay = await repo.addAccount('GoPay', AccountKind.ewallet);
+
+      final now = DateTime.now();
+
+      final draftOutId = await db.into(db.drafts).insert(
+        DraftsCompanion.insert(
+          bankId: 'bca',
+          kind: TxKind.transfer,
+          direction: Direction.outgoing,
+          amount: 50000,
+          occurredAt: now,
+          accountId: Value(accBca.id),
+        ),
+      );
+
+      final draftInId = await db.into(db.drafts).insert(
+        DraftsCompanion.insert(
+          bankId: 'gopay',
+          kind: TxKind.topup,
+          direction: Direction.incoming,
+          amount: 50000,
+          occurredAt: now.add(const Duration(seconds: 10)),
+          accountId: Value(accGopay.id),
+        ),
+      );
+
+      await repo.autoConfirmDraft(draftOutId);
+      await repo.autoConfirmDraft(draftInId);
+
+      final txs = await db.select(db.transactions).get();
+      expect(txs, hasLength(2));
+      expect(txs.every((t) => t.kind == TxKind.internal), isTrue);
+
+      // Keduanya tidak masuk belanja murni
+      final spend = await repo.sumSpendBetween(
+        now.subtract(const Duration(days: 1)),
+        now.add(const Duration(days: 1)),
+      );
+      expect(spend, 0);
     });
   });
 }

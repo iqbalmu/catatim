@@ -91,7 +91,7 @@ class _ReportMetrics {
 
     for (final r in rows) {
       if (r.tx.direction == Direction.incoming) {
-        if (r.tx.kind != TxKind.transfer) {
+        if (!r.tx.kind.isInternalMove) {
           totalIn += r.tx.amount;
           inCount++;
           final key = r.category?.id;
@@ -103,7 +103,7 @@ class _ReportMetrics {
             amount: r.tx.amount,
           ));
         }
-      } else if (r.tx.kind != TxKind.transfer) {
+      } else if (!r.tx.kind.isInternalMove) {
         totalOut += r.tx.amount;
         outCount++;
         final key = r.category?.id;
@@ -122,10 +122,10 @@ class _ReportMetrics {
     var prevOut = 0;
     for (final r in prevRows) {
       if (r.tx.direction == Direction.incoming) {
-        if (r.tx.kind != TxKind.transfer) {
+        if (!r.tx.kind.isInternalMove) {
           prevIn += r.tx.amount;
         }
-      } else if (r.tx.kind != TxKind.transfer) {
+      } else if (!r.tx.kind.isInternalMove) {
         prevOut += r.tx.amount;
       }
     }

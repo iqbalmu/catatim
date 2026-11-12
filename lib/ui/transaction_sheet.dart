@@ -366,7 +366,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
 
     if (!_isDraft &&
         !_isEdit &&
-        _kind == TxKind.transfer &&
+        _kind == TxKind.internal &&
         _toAccountId != null &&
         resolvedAccountId != null &&
         _toAccountId != resolvedAccountId) {
@@ -780,12 +780,12 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 const SizedBox(height: Spacing.m),
                 QuestSelectField<int>(
                   key: ValueKey('account_$_accountId'),
-                  labelText: _kind == TxKind.transfer
+                  labelText: _kind == TxKind.internal
                       ? 'Dari Akun'
                       : (_direction == Direction.outgoing
                           ? 'Sumber Dana'
                           : 'Masuk ke Akun'),
-                  sheetTitle: _kind == TxKind.transfer
+                  sheetTitle: _kind == TxKind.internal
                       ? 'Pilih Akun Asal'
                       : (_direction == Direction.outgoing
                           ? 'Pilih Sumber Dana'
@@ -828,14 +828,16 @@ class _TransactionSheetState extends State<TransactionSheet> {
                         label: k.label,
                         subtitle: switch (k) {
                           TxKind.payment => 'Belanja, tagihan, atau kebutuhan harian',
-                          TxKind.transfer => 'Pindah dana antar rekening / e-wallet',
+                          TxKind.transfer => 'Kirim uang ke orang atau pihak lain',
+                          TxKind.internal => 'Pindah dana antar rekening / e-wallet sendiri',
                           TxKind.topup => 'Isi saldo e-wallet atau uang elektronik',
                           TxKind.withdrawal => 'Tarik tunai dari ATM atau kasir',
                           TxKind.other => 'Transaksi jenis lainnya',
                         },
                         icon: switch (k) {
                           TxKind.payment => Icons.payment_rounded,
-                          TxKind.transfer => Icons.swap_horiz_rounded,
+                          TxKind.transfer => Icons.send_rounded,
+                          TxKind.internal => Icons.swap_horiz_rounded,
                           TxKind.topup => Icons.add_circle_outline_rounded,
                           TxKind.withdrawal => Icons.local_atm_outlined,
                           TxKind.other => Icons.more_horiz_rounded,
@@ -846,7 +848,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
                     if (k == null) return;
                     setState(() {
                       _kind = k;
-                      if (k == TxKind.transfer &&
+                      if (k == TxKind.internal &&
                           _toAccountId == null &&
                           _accounts.length > 1) {
                         _toAccountId = _accounts
@@ -857,7 +859,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
                     });
                   },
                 ),
-                if (_kind == TxKind.transfer) ...[
+                if (_kind == TxKind.internal) ...[
                   const SizedBox(height: Spacing.m),
                   QuestSelectField<int>(
                     key: ValueKey('to_account_$_toAccountId'),

@@ -202,7 +202,8 @@ class TransactionTile extends StatelessWidget {
   }
 
   IconData _iconFor(TxKind kind) => switch (kind) {
-    TxKind.transfer => Icons.swap_horiz_rounded,
+    TxKind.transfer => Icons.send_rounded,
+    TxKind.internal => Icons.swap_horiz_rounded,
     TxKind.payment => Icons.receipt_long_rounded,
     TxKind.topup => Icons.add_card_rounded,
     TxKind.withdrawal => Icons.local_atm_rounded,

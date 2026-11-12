@@ -30,6 +30,12 @@ class LedgerRepository {
   /// dianggap duplikat (bank sering kirim ganda / push+SMS).
   static const dedupWindow = Duration(seconds: 120);
 
+  static const _internalKinds = [
+    TxKind.internal,
+    TxKind.topup,
+    TxKind.withdrawal,
+  ];
+
   /// Pemetaan jenis transaksi → nama kategori bawaan.
   static const _kindCategoryName = {
     TxKind.transfer: 'Transfer',
@@ -37,6 +43,7 @@ class LedgerRepository {
     TxKind.topup: 'Transfer',
     TxKind.withdrawal: 'Transfer',
     TxKind.other: 'Lainnya',
+    TxKind.internal: 'Transfer',
   };
 
   // --- capture ------------------------------------------------------------
@@ -156,7 +163,8 @@ class LedgerRepository {
     final clean = (counterparty == null || counterparty.trim().isEmpty)
         ? null
         : counterparty.trim();
-    final resolvedCategoryId = categoryId ??
+    final resolvedCategoryId =
+        categoryId ??
         await preferredCategoryId(counterparty: clean, kind: kind);
     return _db
         .into(_db.transactions)
@@ -185,7 +193,7 @@ class LedgerRepository {
     String? note,
   }) async {
     final at = occurredAt ?? DateTime.now();
-    final transferCatId = await _defaultCategoryId(TxKind.transfer);
+    final transferCatId = await _defaultCategoryId(TxKind.internal);
     final allAccounts = await getAccounts();
     final fromAcc = allAccounts.where((a) => a.id == fromAccountId).firstOrNull;
     final toAcc = allAccounts.where((a) => a.id == toAccountId).firstOrNull;
@@ -200,34 +208,38 @@ class LedgerRepository {
         : 'Transfer dari $fromLabel';
 
     await _db.transaction(() async {
-      await _db.into(_db.transactions).insert(
-        TransactionsCompanion.insert(
-          uuid: newUuid(),
-          bankId: fromAcc?.bankId ?? 'manual',
-          kind: TxKind.transfer,
-          direction: Direction.outgoing,
-          amount: amount,
-          counterparty: Value(outNote),
-          occurredAt: at,
-          source: TxSource.manual,
-          categoryId: Value(transferCatId),
-          accountId: Value(fromAccountId),
-        ),
-      );
-      await _db.into(_db.transactions).insert(
-        TransactionsCompanion.insert(
-          uuid: newUuid(),
-          bankId: toAcc?.bankId ?? 'manual',
-          kind: TxKind.transfer,
-          direction: Direction.incoming,
-          amount: amount,
-          counterparty: Value(inNote),
-          occurredAt: at,
-          source: TxSource.manual,
-          categoryId: Value(transferCatId),
-          accountId: Value(toAccountId),
-        ),
-      );
+      await _db
+          .into(_db.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              uuid: newUuid(),
+              bankId: fromAcc?.bankId ?? 'manual',
+              kind: TxKind.internal,
+              direction: Direction.outgoing,
+              amount: amount,
+              counterparty: Value(outNote),
+              occurredAt: at,
+              source: TxSource.manual,
+              categoryId: Value(transferCatId),
+              accountId: Value(fromAccountId),
+            ),
+          );
+      await _db
+          .into(_db.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              uuid: newUuid(),
+              bankId: toAcc?.bankId ?? 'manual',
+              kind: TxKind.internal,
+              direction: Direction.incoming,
+              amount: amount,
+              counterparty: Value(inNote),
+              occurredAt: at,
+              source: TxSource.manual,
+              categoryId: Value(transferCatId),
+              accountId: Value(toAccountId),
+            ),
+          );
     });
   }
 
@@ -239,9 +251,9 @@ class LedgerRepository {
 
   Future<void> deleteTransaction(int id) async {
     return _db.transaction(() async {
-      await (_db.update(_db.bons)
-            ..where((b) => b.settlementTransactionId.equals(id)))
-          .write(
+      await (_db.update(
+        _db.bons,
+      )..where((b) => b.settlementTransactionId.equals(id))).write(
         const BonsCompanion(
           settledAt: Value(null),
           settlementTransactionId: Value(null),
@@ -284,23 +296,21 @@ class LedgerRepository {
 
   /// Kategori yang disukai/terakhir dipilih untuk [counterparty] tertentu.
   /// Bila belum ada riwayat transaksi dengan pihak ini, gunakan default dari [kind].
-  Future<int?> preferredCategoryId({
-    String? counterparty,
-    TxKind? kind,
-  }) async {
+  Future<int?> preferredCategoryId({String? counterparty, TxKind? kind}) async {
     final clean = counterparty?.trim();
     if (clean != null && clean.isNotEmpty) {
       final cleanLower = clean.toLowerCase();
-      final lastTx = await (_db.select(_db.transactions)
-            ..where(
-              (t) =>
-                  t.counterparty.isNotNull() &
-                  t.categoryId.isNotNull() &
-                  t.counterparty.lower().equals(cleanLower),
-            )
-            ..orderBy([(t) => OrderingTerm.desc(t.occurredAt)])
-            ..limit(1))
-          .getSingleOrNull();
+      final lastTx =
+          await (_db.select(_db.transactions)
+                ..where(
+                  (t) =>
+                      t.counterparty.isNotNull() &
+                      t.categoryId.isNotNull() &
+                      t.counterparty.lower().equals(cleanLower),
+                )
+                ..orderBy([(t) => OrderingTerm.desc(t.occurredAt)])
+                ..limit(1))
+              .getSingleOrNull();
       if (lastTx?.categoryId != null) {
         return lastTx!.categoryId;
       }
@@ -403,7 +413,8 @@ class LedgerRepository {
           ? null
           : counterparty.trim();
       final targetCounterparty = clean ?? draft.counterparty;
-      final resolvedCategoryId = categoryId ??
+      final resolvedCategoryId =
+          categoryId ??
           draft.categoryId ??
           await preferredCategoryId(
             counterparty: targetCounterparty,
@@ -448,22 +459,141 @@ class LedgerRepository {
         .map((row) => row?.valueText == '1');
   }
 
-  /// Catat draf [id] otomatis sebagai transaksi source auto.
+  /// Catat draf [id] otomatis sebagai transaksi source auto, lalu tautkan
+  /// dengan kaki lawannya bila perpindahan dana antar akun sendiri.
   /// Draf tanpa nominal dilewati. Mengembalikan true bila tercatat.
   Future<bool> autoConfirmDraft(int id) async {
-    final draft = await (_db.select(_db.drafts)..where((d) => d.id.equals(id)))
-        .getSingleOrNull();
+    final draft = await (_db.select(
+      _db.drafts,
+    )..where((d) => d.id.equals(id))).getSingleOrNull();
     if (draft == null || draft.amount <= 0) {
       return false;
     }
-    await confirmDraft(
+    final txId = await confirmDraft(
       draft,
       amount: draft.amount,
       direction: draft.direction,
       kind: draft.kind,
       auto: true,
     );
+    await _linkInternalMove(txId);
     return true;
+  }
+
+  /// Jendela waktu dua kaki perpindahan dana dianggap satu kejadian.
+  static const linkWindow = Duration(minutes: 5);
+
+  /// - Tarik tunai keluar: buat kaki masuk di akun Tunai.
+  /// - Transfer/top up: bila ada kaki lawan (nominal sama, arah berlawanan,
+  ///   akun berbeda, dalam [linkWindow]) dari notifikasi, keduanya jadi
+  ///   'internal' (antar akun sendiri) dan keluar dari arus kas.
+  Future<void> _linkInternalMove(int txId) async {
+    final tx = await (_db.select(
+      _db.transactions,
+    )..where((t) => t.id.equals(txId))).getSingleOrNull();
+    if (tx == null) return;
+    final accounts = await getAccounts();
+    String nameOf(int? accountId, String fallback) =>
+        accounts.where((a) => a.id == accountId).firstOrNull?.name ?? fallback;
+
+    if (tx.kind == TxKind.withdrawal && tx.direction == Direction.outgoing) {
+      final cash = accounts
+          .where((a) => a.kind == AccountKind.cash)
+          .firstOrNull;
+      if (cash == null || cash.id == tx.accountId) return;
+      final existing =
+          await (_db.select(_db.transactions)
+                ..where(
+                  (t) =>
+                      t.accountId.equals(cash.id) &
+                      t.kind.equalsValue(TxKind.withdrawal) &
+                      t.direction.equalsValue(Direction.incoming) &
+                      t.amount.equals(tx.amount) &
+                      t.occurredAt.isBetweenValues(
+                        tx.occurredAt.subtract(linkWindow),
+                        tx.occurredAt.add(linkWindow),
+                      ),
+                )
+                ..limit(1))
+              .getSingleOrNull();
+      if (existing != null) return;
+      await _db
+          .into(_db.transactions)
+          .insert(
+            TransactionsCompanion.insert(
+              uuid: newUuid(),
+              bankId: cash.bankId ?? 'manual',
+              kind: TxKind.withdrawal,
+              direction: Direction.incoming,
+              amount: tx.amount,
+              counterparty: Value(
+                'Tarik tunai dari ${nameOf(tx.accountId, tx.bankId)}',
+              ),
+              occurredAt: tx.occurredAt,
+              source: TxSource.auto,
+              categoryId: Value(await _defaultCategoryId(TxKind.internal)),
+              accountId: Value(cash.id),
+            ),
+          );
+      return;
+    }
+
+    if (tx.kind != TxKind.transfer && tx.kind != TxKind.topup) return;
+    final opposite = tx.direction == Direction.incoming
+        ? Direction.outgoing
+        : Direction.incoming;
+    final candidates =
+        await (_db.select(_db.transactions)..where(
+              (t) =>
+                  t.id.equals(tx.id).not() &
+                  t.amount.equals(tx.amount) &
+                  t.direction.equalsValue(opposite) &
+                  t.kind.isInValues(const [TxKind.transfer, TxKind.topup]) &
+                  t.source.isInValues(const [
+                    TxSource.auto,
+                    TxSource.notification,
+                  ]) &
+                  t.occurredAt.isBetweenValues(
+                    tx.occurredAt.subtract(linkWindow),
+                    tx.occurredAt.add(linkWindow),
+                  ),
+            ))
+            .get();
+    final other = candidates.where((o) {
+      if (o.accountId != null && tx.accountId != null) {
+        return o.accountId != tx.accountId;
+      }
+      return o.bankId != tx.bankId;
+    }).firstOrNull;
+    if (other == null) return;
+
+    final out = tx.direction == Direction.outgoing ? tx : other;
+    final inn = tx.direction == Direction.incoming ? tx : other;
+    final transferCatId = await _defaultCategoryId(TxKind.internal);
+    await _db.transaction(() async {
+      await (_db.update(
+        _db.transactions,
+      )..where((t) => t.id.equals(out.id))).write(
+        TransactionsCompanion(
+          kind: const Value(TxKind.internal),
+          categoryId: Value(transferCatId),
+          counterparty: Value(
+            'Transfer ke ${nameOf(inn.accountId, inn.bankId)}',
+          ),
+        ),
+      );
+      await (_db.update(
+        _db.transactions,
+      )..where((t) => t.id.equals(inn.id))).write(
+        TransactionsCompanion(
+          kind: const Value(TxKind.internal),
+          categoryId: Value(transferCatId),
+          counterparty: Value(
+            'Transfer dari ${nameOf(out.accountId, out.bankId)}',
+          ),
+        ),
+      );
+    });
   }
 
   /// Buang draf tanpa mencatat apa pun.
@@ -485,7 +615,8 @@ class LedgerRepository {
   /// - Arahnya berlawanan (satu keluar, satu masuk)
   /// - Berasal dari bank berbeda (atau akun berbeda)
   /// - Waktu kejadiannya berdekatan (dalam [window], default 5 menit).
-  static ({List<InternalTransferPair> pairs, List<Draft> singles}) partitionDrafts(
+  static ({List<InternalTransferPair> pairs, List<Draft> singles})
+  partitionDrafts(
     List<Draft> drafts, {
     Duration window = const Duration(minutes: 5),
   }) {
@@ -506,7 +637,8 @@ class LedgerRepository {
 
         final isOppositeDirection = a.direction != b.direction;
         final isSameAmount = a.amount == b.amount;
-        final isDifferentBankOrAccount = a.bankId != b.bankId ||
+        final isDifferentBankOrAccount =
+            a.bankId != b.bankId ||
             (a.accountId != null &&
                 b.accountId != null &&
                 a.accountId != b.accountId);
@@ -544,34 +676,38 @@ class LedgerRepository {
     int? inAccountId,
   }) {
     return _db.transaction(() async {
-      final transferCatId = await _defaultCategoryId(TxKind.transfer);
-      final fromAccId = outAccountId ??
+      final transferCatId = await _defaultCategoryId(TxKind.internal);
+      final fromAccId =
+          outAccountId ??
           pair.outDraft.accountId ??
           await _accountIdForBank(pair.outDraft.bankId);
-      final toAccId = inAccountId ??
+      final toAccId =
+          inAccountId ??
           pair.inDraft.accountId ??
           await _accountIdForBank(pair.inDraft.bankId);
 
       final toAccount = toAccId != null
-          ? await (_db.select(_db.accounts)
-                ..where((a) => a.id.equals(toAccId)))
-              .getSingleOrNull()
+          ? await (_db.select(
+              _db.accounts,
+            )..where((a) => a.id.equals(toAccId))).getSingleOrNull()
           : null;
       final fromAccount = fromAccId != null
-          ? await (_db.select(_db.accounts)
-                ..where((a) => a.id.equals(fromAccId)))
-              .getSingleOrNull()
+          ? await (_db.select(
+              _db.accounts,
+            )..where((a) => a.id.equals(fromAccId))).getSingleOrNull()
           : null;
 
       final toLabel = toAccount?.name ?? pair.inDraft.bankId;
       final fromLabel = fromAccount?.name ?? pair.outDraft.bankId;
 
       // 1. Kaki keluar
-      await _db.into(_db.transactions).insert(
+      await _db
+          .into(_db.transactions)
+          .insert(
             TransactionsCompanion.insert(
               uuid: newUuid(),
               bankId: pair.outDraft.bankId,
-              kind: TxKind.transfer,
+              kind: TxKind.internal,
               direction: Direction.outgoing,
               amount: pair.amount,
               counterparty: Value('Transfer ke $toLabel'),
@@ -585,11 +721,13 @@ class LedgerRepository {
           );
 
       // 2. Kaki masuk
-      await _db.into(_db.transactions).insert(
+      await _db
+          .into(_db.transactions)
+          .insert(
             TransactionsCompanion.insert(
               uuid: newUuid(),
               bankId: pair.inDraft.bankId,
-              kind: TxKind.transfer,
+              kind: TxKind.internal,
               direction: Direction.incoming,
               amount: pair.amount,
               counterparty: Value('Transfer dari $fromLabel'),
@@ -603,9 +741,9 @@ class LedgerRepository {
           );
 
       // 3. Hapus kedua draf
-      await (_db.delete(_db.drafts)
-            ..where((d) => d.id.isIn([pair.outDraft.id, pair.inDraft.id])))
-          .go();
+      await (_db.delete(
+        _db.drafts,
+      )..where((d) => d.id.isIn([pair.outDraft.id, pair.inDraft.id]))).go();
     });
   }
 
@@ -842,18 +980,27 @@ class LedgerRepository {
 
   /// Ekstrak frasa yang cocok untuk diabaikan dari draf, simpan ke pola abaikan,
   /// dan bersihkan draf saat ini serta draf lain yang berpola sama.
-  Future<String> discardDraftAndLearnPattern(Draft draft, {String? customPattern}) async {
-    final rawText = '${draft.rawTitle ?? ''} ${draft.rawBody ?? ''} ${draft.counterparty ?? ''}'.trim();
+  Future<String> discardDraftAndLearnPattern(
+    Draft draft, {
+    String? customPattern,
+  }) async {
+    final rawText =
+        '${draft.rawTitle ?? ''} ${draft.rawBody ?? ''} ${draft.counterparty ?? ''}'
+            .trim();
     String pattern = (customPattern ?? '').trim().toLowerCase();
     if (pattern.isEmpty) {
       pattern = _smartExtractIgnorePattern(rawText);
     }
     if (pattern.isNotEmpty) {
-      final bank = draft.bankId.startsWith('app:') ? draft.bankId.substring(4) : draft.bankId;
+      final bank = draft.bankId.startsWith('app:')
+          ? draft.bankId.substring(4)
+          : draft.bankId;
       await addIgnoredPattern(
         pattern: pattern,
         label: '$bank: "$pattern"',
-        bankId: draft.bankId != 'unknown' && !draft.bankId.startsWith('app:') ? draft.bankId : null,
+        bankId: draft.bankId != 'unknown' && !draft.bankId.startsWith('app:')
+            ? draft.bankId
+            : null,
       );
     }
 
@@ -862,7 +1009,9 @@ class LedgerRepository {
     final toDelete = <int>[draft.id];
     if (pattern.isNotEmpty) {
       for (final d in allDrafts) {
-        final dText = '${d.rawTitle ?? ''} ${d.rawBody ?? ''} ${d.counterparty ?? ''}'.toLowerCase();
+        final dText =
+            '${d.rawTitle ?? ''} ${d.rawBody ?? ''} ${d.counterparty ?? ''}'
+                .toLowerCase();
         if (dText.contains(pattern)) {
           toDelete.add(d.id);
         }
@@ -877,7 +1026,9 @@ class LedgerRepository {
     final allDrafts = await (_db.select(_db.drafts)).get();
     final toDelete = <int>[];
     for (final d in allDrafts) {
-      final text = '${d.rawTitle ?? ''} ${d.rawBody ?? ''} ${d.counterparty ?? ''}'.trim();
+      final text =
+          '${d.rawTitle ?? ''} ${d.rawBody ?? ''} ${d.counterparty ?? ''}'
+              .trim();
       if (engine.isIgnored(text, bankId: d.bankId)) {
         toDelete.add(d.id);
       }
@@ -935,11 +1086,9 @@ class LedgerRepository {
                 ..limit(1))
               .getSingleOrNull();
       if (dup != null) return null;
-      final resolvedCatId = categoryId ??
-          await preferredCategoryId(
-            counterparty: title,
-            kind: TxKind.other,
-          );
+      final resolvedCatId =
+          categoryId ??
+          await preferredCategoryId(counterparty: title, kind: TxKind.other);
       final resolvedAccId = accountId ?? await _accountIdForBank(bankId);
       return _db
           .into(_db.drafts)
@@ -1093,16 +1242,17 @@ class LedgerRepository {
   }
 
   Future<Map<DateTime, int>> txCountByDaySince(DateTime since) async {
-    final rows = await _db.customSelect(
-      "SELECT date(occurred_at, 'unixepoch', '$_localTzModifier') AS day, COUNT(*) AS c "
-      'FROM transactions WHERE occurred_at >= ? GROUP BY day',
-      variables: [
-        Variable.withInt(since.millisecondsSinceEpoch ~/ 1000),
-      ],
-      readsFrom: {_db.transactions},
-    ).get();
+    final rows = await _db
+        .customSelect(
+          "SELECT date(occurred_at, 'unixepoch', '$_localTzModifier') AS day, COUNT(*) AS c "
+          'FROM transactions WHERE occurred_at >= ? GROUP BY day',
+          variables: [Variable.withInt(since.millisecondsSinceEpoch ~/ 1000)],
+          readsFrom: {_db.transactions},
+        )
+        .get();
     return {
-      for (final r in rows) DateTime.parse(r.read<String>('day')): r.read<int>('c'),
+      for (final r in rows)
+        DateTime.parse(r.read<String>('day')): r.read<int>('c'),
     };
   }
 
@@ -1115,33 +1265,34 @@ class LedgerRepository {
           "SELECT date(occurred_at, 'unixepoch', '$_localTzModifier') AS day, "
           'SUM(amount) AS s FROM transactions '
           "WHERE direction = 'outgoing' AND occurred_at >= ? GROUP BY day",
-          variables: [
-            Variable.withInt(since.millisecondsSinceEpoch ~/ 1000),
-          ],
+          variables: [Variable.withInt(since.millisecondsSinceEpoch ~/ 1000)],
           readsFrom: {_db.transactions},
         )
         .watch()
-        .map((rows) => {
-              for (final r in rows)
-                DateTime.parse(r.read<String>('day')): r.read<int>('s'),
-            });
+        .map(
+          (rows) => {
+            for (final r in rows)
+              DateTime.parse(r.read<String>('day')): r.read<int>('s'),
+          },
+        );
   }
 
   /// Total belanja MURNI per hari sejak [since] (inklusif); transfer
   /// tidak ikut. Diagregasi di SQLite (audit O-03).
   Future<Map<DateTime, int>> outSpendByDaySince(DateTime since) async {
-    final rows = await _db.customSelect(
-      "SELECT date(occurred_at, 'unixepoch', '$_localTzModifier') AS day, SUM(amount) AS s "
+    final rows = await _db
+        .customSelect(
+          "SELECT date(occurred_at, 'unixepoch', '$_localTzModifier') AS day, SUM(amount) AS s "
           'FROM transactions '
-          "WHERE direction = 'outgoing' AND kind != 'transfer' "
+          "WHERE direction = 'outgoing' AND kind NOT IN ('internal', 'topup', 'withdrawal') "
           'AND occurred_at >= ? GROUP BY day',
-      variables: [
-        Variable.withInt(since.millisecondsSinceEpoch ~/ 1000),
-      ],
-      readsFrom: {_db.transactions},
-    ).get();
+          variables: [Variable.withInt(since.millisecondsSinceEpoch ~/ 1000)],
+          readsFrom: {_db.transactions},
+        )
+        .get();
     return {
-      for (final r in rows) DateTime.parse(r.read<String>('day')): r.read<int>('s'),
+      for (final r in rows)
+        DateTime.parse(r.read<String>('day')): r.read<int>('s'),
     };
   }
 
@@ -1164,13 +1315,13 @@ class LedgerRepository {
 
   /// Stream nilai setting integer (mis. batas harian/mingguan/bulanan) secara reaktif.
   Stream<int?> watchIntSetting(String key) {
-    return (_db.select(_db.appSettings)..where((s) => s.key.equals(key)))
-        .watchSingleOrNull()
-        .map((row) {
-          final text = row?.valueText.trim();
-          if (text == null || text.isEmpty) return null;
-          return int.tryParse(text);
-        });
+    return (_db.select(
+      _db.appSettings,
+    )..where((s) => s.key.equals(key))).watchSingleOrNull().map((row) {
+      final text = row?.valueText.trim();
+      if (text == null || text.isEmpty) return null;
+      return int.tryParse(text);
+    });
   }
 
   // --- tema tampilan -----------------------------------------------------------
@@ -1189,16 +1340,16 @@ class LedgerRepository {
 
   /// Stream reaktif mode tema aplikasi.
   Stream<ThemeMode> watchThemeMode() {
-    return (_db.select(_db.appSettings)..where((s) => s.key.equals(themeModeKey)))
-        .watchSingleOrNull()
-        .map((row) {
-          final raw = row?.valueText;
-          return switch (raw) {
-            'light' => ThemeMode.light,
-            'dark' => ThemeMode.dark,
-            _ => ThemeMode.system,
-          };
-        });
+    return (_db.select(
+      _db.appSettings,
+    )..where((s) => s.key.equals(themeModeKey))).watchSingleOrNull().map((row) {
+      final raw = row?.valueText;
+      return switch (raw) {
+        'light' => ThemeMode.light,
+        'dark' => ThemeMode.dark,
+        _ => ThemeMode.system,
+      };
+    });
   }
 
   /// Ubah dan simpan mode tema aplikasi.
@@ -1364,12 +1515,14 @@ class LedgerRepository {
     int? accountId,
   }) {
     final inSum = _db.transactions.amount.sum(
-      filter: _db.transactions.direction.equalsValue(Direction.incoming) &
-          _db.transactions.kind.equalsValue(TxKind.transfer).not(),
+      filter:
+          _db.transactions.direction.equalsValue(Direction.incoming) &
+          _db.transactions.kind.isInValues(_internalKinds).not(),
     );
     final outSum = _db.transactions.amount.sum(
-      filter: _db.transactions.direction.equalsValue(Direction.outgoing) &
-          _db.transactions.kind.equalsValue(TxKind.transfer).not(),
+      filter:
+          _db.transactions.direction.equalsValue(Direction.outgoing) &
+          _db.transactions.kind.isInValues(_internalKinds).not(),
     );
 
     final query = _db.selectOnly(_db.transactions)
@@ -1386,11 +1539,7 @@ class LedgerRepository {
     return query.watchSingle().map((row) {
       final totalIn = row.read(inSum) ?? 0;
       final totalOut = row.read(outSum) ?? 0;
-      return (
-        totalIn: totalIn,
-        totalOut: totalOut,
-        net: totalIn - totalOut,
-      );
+      return (totalIn: totalIn, totalOut: totalOut, net: totalIn - totalOut);
     });
   }
 
@@ -1402,7 +1551,7 @@ class LedgerRepository {
       ..addColumns([amountSum])
       ..where(
         _db.transactions.direction.equalsValue(Direction.outgoing) &
-            _db.transactions.kind.equalsValue(TxKind.transfer).not() &
+            _db.transactions.kind.isInValues(_internalKinds).not() &
             _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
             _db.transactions.occurredAt.isSmallerThanValue(end),
       );
@@ -1417,7 +1566,7 @@ class LedgerRepository {
       ..addColumns([amountSum])
       ..where(
         _db.transactions.direction.equalsValue(Direction.incoming) &
-            _db.transactions.kind.equalsValue(TxKind.transfer).not() &
+            _db.transactions.kind.isInValues(_internalKinds).not() &
             _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
             _db.transactions.occurredAt.isSmallerThanValue(end),
       );
@@ -1440,7 +1589,7 @@ class LedgerRepository {
       ])
       ..where(
         _db.transactions.direction.equalsValue(Direction.outgoing) &
-            _db.transactions.kind.equalsValue(TxKind.transfer).not() &
+            _db.transactions.kind.isInValues(_internalKinds).not() &
             _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
             _db.transactions.occurredAt.isSmallerThanValue(end),
       )
@@ -1643,7 +1792,9 @@ class LedgerRepository {
     DateTime? settledAt,
   }) async {
     return _db.transaction(() async {
-      final bon = await (_db.select(_db.bons)..where((b) => b.id.equals(bonId))).getSingle();
+      final bon = await (_db.select(
+        _db.bons,
+      )..where((b) => b.id.equals(bonId))).getSingle();
       final date = settledAt ?? DateTime.now();
       final isLent = bon.direction == BonDirection.lent;
 
@@ -1677,7 +1828,9 @@ class LedgerRepository {
   /// Batal lunas: putuskan tautan dan hapus transaksi pelunasan yang tercipta.
   Future<void> unsettleBon(int bonId) async {
     return _db.transaction(() async {
-      final bon = await (_db.select(_db.bons)..where((b) => b.id.equals(bonId))).getSingle();
+      final bon = await (_db.select(
+        _db.bons,
+      )..where((b) => b.id.equals(bonId))).getSingle();
       final txId = bon.settlementTransactionId;
       await updateBon(
         bonId,
@@ -1687,7 +1840,9 @@ class LedgerRepository {
         ),
       );
       if (txId != null) {
-        await (_db.delete(_db.transactions)..where((t) => t.id.equals(txId))).go();
+        await (_db.delete(
+          _db.transactions,
+        )..where((t) => t.id.equals(txId))).go();
       }
     });
   }
@@ -1696,11 +1851,15 @@ class LedgerRepository {
   /// ikut dihapus; jika false (default), transaksi pelunasan tetap dipertahankan.
   Future<void> deleteBon(int id, {bool deleteLinkedTx = false}) async {
     return _db.transaction(() async {
-      final bon = await (_db.select(_db.bons)..where((b) => b.id.equals(id))).getSingleOrNull();
+      final bon = await (_db.select(
+        _db.bons,
+      )..where((b) => b.id.equals(id))).getSingleOrNull();
       final txId = bon?.settlementTransactionId;
       await (_db.delete(_db.bons)..where((b) => b.id.equals(id))).go();
       if (txId != null && deleteLinkedTx) {
-        await (_db.delete(_db.transactions)..where((t) => t.id.equals(txId))).go();
+        await (_db.delete(
+          _db.transactions,
+        )..where((t) => t.id.equals(txId))).go();
       }
     });
   }
@@ -1777,12 +1936,14 @@ class LedgerRepository {
 
       // 2. Hapus preferensi dan setelan lama, lalu tandai demo seed dinonaktifkan
       await _db.delete(_db.appSettings).go();
-      await _db.into(_db.appSettings).insert(
-        AppSettingsCompanion.insert(
-          key: 'demo_seed_disabled',
-          valueText: '1',
-        ),
-      );
+      await _db
+          .into(_db.appSettings)
+          .insert(
+            AppSettingsCompanion.insert(
+              key: 'demo_seed_disabled',
+              valueText: '1',
+            ),
+          );
 
       // 3. Reset akun: hapus semua akun dan buat ulang akun default bersih dengan saldo 0
       await _db.delete(_db.accounts).go();
@@ -1790,7 +1951,9 @@ class LedgerRepository {
 
       // 4. Reset kategori: hapus semua kategori dan buat ulang kategori bawaan
       await _db.delete(_db.categories).go();
-      await _db.batch((b) => b.insertAll(_db.categories, defaultCategoryRows()));
+      await _db.batch(
+        (b) => b.insertAll(_db.categories, defaultCategoryRows()),
+      );
     });
   }
 }
@@ -1798,10 +1961,7 @@ class LedgerRepository {
 /// Pasangan dua draf notifikasi yang saling melengkapi sebagai
 /// transfer antar rekening sendiri (uang keluar di satu akun, masuk di akun lain).
 class InternalTransferPair {
-  const InternalTransferPair({
-    required this.outDraft,
-    required this.inDraft,
-  });
+  const InternalTransferPair({required this.outDraft, required this.inDraft});
 
   final Draft outDraft;
   final Draft inDraft;

@@ -10,7 +10,10 @@ enum Direction { incoming, outgoing }
 enum TxSource { notification, manual, import, auto }
 
 /// Jenis transaksi.
-enum TxKind { transfer, payment, topup, withdrawal, other }
+/// transfer = kirim ke pihak lain (dihitung pengeluaran/pemasukan).
+/// internal = pindah dana antar akun sendiri. topup dan withdrawal juga
+/// perpindahan dana milik sendiri. Ketiganya tidak masuk arus kas.
+enum TxKind { transfer, payment, topup, withdrawal, other, internal }
 
 /// Jenis akun/dompet.
 enum AccountKind { bank, ewallet, cash }
@@ -25,7 +28,14 @@ extension TxKindLabel on TxKind {
     TxKind.topup => 'Top up',
     TxKind.withdrawal => 'Tarik tunai',
     TxKind.other => 'Lainnya',
+    TxKind.internal => 'Antar akun',
   };
+
+  /// Perpindahan dana milik sendiri: dikecualikan dari arus kas dan belanja.
+  bool get isInternalMove =>
+      this == TxKind.internal ||
+      this == TxKind.topup ||
+      this == TxKind.withdrawal;
 }
 
 extension DirectionLabel on Direction {

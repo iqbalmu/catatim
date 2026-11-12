@@ -41,7 +41,7 @@ void main() {
     Future<void> transferAt(DateTime when, int amount) => repo.addManual(
           amount: amount,
           direction: Direction.outgoing,
-          kind: TxKind.transfer,
+          kind: TxKind.internal,
           occurredAt: when,
         );
 
@@ -332,11 +332,11 @@ void main() {
       final dayLine = progress.latest!.snapshot.lines
           .firstWhere((l) => l.label == 'Batas harian');
       expect(dayLine.used, 40000);
-      // Transfer biasa bukan belanja: pace tak berubah.
+      // Transfer antar-akun bukan belanja: pace tak berubah.
       await repo.addManual(
         amount: 5000000,
         direction: Direction.outgoing,
-        kind: TxKind.transfer,
+        kind: TxKind.internal,
         occurredAt: todayAt(11),
       );
       await progress.refresh();

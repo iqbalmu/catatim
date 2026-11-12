@@ -546,7 +546,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
               int totalIn = 0;
               int totalOut = 0;
               for (final item in allItems) {
-                if (item.tx.kind == TxKind.transfer) continue;
+                if (item.tx.kind.isInternalMove) continue;
                 if (item.tx.direction == Direction.incoming) {
                   totalIn += item.tx.amount;
                 } else if (item.tx.direction == Direction.outgoing) {

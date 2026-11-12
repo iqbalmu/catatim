@@ -146,7 +146,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -242,6 +242,17 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           'CREATE INDEX IF NOT EXISTS idx_transactions_cat_occurred '
           'ON transactions (category_id, occurred_at DESC)',
+        );
+      }
+      if (from < 13) {
+        // Transfer antar akun sendiri (pasangan/manual) dulu bertanda
+        // 'transfer'; sekarang 'internal'. Transfer dari notifikasi
+        // (ke pihak lain) tetap 'transfer' dan ikut dihitung.
+        await customStatement(
+          "UPDATE transactions SET kind = 'internal' "
+          "WHERE kind = 'transfer' AND (source = 'manual' "
+          "OR counterparty LIKE 'Transfer ke %' "
+          "OR counterparty LIKE 'Transfer dari %')",
         );
       }
       if (from < 12) {
