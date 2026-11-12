@@ -399,6 +399,29 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         Spacing.xl,
       ),
       children: [
+        StreamBuilder<bool>(
+          stream: widget.repository.watchAutoRecordEnabled(),
+          initialData: false,
+          builder: (context, snap) => QuestCard(
+            padding: EdgeInsets.zero,
+            child: QuestListTile(
+              leading: Icon(Icons.bolt_rounded, color: q.primary),
+              title: Text('Catat otomatis', style: context.qTitle(14.5)),
+              subtitle: Text(
+                'Notifikasi yang terbaca langsung jadi transaksi, tanpa '
+                'konfirmasi.',
+                style: context.qSmall(11.5).copyWith(color: q.muted),
+              ),
+              trailing: QuestSwitch(
+                value: snap.data ?? false,
+                label: 'Catat otomatis',
+                onChanged: widget.repository.setAutoRecordEnabled,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: Spacing.m),
+
         // Search Bar
         TextField(
           controller: _searchCtrl,

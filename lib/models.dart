@@ -5,7 +5,9 @@ import 'dart:math';
 enum Direction { incoming, outgoing }
 
 /// Sumber pencatatan transaksi.
-enum TxSource { notification, manual, import }
+/// notification = draf notifikasi yang dikonfirmasi user; auto = dicatat
+/// otomatis tanpa konfirmasi. Disimpan sebagai teks (nama), tanpa migrasi.
+enum TxSource { notification, manual, import, auto }
 
 /// Jenis transaksi.
 enum TxKind { transfer, payment, topup, withdrawal, other }
@@ -35,7 +37,8 @@ extension DirectionLabel on Direction {
 
 extension TxSourceLabel on TxSource {
   String get label => switch (this) {
-    TxSource.notification => 'Notifikasi',
+    TxSource.notification => 'Dikonfirmasi',
+    TxSource.auto => 'Otomatis',
     TxSource.manual => 'Manual',
     TxSource.import => 'Impor',
   };

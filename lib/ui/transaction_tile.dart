@@ -81,6 +81,15 @@ class TransactionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final tx = item.tx;
     final incoming = tx.direction == Direction.incoming;
+    final (srcIcon, srcLabel, srcColor) = switch (tx.source) {
+      TxSource.auto => (Icons.bolt_rounded, 'Dicatat otomatis', context.q.primary),
+      TxSource.notification => (
+        Icons.mark_email_read_rounded,
+        'Dikonfirmasi dari notifikasi',
+        context.q.good,
+      ),
+      _ => (Icons.edit_note_rounded, 'Dicatat manual', context.q.muted),
+    };
     final category = item.category;
     final title = (tx.counterparty != null && tx.counterparty!.isNotEmpty)
         ? tx.counterparty!
@@ -91,7 +100,8 @@ class TransactionTile extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: '$title, ${category?.name ?? tx.kind.label}, ${Money.format(tx.amount)}, ${incoming ? "pemasukan" : "pengeluaran"}',
+      label:
+          '$title, ${category?.name ?? tx.kind.label}, ${Money.format(tx.amount)}, ${incoming ? "pemasukan" : "pengeluaran"}',
       child: QuestPress(
         onTap: () => TransactionSheet.show(
           context,
@@ -113,15 +123,50 @@ class TransactionTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: dotColor.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
+              Tooltip(
+                message: srcLabel,
+                child: SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: dotColor.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          _iconFor(tx.kind),
+                          color: dotColor,
+                          size: 20,
+                        ),
+                      ),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 18,
+                          height: 18,
+                          decoration: BoxDecoration(
+                            color: context.q.surface,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: srcColor, width: 1.5),
+                          ),
+                          child: Icon(
+                            srcIcon,
+                            size: 11,
+                            color: srcColor,
+                            semanticLabel: srcLabel,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Icon(_iconFor(tx.kind), color: dotColor, size: 20),
               ),
               const SizedBox(width: Spacing.m),
               Expanded(
@@ -135,9 +180,14 @@ class TransactionTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${category?.name ?? tx.kind.label} · ${tx.bankId}',
+                      tx.source == TxSource.manual
+                          ? (category?.name ?? tx.kind.label)
+                          : '${category?.name ?? tx.kind.label} · ${tx.bankId}',
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: context.qSmall(11.5).copyWith(color: context.q.muted),
+                      style: context
+                          .qSmall(11.5)
+                          .copyWith(color: context.q.muted),
                     ),
                   ],
                 ),

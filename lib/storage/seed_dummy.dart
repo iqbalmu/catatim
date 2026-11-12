@@ -129,7 +129,7 @@ class _SeedTx {
   ) =>
       TransactionsCompanion.insert(
         uuid: uuid,
-        bankId: source == TxSource.notification ? 'blu' : 'manual',
+        bankId: source == TxSource.manual ? 'manual' : 'blu',
         kind: kind,
         direction: direction,
         amount: amount,
@@ -189,7 +189,7 @@ List<_SeedTx> _seedSpecs(DateTime now) {
           'Makanan', 'Warung Nasi Bu Sri', TxSource.manual),
     if (week(1, 17, 45) case final d?)
       _SeedTx('seed-dummy-05', d, 15000, Direction.outgoing, TxKind.payment,
-          'Transportasi', 'Gojek ke kantor', TxSource.manual),
+          'Transportasi', 'Gojek ke kantor', TxSource.auto),
     if (week(2, 9, 40) case final d?)
       _SeedTx('seed-dummy-06', d, 25000, Direction.outgoing, TxKind.payment,
           'Tagihan', 'Pulsa & paket data', TxSource.manual),
@@ -198,7 +198,7 @@ List<_SeedTx> _seedSpecs(DateTime now) {
           'Makanan', 'Ayam Geprek Bakar', TxSource.manual),
     if (week(3, 10, 20) case final d?)
       _SeedTx('seed-dummy-08', d, 35000, Direction.outgoing, TxKind.payment,
-          'Belanja', 'Indomaret', TxSource.manual),
+          'Belanja', 'Indomaret', TxSource.auto),
     if (week(4, 19, 30) case final d?)
       _SeedTx('seed-dummy-09', d, 30000, Direction.outgoing, TxKind.payment,
           'Makanan', 'Ayam Geprek Bakar', TxSource.manual),
@@ -209,13 +209,13 @@ List<_SeedTx> _seedSpecs(DateTime now) {
     // ── Bulan berjalan (dipatok tanggal) ──
     if (month(3, 10, 0) case final d?)
       _SeedTx('seed-dummy-11', d, 200000, Direction.outgoing, TxKind.payment,
-          'Tagihan', 'Listrik PLN', TxSource.manual),
+          'Tagihan', 'Listrik PLN', TxSource.notification),
     if (month(7, 14, 0) case final d?)
       _SeedTx('seed-dummy-12', d, 220000, Direction.outgoing, TxKind.payment,
           'Belanja', 'Belanja bulanan pasar', TxSource.manual),
     if (month(10, 9, 15) case final d?)
       _SeedTx('seed-dummy-13', d, 8500000, Direction.incoming, TxKind.payment,
-          'Gaji', 'Gaji bulanan', TxSource.manual),
+          'Gaji', 'Gaji bulanan', TxSource.auto),
     if (month(11, 13, 0) case final d?)
       _SeedTx('seed-dummy-14', d, 90000, Direction.outgoing, TxKind.payment,
           'Lainnya', 'Apotek Kimia Farma', TxSource.manual),
@@ -227,7 +227,7 @@ List<_SeedTx> _seedSpecs(DateTime now) {
           'Tagihan', 'Langganan streaming', TxSource.manual),
     if (month(19, 19, 0) case final d?)
       _SeedTx('seed-dummy-17', d, 1000000, Direction.incoming, TxKind.payment,
-          'Transfer', 'Bayaran freelance artikel', TxSource.manual),
+          'Transfer', 'Bayaran freelance artikel', TxSource.notification),
     if (month(5, 8, 30) case final d?)
       _SeedTx('seed-dummy-18', d, 100000, Direction.outgoing, TxKind.payment,
           'Transportasi', 'Bensin & parkir', TxSource.manual),

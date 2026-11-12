@@ -181,7 +181,10 @@ class CapturePipeline extends ChangeNotifier {
         );
       }
       if (draft != null && connected.contains(draft.bankId)) {
-        await repository.addDraftFromCapture(raw: raw, draft: draft);
+        final id = await repository.addDraftFromCapture(raw: raw, draft: draft);
+        if (id != null && await repository.autoRecordEnabled()) {
+          await repository.autoConfirmDraft(id);
+        }
       } else {
         // Format belum dikenal rule — TETAP jadi draf mentah yang
         // menunggu keputusan user (isi nominal/kategori saat konfirmasi),
