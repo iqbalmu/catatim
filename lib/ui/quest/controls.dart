@@ -244,6 +244,7 @@ class QuestSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final q = context.q;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Semantics(
       toggled: value,
       label: label,
@@ -261,6 +262,12 @@ class QuestSwitch extends StatelessWidget {
               decoration: BoxDecoration(
                 color: value ? q.primarySolid : q.surface2,
                 borderRadius: BorderRadius.circular(AppRadius.pill),
+                // Track mati diberi garis: di dark, surface2 hanya 1,2:1
+                // terhadap kartu sehingga bentuk toggle bisa tenggelam.
+                border: Border.all(
+                  color: value ? Colors.transparent : q.line,
+                  width: 1,
+                ),
               ),
               child: AnimatedAlign(
                 duration: QuestMotion.fast,
@@ -270,7 +277,9 @@ class QuestSwitch extends StatelessWidget {
                   width: 22,
                   height: 22,
                   decoration: BoxDecoration(
-                    color: q.onPrimary,
+                    // Knob mati memakai `q.onPrimary` (tinta gelap) akan
+                    // tenggelam di track gelap; pakai teks terang di dark.
+                    color: value ? q.onPrimary : (dark ? q.body : Colors.white),
                     shape: BoxShape.circle,
                     boxShadow: const [
                       BoxShadow(color: Color(0x1F000000), blurRadius: 4),

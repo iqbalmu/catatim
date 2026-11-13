@@ -29,6 +29,7 @@ class QuestPalette {
     required this.primaryText,
     required this.primaryGradientEnd,
     required this.shadow,
+    required this.brandShadow,
     this.incomingTint = SeedColors.incomingTint,
     this.outgoingTint = SeedColors.outgoingTint,
   });
@@ -56,7 +57,7 @@ class QuestPalette {
 
   /// Isian brand yang lolos kontras WCAG AA untuk kontennya (audit
   /// 2026-11-13): light teal deep + putih (7,9:1), dark teal terang +
-  /// tinta gelap (6,2:1).
+  /// tinta gelap (6,8:1).
   final Color primarySolid;
 
   /// Teks/ikon di atas [primarySolid] / gradien brand.
@@ -71,9 +72,13 @@ class QuestPalette {
 
   final Color shadow;
 
+  /// Bayangan elemen brand (tombol + nav): di light tetap teal pekat agar
+  /// tombol terangkat dari latar terang; di dark hitam netral.
+  final Color brandShadow;
+
   /// Elevasi kartu — offset/blur tetap, warna mengikuti [shadow]:
-  /// light 3% slate (halus), dark 48% hitam (terlihat di permukaan gelap).
-  /// Menggantikan AppShadows statis yang tak pernah flip di dark (audit T-01).
+  /// light 3% slate (halus), dark 32% hitam di atas graphite. Menggantikan
+  /// AppShadows statis yang tak pernah flip di dark (audit T-01).
   List<BoxShadow> get cardShadow => [
         BoxShadow(offset: const Offset(0, 4), blurRadius: 16, color: shadow),
       ];
@@ -107,6 +112,7 @@ class QuestPalette {
     primaryText: SeedColors.primaryDeep,
     primaryGradientEnd: Color(0xFF164E48),
     shadow: Color(0x0A10393D),
+    brandShadow: Color(0x401F5A53),
     incomingTint: SeedColors.incomingTint,
     outgoingTint: SeedColors.outgoingTint,
   );
@@ -128,12 +134,13 @@ class QuestPalette {
     primaryDeep: DarkColors.primaryDeep,
     primaryLight: DarkColors.primaryLight,
     accent: DarkColors.accent,
-    hint: Color(0xFFB7D3D0),
-    primarySolid: DarkColors.primary,
+    hint: Color(0xFFA9B9B7),
+    primarySolid: Color(0xFF4FAA9B),
     onPrimary: DarkColors.bg,
-    primaryText: Color(0xFF7CD4C6),
-    primaryGradientEnd: Color(0xFF8ADCCD),
-    shadow: Color(0x30000000),
+    primaryText: Color(0xFF7FD1C2),
+    primaryGradientEnd: Color(0xFF77C9BA),
+    shadow: Color(0x52000000),
+    brandShadow: Color(0x59000000),
     incomingTint: DarkColors.incomingTint,
     outgoingTint: DarkColors.outgoingTint,
   );
@@ -261,13 +268,19 @@ class QuestPageTransitionsBuilder extends PageTransitionsBuilder {
       end: const Offset(-0.25, 0),
     ).chain(CurveTween(curve: QuestMotion.easeOut));
 
+    // Bayangan tepi route: di light nyaris transparan; di dark latar sudah
+    // gelap, jadi pakai hitam lebih pekat agar tepi layar tetap terbaca.
+    final edgeColor = Theme.of(context).brightness == Brightness.dark
+        ? const Color(0x66000000)
+        : const Color(0x180B2E33);
+
     final edgeShadow = DecoratedBoxTransition(
       decoration: DecorationTween(
         begin: const BoxDecoration(),
-        end: const BoxDecoration(
+        end: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Color(0x180B2E33),
+              color: edgeColor,
               blurRadius: 24,
               offset: Offset(-6, 0),
             ),

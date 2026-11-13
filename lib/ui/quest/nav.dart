@@ -162,10 +162,10 @@ class QuestBottomNav extends StatelessWidget {
               colors: [context.q.primarySolid, context.q.primaryGradientEnd],
             ),
             borderRadius: BorderRadius.circular(AppRadius.pill),
-            boxShadow: const [
+            boxShadow: [
               BoxShadow(
-                color: Color(0x401F5A53),
-                offset: Offset(0, 6),
+                color: context.q.brandShadow,
+                offset: const Offset(0, 6),
                 blurRadius: 16,
               ),
             ],

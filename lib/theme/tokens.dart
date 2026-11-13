@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 /// Token desain — satu sumber kebenaran untuk spacing, radius, dan warna.
 ///
 /// Palet "Petrol Teal CatatIn" (2026-11-13): seluruh warna diturunkan
-/// dari logo aplikasi (karung burlap, syal teal, koin emas, aksen koral)
-/// di atas latar teal gelap #13454A. Dua tema (light/dark); aksen
-/// semantik memakai varian gelap agar lolos WCAG AA di surface & tint-nya.
+/// dari logo aplikasi (karung burlap, syal teal, koin emas, aksen koral).
+/// Light memakai latar off-white ber-tint teal; dark memakai graphite
+/// netral (2026-11-14) agar teal hanya jadi aksen, bukan warna latar.
+/// Aksen semantik memakai varian gelap agar lolos WCAG AA di surface & tint-nya.
 class Spacing {
   Spacing._();
 
@@ -148,42 +149,48 @@ class SeedColors {
       categoryPalette[index % categoryPalette.length];
 }
 
+/// Dark mode netral (2026-11-14): graphite sejuk, bukan teal pekat.
+///
+/// Alasannya bukan cuma hue: `bg`/`surface`/`surface2` lama satu keluarga
+/// teal sehingga batas kartu nyaris tak terlihat (line hanya 1,42:1 di
+/// surface). Kini netral dengan tangga kecerahan yang jelas; teal tetap
+/// hidup sebagai aksen brand (`primary*`), bukan sebagai latar.
 class DarkColors {
   DarkColors._();
 
-  /// Latar app — teal gelap (sedikit lebih dalam dari latar logo).
-  static const Color bg = Color(0xFF0B2E33);
+  /// Latar app — graphite hampir hitam dengan semburat sejuk.
+  static const Color bg = Color(0xFF0C1112);
 
-  /// Kartu/sheet — latar teal logo #13454A.
-  static const Color surface = Color(0xFF14434A);
+  /// Kartu/sheet — satu langkah di atas bg.
+  static const Color surface = Color(0xFF191F21);
 
-  /// Tint latar sekunder / strip.
-  static const Color surface2 = Color(0xFF1C5158);
+  /// Tint latar sekunder / strip / isian input.
+  static const Color surface2 = Color(0xFF262F31);
 
-  /// Garis sekunder & border hairline.
-  static const Color line = Color(0xFF225B62);
-  static const Color border = Color(0xFF225B62);
+  /// Garis sekunder & border hairline — 1,87:1 di surface (sebelumnya 1,42).
+  static const Color line = Color(0xFF3F4C4E);
+  static const Color border = Color(0xFF3F4C4E);
 
-  /// Teks utama — putih kehijauan dari logo.
-  static const Color ink = Color(0xFFEAFBFC);
+  /// Teks utama — putih netral sedikit sejuk.
+  static const Color ink = Color(0xFFEFF4F3);
 
-  /// Teks body — abu teal muda dari logo.
-  static const Color body = Color(0xFFCFE3E4);
+  /// Teks body.
+  static const Color body = Color(0xFFCFD8D7);
 
-  /// Teks sekunder/muted.
-  static const Color muted = Color(0xFF9CC0BD);
+  /// Teks sekunder/muted — 6,3:1 di surface, 5,2:1 di surface2.
+  static const Color muted = Color(0xFF93A2A1);
 
   /// Brand teal syal logo diterangkan — teks/ikon di surface gelap.
-  static const Color primary = Color(0xFF62B8AA);
-  static const Color primaryDeep = Color(0xFF499B8F);
-  static const Color primaryLight = Color(0xFF0F3D40);
-  static const Color accent = Color(0xFFF08A47);
+  static const Color primary = Color(0xFF5FB8A9);
+  static const Color primaryDeep = Color(0xFF47968A);
+  static const Color primaryLight = Color(0xFF17302D);
+  static const Color accent = Color(0xFFE58A5C);
 
   /// Semantik
-  static const Color incoming = Color(0xFF63D8A1);
-  static const Color incomingTint = Color(0xFF0F3B2C);
-  static const Color outgoing = Color(0xFFF98A82); // koral logo
-  static const Color outgoingTint = Color(0xFF3F161A);
-  static const Color warn = Color(0xFFFAC750); // emas koin logo
-  static const Color warnTint = Color(0xFF3D2C07);
+  static const Color incoming = Color(0xFF5FD3A0);
+  static const Color incomingTint = Color(0xFF13322A);
+  static const Color outgoing = Color(0xFFF0928A); // koral logo
+  static const Color outgoingTint = Color(0xFF3A1B1C);
+  static const Color warn = Color(0xFFE8C468); // emas koin logo
+  static const Color warnTint = Color(0xFF3A2E12);
 }

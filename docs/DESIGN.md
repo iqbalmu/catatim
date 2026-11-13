@@ -14,10 +14,10 @@ Dokumen ini adalah sumber kebenaran visual aplikasi; widget-kit terpusat di `lib
    - `card`: Kartu konten standar (radius 20, hairline border, shadow halus).
    - `flat`: Strip ringkas atau sub-konten (latar `surface2`, hairline border, tanpa shadow).
 3. **Anggaran Aksen Warna Terkendali:**
-   - **Teal (`#1F5A53` / `#62B8AA`)**: Hanya untuk brand dan elemen interaktif / CTA primer. Isi CTA memakai `primarySolid` (light teal deep / dark teal terang) dengan konten `onPrimary` (putih / tinta gelap) — pasangan lolos WCAG AA (audit 2026-11-13: putih di atas teal deep 7,9:1, tinta di atas teal terang 6,2:1).
-   - **Hijau (`#266E48` / `#63D8A1`)**: Khusus pemasukan dan status aman / aktif — turunan hijau daun grafik logo. Light varian gelap agar lolos AA di surface & tint.
-   - **Emas (`#8A5F06` / `#FAC750`)**: Khusus peringatan mendekati batas anggaran (75–99%) dan gamifikasi streak — langsung dari koin "Rp" logo (dark) dan varian gelapnya untuk teks light.
-   - **Koral (`#B93A31` / `#F98A82`)**: Khusus pengeluaran dan status over-budget / aksi destruktif — dari teks "In" logo; light digelapkan agar lolos AA (5,0:1 di tint).
+   - **Teal (`#1F5A53` / `#5FB8A9`)**: Hanya untuk brand dan elemen interaktif / CTA primer. Isi CTA memakai `primarySolid` (light teal deep / dark teal terang) dengan konten `onPrimary` (putih / tinta gelap) — pasangan lolos WCAG AA (audit 2026-11-13: putih di atas teal deep 7,9:1, tinta di atas teal terang 6,8:1).
+   - **Hijau (`#266E48` / `#5FD3A0`)**: Khusus pemasukan dan status aman / aktif — turunan hijau daun grafik logo. Light varian gelap agar lolos AA di surface & tint.
+   - **Emas (`#8A5F06` / `#E8C468`)**: Khusus peringatan mendekati batas anggaran (75–99%) dan gamifikasi streak — langsung dari koin "Rp" logo (dark) dan varian gelapnya untuk teks light.
+   - **Koral (`#B93A31` / `#F0928A`)**: Khusus pengeluaran dan status over-budget / aksi destruktif — dari teks "In" logo; light digelapkan agar lolos AA (5,0:1 di tint).
 4. **Angka Adalah Raja:**
    - Semua nominal finansial memakai `FontFeature.tabularFigures()` dengan tipografi tebal (`qDisplay` 28–40 atau `qTitle`).
 5. **Tanpa Dekorasi Berlebih (Craft Floor):**
@@ -54,29 +54,33 @@ Dokumen ini adalah sumber kebenaran visual aplikasi; widget-kit terpusat di `lib
 | `outgoingTint` | `#FDEEEC` | Latar chip pengeluaran / defisit |
 
 ### Dark Mode (`DarkColors`)
+Graphite netral (2026-11-14): latar tidak lagi teal, teal hanya aksen brand.
+Tangga `bg → surface → surface2` dan `line` sengaja dilebarkan agar batas
+kartu terbaca (line 1,87:1 di surface; sebelumnya 1,42:1).
+
 | Token | Nilai Hex | Peran |
 |---|---|---|
-| `bg` | `#0B2E33` | Latar aplikasi (teal gelap, sedikit lebih dalam dari logo) |
-| `surface` | `#14434A` | Permukaan kartu — latar teal logo #13454A |
-| `surface2` | `#1C5158` | Tint latar sekunder / strip |
-| `line` / `border` | `#225B62` | Garis pembatas hairline halus |
-| `text` / `ink` | `#EAFBFC` | Teks judul utama (putih kehijauan logo) |
-| `body` | `#CFE3E4` | Teks bacaan konten (abu teal muda logo) |
-| `muted` | `#9CC0BD` | Teks sekunder / keterangan — hanya di atas `surface`/`bg` (4,8:1) |
-| `hint` | `#B7D3D0` | Teks di atas isian `surface2`: hint/label input, segmen tak aktif |
-| `primary` | `#62B8AA` | Brand & ikon aksen (teal syal logo diterangkan; 4,6:1 di surface) |
-| `primarySolid` | `#62B8AA` | Isi CTA — konten `onPrimary` tinta gelap 6,2:1 |
-| `primaryText` | `#7CD4C6` | Teks berwarna brand |
-| `primaryGradientEnd` | `#8ADCCD` | Ujung gradien CTA |
-| `onPrimary` | `#0B2E33` | Teks/ikon di atas `primarySolid`/gradien |
-| `primaryLight` | `#0F3D40` | Latar tint CTA & badge |
-| `accent` | `#F08A47` | Aksen kedua — orana syal logo diterangkan |
-| `good` / `incoming` | `#63D8A1` | Pemasukan & status aman (hijau daun logo diterangkan) |
-| `incomingTint` | `#0F3B2C` | Latar chip pemasukan / surplus |
-| `warn` | `#FAC750` | Peringatan mendekati batas (emas koin "Rp" logo) |
-| `warnTint` | `#3D2C07` | Latar chip peringatan / streak |
-| `bad` / `outgoing` | `#F98A82` | Pengeluaran & over-budget (koral teks "In" logo diterangkan) |
-| `outgoingTint` | `#3F161A` | Latar chip pengeluaran / defisit |
+| `bg` | `#0C1112` | Latar aplikasi (graphite hampir hitam, semburat sejuk) |
+| `surface` | `#191F21` | Permukaan kartu — satu langkah di atas bg |
+| `surface2` | `#262F31` | Tint latar sekunder / strip / isian input |
+| `line` / `border` | `#3F4C4E` | Garis pembatas hairline (1,87:1 di surface) |
+| `text` / `ink` | `#EFF4F3` | Teks judul utama (putih netral) |
+| `body` | `#CFD8D7` | Teks bacaan konten |
+| `muted` | `#93A2A1` | Teks sekunder / keterangan (6,3:1 di surface, 5,2:1 di surface2) |
+| `hint` | `#A9B9B7` | Teks di atas isian `surface2`: hint/label input, segmen tak aktif (6,7:1) |
+| `primary` | `#5FB8A9` | Brand & ikon aksen (teal syal diterangkan; 5,8:1 di surface2) |
+| `primarySolid` | `#4FAA9B` | Isi CTA — konten `onPrimary` tinta gelap 6,8:1 |
+| `primaryText` | `#7FD1C2` | Teks berwarna brand (9,4:1 di surface) |
+| `primaryGradientEnd` | `#77C9BA` | Ujung gradien CTA |
+| `onPrimary` | `#0C1112` | Teks/ikon di atas `primarySolid`/gradien |
+| `primaryLight` | `#17302D` | Latar tint CTA & badge |
+| `accent` | `#E58A5C` | Aksen kedua — orana syal logo diterangkan |
+| `good` / `incoming` | `#5FD3A0` | Pemasukan & status aman (9,0:1 di surface) |
+| `incomingTint` | `#13322A` | Latar chip pemasukan / surplus |
+| `warn` | `#E8C468` | Peringatan mendekati batas (10,0:1 di surface) |
+| `warnTint` | `#3A2E12` | Latar chip peringatan / streak |
+| `bad` / `outgoing` | `#F0928A` | Pengeluaran & over-budget (7,3:1 di surface) |
+| `outgoingTint` | `#3A1B1C` | Latar chip pengeluaran / defisit |
 
 ## Tipografi — Nunito
 

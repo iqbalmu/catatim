@@ -106,10 +106,18 @@ class _BukuduitBootstrapState extends State<BukuduitBootstrap> {
     final app = _ready;
     if (app != null) return app;
     if (_locked) return const BukuduitLockedApp();
+    // Splash mengikuti brightness perangkat supaya tidak berkedip putih saat
+    // app dibuka dalam tema gelap (mode pilihan user belum terbaca — DB baru
+    // dibuka di _init).
+    final dark =
+        WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+        Brightness.dark;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: QuestSchemes.light(),
-      home: Scaffold(backgroundColor: QuestPalette.light.bg),
+      theme: dark ? QuestSchemes.dark() : QuestSchemes.light(),
+      home: Scaffold(
+        backgroundColor: (dark ? QuestPalette.dark : QuestPalette.light).bg,
+      ),
     );
   }
 }
