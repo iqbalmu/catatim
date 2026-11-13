@@ -58,7 +58,9 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           Spacing.m,
-          Spacing.s,
+          // Napas di bawah header: judul app bar tidak menempel ke kartu
+          // pertama (sebelumnya Spacing.s terasa sesak).
+          Spacing.l,
           Spacing.m,
           (showBack ? Spacing.xl : 104) + MediaQuery.paddingOf(context).bottom,
         ),
@@ -403,7 +405,9 @@ class SettingsScreen extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: Spacing.m),
+          // Jarak ekstra sebelum footer: blok "Tentang" bukan section baru,
+          // jadi butuh napas lebih dari jarak antar-kartu biasa.
+          const SizedBox(height: Spacing.xl),
 
           // Tentang: logo app sejajar di kiri nama + versi, tanpa kartu.
           Padding(
