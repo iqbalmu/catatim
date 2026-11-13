@@ -28,14 +28,14 @@ class DailyPaceHeroCard extends StatelessWidget {
           final LimitLine? monthlyLine = snapshot?.lines
               .cast<LimitLine?>()
               .firstWhere(
-                (l) => l?.label == 'Total bulan ini',
+                (l) => l?.label == LimitScope.monthly.label,
                 orElse: () => null,
               );
 
           final LimitLine? dailyLine = snapshot?.lines
               .cast<LimitLine?>()
               .firstWhere(
-                (l) => l?.label == 'Jatah harian',
+                (l) => l?.label == LimitScope.daily.label,
                 orElse: () => null,
               );
 
@@ -163,6 +163,16 @@ class DailyPaceHeroCard extends StatelessWidget {
                       ),
                   ],
                 ),
+                if (dailyLine?.scopeNote != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      'Dihitung dari: ${dailyLine!.scopeNote}',
+                      style: context.qSmall(10.5).copyWith(color: q.muted),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
 
                 if (monthlyLimit != null && monthlyLimit > 0) ...[
                   const SizedBox(height: Spacing.m),
@@ -197,6 +207,16 @@ class DailyPaceHeroCard extends StatelessWidget {
                     backgroundColor: q.surface2,
                     minHeight: 6,
                   ),
+                  if (monthlyLine?.scopeNote != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        'Dihitung dari: ${monthlyLine!.scopeNote}',
+                        style: context.qSmall(10.5).copyWith(color: q.muted),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                 ],
               ],
             ),

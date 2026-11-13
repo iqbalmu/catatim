@@ -16,58 +16,130 @@ class _CategoryBudgetResult {
   final bool delete;
 }
 
-/// Dialog input nominal rupiah. Simpan kosong → null (hapus);
-/// Batal/sentuh luar → current (batal, tak ada perubahan).
+/// Hasil dialog batas global: nominal + cakupan kategori.
 
-Future<int?> _askAmount(
+class _LimitEditResult {
+  const _LimitEditResult({required this.amount, required this.categories});
+
+  /// Nominal batas (rupiah); null = hapus batas ini.
+  final int? amount;
+
+  /// Id kategori yang dihitung; null = semua kategori.
+  final Set<int>? categories;
+}
+
+/// Dialog batas global: nominal + kategori yang dihitung.
+///
+/// "Semua" dan kategori spesifik saling bebas — memilih satu kategori
+/// melepas "Semua", memilih "Semua" mengosongkan pilihan. Pilihan kosong
+/// tidak pernah disimpan: mengosongkan semua berarti kembali ke hitungan
+/// seluruh kategori.
+Future<_LimitEditResult?> _askLimitWithCategories(
   BuildContext context, {
-  required String title,
+  required LimitScope scope,
   required int? current,
+  required Set<int>? currentCategories,
+  required List<Category> categories,
 }) {
   final ctrl = TextEditingController(text: current == null ? '' : '$current');
-  const cancelled = -1;
-  const deleted = -2;
-  return showQuestDialog<int>(
+  // null = semua kategori; set = kategori spesifik yang dihitung.
+  Set<int>? selected =
+      currentCategories == null ? null : {...currentCategories};
+
+  void toggle(int id) {
+    final next = selected == null ? <int>{} : {...selected!};
+    if (!next.remove(id)) next.add(id);
+    selected = next.isEmpty ? null : next;
+  }
+
+  return showQuestDialog<_LimitEditResult>(
     context,
-    title: title,
-    content: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const QuestFieldLabel('Nominal (Rupiah)'),
-        const SizedBox(height: Spacing.xs),
-        TextField(
-          controller: ctrl,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: const InputDecoration(
-            hintText: 'Kosongkan kalau mau menghapus batas ini',
-          ),
-        ),
-      ],
+    title: scope.settingTitle,
+    content: StatefulBuilder(
+      builder: (context, setDialogState) {
+        final q = context.q;
+        final names = {for (final c in categories) c.id: c.name};
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const QuestFieldLabel('Nominal (Rupiah)'),
+            const SizedBox(height: Spacing.xs),
+            TextField(
+              controller: ctrl,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              decoration: const InputDecoration(
+                hintText: 'Kosongkan kalau mau menghapus batas ini',
+              ),
+            ),
+            const SizedBox(height: Spacing.m),
+            const QuestFieldLabel('Kategori yang dihitung'),
+            const SizedBox(height: Spacing.xs),
+            Wrap(
+              spacing: Spacing.xs,
+              runSpacing: Spacing.xs,
+              children: [
+                QuestChip(
+                  label: 'Semua',
+                  selected: selected == null,
+                  onTap: () => setDialogState(() => selected = null),
+                ),
+                for (final c in categories)
+                  QuestChip(
+                    label: c.name,
+                    selected: selected != null && selected!.contains(c.id),
+                    onTap: () => setDialogState(() => toggle(c.id)),
+                    leading: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: SeedColors.categoryColor(c.colorIndex),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: q.line, width: 1.5),
+                      ),
+                    ),
+                  ),
+                QuestChip(
+                  label: 'Tanpa kategori',
+                  selected:
+                      selected != null && selected!.contains(kUncategorizedId),
+                  onTap: () => setDialogState(() => toggle(kUncategorizedId)),
+                ),
+              ],
+            ),
+            const SizedBox(height: Spacing.s),
+            Text(
+              limitScopeNote(selected, names) ??
+                  'Semua kategori dihitung ke batas ini.',
+              style: context.qSmall(12).copyWith(color: q.muted),
+            ),
+          ],
+        );
+      },
     ),
     actions: [
       QuestButton(
         label: 'Batal',
         tone: QuestTone.secondary,
-        onPressed: () => Navigator.pop(context, cancelled),
+        onPressed: () => Navigator.pop(context),
       ),
       QuestButton(
         label: 'Simpan',
         icon: Icons.check_rounded,
-        onPressed: () => Navigator.pop(
-          context,
-          ctrl.text.trim().isEmpty ? deleted : Money.parseGroup(ctrl.text),
-        ),
+        onPressed: () {
+          final amount = ctrl.text.trim().isEmpty
+              ? null
+              : int.tryParse(ctrl.text.replaceAll(RegExp(r'[^0-9]'), ''));
+          Navigator.pop(
+            context,
+            _LimitEditResult(amount: amount, categories: selected),
+          );
+        },
       ),
     ],
-  ).then((value) {
-    // Sentuh luar dialog → null: anggap batal, bukan hapus.
-    if (value == null || value == cancelled) return current;
-    if (value == deleted) return null;
-    return value;
-  });
+  );
 }
 
 /// Modal gabungan satu pintu: ubah nama kategori, atur batas bulanan,

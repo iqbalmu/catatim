@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:flutter/material.dart' show ThemeMode;
 
+import '../core/budget.dart';
 import '../models.dart';
 import '../rules/engine.dart' show RuleEngine;
 import '../rules/rule_set.dart' show CustomTemplate;
@@ -1331,16 +1332,45 @@ class LedgerRepository {
         );
   }
 
-  /// Total belanja MURNI per hari sejak [since] (inklusif); transfer
-  /// tidak ikut. Diagregasi di SQLite (audit O-03).
-  Future<Map<DateTime, int>> outSpendByDaySince(DateTime since) async {
+  /// Total belanja MURNI per hari sejak [since] (inklusif); transfer ke
+  /// pihak lain ikut, perpindahan dana milik sendiri tidak. Diagregasi
+  /// di SQLite (audit O-03).
+  ///
+  /// [categories]=white-list kategori: null = semua kategori; set berisi
+  /// [kUncategorizedId] juga menghitung transaksi tanpa kategori.
+  Future<Map<DateTime, int>> outSpendByDaySince(
+    DateTime since, {
+    Set<int>? categories,
+  }) async {
+    if (categories != null && categories.isEmpty) return {};
+    final sql = StringBuffer(
+      "SELECT date(occurred_at, 'unixepoch', '$_localTzModifier') AS day, SUM(amount) AS s "
+      'FROM transactions '
+      "WHERE direction = 'outgoing' AND kind NOT IN ('internal', 'topup', 'withdrawal') "
+      'AND occurred_at >= ?',
+    );
+    final variables = <Variable>[
+      Variable.withInt(since.millisecondsSinceEpoch ~/ 1000),
+    ];
+    if (categories != null) {
+      final ids = categories.where((id) => id != kUncategorizedId).toList();
+      final clauses = <String>[];
+      if (ids.isNotEmpty) {
+        clauses.add(
+          'category_id IN (${List.filled(ids.length, '?').join(', ')})',
+        );
+        variables.addAll(ids.map(Variable.withInt));
+      }
+      if (categories.contains(kUncategorizedId)) {
+        clauses.add('category_id IS NULL');
+      }
+      if (clauses.isNotEmpty) sql.write(' AND (${clauses.join(' OR ')})');
+    }
+    sql.write(' GROUP BY day');
     final rows = await _db
         .customSelect(
-          "SELECT date(occurred_at, 'unixepoch', '$_localTzModifier') AS day, SUM(amount) AS s "
-          'FROM transactions '
-          "WHERE direction = 'outgoing' AND kind NOT IN ('internal', 'topup', 'withdrawal') "
-          'AND occurred_at >= ? GROUP BY day',
-          variables: [Variable.withInt(since.millisecondsSinceEpoch ~/ 1000)],
+          sql.toString(),
+          variables: variables,
           readsFrom: {_db.transactions},
         )
         .get();
@@ -1348,6 +1378,20 @@ class LedgerRepository {
       for (final r in rows)
         DateTime.parse(r.read<String>('day')): r.read<int>('s'),
     };
+  }
+
+  /// Pemicu reaktif pemakaian batas: emit saat transaksi berubah ATAU
+  /// filter kategori batas berubah — app_settings ikut readsFrom supaya
+  /// kartu batas ikut berubah begitu user mengganti filter kategori.
+  Stream<void> watchOutSpendTrigger(DateTime since) {
+    return _db
+        .customSelect(
+          'SELECT 1 FROM transactions WHERE occurred_at >= ? LIMIT 1',
+          variables: [Variable.withInt(since.millisecondsSinceEpoch ~/ 1000)],
+          readsFrom: {_db.transactions, _db.appSettings},
+        )
+        .watch()
+        .map((_) {});
   }
 
   // --- settings -----------------------------------------------------------------
@@ -1376,6 +1420,16 @@ class LedgerRepository {
       if (text == null || text.isEmpty) return null;
       return int.tryParse(text);
     });
+  }
+
+  /// Stream nilai beberapa key app_settings sekaligus (satu query) —
+  /// dipakai layar Anggaran untuk batas + filter kategorinya.
+  Stream<Map<String, String>> watchSettings(List<String> keys) {
+    final query = _db.select(_db.appSettings)
+      ..where((s) => s.key.isIn(keys));
+    return query.watch().map(
+          (rows) => {for (final r in rows) r.key: r.valueText},
+        );
   }
 
   // --- tema tampilan -----------------------------------------------------------
@@ -1464,6 +1518,44 @@ class LedgerRepository {
                   : b.accountId.equals(accountId)),
         ))
         .go();
+  }
+
+  // --- filter kategori per scope batas ---------------------------------------
+
+  /// Filter kategori satu scope batas. null = semua kategori (belum ada
+  /// filter tersimpan).
+  Future<Set<int>?> getLimitCategories(String key) async =>
+      parseLimitCategories(await getSetting(key));
+
+  /// Simpan filter kategori scope batas. null atau set kosong = semua
+  /// kategori (filter dihapus, kembali ke perilaku bawaan).
+  Future<void> setLimitCategories(String key, Set<int>? categories) async {
+    if (categories == null || categories.isEmpty) {
+      await setSetting(key, '');
+      return;
+    }
+    await setSetting(key, encodeLimitCategories(categories));
+  }
+
+  /// Stream filter kategori scope batas — null = semua kategori.
+  Stream<Set<int>?> watchLimitCategories(String key) {
+    return (_db.select(
+      _db.appSettings,
+    )..where((s) => s.key.equals(key))).watchSingleOrNull().map(
+          (row) => parseLimitCategories(row?.valueText),
+        );
+  }
+
+  /// Buang id kategori yang dihapus dari filter seluruh scope batas.
+  /// Filter yang jadi kosong dikembalikan ke "semua kategori" — batas
+  /// yang tidak menghitung apa pun lebih membingungkan daripada default.
+  Future<void> _removeCategoryFromLimitScopes(int categoryId) async {
+    for (final scope in LimitScope.values) {
+      final ids = await getLimitCategories(scope.categoriesKey);
+      if (ids == null || !ids.contains(categoryId)) continue;
+      final kept = ids.where((id) => id != categoryId).toSet();
+      await setLimitCategories(scope.categoriesKey, kept.isEmpty ? null : kept);
+    }
   }
 
   /// Keluar bulan dikelompokkan per pasangan (kategori, akun) dalam
@@ -1597,9 +1689,18 @@ class LedgerRepository {
     });
   }
 
-  /// Total keluar MURNI dalam [start, end): outgoing TANPA kind
-  /// transfer (transfer dikecualikan).
-  Future<int> sumSpendBetween(DateTime start, DateTime end) async {
+  /// Total keluar MURNI dalam [start, end): outgoing tanpa perpindahan
+  /// dana milik sendiri (internal/topup/tarik tunai). Transfer ke pihak
+  /// lain tetap dihitung — itu pengeluaran riil.
+  ///
+  /// [categories]=white-list kategori: null = semua kategori; set berisi
+  /// [kUncategorizedId] juga menghitung transaksi tanpa kategori.
+  Future<int> sumSpendBetween(
+    DateTime start,
+    DateTime end, {
+    Set<int>? categories,
+  }) async {
+    if (categories != null && categories.isEmpty) return 0;
     final amountSum = _db.transactions.amount.sum();
     final query = _db.selectOnly(_db.transactions)
       ..addColumns([amountSum])
@@ -1609,8 +1710,23 @@ class LedgerRepository {
             _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
             _db.transactions.occurredAt.isSmallerThanValue(end),
       );
+    final filter = _categoryFilter(categories);
+    if (filter != null) query.where(filter);
     final row = await query.getSingle();
     return row.read(amountSum) ?? 0;
+  }
+
+  /// Filter kategori untuk query — null berarti tanpa filter (semua
+  /// kategori). Set kosong ditangani pemanggil (hasil selalu nol).
+  Expression<bool>? _categoryFilter(Set<int>? categories) {
+    if (categories == null) return null;
+    final ids = categories.where((id) => id != kUncategorizedId).toList();
+    final includeUncategorized = categories.contains(kUncategorizedId);
+    final Expression<bool> selected = ids.isEmpty
+        ? _db.transactions.categoryId.isNull()
+        : _db.transactions.categoryId.isIn(ids);
+    if (!includeUncategorized || ids.isEmpty) return selected;
+    return selected | _db.transactions.categoryId.isNull();
   }
 
   /// Versi pemasukan-murni dari [sumBetween]: kind transfer dikecualikan.
@@ -1628,8 +1744,9 @@ class LedgerRepository {
     return row.read(amountSum) ?? 0;
   }
 
-  /// Versi belanja-murni dari [outPairsBetween]: kind transfer
-  /// dikecualikan (alokasi spend-murni, Plan 04).
+  /// Versi belanja-murni dari [outPairsBetween]: perpindahan dana milik
+  /// sendiri dikecualikan (internal/topup/tarik tunai), transfer ke pihak
+  /// lain tetap ikut.
   Future<Map<({int? category, int? account}), int>> outSpendPairsBetween(
     DateTime start,
     DateTime end,
@@ -1734,13 +1851,15 @@ class LedgerRepository {
   }
 
   /// Hapus kategori: transaksinya dipindah ke kategori [fallbackId]
-  /// (biasanya "Lainnya"), alokasinya ikut terhapus.
+  /// (biasanya "Lainnya"), alokasinya ikut terhapus, dan filter kategori
+  /// pada scope batas ikut dibersihkan.
   Future<void> deleteCategory(int id, {required int fallbackId}) async {
     if (id == fallbackId) throw ArgumentError('tidak boleh hapus fallback');
     await (_db.update(_db.transactions)..where((t) => t.categoryId.equals(id)))
         .write(TransactionsCompanion(categoryId: Value(fallbackId)));
     await (_db.delete(_db.budgets)..where((b) => b.categoryId.equals(id))).go();
     await (_db.delete(_db.categories)..where((c) => c.id.equals(id))).go();
+    await _removeCategoryFromLimitScopes(id);
   }
 
   // --- backup -----------------------------------------------------------------

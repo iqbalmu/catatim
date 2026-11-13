@@ -1,4 +1,4 @@
-import '../core/budget.dart' show BudgetSnapshot, LimitLine;
+import '../core/budget.dart';
 import '../core/budget_alert.dart';
 import '../storage/repository.dart';
 import 'notify_channel.dart';
@@ -26,13 +26,17 @@ class BudgetAlertService {
       if (!await _repo.budgetAlertsEnabled()) return;
       final threshold = await _repo.budgetAlertThreshold();
       final state = await _repo.budgetAlertState();
-      ({int used, int? limit})? usage(LimitLine? line) =>
-          line == null ? null : (used: line.used, limit: line.limit);
+      ({int used, int? limit, String? note})? usage(LimitLine? line) => line ==
+              null
+          ? null
+          : (used: line.used, limit: line.limit, note: line.scopeNote);
       final plan = planBudgetAlerts(
         lines: {
-          BudgetAlertScope.daily: usage(snapshot.lineByLabel(kLineDaily)),
-          BudgetAlertScope.weekly: usage(snapshot.lineByLabel(kLineWeekly)),
-          BudgetAlertScope.monthly: usage(snapshot.lineByLabel(kLineMonthly)),
+          LimitScope.daily: usage(snapshot.lineByLabel(LimitScope.daily.label)),
+          LimitScope.weekly:
+              usage(snapshot.lineByLabel(LimitScope.weekly.label)),
+          LimitScope.monthly:
+              usage(snapshot.lineByLabel(LimitScope.monthly.label)),
         },
         thresholdPercent: threshold,
         state: state,

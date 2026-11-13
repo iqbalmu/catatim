@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/budget.dart';
-import '../core/budget_alert.dart';
 import '../core/money.dart';
 import '../game/mascot.dart';
 import '../notify/budget_alert_service.dart';
@@ -176,23 +175,47 @@ class ProgressService extends ChangeNotifier {
     var streak = 0;
     var streakPaused = false;
 
-    // Keluar (pace + garis global) = belanja murni; transfer biasa tidak
-    // masuk ke mana pun (opsi A).
-    final dayOut = await _repo.sumSpendBetween(today, dayEnd);
-    final weekOut = await _repo.sumSpendBetween(weekStart, dayEnd);
-    final monthOut = await _repo.sumSpendBetween(monthStart, monthEnd);
+    // Keluar (pace + garis global) = belanja murni; transfer ke pihak
+    // lain tetap masuk, perpindahan dana milik sendiri tidak.
+    // Tiap scope batas punya filter kategorinya sendiri, jadi angka
+    // "dipakai" selalu sebanding dengan plafon yang ditampilkan.
+    final categories = await _repo.watchCategories().first;
+    final existingCategoryIds = {for (final c in categories) c.id};
+    final scopeCategories = <LimitScope, Set<int>?>{};
+    for (final scope in LimitScope.values) {
+      scopeCategories[scope] = pruneLimitCategories(
+        await _repo.getLimitCategories(scope.categoriesKey),
+        existingCategoryIds,
+      );
+    }
+
+    final dayOut = await _repo.sumSpendBetween(
+      today,
+      dayEnd,
+      categories: scopeCategories[LimitScope.daily],
+    );
+    final weekOut = await _repo.sumSpendBetween(
+      weekStart,
+      dayEnd,
+      categories: scopeCategories[LimitScope.weekly],
+    );
+    final monthOut = await _repo.sumSpendBetween(
+      monthStart,
+      monthEnd,
+      categories: scopeCategories[LimitScope.monthly],
+    );
     final monthIn = await _repo.sumIncomeBetween(monthStart, monthEnd);
     final lastMonthOut = await _repo.sumSpendBetween(
       lastMonthStart,
       lastMonthEnd,
+      categories: scopeCategories[LimitScope.monthly],
     );
     final lastMonthIn = await _repo.sumIncomeBetween(
       lastMonthStart,
       lastMonthEnd,
     );
-    final catAccountUsed = await _repo.outPairsBetween(monthStart, monthEnd);
+    final catAccountUsed = await _repo.outSpendPairsBetween(monthStart, monthEnd);
     final budgets = await _repo.watchBudgets().first;
-    final categories = await _repo.watchCategories().first;
     final accounts = await _repo.watchAccounts().first;
     final dailyLimit = int.tryParse(
       await _repo.getSetting(kKeyDailyLimit) ?? '',
@@ -210,7 +233,18 @@ class ProgressService extends ChangeNotifier {
       monthlyTotal: monthTotalLimit,
     );
     streakPaused = bar == null;
-    final spendByDay = await _repo.outSpendByDaySince(streakSince);
+    // Pengukuran disiplin harian mengikuti scope yang menetapkan jatah
+    // harian (harian → mingguan → bulanan), jadi angka "lolos" dan
+    // angka "sisa aman" memakai definisi yang sama.
+    final barScope = effectiveDailyScope(
+      dailyLimit: dailyLimit,
+      weeklyLimit: weekLimit,
+      monthlyTotal: monthTotalLimit,
+    );
+    final spendByDay = await _repo.outSpendByDaySince(
+      streakSince,
+      categories: barScope == null ? null : scopeCategories[barScope],
+    );
     final disciplineMonth = <DailyDiscipline>[];
     if (!streakPaused) {
       DateTime? firstDay;
@@ -255,12 +289,32 @@ class ProgressService extends ChangeNotifier {
             (b.accountId == null || e.key.account == b.accountId))
         .fold(0, (total, e) => total + e.value);
     final lines = <LimitLine>[
-      LimitLine(label: kLineDaily, used: dayOut, limit: dailyLimit),
-      LimitLine(label: kLineWeekly, used: weekOut, limit: weekLimit),
       LimitLine(
-        label: kLineMonthly,
+        label: LimitScope.daily.label,
+        used: dayOut,
+        limit: dailyLimit,
+        scopeNote: limitScopeNote(
+          scopeCategories[LimitScope.daily],
+          categoryNames,
+        ),
+      ),
+      LimitLine(
+        label: LimitScope.weekly.label,
+        used: weekOut,
+        limit: weekLimit,
+        scopeNote: limitScopeNote(
+          scopeCategories[LimitScope.weekly],
+          categoryNames,
+        ),
+      ),
+      LimitLine(
+        label: LimitScope.monthly.label,
         used: monthOut,
         limit: monthTotalLimit,
+        scopeNote: limitScopeNote(
+          scopeCategories[LimitScope.monthly],
+          categoryNames,
+        ),
       ),
       for (final b in budgets)
         LimitLine(

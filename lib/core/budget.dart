@@ -4,10 +4,120 @@
 /// Konvensi periode: [start, end) eksklusif di ujung atas.
 library;
 
+import 'dart:convert';
+
 /// Batas alokasi harian / mingguan / total bulanan, dalam rupiah.
 const String kKeyDailyLimit = 'budget_daily_limit';
 const String kKeyWeeklyLimit = 'budget_weekly_limit';
 const String kKeyMonthlyTotal = 'budget_monthly_total';
+
+/// Key filter kategori per scope batas (lihat [LimitScope.categoriesKey]).
+/// Nilai: JSON array id kategori; kosong = semua kategori dihitung.
+const String kKeyDailyCategories = 'budget_daily_categories';
+const String kKeyWeeklyCategories = 'budget_weekly_categories';
+const String kKeyMonthlyCategories = 'budget_monthly_categories';
+
+/// Sentinel id kategori untuk "tanpa kategori" (category_id NULL di DB).
+/// Id kategori asli selalu > 0, jadi -1 tidak mungkin bentrok.
+const int kUncategorizedId = -1;
+
+/// Satu scope batas global: harian, mingguan, atau total bulanan.
+///
+/// Batas dan filter kategori disimpan terpisah: batas (rupiah) di satu
+/// key app_settings, filter kategori di key lain. Keduanya independen —
+/// batas bisa ada tanpa filter, atau filter ada tanpa batas.
+enum LimitScope { daily, weekly, monthly }
+
+extension LimitScopeInfo on LimitScope {
+  /// Key app_settings untuk nilai batas (rupiah).
+  String get limitKey => switch (this) {
+        LimitScope.daily => kKeyDailyLimit,
+        LimitScope.weekly => kKeyWeeklyLimit,
+        LimitScope.monthly => kKeyMonthlyTotal,
+      };
+
+  /// Key app_settings untuk filter kategori (JSON array id).
+  String get categoriesKey => switch (this) {
+        LimitScope.daily => kKeyDailyCategories,
+        LimitScope.weekly => kKeyWeeklyCategories,
+        LimitScope.monthly => kKeyMonthlyCategories,
+      };
+
+  /// Label garis batas di [BudgetSnapshot] — dipakai maskot, alert, dan
+  /// notifikasi lewat konstanta ini, bukan string terpisah.
+  String get label => switch (this) {
+        LimitScope.daily => 'Batas harian',
+        LimitScope.weekly => 'Batas mingguan',
+        LimitScope.monthly => 'Total bulan ini',
+      };
+
+  /// Label pendek untuk pesan notifikasi.
+  String get shortLabel => switch (this) {
+        LimitScope.daily => 'Harian',
+        LimitScope.weekly => 'Mingguan',
+        LimitScope.monthly => 'Bulanan',
+      };
+
+  /// Judul dialog pengaturan batas.
+  String get settingTitle => switch (this) {
+        LimitScope.daily => 'Atur Batas Harian',
+        LimitScope.weekly => 'Atur Batas Mingguan',
+        LimitScope.monthly => 'Atur Batas Total Bulanan',
+      };
+}
+
+/// Baca daftar id kategori tersimpan untuk satu scope batas.
+/// null = semua kategori (filter belum diset atau isinya tak terbaca).
+Set<int>? parseLimitCategories(String? raw) {
+  final text = raw?.trim();
+  if (text == null || text.isEmpty) return null;
+  Object? decoded;
+  try {
+    decoded = jsonDecode(text);
+  } on FormatException {
+    return null;
+  }
+  if (decoded is! List) return null;
+  final ids = decoded.whereType<num>().map((n) => n.toInt()).toSet();
+  // Array kosong = tidak ada pilihan = kembali ke default semua kategori.
+  return ids.isEmpty ? null : ids;
+}
+
+/// Simpan daftar id kategori sebagai JSON array (urut ascending).
+String encodeLimitCategories(Set<int> ids) {
+  final sorted = ids.toList()..sort();
+  return jsonEncode(sorted);
+}
+
+/// Buang id kategori yang sudah tidak ada (kategori dihapus) dari filter
+/// scope. Hasil kosong → null (semua kategori): batas yang tidak menghitung
+/// apa pun lebih membingungkan daripada kembali ke default.
+Set<int>? pruneLimitCategories(Set<int>? ids, Set<int> existingCategoryIds) {
+  if (ids == null) return null;
+  final kept = ids
+      .where((id) => id == kUncategorizedId || existingCategoryIds.contains(id))
+      .toSet();
+  return kept.isEmpty ? null : kept;
+}
+
+/// Ringkasan filter scope untuk badge: 'Semua kategori' atau '2 kategori'.
+String limitScopeSummary(Set<int>? ids) {
+  if (ids == null) return 'Semua kategori';
+  final n = ids.length;
+  return n == 1 ? '1 kategori' : '$n kategori';
+}
+
+/// Catatan cakupan batas: nama kategori yang ikut dihitung, urut sesuai
+/// [categoryNames]. null saat semua kategori dihitung (tidak ada filter).
+String? limitScopeNote(Set<int>? ids, Map<int, String> categoryNames) {
+  if (ids == null) return null;
+  final parts = <String>[
+    for (final entry in categoryNames.entries)
+      if (ids.contains(entry.key)) entry.value,
+    if (ids.contains(kUncategorizedId)) 'Tanpa kategori',
+  ];
+  return parts.isEmpty ? null : parts.join(', ');
+}
 
 /// Posisi satu garis batas terhadap pemakaian.
 enum BudgetLevel { ok, warning, over }
@@ -22,6 +132,7 @@ class LimitLine {
     required this.used,
     this.limit,
     this.isCategory = false,
+    this.scopeNote,
   });
 
   final String label;
@@ -30,6 +141,10 @@ class LimitLine {
 
   /// True untuk garis alokasi kategori (bukan batas global).
   final bool isCategory;
+
+  /// Catatan cakupan kategori batas ini — contoh 'Makanan, Transportasi'.
+  /// null = semua kategori dihitung.
+  final String? scopeNote;
 
   /// warning mulai 75% terpakai; over saat menyentuh plafon.
   BudgetLevel get level {
@@ -185,15 +300,23 @@ DailyPace dailyPace({
   final dayOfMonth = now.day;
 
   int? safe;
-  if (dailyLimit != null && dailyLimit > 0) {
-    safe = dailyLimit - dayOut;
-  } else if (weeklyLimit != null && weeklyLimit > 0) {
-    // Senin = awal minggu; sisa hari termasuk hari ini, minimal 1.
-    final daysLeftWeek = 7 - now.weekday + 1;
-    safe = (weeklyLimit - weekOut) ~/ daysLeftWeek;
-  } else if (monthlyTotal != null && monthlyTotal > 0) {
-    final daysLeftMonth = daysInMonth - dayOfMonth + 1;
-    safe = (monthlyTotal - monthOut) ~/ daysLeftMonth;
+  final scope = effectiveDailyScope(
+    dailyLimit: dailyLimit,
+    weeklyLimit: weeklyLimit,
+    monthlyTotal: monthlyTotal,
+  );
+  switch (scope) {
+    case LimitScope.daily:
+      safe = dailyLimit! - dayOut;
+    case LimitScope.weekly:
+      // Senin = awal minggu; sisa hari termasuk hari ini, minimal 1.
+      final daysLeftWeek = 7 - now.weekday + 1;
+      safe = (weeklyLimit! - weekOut) ~/ daysLeftWeek;
+    case LimitScope.monthly:
+      final daysLeftMonth = daysInMonth - dayOfMonth + 1;
+      safe = (monthlyTotal! - monthOut) ~/ daysLeftMonth;
+    case null:
+      safe = null;
   }
 
   return DailyPace(
@@ -202,6 +325,21 @@ DailyPace dailyPace({
     daysInMonth: daysInMonth,
     idealUsedPercent: (dayOfMonth / daysInMonth * 100).round(),
   );
+}
+
+/// Scope batas yang menentukan "jatah harian" ketika batas harian tidak
+/// diset: harian → mingguan → bulanan. Prioritas ini sama dengan
+/// [dailyBar] dan [dailyPace] — dipakai untuk memilih filter kategori yang
+/// mengukur disiplin harian.
+LimitScope? effectiveDailyScope({
+  required int? dailyLimit,
+  required int? weeklyLimit,
+  required int? monthlyTotal,
+}) {
+  if (dailyLimit != null && dailyLimit > 0) return LimitScope.daily;
+  if (weeklyLimit != null && weeklyLimit > 0) return LimitScope.weekly;
+  if (monthlyTotal != null && monthlyTotal > 0) return LimitScope.monthly;
+  return null;
 }
 
 /// Jatah harian: plafon kasar per hari dari batas yang ada. Prioritas
@@ -214,15 +352,22 @@ int? dailyBar({
   int? weeklyLimit,
   int? monthlyTotal,
 }) {
-  if (dailyLimit != null && dailyLimit > 0) return dailyLimit;
-  if (weeklyLimit != null && weeklyLimit > 0) return weeklyLimit ~/ 7;
-  if (monthlyTotal != null && monthlyTotal > 0) {
-    final monthStart = DateTime(now.year, now.month);
-    final daysInMonth =
-        DateTime(now.year, now.month + 1).difference(monthStart).inDays;
-    return monthlyTotal ~/ daysInMonth;
-  }
-  return null;
+  final scope = effectiveDailyScope(
+    dailyLimit: dailyLimit,
+    weeklyLimit: weeklyLimit,
+    monthlyTotal: monthlyTotal,
+  );
+  return switch (scope) {
+    LimitScope.daily => dailyLimit,
+    LimitScope.weekly => (weeklyLimit ?? 0) ~/ 7,
+    LimitScope.monthly => monthlyTotal == null
+        ? null
+        : monthlyTotal ~/
+            DateTime(now.year, now.month + 1)
+                .difference(DateTime(now.year, now.month))
+                .inDays,
+    null => null,
+  };
 }
 
 /// Garis global (bukan alokasi kategori) yang layak ditampilkan di hero:

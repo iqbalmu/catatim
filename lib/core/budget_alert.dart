@@ -6,27 +6,12 @@
 /// waktu lokal device.
 library;
 
+import 'budget.dart';
 import 'money.dart';
-
-/// Batas global yang dipantau (bukan alokasi per kategori).
-enum BudgetAlertScope { daily, weekly, monthly }
-
-/// Label garis di BudgetSnapshot — konstan agar pencocokan tidak
-/// stringly-typed di ProgressService maupun BudgetAlertService.
-const String kLineDaily = 'Batas harian';
-const String kLineWeekly = 'Batas mingguan';
-const String kLineMonthly = 'Total bulan ini';
-
-/// Label pendek untuk pesan notifikasi.
-String budgetAlertScopeLabel(BudgetAlertScope scope) => switch (scope) {
-      BudgetAlertScope.daily => 'Harian',
-      BudgetAlertScope.weekly => 'Mingguan',
-      BudgetAlertScope.monthly => 'Bulanan',
-    };
 
 /// Key periode dedup: ganti periode berarti state lama tidak lagi
 /// cocok → garis yang masih di atas ambang menembak lagi sekali.
-String budgetAlertPeriodKey(BudgetAlertScope scope, DateTime now) {
+String budgetAlertPeriodKey(LimitScope scope, DateTime now) {
   final today = DateTime(now.year, now.month, now.day);
   // Minggu dihitung dari Senin (konsisten ProgressService.refresh);
   // tanggal Senin betul walau jatuh di bulan/tahun sebelumnya.
@@ -36,9 +21,9 @@ String budgetAlertPeriodKey(BudgetAlertScope scope, DateTime now) {
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
   return switch (scope) {
-    BudgetAlertScope.daily => 'd${stamp(today)}',
-    BudgetAlertScope.weekly => 'w${stamp(monday)}',
-    BudgetAlertScope.monthly => 'm${today.year.toString().padLeft(4, '0')}-'
+    LimitScope.daily => 'd${stamp(today)}',
+    LimitScope.weekly => 'w${stamp(monday)}',
+    LimitScope.monthly => 'm${today.year.toString().padLeft(4, '0')}-'
         '${today.month.toString().padLeft(2, '0')}',
   };
 }
@@ -51,9 +36,10 @@ class BudgetAlertHit {
     required this.limit,
     required this.percent,
     required this.over,
+    this.note,
   });
 
-  final BudgetAlertScope scope;
+  final LimitScope scope;
   final int used;
   final int limit;
 
@@ -62,6 +48,10 @@ class BudgetAlertHit {
 
   /// True bila sudah melewati batas (bukan sekadar menyentuh ambang).
   final bool over;
+
+  /// Catatan cakupan kategori — contoh 'Makanan, Transportasi'.
+  /// null = semua kategori dihitung.
+  final String? note;
 
   int get remaining => (limit - used).clamp(0, limit);
 }
@@ -79,7 +69,7 @@ class BudgetAlertPlan {
 }
 
 /// Key state untuk satu scope+jenis menembak di app_settings.
-String _stateKey(BudgetAlertScope scope, {required bool over}) =>
+String _stateKey(LimitScope scope, {required bool over}) =>
     '${scope.name}#${over ? 'over' : 'warn'}';
 
 /// Putuskan garis mana yang layak menembak sekarang.
@@ -90,7 +80,7 @@ String _stateKey(BudgetAlertScope scope, {required bool over}) =>
 /// bila periodKey berbeda (belum kirim periode ini). Over mengalahkan
 /// warn dalam satu evaluasi agar satu scope maksimal satu hit.
 BudgetAlertPlan planBudgetAlerts({
-  required Map<BudgetAlertScope, ({int used, int? limit})?> lines,
+  required Map<LimitScope, ({int used, int? limit, String? note})?> lines,
   required int thresholdPercent,
   required Map<String, String> state,
   required DateTime now,
@@ -98,7 +88,7 @@ BudgetAlertPlan planBudgetAlerts({
   final hits = <BudgetAlertHit>[];
   final next = Map<String, String>.of(state);
 
-  for (final scope in BudgetAlertScope.values) {
+  for (final scope in LimitScope.values) {
     final line = lines[scope];
     if (line == null) continue;
     final limit = line.limit;
@@ -115,6 +105,7 @@ BudgetAlertPlan planBudgetAlerts({
       limit: limit,
       percent: used * 100 ~/ limit,
       over: over,
+      note: line.note,
     ));
     next[key] = period;
   }
@@ -130,7 +121,7 @@ BudgetAlertPlan planBudgetAlerts({
 }) {
   if (hits.isEmpty) return null;
   final first = hits.first;
-  final label = budgetAlertScopeLabel(first.scope);
+  final label = first.scope.shortLabel;
   final String title;
   if (hits.length > 1) {
     title = first.over
@@ -143,9 +134,10 @@ BudgetAlertPlan planBudgetAlerts({
   }
   final body = [
     for (final h in hits)
-      '${budgetAlertScopeLabel(h.scope)}: ${Money.formatAbs(h.used)} dari '
+      '${h.scope.shortLabel}: ${Money.formatAbs(h.used)} dari '
           '${Money.formatAbs(h.limit)} — sisa ${Money.formatAbs(h.remaining)}'
-          '${h.over ? ' (lewat)' : ''}',
+          '${h.over ? ' (lewat)' : ''}'
+          '${h.note != null ? ' · ${h.note}' : ''}',
   ].join('\n');
   return (title: title, body: body);
 }

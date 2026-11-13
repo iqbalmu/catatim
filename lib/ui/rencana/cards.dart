@@ -1,8 +1,8 @@
 part of '../rencana_batas.dart';
 
 /// Kartu mini satu batas: terpakai berjalan + bar status + plafon.
-/// Tap → dialog edit plafon. Pola visual sama dengan [_AllocationRow]
-/// (over = latar merah pudar, warning = madu, ok = hijau).
+/// Tap → dialog edit plafon + cakupan kategori. Pola visual sama dengan
+/// [_AllocationRow] (over = latar merah pudar, warning = madu, ok = hijau).
 
 class _LimitMiniCard extends StatelessWidget {
   const _LimitMiniCard({
@@ -10,12 +10,16 @@ class _LimitMiniCard extends StatelessWidget {
     required this.used,
     required this.limit,
     required this.onTap,
+    this.scopeNote,
   });
 
   final String label;
   final int used;
   final int? limit;
   final VoidCallback onTap;
+
+  /// Kategori yang dihitung ke batas ini; null = semua kategori.
+  final String? scopeNote;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +58,19 @@ class _LimitMiniCard extends StatelessWidget {
                   Icon(Icons.edit_rounded, size: 13, color: q.muted),
                 ],
               ),
+              if (scopeNote != null) ...[
+                const SizedBox(height: Spacing.xxs),
+                Text(
+                  scopeNote!,
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w700,
+                    color: q.primaryText,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
               const SizedBox(height: Spacing.xxs),
               FittedBox(
                 fit: BoxFit.scaleDown,
@@ -257,11 +274,15 @@ class _BatasBulananCard extends StatelessWidget {
     required this.used,
     required this.limit,
     required this.onTap,
+    this.scopeNote,
   });
 
   final int used;
   final int? limit;
   final VoidCallback onTap;
+
+  /// Kategori yang dihitung ke batas ini; null = semua kategori.
+  final String? scopeNote;
 
   @override
   Widget build(BuildContext context) {
@@ -349,6 +370,17 @@ class _BatasBulananCard extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: Spacing.s),
+          if (scopeNote != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: Spacing.s),
+              child: Text(
+                'Dihitung dari: $scopeNote',
+                style: context.qSmall(11).copyWith(color: q.muted),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           const SizedBox(height: Spacing.m),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
