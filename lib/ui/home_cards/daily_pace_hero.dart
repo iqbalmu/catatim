@@ -247,7 +247,7 @@ class DailyPaceHeroCard extends StatelessWidget {
           ),
           const SizedBox(height: Spacing.m),
           Text(
-            'Atur batas harian atau bulanan, lalu Bukuduit menghitung sisa uang yang boleh dipakai tiap hari.',
+            'Atur batas harian atau bulanan, lalu CatatIn menghitung sisa uang yang boleh dipakai tiap hari.',
             style: context.qBody(12.5).copyWith(color: q.muted),
           ),
           const SizedBox(height: Spacing.s),

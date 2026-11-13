@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bukuduit/theme/quest.dart';
-import 'package:bukuduit/ui/quest.dart';
+import 'package:catatim/theme/quest.dart';
+import 'package:catatim/ui/quest.dart';
 
 void main() {
   testWidgets('QuestBottomNav switches active tabs across center button gap', (tester) async {

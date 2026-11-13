@@ -1,8 +1,8 @@
-import 'package:bukuduit/models.dart';
-import 'package:bukuduit/storage/database.dart';
-import 'package:bukuduit/storage/repository.dart';
-import 'package:bukuduit/theme/quest.dart';
-import 'package:bukuduit/ui/laporan_screen.dart';
+import 'package:catatim/models.dart';
+import 'package:catatim/storage/database.dart';
+import 'package:catatim/storage/repository.dart';
+import 'package:catatim/theme/quest.dart';
+import 'package:catatim/ui/laporan_screen.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

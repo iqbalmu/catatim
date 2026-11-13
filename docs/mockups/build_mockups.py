@@ -205,7 +205,7 @@ def avatar_row(c: Canvas, cx, y, gap=24) -> None:
 def t3_top(c: Canvas, caption="Duit tenang — masih dalam batas hari ini") -> None:
     """Bagian atas yang sama untuk semua variasi T3: ruang hangat + karakter di tengah."""
     status_bar(c)
-    c.text(24, 60, "Bukuduit", size=13, weight=800)
+    c.text(24, 60, "CatatIn", size=13, weight=800)
     c.circle(296, 54, 15, stroke=BORDER, sw=1.6)
     c.circle(330, 54, 15, stroke=BORDER, sw=1.6)
     c.circle(300, 47, 4, fill=BAD)
@@ -410,7 +410,7 @@ PAGE = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mockup Beranda — Bukuduit</title>
+<title>Mockup Beranda — CatatIn</title>
 <style>
   :root {{
     --bg: {bg}; --surface: {surface}; --fg: {fg}; --muted: {muted};

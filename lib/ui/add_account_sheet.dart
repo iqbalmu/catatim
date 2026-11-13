@@ -462,7 +462,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
         const SizedBox(height: Spacing.xs),
         _FactRow(
           icon: Icons.notifications_active_rounded,
-          text: 'Notifikasi transaksi ${bank.displayName} dibaca Bukuduit',
+          text: 'Notifikasi transaksi ${bank.displayName} dibaca CatatIn',
         ),
         _FactRow(
           icon: Icons.edit_note_rounded,
@@ -512,14 +512,14 @@ class _AddAccountSheetState extends State<AddAccountSheet>
         Text('Satu langkah terakhir', style: context.qTitle(17)),
         const SizedBox(height: Spacing.xs),
         Text(
-          'Bukuduit perlu izin membaca notifikasi. Caranya:',
+          'CatatIn perlu izin membaca notifikasi. Caranya:',
           style: context.qBody(13),
         ),
         const SizedBox(height: Spacing.m),
         _StepRow(number: '1', text: 'Tekan "Buka Pengaturan" di bawah'),
         _StepRow(
           number: '2',
-          text: 'Cari Bukuduit, lalu nyalakan akses notifikasinya',
+          text: 'Cari CatatIn, lalu nyalakan akses notifikasinya',
         ),
         _StepRow(
           number: '3',

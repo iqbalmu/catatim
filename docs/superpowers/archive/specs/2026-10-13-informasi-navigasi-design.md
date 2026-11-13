@@ -1,4 +1,4 @@
-# Desain Informasi & Navigasi Bukuduit
+# Desain Informasi & Navigasi CatatIn
 
 Tanggal: 2026-10-13. Status: **DRAF — belum disetujui, belum boleh bangun kode produk.**
 Hasil brainstorming 3 layar mockup (audit → navbar → peta navigasi) + dinding alur A–K.
@@ -6,7 +6,7 @@ Builder: baca utuh sebelum menyusun plan. Yang eksplisit "diserahkan ke builder"
 
 ## 1. Maksud & latar
 
-Pemilik memakai Bukuduit harian untuk diri sendiri, dalam dua momen berbeda:
+Pemilik memakai CatatIn harian untuk diri sendiri, dalam dua momen berbeda:
 
 - ⚡ **Lirik 10 detik sebelum bayar** — "hari/minggu/bulan ini masih aman nggak?"
 - 🪑 **Duduk tenang** (akhir minggu/bulan) — "duitku ke mana, berapa, dibanding bulan lalu gimana?"

@@ -8,8 +8,8 @@ import 'storage/repository.dart';
 import 'theme/quest.dart';
 import 'ui/home_screen.dart';
 
-class BukuduitApp extends StatelessWidget {
-  const BukuduitApp({
+class CatatInApp extends StatelessWidget {
+  const CatatInApp({
     super.key,
     required this.repository,
     required this.pipeline,
@@ -30,7 +30,7 @@ class BukuduitApp extends StatelessWidget {
       builder: (context, snapshot) {
         final themeMode = snapshot.data ?? ThemeMode.system;
         return MaterialApp(
-          title: 'Bukuduit',
+          title: 'CatatIn',
           locale: const Locale('id'),
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,

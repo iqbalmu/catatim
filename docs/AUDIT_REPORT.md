@@ -1,4 +1,4 @@
-# Laporan Audit — Bukuduit
+# Laporan Audit — CatatIn
 
 Temuan per aspek rencana [`AUDIT_PLAN.md`](AUDIT_PLAN.md).
 Severity: **Kritis** (eksploitasi langsung merugikan) / **Sedang** (perlu
@@ -104,7 +104,7 @@ gagal start dengan error generik, tanpa pesan "data terkunci,
 pulihkan dari backup PIN". Jalur pemulihan ada (layar Backup) tapi
 user tidak diarahkan ke sana.
 *Diperbaiki 2026-10-31:* deteksi `isDatabaseLocked()` di `main()` →
-layar "Data terkunci" (`BukuduitLockedApp`) dengan dua jalan:
+layar "Data terkunci" (`CatatInLockedApp`) dengan dua jalan:
 "Pulihkan dari backup" (alur restore dipindah ke
 `restore_flow.dart`, reusable) atau "Mulai dari awal" (hapus DB,
 konfirmasi destruktif). Terverifikasi E2E di emulator: hapus kunci →
@@ -118,7 +118,7 @@ menangkap nominal terlihat. *Risiko diterima* (keputusan user
 yang legit. Proteksi toggle dipahami kosmetik.
 
 **A-08 Sisa file backup di cache.**
-`_backup()` menyalin DB ke `cache/bukuduit-backup-*.sqlite`, share,
+`_backup()` menyalin DB ke `cache/CatatIn-backup-*.sqlite`, share,
 tanpa menghapus. File terenkripsi (bukan plaintext) jadi risiko
 rendah, tapi menetap selamanya di cache. *Rekomendasi:* hapus setelah
 share selesai / sebelum membuat baru.
@@ -349,7 +349,7 @@ Catatan baik: data demo terpasang **hanya di debug**
 *Rekomendasi:* `runApp` lebih dulu (splash) lalu init async, atau
 probe lock memakai koneksi yang sama dengan DB utama, dan tunda
 *Diperbaiki 2026-10-31:* `main()` kini `runApp` langsung (splash) —
-init berat jalan async di `BukuduitBootstrap`, DB dibuka SEKALI (probe
+init berat jalan async di `CatatInBootstrap`, DB dibuka SEKALI (probe
 kunci pakai koneksi yang sama), `isDatabaseLocked()` dipensiunkan.
 Hasil ukur ulang: rata-rata 2.941 → 2.135 dtk (**−28%**) di emulator;
 jalur layar terkunci tetap terverifikasi runtime.

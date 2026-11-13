@@ -1,4 +1,4 @@
-# Bukuduit
+# CatatIn
 
 Pencatat keuangan pribadi, **offline-first**, Android. Transaksi dari push
 notifikasi aplikasi bank/e-wallet tertangkap otomatis via
@@ -33,7 +33,7 @@ header global (lonceng capture + menu) di semua tab.
   alokasi per jenis anggaran, bisa di-scope ke akun tertentu (mis.
   "Makanan @ e-wallet"), progres vs bulan lalu.
 
-- **Bukuduit Quest**: maskot Duit mencerminkan kondisi batas — khawatir
+- **CatatIn Quest**: maskot Duit mencerminkan kondisi batas — khawatir
   saat terlampaui, tenang saat aman. **Streak disiplin** menghitung
   hari berturut jaga batas dari data asli (milestone 3/7/14/21/30/60/
   100 hari).
@@ -49,7 +49,7 @@ flutter run                                  # atau: flutter build apk
 ```
 
 Alur pertama kali: Menu ⋯ → **Catat otomatis** → tombol *Mulai* → baca
-disclosure → "Saya mengerti" → beri centang Bukuduit di *Notification
+disclosure → "Saya mengerti" → beri centang CatatIn di *Notification
 access* Android — sambungan bank lanjut otomatis begitu kembali.
 
 ## Capture & tuning rules

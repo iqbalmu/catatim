@@ -11,7 +11,7 @@ import '../storage/database.dart' show CaptureLog;
 import '../storage/repository.dart';
 import 'capture_channel.dart';
 
-const String _ownPackage = 'id.xmuu.bukuduit';
+const String _ownPackage = 'id.xmuu.catatim';
 
 /// Menghubungkan aliran notifikasi mentah → parser → draf.
 ///

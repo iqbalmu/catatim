@@ -1,10 +1,10 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bukuduit/models.dart';
-import 'package:bukuduit/rules/rule_set.dart';
-import 'package:bukuduit/storage/database.dart';
-import 'package:bukuduit/storage/repository.dart';
+import 'package:catatim/models.dart';
+import 'package:catatim/rules/rule_set.dart';
+import 'package:catatim/storage/database.dart';
+import 'package:catatim/storage/repository.dart';
 
 void main() {
   late AppDatabase db;

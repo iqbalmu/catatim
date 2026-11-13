@@ -88,13 +88,13 @@ class _BackupScreenState extends State<BackupScreen>
     // pembersihan hanya pasca-share tidak bisa diandalkan.
     final cache = (await getTemporaryDirectory()).listSync();
     for (final entry in cache) {
-      if (entry is File && entry.path.contains('bukuduit-backup-')) {
+      if (entry is File && entry.path.contains('catatim-backup-')) {
         entry.deleteSync();
       }
     }
     await widget.repository.checkpoint();
     final dbFile = await currentDatabaseFile();
-    final path = await _tmpPath('bukuduit-backup-${_stamp()}.sqlite');
+    final path = await _tmpPath('catatim-backup-${_stamp()}.sqlite');
     await dbFile.copy(path);
     // Kunci ulang salinan dengan PIN user (DB aktif tetap terkunci
     // passphrase perangkat).
@@ -109,7 +109,7 @@ class _BackupScreenState extends State<BackupScreen>
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(path)],
-          text: 'Backup data Bukuduit: simpan dan ingat PIN-nya!',
+          text: 'Backup data CatatIn: simpan dan ingat PIN-nya!',
         ),
       );
     } finally {

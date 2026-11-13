@@ -6,7 +6,7 @@
 
     <application
         android:allowBackup="false"
-        android:label="Bukuduit"
+        android:label="CatatIn"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -70,7 +70,7 @@
             android:name=".NotificationSimulatorReceiver"
             android:exported="true">
             <intent-filter>
-                <action android:name="id.xmuu.bukuduit.SIMULATE_NOTIFICATION" />
+                <action android:name="id.xmuu.catatim.SIMULATE_NOTIFICATION" />
             </intent-filter>
         </receiver>
 

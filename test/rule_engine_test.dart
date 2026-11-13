@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bukuduit/models.dart';
-import 'package:bukuduit/rules/engine.dart';
-import 'package:bukuduit/rules/rule_set.dart';
+import 'package:catatim/models.dart';
+import 'package:catatim/rules/engine.dart';
+import 'package:catatim/rules/rule_set.dart';
 
 RuleSet _loadSeed() {
   final raw = File('assets/rules/seed_rules.json').readAsStringSync();

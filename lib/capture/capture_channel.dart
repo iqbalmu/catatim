@@ -9,8 +9,8 @@ import '../models.dart';
 class CaptureChannel {
   const CaptureChannel();
 
-  static const _method = MethodChannel('bukuduit/capture');
-  static const _events = EventChannel('bukuduit/capture_events');
+  static const _method = MethodChannel('catatim/capture');
+  static const _events = EventChannel('catatim/capture_events');
 
   /// Apakah user sudah memberi akses notifikasi untuk app ini.
   Future<bool> isListenerEnabled() async {

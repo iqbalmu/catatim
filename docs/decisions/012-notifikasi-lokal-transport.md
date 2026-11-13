@@ -13,7 +13,7 @@ native sendiri.
 
 ## Keputusan
 
-Channel native sendiri (`bukuduit/notify` → `MainActivity` →
+Channel native sendiri (`CatatIn/notify` → `MainActivity` →
 `BudgetNotifier`), konsisten ADR-001: Kotlin HANYA membuat channel,
 mengecek izin (`canPost`, runtime `POST_NOTIFICATIONS` Android 13+),
 dan menampilkan notifikasi berteks dari Dart. Seluruh keputusan —

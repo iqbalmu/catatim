@@ -2,9 +2,9 @@ import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bukuduit/theme/quest.dart';
-import 'package:bukuduit/ui/month_picker.dart';
-import 'package:bukuduit/ui/quest.dart';
+import 'package:catatim/theme/quest.dart';
+import 'package:catatim/ui/month_picker.dart';
+import 'package:catatim/ui/quest.dart';
 
 /// Spot-check semantik TalkBack yang ditambahkan $impeccable harden
 /// (audit 2026-11-11): state terpilih diumumkan pada pemilih bulan dan chip.

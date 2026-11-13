@@ -91,7 +91,7 @@ class BatchSimulationReport {
   double get passRate => total == 0 ? 0 : (passed / total) * 100;
 }
 
-/// Kumpulan skenario notifikasi bawaan Bukuduit.
+/// Kumpulan skenario notifikasi bawaan CatatIn.
 const List<CaptureScenario> kSimulatorPresets = [
   // --- blu by BCA ---
   CaptureScenario(

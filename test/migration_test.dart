@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqlite3/sqlite3.dart';
-import 'package:bukuduit/models.dart';
-import 'package:bukuduit/storage/database.dart'
+import 'package:catatim/models.dart';
+import 'package:catatim/storage/database.dart'
     show AppDatabase, defaultCategoryNames;
-import 'package:bukuduit/storage/repository.dart';
+import 'package:catatim/storage/repository.dart';
 
 /// Regression: DB ber-schema v1 (dipakai versi app sebelum kategori) HARUS
 /// termigrasi mulus ke v2 tanpa kehilangan data.
@@ -14,7 +14,7 @@ void main() {
   late File dbFile;
 
   setUp(() async {
-    final dir = await Directory.systemTemp.createTemp('bukuduit_mig');
+    final dir = await Directory.systemTemp.createTemp('catatim_mig');
     dbFile = File('${dir.path}/legacy.sqlite');
 
     // Bangun DB v1 persis seperti yang ada di device lama.

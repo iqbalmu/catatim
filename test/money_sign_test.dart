@@ -1,5 +1,5 @@
-import 'package:bukuduit/core/money.dart';
-import 'package:bukuduit/theme/quest.dart';
+import 'package:catatim/core/money.dart';
+import 'package:catatim/theme/quest.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

@@ -3,18 +3,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 
-import 'package:bukuduit/capture/capture_channel.dart';
-import 'package:bukuduit/capture/pipeline.dart';
-import 'package:bukuduit/core/budget.dart';
-import 'package:bukuduit/game/progress.dart';
-import 'package:bukuduit/models.dart';
-import 'package:bukuduit/rules/engine.dart';
-import 'package:bukuduit/rules/rule_set.dart';
-import 'package:bukuduit/storage/database.dart';
-import 'package:bukuduit/storage/repository.dart';
-import 'package:bukuduit/theme/quest.dart';
-import 'package:bukuduit/ui/rencana_batas.dart';
-import 'package:bukuduit/ui/settings_screen.dart';
+import 'package:catatim/capture/capture_channel.dart';
+import 'package:catatim/capture/pipeline.dart';
+import 'package:catatim/core/budget.dart';
+import 'package:catatim/game/progress.dart';
+import 'package:catatim/models.dart';
+import 'package:catatim/rules/engine.dart';
+import 'package:catatim/rules/rule_set.dart';
+import 'package:catatim/storage/database.dart';
+import 'package:catatim/storage/repository.dart';
+import 'package:catatim/theme/quest.dart';
+import 'package:catatim/ui/rencana_batas.dart';
+import 'package:catatim/ui/settings_screen.dart';
 
 void main() {
   group('Reset / Kosongkan Data', () {

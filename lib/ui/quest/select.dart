@@ -17,7 +17,7 @@ class QuestSelectOption<T> {
   final Widget? leading;
 }
 
-/// Input field pemilih nilai dengan modal bottom sheet picker khas Bukuduit.
+/// Input field pemilih nilai dengan modal bottom sheet picker khas CatatIn.
 ///
 /// Menggantikan [DropdownButtonFormField] bawaan Material yang kaku dengan
 /// pemilih berbasis sheet yang ramah jempol, bersih, beranimasi halus, dan

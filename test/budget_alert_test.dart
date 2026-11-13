@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bukuduit/core/budget.dart';
-import 'package:bukuduit/core/budget_alert.dart';
+import 'package:catatim/core/budget.dart';
+import 'package:catatim/core/budget_alert.dart';
 
 void main() {
   group('budgetAlertPeriodKey', () {

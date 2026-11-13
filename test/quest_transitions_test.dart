@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bukuduit/theme/quest.dart';
+import 'package:catatim/theme/quest.dart';
 
 void main() {
   testWidgets('QuestPageTransitionsBuilder pushes and pops with parallax and without error', (tester) async {

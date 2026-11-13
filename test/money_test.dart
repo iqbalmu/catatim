@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bukuduit/core/money.dart';
+import 'package:catatim/core/money.dart';
 
 void main() {
   group('Money.parseGroup', () {

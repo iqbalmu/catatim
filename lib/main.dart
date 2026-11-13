@@ -23,21 +23,21 @@ Future<void> main() async {
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   // Frame pertama tampil SEKARANG; init berat jalan di belakang splash
   // (audit F-01 — dulu buka DB + seed menahan startup 2,6–3,2 dtk).
-  runApp(const BukuduitBootstrap());
+  runApp(const CatatInBootstrap());
 }
 
 /// rules — lalu tukar ke app utama / layar terkunci.
 /// Splash + init async: pulihkan restore, buka DB sekali (probe kunci
 /// memakai koneksi yang sama — tidak dua kali buka), seed, katalog
 /// rules — lalu tukar ke app utana / layar terkunci.
-class BukuduitBootstrap extends StatefulWidget {
-  const BukuduitBootstrap({super.key});
+class CatatInBootstrap extends StatefulWidget {
+  const CatatInBootstrap({super.key});
 
   @override
-  State<BukuduitBootstrap> createState() => _BukuduitBootstrapState();
+  State<CatatInBootstrap> createState() => _CatatInBootstrapState();
 }
 
-class _BukuduitBootstrapState extends State<BukuduitBootstrap> {
+class _CatatInBootstrapState extends State<CatatInBootstrap> {
   Widget? _ready;
   bool _locked = false;
 
@@ -92,7 +92,7 @@ class _BukuduitBootstrapState extends State<BukuduitBootstrap> {
 
     if (!mounted) return;
     setState(() {
-      _ready = BukuduitApp(
+      _ready = CatatInApp(
         repository: repository,
         pipeline: pipeline,
         progress: progress,
@@ -105,7 +105,7 @@ class _BukuduitBootstrapState extends State<BukuduitBootstrap> {
   Widget build(BuildContext context) {
     final app = _ready;
     if (app != null) return app;
-    if (_locked) return const BukuduitLockedApp();
+    if (_locked) return const CatatInLockedApp();
     // Splash mengikuti brightness perangkat supaya tidak berkedip putih saat
     // app dibuka dalam tema gelap (mode pilihan user belum terbaca — DB baru
     // dibuka di _init).

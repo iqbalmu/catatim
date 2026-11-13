@@ -1,4 +1,4 @@
-# Rencana Audit Total — Bukuduit
+# Rencana Audit Total — CatatIn
 
 Audit menyeluruh per aspek, dibasahkan ke struktur repo nyata (bukan
 checklist generik): tiap butir punya target file dan metode verifikasi.

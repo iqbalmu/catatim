@@ -1,8 +1,8 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bukuduit/models.dart';
-import 'package:bukuduit/storage/database.dart';
-import 'package:bukuduit/storage/repository.dart';
+import 'package:catatim/models.dart';
+import 'package:catatim/storage/database.dart';
+import 'package:catatim/storage/repository.dart';
 
 /// Regresi agregasi-per-hari (audit O-03): sebelumnya baris mentah 370 hari
 /// ditarik ke UI isolate dan dikelompokkan di Dart; kini GROUP BY di SQLite.

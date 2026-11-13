@@ -1,4 +1,4 @@
-# Arsitektur Bukuduit
+# Arsitektur CatatIn
 
 Pencatat keuangan pribadi Android, offline-first. Transaksi dari push
 notifikasi bank/e-wallet tertangkap otomatis; semua data tersimpan

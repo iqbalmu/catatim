@@ -1,4 +1,4 @@
-# Design System Bukuduit — "Petrol Teal CatatIn" v4.0
+# Design System CatatIn — "Petrol Teal CatatIn" v4.0
 
 Arah visual (diperbarui 2026-11-13):
 **hangat, ramah, dan berbobot finansial** — seluruh palet diturunkan dari logo

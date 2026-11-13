@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 class NotifyChannel {
   const NotifyChannel();
 
-  static const _method = MethodChannel('bukuduit/notify');
+  static const _method = MethodChannel('catatim/notify');
 
   /// Notifikasi boleh tampil: izin app aktif dan channel tidak
   /// dimatikan user. Plugin belum terdaftar (mis. hot restart) → false.

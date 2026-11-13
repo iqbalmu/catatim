@@ -2,8 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bukuduit/theme/quest.dart';
-import 'package:bukuduit/theme/tokens.dart';
+import 'package:catatim/theme/quest.dart';
+import 'package:catatim/theme/tokens.dart';
 
 /// Regresi kontras WCAG untuk token semantik & brand (audit 2026-11-11).
 ///

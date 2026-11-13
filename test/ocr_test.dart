@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bukuduit/capture/ocr.dart';
-import 'package:bukuduit/models.dart';
+import 'package:catatim/capture/ocr.dart';
+import 'package:catatim/models.dart';
 
 void main() {
   group('OcrService.parseReceiptText', () {

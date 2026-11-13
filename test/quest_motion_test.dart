@@ -1,18 +1,18 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bukuduit/capture/capture_channel.dart';
-import 'package:bukuduit/capture/pipeline.dart';
-import 'package:bukuduit/game/progress.dart';
-import 'package:bukuduit/models.dart';
-import 'package:bukuduit/rules/engine.dart';
-import 'package:bukuduit/rules/rule_set.dart';
-import 'package:bukuduit/storage/database.dart';
-import 'package:bukuduit/storage/repository.dart';
-import 'package:bukuduit/theme/quest.dart';
-import 'package:bukuduit/ui/home_cards.dart';
-import 'package:bukuduit/ui/home_screen.dart';
-import 'package:bukuduit/ui/quest.dart';
+import 'package:catatim/capture/capture_channel.dart';
+import 'package:catatim/capture/pipeline.dart';
+import 'package:catatim/game/progress.dart';
+import 'package:catatim/models.dart';
+import 'package:catatim/rules/engine.dart';
+import 'package:catatim/rules/rule_set.dart';
+import 'package:catatim/storage/database.dart';
+import 'package:catatim/storage/repository.dart';
+import 'package:catatim/theme/quest.dart';
+import 'package:catatim/ui/home_cards.dart';
+import 'package:catatim/ui/home_screen.dart';
+import 'package:catatim/ui/quest.dart';
 
 /// Animasi tipis permukaan Beranda: toggle saldo & banner draf. Dipagari
 /// agar regenerasi UI tidak menghilangkan umpan balik visual secara diam-diam.

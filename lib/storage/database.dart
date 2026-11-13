@@ -450,7 +450,7 @@ QueryExecutor encryptedExecutor(File file, String passphrase) {
 /// Lokasi file DB aktif — dipakai openAppDatabase & layar Backup.
 Future<File> currentDatabaseFile() async {
   final dir = await getApplicationDocumentsDirectory();
-  return File('${dir.path}/bukuduit.sqlite');
+  return File('${dir.path}/catatim.sqlite');
 }
 
 /// Passphrase aktif — dibutuhkan layar Backup agar user bisa menyimpannya

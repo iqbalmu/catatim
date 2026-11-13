@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bukuduit/core/budget.dart';
+import 'package:catatim/core/budget.dart';
 
 void main() {
   group('LimitLine.level', () {

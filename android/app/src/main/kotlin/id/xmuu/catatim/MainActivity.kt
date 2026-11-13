@@ -1,4 +1,4 @@
-package id.xmuu.bukuduit
+package id.xmuu.catatim
 
 import android.app.Notification
 import android.content.BroadcastReceiver
@@ -213,9 +213,9 @@ class MainActivity : FlutterActivity() {
     }
 
     companion object {
-        const val METHOD_CHANNEL = "bukuduit/capture"
-        const val EVENT_CHANNEL = "bukuduit/capture_events"
-        const val NOTIFY_CHANNEL = "bukuduit/notify"
+        const val METHOD_CHANNEL = "catatim/capture"
+        const val EVENT_CHANNEL = "catatim/capture_events"
+        const val NOTIFY_CHANNEL = "catatim/notify"
         const val REQUEST_POST_PERMISSION = 4001
 
         @Volatile
@@ -250,11 +250,11 @@ class NotificationCatcher : NotificationListenerService() {
         /// jangan pernah sentuh file di main thread; notifikasi bisa
         /// datang beruntun saat UI sedang aktif. FIFO: urutan enqueue
         /// vs drain tetap terjaga karena satu thread yang sama.
-        private val ioThread = HandlerThread("bukuduit-capture-io").apply { start() }
+        private val ioThread = HandlerThread("catatim-capture-io").apply { start() }
         private val ioHandler = Handler(ioThread.looper)
         private val replyHandler = Handler(Looper.getMainLooper())
 
-        private const val PREFS = "bukuduit_capture"
+        private const val PREFS = "catatim_capture"
         private const val KEY_ALLOWED = "allowed_packages"
         private const val KEY_LEARNED = "learned_packages"
         private const val KEY_LAST_HEARTBEAT = "last_heartbeat_at"
@@ -420,7 +420,7 @@ class NotificationCatcher : NotificationListenerService() {
 
 /**
  * Receiver simulasi notifikasi untuk pengujian otomatisasi dan pengujian manual
- * via `adb shell am broadcast -a id.xmuu.bukuduit.SIMULATE_NOTIFICATION ...`
+ * via `adb shell am broadcast -a id.xmuu.catatim.SIMULATE_NOTIFICATION ...`
  */
 class NotificationSimulatorReceiver : BroadcastReceiver() {
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -457,6 +457,6 @@ class NotificationSimulatorReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        const val ACTION_SIMULATE = "id.xmuu.bukuduit.SIMULATE_NOTIFICATION"
+        const val ACTION_SIMULATE = "id.xmuu.catatim.SIMULATE_NOTIFICATION"
     }
 }

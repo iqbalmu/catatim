@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bukuduit/core/buckets.dart';
-import 'package:bukuduit/models.dart';
+import 'package:catatim/core/buckets.dart';
+import 'package:catatim/models.dart';
 
 AmountPoint point(
   int year,

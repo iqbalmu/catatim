@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/native.dart';
 
-import 'package:bukuduit/capture/capture_channel.dart';
-import 'package:bukuduit/capture/pipeline.dart';
-import 'package:bukuduit/rules/engine.dart';
-import 'package:bukuduit/rules/rule_set.dart';
-import 'package:bukuduit/storage/database.dart';
-import 'package:bukuduit/storage/repository.dart';
-import 'package:bukuduit/theme/quest.dart';
-import 'package:bukuduit/ui/add_account_sheet.dart';
+import 'package:catatim/capture/capture_channel.dart';
+import 'package:catatim/capture/pipeline.dart';
+import 'package:catatim/rules/engine.dart';
+import 'package:catatim/rules/rule_set.dart';
+import 'package:catatim/storage/database.dart';
+import 'package:catatim/storage/repository.dart';
+import 'package:catatim/theme/quest.dart';
+import 'package:catatim/ui/add_account_sheet.dart';
 
 void main() {
   testWidgets('AddAccountSheet: bebas overflow di layar sempit dengan banyak pilihan bank',

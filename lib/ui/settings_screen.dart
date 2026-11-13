@@ -424,7 +424,7 @@ class SettingsScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('bukuduit', style: context.qTitle(14)),
+                      Text('catatim', style: context.qTitle(14)),
                       const SizedBox(height: 2),
                       Text(
                         'Versi 1.0.0. Data terenkripsi di perangkat ini.',

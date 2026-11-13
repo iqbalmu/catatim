@@ -3,13 +3,13 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:bukuduit/capture/pipeline.dart';
-import 'package:bukuduit/capture/simulator.dart';
-import 'package:bukuduit/capture/capture_channel.dart';
-import 'package:bukuduit/rules/engine.dart';
-import 'package:bukuduit/rules/rule_set.dart';
-import 'package:bukuduit/storage/database.dart';
-import 'package:bukuduit/storage/repository.dart';
+import 'package:catatim/capture/pipeline.dart';
+import 'package:catatim/capture/simulator.dart';
+import 'package:catatim/capture/capture_channel.dart';
+import 'package:catatim/rules/engine.dart';
+import 'package:catatim/rules/rule_set.dart';
+import 'package:catatim/storage/database.dart';
+import 'package:catatim/storage/repository.dart';
 
 RuleSet _loadSeed() {
   final raw = File('assets/rules/seed_rules.json').readAsStringSync();

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Splash bukuduit: latar teal brand (#13454A, dari logo) + logo tengah.
+<!-- Splash catatim: latar teal brand (#13454A, dari logo) + logo tengah.
      Logo punya latar teal sendiri sehingga menyatu mulus. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/launch_bg" />

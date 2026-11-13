@@ -13,7 +13,7 @@ import 'quest.dart';
 /// Teks persetujuan akses — syarat kebijakan User Data Google Play,
 /// ditampilkan sebelum mengarahkan user ke pengaturan sistem.
 const String connectDisclosureText =
-    'Bukuduit membaca notifikasi transaksi dari bank dan e-wallet yang '
+    'CatatIn membaca notifikasi transaksi dari bank dan e-wallet yang '
     'kamu hubungkan, lalu menawarkannya sebagai draf catatan. Tidak ada '
     'yang tersimpan sebelum kamu menekan Catat.\n\n'
     'Semua data tersimpan terenkripsi di HP ini dan tidak pernah dikirim '
