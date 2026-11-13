@@ -442,7 +442,7 @@ class LaporanScreenState extends State<LaporanScreen> {
                     return ListView(
                       padding: EdgeInsets.fromLTRB(
                         Spacing.m,
-                        Spacing.m,
+                        Spacing.s,
                         Spacing.m,
                         (isPushed ? Spacing.xl : 104) + MediaQuery.paddingOf(context).bottom,
                       ),
@@ -483,9 +483,9 @@ class LaporanScreenState extends State<LaporanScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Laporan', style: context.qTitle(22)),
+                                  Text('Laporan', style: context.qTitle(20)),
                                   Text(
-                                    'Evaluasi arus kas & struktur pengeluaran',
+                                    'Arus kas & pengeluaran',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: context.qSmall(12),
@@ -560,7 +560,7 @@ class LaporanScreenState extends State<LaporanScreen> {
                           ],
                         ),
                         ),
-                        const SizedBox(height: Spacing.s + 4),
+                        const SizedBox(height: Spacing.m),
 
                         // ── Dedicated Full-Width Period Navigator Bar ──────
                         QuestTabEnter(
@@ -647,7 +647,7 @@ class LaporanScreenState extends State<LaporanScreen> {
                           ),
                         ),
                         ),
-                        const SizedBox(height: Spacing.l),
+                        const SizedBox(height: Spacing.m),
 
                         if (waiting)
                           const Center(
@@ -678,7 +678,7 @@ class LaporanScreenState extends State<LaporanScreen> {
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: Spacing.l),
+                                const SizedBox(height: Spacing.m),
 
                                 if (!report.hasAnyActivity)
                                   QuestTabEnter(
@@ -718,7 +718,7 @@ class LaporanScreenState extends State<LaporanScreen> {
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(height: Spacing.l),
+                                  const SizedBox(height: Spacing.m),
 
                                   // ── 03 · KOMPOSISI KATEGORI ──────────────
                                   QuestTabEnter(
@@ -759,7 +759,7 @@ class LaporanScreenState extends State<LaporanScreen> {
 
                                   // ── 04 · PENGELUARAN TERBESAR ────────────
                                   if (report.topExpenses.isNotEmpty) ...[
-                                    const SizedBox(height: Spacing.l),
+                                    const SizedBox(height: Spacing.m),
                                     QuestTabEnter(
                                       index: 5,
                                       child: Column(

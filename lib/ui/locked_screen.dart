@@ -82,7 +82,7 @@ class LockedScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(Spacing.l),
+          padding: const EdgeInsets.fromLTRB(Spacing.l, 0, Spacing.l, Spacing.l),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

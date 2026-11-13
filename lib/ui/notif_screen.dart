@@ -235,7 +235,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           Padding(
                             padding: const EdgeInsets.fromLTRB(
                               Spacing.m,
-                              Spacing.sm,
+                              0,
                               Spacing.m,
                               Spacing.s,
                             ),

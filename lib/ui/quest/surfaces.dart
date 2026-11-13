@@ -31,7 +31,7 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize =>
-      Size.fromHeight(60 * textScale.clamp(1.0, 2.0));
+      Size.fromHeight(68 * textScale.clamp(1.0, 2.0));
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +42,8 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
           Spacing.m,
           Spacing.s,
           Spacing.m,
-          Spacing.xs,
+          // Header memiliki jarak appbar → konten (16dp); body mulai dari 0.
+          Spacing.m,
         ),
         child: QuestTabEnter(
           index: 0,

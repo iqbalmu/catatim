@@ -134,7 +134,7 @@ class _BackupScreenState extends State<BackupScreen>
       body: ListView(
         padding: const EdgeInsets.fromLTRB(
           Spacing.m,
-          Spacing.s,
+          0,
           Spacing.m,
           Spacing.m,
         ),

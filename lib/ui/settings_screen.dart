@@ -58,9 +58,7 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           Spacing.m,
-          // Napas di bawah header: judul app bar tidak menempel ke kartu
-          // pertama (sebelumnya Spacing.s terasa sesak).
-          Spacing.l,
+          0,
           Spacing.m,
           (showBack ? Spacing.xl : 104) + MediaQuery.paddingOf(context).bottom,
         ),
@@ -107,8 +105,6 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: Spacing.m),
-
           // ── Grup 1: MANAJEMEN KEUANGAN ──
           QuestTabEnter(
             index: 2,
@@ -219,8 +215,6 @@ class SettingsScreen extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: Spacing.m),
-
           // ── Grup 2: PENGATURAN & SISTEM ──
           QuestTabEnter(
             index: 3,

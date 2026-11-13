@@ -75,7 +75,7 @@ class BankAccountsScreen extends StatelessWidget {
                   return ListView(
                     padding: const EdgeInsets.fromLTRB(
                       Spacing.m,
-                      Spacing.s,
+                      0,
                       Spacing.m,
                       Spacing.m,
                     ),

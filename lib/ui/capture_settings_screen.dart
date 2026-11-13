@@ -327,7 +327,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   Spacing.m,
-                  Spacing.xs,
+                  0,
                   Spacing.m,
                   Spacing.s,
                 ),

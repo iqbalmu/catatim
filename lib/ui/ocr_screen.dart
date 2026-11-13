@@ -514,7 +514,7 @@ class _OcrScreenState extends State<OcrScreen> {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.all(Spacing.m),
+              padding: const EdgeInsets.fromLTRB(Spacing.m, 0, Spacing.m, Spacing.m),
               children: [
                 if (_imagePath != null && File(_imagePath!).existsSync()) ...[
                   ClipRRect(
