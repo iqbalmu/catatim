@@ -1,4 +1,4 @@
-# bukuduit
+# CatatIn (catatim)
 
 Pencatat keuangan pribadi offline dengan capture notifikasi bank (Android).
 

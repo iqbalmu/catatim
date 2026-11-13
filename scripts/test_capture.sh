@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# Bukuduit — Skrip Otomasi Injeksi Notifikasi Bank (M3 Validation)
+# CatatIn — Skrip Uji Capture: Injeksi Notifikasi Bank Simulasi
 # ==============================================================================
 # Mengirim notifikasi simulasi ke device via Android BroadcastReceiver
-# tanpa perlu transfer uang asli.
+# tanpa perlu transfer uang asli. Khusus build debug (receiver menolak
+# broadcast di build rilis).
 #
 # Penggunaan:
 #   ./scripts/test_capture.sh all                     # Kirim seluruh variasi preset
@@ -16,8 +17,8 @@
 
 set -e
 
-ACTION="id.xmuu.bukuduit.SIMULATE_NOTIFICATION"
-COMPONENT="id.xmuu.bukuduit/.NotificationSimulatorReceiver"
+ACTION="id.xmuu.catatim.SIMULATE_NOTIFICATION"
+COMPONENT="id.xmuu.catatim/.NotificationSimulatorReceiver"
 
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -91,7 +92,7 @@ test_guard() {
 }
 
 show_help() {
-  echo "Bukuduit Capture Notification Injection Tool"
+  echo "CatatIn Capture Notification Injection Tool"
   echo ""
   echo "Perintah:"
   echo "  $0 all                    Menjalankan seluruh variasi preset"
