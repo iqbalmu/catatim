@@ -2,4 +2,6 @@
 <resources>
     <!-- Latar splash & window awal — teal brand dari logo CatatIn. -->
     <color name="launch_bg">#13454A</color>
+    <!-- Latar adaptive icon launcher (Android 8+) agar menyatu tanpa wrapper putih. -->
+    <color name="ic_launcher_background">#14454B</color>
 </resources>
