@@ -405,29 +405,35 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: Spacing.m),
 
-          // Tentang: logo app + teks biasa, tanpa kartu.
+          // Tentang: logo app sejajar di kiri nama + versi, tanpa kartu.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Center(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.cell),
-                    child: Image.asset(
-                      'assets/logo/catatin_logo.png',
-                      width: 64,
-                      height: 64,
-                      filterQuality: FilterQuality.medium,
-                    ),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.cell),
+                  child: Image.asset(
+                    'assets/logo/catatin_logo.png',
+                    width: 40,
+                    height: 40,
+                    filterQuality: FilterQuality.medium,
                   ),
                 ),
-                const SizedBox(height: Spacing.s),
-                Text('bukuduit', style: context.qTitle(14)),
-                const SizedBox(height: 2),
-                Text(
-                  'Versi 1.0.0. Data tersimpan terenkripsi di perangkat ini.',
-                  style: context.qSmall(12),
+                const SizedBox(width: Spacing.s),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('bukuduit', style: context.qTitle(14)),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Versi 1.0.0. Data terenkripsi di perangkat ini.',
+                        style: context.qSmall(12),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
