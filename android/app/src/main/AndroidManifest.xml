@@ -64,6 +64,16 @@
             </intent-filter>
         </service>
 
+        <!-- Simulasi capture utk pengujian (adb broadcast). Handler Kotlin
+             mengabaikan broadcast di build rilis — lihat onReceive. -->
+        <receiver
+            android:name=".NotificationSimulatorReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="id.xmuu.bukuduit.SIMULATE_NOTIFICATION" />
+            </intent-filter>
+        </receiver>
+
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

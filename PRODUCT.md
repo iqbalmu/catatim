@@ -77,7 +77,8 @@ terenkripsi SQLCipher, tanpa akun, tanpa iklan.
 
 ## Product Principles
 
-1. Capture dulu, kurasi kemudian — tidak pernah auto-post transaksi.
+1. Capture dulu, kurasi kemudian — default tidak pernah auto-catat
+   transaksi; auto-record hanya lewat pengaturan yang di-opt-in user.
 2. Angka adalah raja — nominal selalu tabular, tebal, jelas arahnya.
 3. Privasi adalah default — offline, terenkripsi, tanpa telemetri.
 4. Indonesia dulu — bahasa, format uang, konteks bank lokal.

@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
+import android.os.HandlerThread
 import android.os.Looper
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
@@ -88,7 +89,9 @@ class MainActivity : FlutterActivity() {
                         if (pkg != null) NotificationCatcher.learnPackage(this, pkg)
                         result.success(null)
                     }
-                    "drainQueue" -> result.success(NotificationCatcher.drainQueue(this))
+                    "drainQueue" -> NotificationCatcher.drainQueue(this) { lines ->
+                        result.success(lines)
+                    }
                     "getLastCaptureHeartbeat" -> result.success(NotificationCatcher.getLastHeartbeatAt(this))
                     "listLaunchableApps" -> {
                         val pm = packageManager
@@ -243,6 +246,14 @@ class NotificationCatcher : NotificationListenerService() {
         private const val QUEUE_MAX_BYTES = 1_000_000L
         private const val QUEUE_KEEP_LINES = 1000
 
+        /// I/O antrian (tulis + baca-hapus) berjalan di thread ini —
+        /// jangan pernah sentuh file di main thread; notifikasi bisa
+        /// datang beruntun saat UI sedang aktif. FIFO: urutan enqueue
+        /// vs drain tetap terjaga karena satu thread yang sama.
+        private val ioThread = HandlerThread("bukuduit-capture-io").apply { start() }
+        private val ioHandler = Handler(ioThread.looper)
+        private val replyHandler = Handler(Looper.getMainLooper())
+
         private const val PREFS = "bukuduit_capture"
         private const val KEY_ALLOWED = "allowed_packages"
         private const val KEY_LEARNED = "learned_packages"
@@ -300,10 +311,19 @@ class NotificationCatcher : NotificationListenerService() {
             return pkg in allowed
         }
 
+        /// Fire-and-forget: tulisan dijadwalkan di IO thread, pemanggil
+        /// (onNotificationPosted / receiver) tidak pernah menunggu disk.
+        /// Context dinormalkan ke applicationContext agar tidak menggantung
+        /// referensi activity di antrean yang berjalan belakangan.
         fun enqueue(context: Context, line: String) {
+            ioHandler.post { writeToQueue(context.applicationContext, line) }
+        }
+
+        private fun writeToQueue(context: Context, line: String) {
             synchronized(lock) {
                 val file = File(context.filesDir, QUEUE_FILE)
                 file.appendText(line + "\n")
+
                 // Antrian hanya jaring pengaman saat app mati — jangan
                 // biarkan tumbuh tanpa batas; simpan bagian terakhir.
                 if (file.length() > QUEUE_MAX_BYTES) {
@@ -315,13 +335,18 @@ class NotificationCatcher : NotificationListenerService() {
             }
         }
 
-        fun drainQueue(context: Context): List<String> {
-            synchronized(lock) {
-                val file = File(context.filesDir, QUEUE_FILE)
-                if (!file.exists()) return emptyList()
-                val lines = file.readLines().filter { it.isNotBlank() }
-                file.delete()
-                return lines
+        /// Baca-hapus antrian di IO thread, jawab via callback di main
+        /// thread (MethodChannel result wajib di main).
+        fun drainQueue(context: Context, onDone: (List<String>) -> Unit) {
+            ioHandler.post {
+                val lines = synchronized(lock) {
+                    val file = File(context.applicationContext.filesDir, QUEUE_FILE)
+                    if (!file.exists()) return@synchronized emptyList()
+                    val result = file.readLines().filter { it.isNotBlank() }
+                    file.delete()
+                    result
+                }
+                replyHandler.post { onDone(lines) }
             }
         }
 
@@ -402,6 +427,12 @@ class NotificationSimulatorReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != ACTION_SIMULATE) return
+        // Gerbang simulasi hanya untuk build debug; build rilis (Play)
+        // kebal injeksi notifikasi palsu dari app lain.
+        val debuggable =
+            context.applicationInfo.flags and
+                android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE
+        if (debuggable == 0) return
         val pkg = intent.getStringExtra("package")
             ?: intent.getStringExtra("packageName")
             ?: "com.bcadigital.blu"
