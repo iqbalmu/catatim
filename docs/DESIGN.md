@@ -1,8 +1,9 @@
-# Design System Bukuduit — "Slate-Indigo Clean" v3.0
+# Design System Bukuduit — "Petrol Teal CatatIn" v4.0
 
-Arah visual (diperbarui 2026-11-11):
-**bersih, tenang, dan berbobot finansial** — menggunakan palet ultra-clean Slate 50
-(Slate 900 pada Dark Mode) dengan aksen fungsional Indigo, Emerald, Amber, dan Rose.
+Arah visual (diperbarui 2026-11-13):
+**hangat, ramah, dan berbobot finansial** — seluruh palet diturunkan dari logo
+aplikasi CatatIn: latar teal petrol `#13454A` dengan aksen teal syal, orana syal,
+emas koin "Rp", koral teks "In", hijau daun grafik, dan burlap karung.
 Dokumen ini adalah sumber kebenaran visual aplikasi; widget-kit terpusat di `lib/ui/quest.dart` + `lib/theme/`.
 
 ## Prinsip Desain
@@ -13,10 +14,10 @@ Dokumen ini adalah sumber kebenaran visual aplikasi; widget-kit terpusat di `lib
    - `card`: Kartu konten standar (radius 20, hairline border, shadow halus).
    - `flat`: Strip ringkas atau sub-konten (latar `surface2`, hairline border, tanpa shadow).
 3. **Anggaran Aksen Warna Terkendali:**
-   - **Indigo (`#4F46E5` / `#818CF8`)**: Hanya untuk brand dan elemen interaktif / CTA primer. Isi CTA memakai `primarySolid` (light Indigo 600 / dark Indigo 400) dengan konten `onPrimary` (putih / tinta gelap) — pasangan lolos WCAG AA (audit 2026-11-11: putih di atas Indigo 400 hanya 2,98:1).
-   - **Emerald (`#047857` / `#34D399`)**: Khusus pemasukan dan status aman / aktif. Light memakai varian 700 agar lolos AA sebagai teks nominal (Emerald 500 hanya 2,54:1 di putih).
-   - **Amber (`#B45309` / `#FBBF24`)**: Khusus peringatan mendekati batas anggaran (75–99%) dan gamifikasi streak. Light varian 700 (Amber 500 di `warnTint` hanya 1,93:1).
-   - **Rose (`#B91C1C` / `#F87171`)**: Khusus pengeluaran dan status over-budget / aksi destruktif. Light varian 700 (Rose 500 3,76:1, Rose 600 masih 4,41:1 di tint).
+   - **Teal (`#1F5A53` / `#62B8AA`)**: Hanya untuk brand dan elemen interaktif / CTA primer. Isi CTA memakai `primarySolid` (light teal deep / dark teal terang) dengan konten `onPrimary` (putih / tinta gelap) — pasangan lolos WCAG AA (audit 2026-11-13: putih di atas teal deep 7,9:1, tinta di atas teal terang 6,2:1).
+   - **Hijau (`#266E48` / `#63D8A1`)**: Khusus pemasukan dan status aman / aktif — turunan hijau daun grafik logo. Light varian gelap agar lolos AA di surface & tint.
+   - **Emas (`#8A5F06` / `#FAC750`)**: Khusus peringatan mendekati batas anggaran (75–99%) dan gamifikasi streak — langsung dari koin "Rp" logo (dark) dan varian gelapnya untuk teks light.
+   - **Koral (`#B93A31` / `#F98A82`)**: Khusus pengeluaran dan status over-budget / aksi destruktif — dari teks "In" logo; light digelapkan agar lolos AA (5,0:1 di tint).
 4. **Angka Adalah Raja:**
    - Semua nominal finansial memakai `FontFeature.tabularFigures()` dengan tipografi tebal (`qDisplay` 28–40 atau `qTitle`).
 5. **Tanpa Dekorasi Berlebih (Craft Floor):**
@@ -30,50 +31,52 @@ Dokumen ini adalah sumber kebenaran visual aplikasi; widget-kit terpusat di `lib
 ### Light Mode (`SeedColors`)
 | Token | Nilai Hex | Peran |
 |---|---|---|
-| `bg` | `#F8FAFC` | Latar aplikasi (Slate 50) |
+| `bg` | `#F3F8F7` | Latar aplikasi (off-white ber-tint teal) |
 | `surface` | `#FFFFFF` | Permukaan kartu murni |
-| `surface2` | `#F1F5F9` | Tint latar sekunder / strip (Slate 100) |
-| `line` / `border` | `#F1F5F9` | Garis pembatas hairline halus |
-| `text` / `ink` | `#0F172A` | Teks judul utama (Slate 900) |
-| `body` | `#334155` | Teks bacaan konten (Slate 700) |
-| `muted` | `#64748B` | Teks sekunder / keterangan (Slate 500) — hanya di atas `surface`/`bg` |
-| `hint` | `#475569` | Teks di atas isian `surface2`: hint/label input, segmen tak aktif (Slate 600, 6,9:1) |
-| `primary` | `#6366F1` | Brand — ikon/aksen non-teks & ripple (Indigo 500; 3,99:1 sebagai teks kecil) |
-| `primarySolid` | `#4F46E5` | Isi CTA/chip terpilih/switch — pasangan `onPrimary` putih 6,29:1 (Indigo 600) |
-| `primaryText` | `#4F46E5` | Teks berwarna brand: link "Lihat Semua", label nav aktif (Indigo 600, 6,29:1) |
-| `primaryGradientEnd` | `#4338CA` | Ujung gradien CTA (Indigo 700, putih 7,9:1) |
+| `surface2` | `#E7F0EE` | Tint latar sekunder / strip |
+| `line` / `border` | `#E3EDEB` | Garis pembatas hairline halus |
+| `text` / `ink` | `#10393D` | Teks judul utama (petrol ink, teal tergelap logo) |
+| `body` | `#2C4B4D` | Teks bacaan konten |
+| `muted` | `#54716E` | Teks sekunder / keterangan — hanya di atas `surface`/`bg` (5,3:1) |
+| `hint` | `#3E5D5A` | Teks di atas isian `surface2`: hint/label input, segmen tak aktif (6,2:1) |
+| `primary` | `#2A6F66` | Brand — ikon/aksen non-teks & ripple (teal syal logo digelapkan; 5,9:1) |
+| `primarySolid` | `#1F5A53` | Isi CTA/chip terpilih/switch — pasangan `onPrimary` putih 7,9:1 |
+| `primaryText` | `#1F5A53` | Teks berwarna brand: link "Lihat Semua", label nav aktif (7,9:1) |
+| `primaryGradientEnd` | `#164E48` | Ujung gradien CTA (putih 9,5:1) |
 | `onPrimary` | `#FFFFFF` | Teks/ikon di atas `primarySolid`/gradien |
-| `primaryLight` | `#EEF2FF` | Latar tint CTA & banner draf (Indigo 50) |
-| `good` / `incoming` | `#047857` | Pemasukan & status aman (Emerald 700; 5,0–5,5:1 di semua permukaan) |
-| `incomingTint` | `#ECFDF5` | Latar chip pemasukan / surplus |
-| `warn` | `#B45309` | Peringatan mendekati batas 75-99% (Amber 700; 4,5–5,0:1) |
-| `warnTint` | `#FEF3C7` | Latar chip peringatan / streak |
-| `bad` / `outgoing` | `#B91C1C` | Pengeluaran & over-budget (Rose 700; 5,9–6,5:1) |
-| `outgoingTint` | `#FEF2F2` | Latar chip pengeluaran / defisit |
+| `primaryLight` | `#DCEEEA` | Latar tint CTA & banner draf |
+| `accent` | `#C75B1E` | Aksen kedua — orana strip syal logo (ikon, 4,3:1) |
+| `good` / `incoming` | `#266E48` | Pemasukan & status aman (hijau daun logo; 6,2:1 di surface, 5,5:1 di tint) |
+| `incomingTint` | `#E8F4EE` | Latar chip pemasukan / surplus |
+| `warn` | `#8A5F06` | Peringatan mendekati batas 75-99% (emas koin digelapkan; 5,6:1 di tint) |
+| `warnTint` | `#FCF1D8` | Latar chip peringatan / streak |
+| `bad` / `outgoing` | `#B93A31` | Pengeluaran & over-budget (koral teks "In" logo; 5,7:1 di surface, 5,0:1 di tint) |
+| `outgoingTint` | `#FDEEEC` | Latar chip pengeluaran / defisit |
 
 ### Dark Mode (`DarkColors`)
 | Token | Nilai Hex | Peran |
 |---|---|---|
-| `bg` | `#0F172A` | Latar aplikasi (Slate 900) |
-| `surface` | `#1E293B` | Permukaan kartu (Slate 800) |
-| `surface2` | `#334155` | Tint latar sekunder / strip (Slate 700) |
-| `line` / `border` | `#334155` | Garis pembatas hairline halus |
-| `text` / `ink` | `#F8FAFC` | Teks judul utama (Slate 50) |
-| `body` | `#E2E8F0` | Teks bacaan konten (Slate 200) |
-| `muted` | `#94A3B8` | Teks sekunder / keterangan (Slate 400) — hanya di atas `surface`/`bg` |
-| `hint` | `#CBD5E1` | Teks di atas isian `surface2`: hint/label input, segmen tak aktif (Slate 300, 7,0:1) |
-| `primary` | `#818CF8` | Brand & ikon aksen (Indigo 400) |
-| `primarySolid` | `#818CF8` | Isi CTA — konten `onPrimary` tinta gelap 5,98:1 (Indigo 400) |
-| `primaryText` | `#A5B4FC` | Teks berwarna brand (Indigo 300; 5,7–9:1 di permukaan dark) |
-| `primaryGradientEnd` | `#A5B4FC` | Ujung gradien CTA (Indigo 300, tinta 8,96:1) |
-| `onPrimary` | `#0F172A` | Teks/ikon di atas `primarySolid`/gradien |
-| `primaryLight` | `#312E81` | Latar tint CTA & badge (Indigo 900) |
-| `good` / `incoming` | `#34D399` | Pemasukan & status aman (Emerald 400) |
-| `incomingTint` | `#064E3B` | Latar chip pemasukan / surplus |
-| `warn` | `#FBBF24` | Peringatan mendekati batas (Amber 400) |
-| `warnTint` | `#451A03` | Latar chip peringatan / streak |
-| `bad` / `outgoing` | `#F87171` | Pengeluaran & over-budget (Rose 400) |
-| `outgoingTint` | `#450A0A` | Latar chip pengeluaran / defisit |
+| `bg` | `#0B2E33` | Latar aplikasi (teal gelap, sedikit lebih dalam dari logo) |
+| `surface` | `#14434A` | Permukaan kartu — latar teal logo #13454A |
+| `surface2` | `#1C5158` | Tint latar sekunder / strip |
+| `line` / `border` | `#225B62` | Garis pembatas hairline halus |
+| `text` / `ink` | `#EAFBFC` | Teks judul utama (putih kehijauan logo) |
+| `body` | `#CFE3E4` | Teks bacaan konten (abu teal muda logo) |
+| `muted` | `#9CC0BD` | Teks sekunder / keterangan — hanya di atas `surface`/`bg` (4,8:1) |
+| `hint` | `#B7D3D0` | Teks di atas isian `surface2`: hint/label input, segmen tak aktif |
+| `primary` | `#62B8AA` | Brand & ikon aksen (teal syal logo diterangkan; 4,6:1 di surface) |
+| `primarySolid` | `#62B8AA` | Isi CTA — konten `onPrimary` tinta gelap 6,2:1 |
+| `primaryText` | `#7CD4C6` | Teks berwarna brand |
+| `primaryGradientEnd` | `#8ADCCD` | Ujung gradien CTA |
+| `onPrimary` | `#0B2E33` | Teks/ikon di atas `primarySolid`/gradien |
+| `primaryLight` | `#0F3D40` | Latar tint CTA & badge |
+| `accent` | `#F08A47` | Aksen kedua — orana syal logo diterangkan |
+| `good` / `incoming` | `#63D8A1` | Pemasukan & status aman (hijau daun logo diterangkan) |
+| `incomingTint` | `#0F3B2C` | Latar chip pemasukan / surplus |
+| `warn` | `#FAC750` | Peringatan mendekati batas (emas koin "Rp" logo) |
+| `warnTint` | `#3D2C07` | Latar chip peringatan / streak |
+| `bad` / `outgoing` | `#F98A82` | Pengeluaran & over-budget (koral teks "In" logo diterangkan) |
+| `outgoingTint` | `#3F161A` | Latar chip pengeluaran / defisit |
 
 ## Tipografi — Nunito
 

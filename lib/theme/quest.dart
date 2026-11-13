@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/money.dart';
 import 'tokens.dart';
 
-/// Palet "Slate-Indigo Clean" v3.0 (docs/DESIGN.md) — dua tema, light/dark;
+/// Palet "Petrol Teal CatatIn" (2026-11-13) — dua tema, light/dark;
 /// pasangan solid/onPrimary lolos WCAG AA. Semua widget custom membaca
 /// warna dari sini, bukan default Material, supaya identitas tidak bocor.
 class QuestPalette {
@@ -22,7 +22,7 @@ class QuestPalette {
     required this.primary,
     required this.primaryDeep,
     required this.primaryLight,
-    required this.violet,
+    required this.accent,
     required this.hint,
     required this.primarySolid,
     required this.onPrimary,
@@ -48,25 +48,25 @@ class QuestPalette {
   final Color primary;
   final Color primaryDeep;
   final Color primaryLight;
-  final Color violet;
+  final Color accent;
 
   /// Teks di atas isian `surface2` (hint/label input, segmen tak aktif) —
-  /// light Slate 600 / dark Slate 300; `muted` gagal 4,5:1 di surface2.
+  /// teal-slate; `muted` gagal 4,5:1 di surface2.
   final Color hint;
 
-  /// Isi brand yang lolos kontras WCAG AA untuk kontennya (audit
-  /// 2026-11-11): light Indigo 600 + putih, dark Indigo 400 + tinta gelap
-  /// (putih di atas Indigo 400 hanya 2,98:1).
+  /// Isian brand yang lolos kontras WCAG AA untuk kontennya (audit
+  /// 2026-11-13): light teal deep + putih (7,9:1), dark teal terang +
+  /// tinta gelap (6,2:1).
   final Color primarySolid;
 
   /// Teks/ikon di atas [primarySolid] / gradien brand.
   final Color onPrimary;
 
-  /// Teks berwarna brand (link, label CTA inline) — light Indigo 600,
-  /// dark Indigo 300; `primary` murni gagal 4,5:1 sebagai teks kecil.
+  /// Teks berwarna brand (link, label CTA inline) — light teal deep,
+  /// dark teal terang; `primary` murni gagal 4,5:1 sebagai teks kecil.
   final Color primaryText;
 
-  /// Ujung kedua gradien CTA — light Indigo 700, dark Indigo 300.
+  /// Ujung kedua gradien CTA — teal lebih gelap (light) / lebih terang (dark).
   final Color primaryGradientEnd;
 
   final Color shadow;
@@ -100,13 +100,13 @@ class QuestPalette {
     primary: SeedColors.primary,
     primaryDeep: SeedColors.primaryDeep,
     primaryLight: SeedColors.primaryLight,
-    violet: SeedColors.violet,
-    hint: Color(0xFF475569),
+    accent: SeedColors.accent,
+    hint: Color(0xFF3E5D5A),
     primarySolid: SeedColors.primaryDeep,
     onPrimary: Colors.white,
     primaryText: SeedColors.primaryDeep,
-    primaryGradientEnd: Color(0xFF4338CA),
-    shadow: Color(0x080F172A),
+    primaryGradientEnd: Color(0xFF164E48),
+    shadow: Color(0x0A10393D),
     incomingTint: SeedColors.incomingTint,
     outgoingTint: SeedColors.outgoingTint,
   );
@@ -127,12 +127,12 @@ class QuestPalette {
     primary: DarkColors.primary,
     primaryDeep: DarkColors.primaryDeep,
     primaryLight: DarkColors.primaryLight,
-    violet: DarkColors.violet,
-    hint: Color(0xFFCBD5E1),
+    accent: DarkColors.accent,
+    hint: Color(0xFFB7D3D0),
     primarySolid: DarkColors.primary,
     onPrimary: DarkColors.bg,
-    primaryText: Color(0xFFA5B4FC),
-    primaryGradientEnd: Color(0xFFA5B4FC),
+    primaryText: Color(0xFF7CD4C6),
+    primaryGradientEnd: Color(0xFF8ADCCD),
     shadow: Color(0x30000000),
     incomingTint: DarkColors.incomingTint,
     outgoingTint: DarkColors.outgoingTint,
@@ -267,7 +267,7 @@ class QuestPageTransitionsBuilder extends PageTransitionsBuilder {
         end: const BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Color(0x180F172A),
+              color: Color(0x180B2E33),
               blurRadius: 24,
               offset: Offset(-6, 0),
             ),

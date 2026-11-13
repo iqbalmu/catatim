@@ -21,7 +21,7 @@ class QuestSelectOption<T> {
 ///
 /// Menggantikan [DropdownButtonFormField] bawaan Material yang kaku dengan
 /// pemilih berbasis sheet yang ramah jempol, bersih, beranimasi halus, dan
-/// selaras dengan sistem desain Slate-Indigo.
+/// selaras dengan sistem desain Petrol Teal CatatIn.
 class QuestSelectField<T> extends StatelessWidget {
   const QuestSelectField({
     super.key,

@@ -151,8 +151,8 @@ class MascotStage extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0x3D3E2214),
-                    const Color(0x003E2214),
+                    const Color(0x3D6B4937),
+                    const Color(0x006B4937),
                   ],
                 ),
               ),
@@ -181,20 +181,22 @@ class _PochyPainter extends CustomPainter {
   final double t;
   final bool animate;
 
-  static const _burlap = Color(0xFFE1BC94);
+  /// Warna diambil langsung dari logo aplikasi (karung burlap, tali,
+  /// syal teal + orana, koin emas) supaya maskot identik dengan logo.
+  static const _burlap = Color(0xFFD7B285);
   static const _burlapDeep = Color(0xFFBF946F);
-  static const _rope = Color(0xFF3E2214);
-  static const _scarf = Color(0xFF7FBDB1);
-  static const _scarfWarm = Color(0xFFF2913D);
-  static const _coin = Color(0xFFF1A23A);
-  static const _coinDeep = Color(0xFFC46913);
+  static const _rope = Color(0xFF6B4937);
+  static const _scarf = Color(0xFF499B8F);
+  static const _scarfWarm = Color(0xFFEA732E);
+  static const _coin = Color(0xFFFAC750);
+  static const _coinDeep = Color(0xFFCB8F21);
   static const _blush = Color(0xFFF2A69E);
 
   static const _confetti = [
-    Color(0xFFE07A5F),
-    Color(0xFF3D8AA8),
-    Color(0xFF8A6FBF),
-    Color(0xFF4E9A6F),
+    Color(0xFFF77168), // koral teks "In" logo
+    Color(0xFFEA732E), // orana syal
+    Color(0xFF499B8F), // teal syal
+    Color(0xFF628F63), // hijau daun grafik
   ];
 
   @override

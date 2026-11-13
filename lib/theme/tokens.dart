@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 /// Token desain — satu sumber kebenaran untuk spacing, radius, dan warna.
 ///
-/// Palet v3.0 "Slate-Indigo Clean": bersih, tenang, berbobot finansial —
-/// lihat docs/DESIGN.md. Dua tema (light/dark); aksen semantik light
-/// memakai varian 700 agar lolos WCAG AA (audit 2026-11-11).
+/// Palet "Petrol Teal CatatIn" (2026-11-13): seluruh warna diturunkan
+/// dari logo aplikasi (karung burlap, syal teal, koin emas, aksen koral)
+/// di atas latar teal gelap #13454A. Dua tema (light/dark); aksen
+/// semantik memakai varian gelap agar lolos WCAG AA di surface & tint-nya.
 class Spacing {
   Spacing._();
 
@@ -62,74 +63,84 @@ class AppRadius {
 
 class SeedColors {
 
-  // ── Netral Slate ───────────────────────────────────────────────
-  /// Latar app — Slate 50 ultra-clean.
-  static const Color bg = Color(0xFFF8FAFC);
+  // ── Netral teal (dari logo) ────────────────────────────────────
+  /// Latar app — off-white ber-tint teal.
+  static const Color bg = Color(0xFFF3F8F7);
 
   /// Kartu/sheet — putih murni.
   static const Color surface = Color(0xFFFFFFFF);
 
-  /// Tint lembut: chip, track bar, zona sekunder — Slate 100.
-  static const Color surface2 = Color(0xFFF1F5F9);
+  /// Tint lembut: chip, track bar, zona sekunder.
+  static const Color surface2 = Color(0xFFE7F0EE);
 
-  /// Garis sekunder & border hairline — Slate 100.
-  static const Color line = Color(0xFFF1F5F9);
-  static const Color border = Color(0xFFF1F5F9);
+  /// Garis sekunder & border hairline.
+  static const Color line = Color(0xFFE3EDEB);
+  static const Color border = Color(0xFFE3EDEB);
 
-  /// Teks utama — Obsidian Slate 900.
-  static const Color ink = Color(0xFF0F172A);
+  /// Teks utama — petrol ink (teal paling gelap dari logo).
+  static const Color ink = Color(0xFF10393D);
 
-  /// Teks body — Slate 700.
-  static const Color body = Color(0xFF334155);
+  /// Teks body.
+  static const Color body = Color(0xFF2C4B4D);
 
-  /// Teks sekunder/muted — Slate 500.
-  static const Color muted = Color(0xFF64748B);
+  /// Teks sekunder/muted.
+  static const Color muted = Color(0xFF54716E);
 
   // ── Brand Primary & Aksen ──────────────────────────────────────
-  static const Color primary = Color(0xFF6366F1); // Indigo 500
-  static const Color primaryDeep = Color(0xFF4F46E5); // Indigo 600
-  static const Color primaryLight = Color(0xFFEEF2FF); // Indigo 50
-  static const Color violet = Color(0xFF8B5CF6); // Violet 500
+  /// Teal syal logo (#499B8F) digelapkan agar lolos AA 4,5:1 di putih.
+  static const Color primary = Color(0xFF2A6F66);
+
+  /// Teal lebih dalam — tombol solid/gradien CTA.
+  static const Color primaryDeep = Color(0xFF1F5A53);
+
+  /// Tint brand: chip terpilih, track aktif.
+  static const Color primaryLight = Color(0xFFDCEEEA);
+
+  /// Aksen kedua — orana strip syal logo (#EA732E), digelapkan
+  /// agar tetap terbaca di surface.
+  static const Color accent = Color(0xFFC75B1E);
 
 
-  // ── Emas & Amber ───────────────────────────────────────────────
-  static const Color honeyBright = Color(0xFFFDE68A);
+  // ── Emas koin ──────────────────────────────────────────────────
+  /// Koin "Rp" logo (#FAC750) — glow/garis badge gamifikasi.
+  static const Color honeyBright = Color(0xFFFAC750);
 
-  static const Color honeyDeep = Color(0xFFD97706);
+  /// Ikon badge terbuka di atas tint emas (non-teks, ≥3:1).
+  static const Color honeyDeep = Color(0xFF8A5F06);
 
-  static const Color honey100 = Color(0xFFFEF3C7);
+  /// Tint emas: latar badge terbuka.
+  static const Color honey100 = Color(0xFFFCF1D8);
 
 
   // ── Semantik arah & status ──────────────────────────────────────
-  /// Masuk / aman — Emerald 700 (WCAG AA on surface & tint, audit
-  /// 2026-11-11: Emerald 500 hanya 2,54:1 di putih).
-  static const Color incoming = Color(0xFF047857);
+  /// Masuk / aman — hijau daun logo (#9FB595) digelapkan; AA on
+  /// surface & incomingTint.
+  static const Color incoming = Color(0xFF266E48);
 
-  /// Keluar / OVER — Rose 700 (Rose 500 hanya 3,76:1, Rose 600 4,41 di tint).
-  static const Color outgoing = Color(0xFFB91C1C);
+  /// Keluar / OVER — koral teks "In" logo (#F77168) digelapkan.
+  static const Color outgoing = Color(0xFFB93A31);
 
-  /// Peringatan / mendekati batas (75-99%) — Amber 700 (Amber 500
-  /// hanya 1,93:1 di warnTint).
-  static const Color warn = Color(0xFFB45309);
-  static const Color warnTint = Color(0xFFFEF3C7);
+  /// Peringatan / mendekati batas (75-99%) — emas koin digelapkan.
+  static const Color warn = Color(0xFF8A5F06);
+  static const Color warnTint = Color(0xFFFCF1D8);
 
   /// Tint semantik (chip status).
-  static const Color incomingTint = Color(0xFFECFDF5);
-  static const Color outgoingTint = Color(0xFFFEF2F2);
+  static const Color incomingTint = Color(0xFFE8F4EE);
+  static const Color outgoingTint = Color(0xFFFDEEEC);
 
 
   /// Warna kategori — BAHASA DATA (ADR-010): diindeks via
   /// Categories.colorIndex, tidak berubah, tidak dipakai di luar
-  /// konteks kategorinya.
+  /// konteks kategorinya. Semua hue diambil dari keluarga warna logo.
   static const List<Color> categoryPalette = [
-    Color(0xFFE07A5F), // Makanan
-    Color(0xFF3D8AA8), // Transportasi
-    Color(0xFF8A6FBF), // Tagihan
-    Color(0xFF4E9A6F), // Belanja
-    Color(0xFFD4A017), // Hiburan
-    Color(0xFFC75B6E), // Kesehatan
-    Color(0xFF2E8B74), // Gaji
-    Color(0xFF6B7FA3), // Transfer
+    Color(0xFFE4762F), // Makanan — orana syal
+    Color(0xFF2A6F66), // Transportasi — teal brand
+    Color(0xFF13454A), // Tagihan — teal latar logo
+    Color(0xFF628F63), // Belanja — hijau daun
+    Color(0xFFC9971C), // Hiburan — emas koin
+    Color(0xFFD9574B), // Kesehatan — koral
+    Color(0xFF3E9486), // Gaji — teal syal terang
+    Color(0xFF54716E), // Transfer — slate teal
     Color(0xFF8D8D8D), // Lainnya
   ];
 
@@ -140,39 +151,39 @@ class SeedColors {
 class DarkColors {
   DarkColors._();
 
-  /// Latar app — Slate 900.
-  static const Color bg = Color(0xFF0F172A);
+  /// Latar app — teal gelap (sedikit lebih dalam dari latar logo).
+  static const Color bg = Color(0xFF0B2E33);
 
-  /// Kartu/sheet — Slate 800.
-  static const Color surface = Color(0xFF1E293B);
+  /// Kartu/sheet — latar teal logo #13454A.
+  static const Color surface = Color(0xFF14434A);
 
-  /// Tint latar sekunder / strip — Slate 700.
-  static const Color surface2 = Color(0xFF334155);
+  /// Tint latar sekunder / strip.
+  static const Color surface2 = Color(0xFF1C5158);
 
-  /// Garis sekunder & border hairline — Slate 700.
-  static const Color line = Color(0xFF334155);
-  static const Color border = Color(0xFF334155);
+  /// Garis sekunder & border hairline.
+  static const Color line = Color(0xFF225B62);
+  static const Color border = Color(0xFF225B62);
 
-  /// Teks utama — Slate 50.
-  static const Color ink = Color(0xFFF8FAFC);
+  /// Teks utama — putih kehijauan dari logo.
+  static const Color ink = Color(0xFFEAFBFC);
 
-  /// Teks body — Slate 200.
-  static const Color body = Color(0xFFE2E8F0);
+  /// Teks body — abu teal muda dari logo.
+  static const Color body = Color(0xFFCFE3E4);
 
-  /// Teks sekunder/muted — Slate 400.
-  static const Color muted = Color(0xFF94A3B8);
+  /// Teks sekunder/muted.
+  static const Color muted = Color(0xFF9CC0BD);
 
-  /// Brand Primary Indigo 400.
-  static const Color primary = Color(0xFF818CF8);
-  static const Color primaryDeep = Color(0xFF6366F1);
-  static const Color primaryLight = Color(0xFF312E81);
-  static const Color violet = Color(0xFFA78BFA);
+  /// Brand teal syal logo diterangkan — teks/ikon di surface gelap.
+  static const Color primary = Color(0xFF62B8AA);
+  static const Color primaryDeep = Color(0xFF499B8F);
+  static const Color primaryLight = Color(0xFF0F3D40);
+  static const Color accent = Color(0xFFF08A47);
 
   /// Semantik
-  static const Color incoming = Color(0xFF34D399); // Emerald 400
-  static const Color incomingTint = Color(0xFF064E3B);
-  static const Color outgoing = Color(0xFFF87171); // Rose 400
-  static const Color outgoingTint = Color(0xFF450A0A);
-  static const Color warn = Color(0xFFFBBF24); // Amber 400
-  static const Color warnTint = Color(0xFF451A03);
+  static const Color incoming = Color(0xFF63D8A1);
+  static const Color incomingTint = Color(0xFF0F3B2C);
+  static const Color outgoing = Color(0xFFF98A82); // koral logo
+  static const Color outgoingTint = Color(0xFF3F161A);
+  static const Color warn = Color(0xFFFAC750); // emas koin logo
+  static const Color warnTint = Color(0xFF3D2C07);
 }

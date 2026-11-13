@@ -1117,7 +1117,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(Icons.science_rounded,
-                      color: q.violet, size: 20),
+                      color: q.accent, size: 20),
                 ),
                 title: Text('Simulator & Validasi Notifikasi',
                     style: context.qTitle(14.5)),
