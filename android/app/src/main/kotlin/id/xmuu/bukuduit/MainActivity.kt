@@ -4,6 +4,7 @@ import android.app.Notification
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -147,6 +148,55 @@ class MainActivity : FlutterActivity() {
                     NotificationCatcher.sink = null
                 }
             })
+
+        // Peringatan batas (ADR-012): Dart memutuskan kapan & apa;
+        // native hanya cek izin dan menampilkan notifikasinya.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NOTIFY_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "canPost" -> result.success(BudgetNotifier.canPost(this))
+                    "needsRuntimePermission" ->
+                        result.success(BudgetNotifier.needsRuntimePermission(this))
+                    "requestPermission" -> {
+                        if (BudgetNotifier.needsRuntimePermission(this)) {
+                            pendingPermissionResult = result
+                            requestPermissions(
+                                arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                                REQUEST_POST_PERMISSION,
+                            )
+                        } else {
+                            // < Android 13: state berupa izin sistem saat ini.
+                            result.success(BudgetNotifier.canPost(this))
+                        }
+                    }
+                    "openAppNotificationSettings" -> {
+                        BudgetNotifier.openAppNotificationSettings(this)
+                        result.success(null)
+                    }
+                    "show" -> {
+                        val title = call.argument<String>("title").orEmpty()
+                        val body = call.argument<String>("body").orEmpty()
+                        BudgetNotifier.show(applicationContext, title, body)
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != REQUEST_POST_PERMISSION) return
+        val pending = pendingPermissionResult
+        pendingPermissionResult = null
+        pending?.success(
+            grantResults.isNotEmpty() &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED,
+        )
     }
 
     private fun isListenerEnabled(): Boolean {
@@ -162,9 +212,14 @@ class MainActivity : FlutterActivity() {
     companion object {
         const val METHOD_CHANNEL = "bukuduit/capture"
         const val EVENT_CHANNEL = "bukuduit/capture_events"
+        const val NOTIFY_CHANNEL = "bukuduit/notify"
+        const val REQUEST_POST_PERMISSION = 4001
 
         @Volatile
         var pendingSharedPayload: Map<String, Any?>? = null
+
+        @Volatile
+        var pendingPermissionResult: MethodChannel.Result? = null
     }
 }
 

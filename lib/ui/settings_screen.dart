@@ -12,6 +12,7 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'backup_screen.dart';
 import 'bank_accounts_screen.dart';
+import 'budget_alert_sheet.dart';
 import 'capture_settings_screen.dart';
 import 'gamification_sheet.dart';
 import 'laporan_screen.dart';
@@ -305,7 +306,35 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       Divider(height: 1, thickness: 1, color: q.line),
 
-                      // 3. Backup & Pulihkan Data
+                      // 3. Peringatan Batas (notifikasi Android)
+                      StreamBuilder<bool>(
+                        stream: repository.watchBudgetAlertsEnabled(),
+                        initialData: false,
+                        builder: (context, snap) => QuestListTile(
+                          leading: _SettingIcon(
+                            icon: Icons.notification_important_rounded,
+                          ),
+                          title: Text(
+                            'Peringatan Batas',
+                            style: context.qTitle(15),
+                          ),
+                          subtitle: Text(
+                            (snap.data ?? false)
+                                ? 'Notifikasi saat menyentuh ambang persen'
+                                : 'Nonaktif',
+                            style: context.qSmall(12),
+                          ),
+                          trailing: Icon(
+                            Icons.chevron_right_rounded,
+                            color: q.muted,
+                          ),
+                          onTap: () =>
+                              BudgetAlertSheet.show(context, repository),
+                        ),
+                      ),
+                      Divider(height: 1, thickness: 1, color: q.line),
+
+                      // 4. Backup & Pulihkan Data
                       QuestListTile(
                         leading: _SettingIcon(icon: Icons.shield_outlined),
                         title: Text(
@@ -330,7 +359,7 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       Divider(height: 1, thickness: 1, color: q.line),
 
-                      // 4. Isi Data Contoh (hanya build debug)
+                      // 5. Isi Data Contoh (hanya build debug)
                       if (kDebugMode) ...[
                         Divider(height: 1, thickness: 1, color: q.line),
                         QuestListTile(
@@ -351,7 +380,7 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       ],
 
-                      // 5. Kosongkan Data Aplikasi (Danger Zone di bagian paling akhir)
+                      // 6. Kosongkan Data Aplikasi (Danger Zone di bagian paling akhir)
                       QuestListTile(
                         leading: _SettingIcon(icon: Icons.delete_forever_rounded, danger: true),
                         title: Text(

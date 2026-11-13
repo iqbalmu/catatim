@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../core/budget.dart';
+import '../core/budget_alert.dart';
 import '../core/money.dart';
 import '../game/mascot.dart';
+import '../notify/budget_alert_service.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
 
@@ -123,9 +127,14 @@ class ProgressSummary {
 /// tidak pernah drift); batas anggaran tersimpan di tabel budgets dan
 /// settings.
 class ProgressService extends ChangeNotifier {
-  ProgressService({required LedgerRepository repository}) : _repo = repository;
+  ProgressService({required LedgerRepository repository, this._alerts})
+    : _repo = repository;
 
   final LedgerRepository _repo;
+
+  /// Peringatan batas via notifikasi Android; null = fitur tidak
+  /// dipasang (test lama tanpa wiring tetap jalan).
+  final BudgetAlertService? _alerts;
 
   ProgressSummary? latest;
 
@@ -246,10 +255,10 @@ class ProgressService extends ChangeNotifier {
             (b.accountId == null || e.key.account == b.accountId))
         .fold(0, (total, e) => total + e.value);
     final lines = <LimitLine>[
-      LimitLine(label: 'Batas harian', used: dayOut, limit: dailyLimit),
-      LimitLine(label: 'Batas mingguan', used: weekOut, limit: weekLimit),
+      LimitLine(label: kLineDaily, used: dayOut, limit: dailyLimit),
+      LimitLine(label: kLineWeekly, used: weekOut, limit: weekLimit),
       LimitLine(
-        label: 'Total bulan ini',
+        label: kLineMonthly,
         used: monthOut,
         limit: monthTotalLimit,
       ),
@@ -398,6 +407,12 @@ class ProgressService extends ChangeNotifier {
     await refresh();
 
     final after = latest!.snapshot;
+    // Notifikasi Android: kirim tanpa menunda pembaruan UI; gagal kirim
+    // ditangani di dalam check().
+    final alerts = _alerts;
+    if (alerts != null) {
+      unawaited(alerts.check(after));
+    }
     if (before != null) {
       final prevLevels = {
         for (final line in before.lines) line.label: line.level,

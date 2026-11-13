@@ -9,6 +9,7 @@ import 'ui/locked_screen.dart';
 import 'capture/capture_channel.dart';
 import 'capture/pipeline.dart';
 import 'game/progress.dart';
+import 'notify/budget_alert_service.dart';
 import 'rules/engine.dart';
 import 'storage/database.dart';
 import 'storage/repository.dart';
@@ -76,11 +77,15 @@ class _BukuduitBootstrapState extends State<BukuduitBootstrap> {
     // bank memakai seed rules murni agar bankId selalu ID katalog asli.
     final ruleSet = await loadSeedRuleSet();
     final engine = RuleEngine(ruleSet);
-    final progress = ProgressService(repository: repository);
+    final progress = ProgressService(
+      repository: repository,
+      alerts: BudgetAlertService(repository: repository),
+    );
     final pipeline = CapturePipeline(
       channel: const CaptureChannel(),
       engine: engine,
       repository: repository,
+      progress: progress,
     );
     unawaited(pipeline.start());
     unawaited(progress.refresh());

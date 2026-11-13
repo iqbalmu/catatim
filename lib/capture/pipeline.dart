@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../models.dart';
+import '../game/progress.dart';
 import '../rules/engine.dart';
 import '../rules/rule_set.dart'
     show BankRules, BankRulesAccountKind, CustomTemplate, RuleSet;
@@ -22,12 +23,18 @@ class CapturePipeline extends ChangeNotifier {
     required this.channel,
     required this.engine,
     required this.repository,
+    this.progress,
     RuleSet? baseRuleSet,
   }) : _baseRuleSet = baseRuleSet ?? engine.ruleSet;
 
   final CaptureChannel channel;
   final RuleEngine engine;
   final LedgerRepository repository;
+
+  /// Dipanggil setelah draf dicatat otomatis agar garis batas (alert
+  /// in-app + notifikasi Android) ikut dievaluasi realtime — jalur
+  /// konfirmasi manual sudah memanggil ini dari UI.
+  final ProgressService? progress;
   final RuleSet _baseRuleSet;
 
   StreamSubscription<RawCapture>? _subscription;
@@ -184,6 +191,7 @@ class CapturePipeline extends ChangeNotifier {
         final id = await repository.addDraftFromCapture(raw: raw, draft: draft);
         if (id != null && await repository.autoRecordEnabled()) {
           await repository.autoConfirmDraft(id);
+          unawaited(progress?.onTransactionRecorded());
         }
       } else {
         // Format belum dikenal rule — TETAP jadi draf mentah yang

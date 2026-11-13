@@ -459,6 +459,60 @@ class LedgerRepository {
         .map((row) => row?.valueText == '1');
   }
 
+  // --- peringatan batas (notifikasi Android) -----------------------------------
+
+  static const budgetAlertsEnabledKey = 'budget_alerts_enabled';
+  static const budgetAlertThresholdKey = 'budget_alert_threshold';
+  static const budgetAlertStateKey = 'budget_alert_state';
+
+  /// Persen bawaan peringatan batas saat user belum memilih.
+  static const defaultBudgetAlertThreshold = 80;
+
+  /// Notifikasi peringatan batas pengeluaran aktif.
+  Future<bool> budgetAlertsEnabled() async =>
+      await getSetting(budgetAlertsEnabledKey) == '1';
+
+  Future<void> setBudgetAlertsEnabled(bool on) =>
+      setSetting(budgetAlertsEnabledKey, on ? '1' : '0');
+
+  Stream<bool> watchBudgetAlertsEnabled() {
+    return (_db.select(_db.appSettings)
+          ..where((s) => s.key.equals(budgetAlertsEnabledKey)))
+        .watchSingleOrNull()
+        .map((row) => row?.valueText == '1');
+  }
+
+  /// Persen ambang peringatan (1–100; nilai rusak → bawaan 80).
+  Future<int> budgetAlertThreshold() async {
+    final raw = int.tryParse(await getSetting(budgetAlertThresholdKey) ?? '');
+    return (raw == null || raw < 1 || raw > 100)
+        ? defaultBudgetAlertThreshold
+        : raw;
+  }
+
+  Future<void> setBudgetAlertThreshold(int percent) =>
+      setSetting(budgetAlertThresholdKey, percent.clamp(1, 100).toString());
+
+  /// State dedup peringatan: {scope#jenis: periodKey}. Disimpan agar
+  /// satu garis hanya menembak sekali per periode.
+  Future<Map<String, String>> budgetAlertState() async {
+    final raw = await getSetting(budgetAlertStateKey);
+    if (raw == null || raw.isEmpty) return const {};
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return const {};
+      return {
+        for (final entry in decoded.entries)
+          '${entry.key}': '${entry.value}',
+      };
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  Future<void> setBudgetAlertState(Map<String, String> state) =>
+      setSetting(budgetAlertStateKey, jsonEncode(state));
+
   /// Catat draf [id] otomatis sebagai transaksi source auto, lalu tautkan
   /// dengan kaki lawannya bila perpindahan dana antar akun sendiri.
   /// Draf tanpa nominal dilewati. Mengembalikan true bila tercatat.

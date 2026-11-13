@@ -104,6 +104,16 @@ class BudgetSnapshot {
     return worst;
   }
 
+  /// Garis dengan label persis; null bila tidak ada. Dipakai
+  /// BudgetAlertService mencocokkan batas global tanpa string
+  /// tersebar.
+  LimitLine? lineByLabel(String label) {
+    for (final line in lines) {
+      if (line.label == label) return line;
+    }
+    return null;
+  }
+
   /// Garis yang terlampaui (terburuk dulu).
   List<LimitLine> get overLines =>
       lines.where((l) => l.level == BudgetLevel.over).toList()

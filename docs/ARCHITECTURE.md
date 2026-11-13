@@ -21,10 +21,11 @@ alasan tiap keputusan ada di [`decisions/`](decisions/).
 
 | Lapisan | Isi | Aturan |
 |---|---|---|
-| Native (Kotlin) | `MainActivity.kt`, `NotificationCatcher` | Baca notifikasi (lewati ongoing) → JSON mentah → antrian file terbatas + EventChannel. Tidak parse, tidak putuskan apa pun. |
+| Native (Kotlin) | `MainActivity.kt`, `NotificationCatcher`, `BudgetNotifier` | Baca notifikasi (lewati ongoing) → JSON mentah → antrian file terbatas + EventChannel. BudgetNotifier: tampilkan notifikasi lokal peringatan batas — tanpa logika (ADR-012). |
 | Capture | `lib/capture/` | Drain antrian (tahan baris korup), filter bank terhubung, antrean pemrosesan berurutan, fallback capture log. |
 | Rules | `lib/rules/`, `assets/rules/seed_rules.json` | Parse teks notifikasi → draf transaksi. Seed rules murni, murni Dart. |
-| Core | `lib/core/` | Money (int rupiah), buckets tren, budget (`LimitLine`/`BudgetSnapshot`), format tanggal ID. Murni Dart, tanpa drift/Flutter. |
+| Core | `lib/core/` | Money (int rupiah), buckets tren, budget (`LimitLine`/`BudgetSnapshot`), alert batas (`budget_alert.dart`), format tanggal ID. Murni Dart, tanpa drift/Flutter. |
+| Notify | `lib/notify/` | `BudgetAlertService`: putuskan garis yang baru menyentuh ambang persen + dedup per periode (`app_settings`), kirim via channel. Dipanggil tiap transaksi tercatat (ADR-012). |
 | Storage | `lib/storage/` | Drift schema v11, SQLCipher, `LedgerRepository` satu-satunya akses data. |
 
 ## Alur capture
@@ -62,7 +63,15 @@ flowchart LR
   log terbaca/dup >30 hari dipangkas otomatis.
 - Setiap transaksi tercatat (konfirmasi draf maupun manual) memicu
   `ProgressService.onTransactionRecorded()` → deteksi garis batas naik
-  level / pulih / milestone streak, realtime.
+  level / pulih / milestone streak, realtime. Jalur catat-otomatis
+  (`autoConfirmDraft` di pipeline) memicu hal yang sama.
+- **Peringatan batas (notifikasi Android, ADR-012):** transaksi
+  tercatat yang membuat pengeluaran baru menyentuh ambang persen
+  (bawaan 80%, bisa diatur di Profil › Peringatan Batas) menampilkan
+  notifikasi lokal — harian/mingguan/bulanan bergabung jadi satu
+  notifikasi per event, sekali per garis per periode (state dedup di
+  `app_settings`). Hanya jalan saat proses app hidup, konsisten
+  pipeline capture.
 
 ## Rules & model hubungkan bank
 
@@ -140,10 +149,12 @@ draf + tautan akun↔bank; v10 membuang `user_rules` dan menambah
 | [009](decisions/009-pensiun-target-sisihkan.md) | Target/Sisihkan dipensiunkan; Rencana = Batas, belanja murni tunggal |
 | [010](decisions/010-palet-dari-piksel-maskot.md) | Palet turunan piksel maskot Pochy |
 | [011](decisions/011-notasi-tanda-nominal.md) | Tanda arah nominal digambar minimalis (bukan seberat angka) |
+| [012](decisions/012-notifikasi-lokal-transport.md) | Peringatan batas = notifikasi lokal; native transport, keputusan di Dart |
 
 ## Pengujian
 
-159 test, 16 file: rule engine (seed + fallback), budget, progress/
+281 test, 35 file: rule engine (seed + fallback), budget, alert batas
+(crossing + dedup per periode), progress/
 streak/mood, repository (dedup, saldo, migrasi v1→v11, alokasi, log
 lifecycle), pipeline (draf, dedup, baris korup, allowlist paket, tempel teks,
 notifikasi aktif), OCR struk/nota, money, buckets, rekap filter, history —
