@@ -87,6 +87,10 @@ class QuestCard extends StatelessWidget {
 /// Chip pilihan ala tombol game.
 
 class QuestChip extends StatelessWidget {
+  /// Tinggi ramping untuk pemilih multi-pilih di dialog (38dp).
+  /// Default false: chip filter standar 48dp.
+  final bool compact;
+
   const QuestChip({
     super.key,
     required this.label,
@@ -94,6 +98,7 @@ class QuestChip extends StatelessWidget {
     required this.onTap,
     this.onLongPress,
     this.leading,
+    this.compact = false,
   });
 
   final String label;
@@ -114,31 +119,45 @@ class QuestChip extends StatelessWidget {
       child: QuestPress(
         onTap: onTap,
         onLongPress: onLongPress,
-        child: AnimatedContainer(
-          duration: QuestMotion.fast,
-          curve: QuestMotion.easeOut,
-          constraints: const BoxConstraints(minHeight: 48),
+        // Chip selalu selebar isinya — UnconstrainedBox menetralkan
+        // konteks lebar-tight (mis. kolom stretch) yang membuat pill
+        // melebar penuh tanpa disengaja.
+        child: UnconstrainedBox(
           alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-          color: selected ? q.primarySolid : q.surface2,
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-          ),
-          child: AnimatedDefaultTextStyle(
+          child: AnimatedContainer(
             duration: QuestMotion.fast,
             curve: QuestMotion.easeOut,
-            style: TextStyle(
-              fontFamily: 'Nunito',
-              fontWeight: FontWeight.w800,
-              fontSize: 13,
-              color: selected ? q.onPrimary : q.text,
+            constraints: BoxConstraints(
+              minHeight: compact ? 38 : 48,
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (leading != null) ...[leading!, const SizedBox(width: 6)],
-                Text(label),
-              ],
+            alignment: Alignment.center,
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 14 : 16,
+              vertical: compact ? 6 : 8,
+            ),
+            decoration: BoxDecoration(
+              color: selected ? q.primarySolid : q.surface2,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+            child: AnimatedDefaultTextStyle(
+              duration: QuestMotion.fast,
+              curve: QuestMotion.easeOut,
+              style: TextStyle(
+                fontFamily: 'Nunito',
+                fontWeight: FontWeight.w800,
+                fontSize: compact ? 12.5 : 13,
+                color: selected ? q.onPrimary : q.text,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (leading != null) ...[
+                    leading!,
+                    const SizedBox(width: 6),
+                  ],
+                  Text(label),
+                ],
+              ),
             ),
           ),
         ),

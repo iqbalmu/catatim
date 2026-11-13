@@ -23,7 +23,7 @@ Dokumen ini adalah sumber kebenaran visual aplikasi; widget-kit terpusat di `lib
 5. **Tanpa Dekorasi Berlebih (Craft Floor):**
    - Menghapus tagline dekoratif, penomoran buatan (seperti `01–04`), nesting kartu di dalam kartu, dan kicker/eyebrow berlebihan.
    - Tanpa emoji pada salinan sistem (gunakan Material Symbols / Icons resmi).
-  - Target sentuh interaktif minimum **48×48 dp** di seluruh komponen (ditegakkan di kit: tombol/ikon/switch/chip 48; segmented sel 40, kontrol penuh 48 dengan bingkai; sel kalender & bulan 44 visual dalam hit QuestPress).
+  - Target sentuh interaktif minimum **48×48 dp** di seluruh komponen (ditegakkan di kit: tombol/ikon/switch/chip 48; segmented & chip pemilih dialog 40/38 — kontrol penuh 48 dengan bingkai/spacing; sel kalender & bulan 44 visual dalam hit QuestPress).
   - Dukungan aksesibilitas TalkBack: `Semantics` label/state di seluruh kontrol kustom, liveRegion pada nominal keypad; ikon status bar edge-to-edge mengikuti tema.
 
 ## Palet Token (`lib/theme/tokens.dart` & `quest.dart`)

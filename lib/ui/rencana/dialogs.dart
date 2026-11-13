@@ -28,6 +28,37 @@ class _LimitEditResult {
   final Set<int>? categories;
 }
 
+/// Formatter input nominal: digits → kelompok ribuan ber-titik
+/// (1500000 → 1.500.000), caret dipatok di ujung.
+class _RupiahGroupingFormatter extends TextInputFormatter {
+  static String grouped(String raw) {
+    final digits = raw.replaceAll(RegExp('[^0-9]'), '');
+    if (digits.isEmpty) return '';
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      buffer.write(digits[i]);
+      final sisa = digits.length - i - 1;
+      if (sisa > 0 && sisa % 3 == 0) buffer.write('.');
+    }
+    return buffer.toString();
+  }
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp('[^0-9]'), '');
+    // Batas waras 12 digit (miliaran) — sama dengan batas engine.
+    final capped = digits.length > 12 ? digits.substring(0, 12) : digits;
+    final groupedText = grouped(capped);
+    return TextEditingValue(
+      text: groupedText,
+      selection: TextSelection.collapsed(offset: groupedText.length),
+    );
+  }
+}
+
 /// Dialog batas global: nominal + kategori yang dihitung.
 ///
 /// "Semua" dan kategori spesifik saling bebas — memilih satu kategori
@@ -41,7 +72,9 @@ Future<_LimitEditResult?> _askLimitWithCategories(
   required Set<int>? currentCategories,
   required List<Category> categories,
 }) {
-  final ctrl = TextEditingController(text: current == null ? '' : '$current');
+  final ctrl = TextEditingController(
+    text: current == null ? '' : _RupiahGroupingFormatter.grouped('$current'),
+  );
   // null = semua kategori; set = kategori spesifik yang dihitung.
   Set<int>? selected =
       currentCategories == null ? null : {...currentCategories};
@@ -59,63 +92,70 @@ Future<_LimitEditResult?> _askLimitWithCategories(
       builder: (context, setDialogState) {
         final q = context.q;
         final names = {for (final c in categories) c.id: c.name};
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const QuestFieldLabel('Nominal (Rupiah)'),
-            const SizedBox(height: Spacing.xs),
-            TextField(
-              controller: ctrl,
-              autofocus: true,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: const InputDecoration(
-                hintText: 'Kosongkan kalau mau menghapus batas ini',
-              ),
-            ),
-            const SizedBox(height: Spacing.m),
-            const QuestFieldLabel('Kategori yang dihitung'),
-            const SizedBox(height: Spacing.xs),
-            Wrap(
-              spacing: Spacing.xs,
-              runSpacing: Spacing.xs,
-              children: [
-                QuestChip(
-                  label: 'Semua',
-                  selected: selected == null,
-                  onTap: () => setDialogState(() => selected = null),
+        return SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const QuestFieldLabel('Nominal (Rupiah)'),
+              const SizedBox(height: Spacing.xs),
+              TextField(
+                controller: ctrl,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  _RupiahGroupingFormatter(),
+                ],
+                decoration: const InputDecoration(
+                  hintText: 'Kosongkan kalau mau menghapus batas ini',
                 ),
-                for (final c in categories)
+              ),
+              const SizedBox(height: Spacing.m),
+              const QuestFieldLabel('Kategori yang dihitung'),
+              const SizedBox(height: Spacing.xs),
+              Wrap(
+                spacing: Spacing.s,
+                runSpacing: Spacing.s,
+                children: [
                   QuestChip(
-                    label: c.name,
-                    selected: selected != null && selected!.contains(c.id),
-                    onTap: () => setDialogState(() => toggle(c.id)),
-                    leading: Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: SeedColors.categoryColor(c.colorIndex),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: q.line, width: 1.5),
+                    label: 'Semua',
+                    selected: selected == null,
+                    compact: true,
+                    onTap: () => setDialogState(() => selected = null),
+                  ),
+                  for (final c in categories)
+                    QuestChip(
+                      label: c.name,
+                      selected: selected != null && selected!.contains(c.id),
+                      compact: true,
+                      onTap: () => setDialogState(() => toggle(c.id)),
+                      leading: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: SeedColors.categoryColor(c.colorIndex),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: q.line, width: 1.5),
+                        ),
                       ),
                     ),
+                  QuestChip(
+                    label: 'Tanpa kategori',
+                    selected:
+                        selected != null && selected!.contains(kUncategorizedId),
+                    compact: true,
+                    onTap: () => setDialogState(() => toggle(kUncategorizedId)),
                   ),
-                QuestChip(
-                  label: 'Tanpa kategori',
-                  selected:
-                      selected != null && selected!.contains(kUncategorizedId),
-                  onTap: () => setDialogState(() => toggle(kUncategorizedId)),
-                ),
-              ],
-            ),
-            const SizedBox(height: Spacing.s),
-            Text(
-              limitScopeNote(selected, names) ??
-                  'Semua kategori dihitung ke batas ini.',
-              style: context.qSmall(12).copyWith(color: q.muted),
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: Spacing.s),
+              Text(
+                limitScopeNote(selected, names) ??
+                    'Semua kategori dihitung ke batas ini.',
+                style: context.qSmall(12).copyWith(color: q.muted),
+              ),
+            ],
+          ),
         );
       },
     ),
@@ -155,7 +195,9 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
 }) {
   final nameCtrl = TextEditingController(text: category.name);
   final limitCtrl = TextEditingController(
-    text: currentLimit != null && currentLimit > 0 ? '$currentLimit' : '',
+    text: currentLimit != null && currentLimit > 0
+        ? _RupiahGroupingFormatter.grouped('$currentLimit')
+        : '',
   );
   int? scope = currentAccount;
 
@@ -190,7 +232,10 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
             TextField(
               controller: limitCtrl,
               keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                _RupiahGroupingFormatter(),
+              ],
               style: TextStyle(
                 fontFamily: 'Nunito',
                 fontSize: 13.5,
@@ -332,7 +377,10 @@ class _NewCategoryFormState extends State<_NewCategoryForm> {
         TextField(
           controller: limitCtrl,
           keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            _RupiahGroupingFormatter(),
+          ],
           style: TextStyle(
             fontFamily: 'Nunito',
             fontSize: 13.5,
