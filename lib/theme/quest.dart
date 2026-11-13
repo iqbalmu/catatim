@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/money.dart';
 import 'tokens.dart';
 
-/// Palet "Petrol Teal CatatIn" (2026-11-13) — dua tema, light/dark;
+/// Palet "Petrol Teal CatatIM" (2026-11-13) — dua tema, light/dark;
 /// pasangan solid/onPrimary lolos WCAG AA. Semua widget custom membaca
 /// warna dari sini, bukan default Material, supaya identitas tidak bocor.
 class QuestPalette {

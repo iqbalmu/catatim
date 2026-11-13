@@ -1,4 +1,4 @@
-# Arsitektur CatatIn
+# Arsitektur CatatIM
 
 Pencatat keuangan pribadi Android, offline-first. Transaksi dari push
 notifikasi bank/e-wallet tertangkap otomatis; semua data tersimpan

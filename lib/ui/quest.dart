@@ -5,7 +5,7 @@ import '../core/money.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 
-/// Komponen visual khas CatatIn Quest: kartu papan-peraga, tombol chunky,
+/// Komponen visual khas CatatIM Quest: kartu papan-peraga, tombol chunky,
 /// chip game, header custom, nav custom. Satu-satunya tempat gaya visual
 /// didefinisikan agar tidak ada default Material yang bocor.
 

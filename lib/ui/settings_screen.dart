@@ -412,7 +412,7 @@ class SettingsScreen extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(AppRadius.cell),
                   child: Image.asset(
-                    'assets/logo/catatin_logo.png',
+                    'assets/logo/catatim_logo.png',
                     width: 40,
                     height: 40,
                     filterQuality: FilterQuality.medium,

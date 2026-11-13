@@ -17,11 +17,11 @@ class QuestSelectOption<T> {
   final Widget? leading;
 }
 
-/// Input field pemilih nilai dengan modal bottom sheet picker khas CatatIn.
+/// Input field pemilih nilai dengan modal bottom sheet picker khas CatatIM.
 ///
 /// Menggantikan [DropdownButtonFormField] bawaan Material yang kaku dengan
 /// pemilih berbasis sheet yang ramah jempol, bersih, beranimasi halus, dan
-/// selaras dengan sistem desain Petrol Teal CatatIn.
+/// selaras dengan sistem desain Petrol Teal CatatIM.
 class QuestSelectField<T> extends StatelessWidget {
   const QuestSelectField({
     super.key,

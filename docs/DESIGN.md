@@ -1,8 +1,8 @@
-# Design System CatatIn — "Petrol Teal CatatIn" v4.0
+# Design System CatatIM — "Petrol Teal CatatIM" v4.0
 
 Arah visual (diperbarui 2026-11-13):
 **hangat, ramah, dan berbobot finansial** — seluruh palet diturunkan dari logo
-aplikasi CatatIn: latar teal petrol `#13454A` dengan aksen teal syal, orana syal,
+aplikasi CatatIM: latar teal petrol `#13454A` dengan aksen teal syal, orana syal,
 emas koin "Rp", koral teks "In", hijau daun grafik, dan burlap karung.
 Dokumen ini adalah sumber kebenaran visual aplikasi; widget-kit terpusat di `lib/ui/quest.dart` + `lib/theme/`.
 

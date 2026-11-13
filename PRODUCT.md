@@ -62,7 +62,7 @@ terenkripsi SQLCipher, tanpa akun, tanpa iklan.
 
 ## Brand Commitments
 
-- Nama "CatatIn"; maskot Pochy (ADR-010).
+- Nama "CatatIM"; maskot Pochy (ADR-010).
 - Font Nunito; ikon Material.
 - Identitas visual "Slate-Indigo Clean" (docs/DESIGN.md) adalah sumber
   kebenaran visual.

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Token desain — satu sumber kebenaran untuk spacing, radius, dan warna.
 ///
-/// Palet "Petrol Teal CatatIn" (2026-11-13): seluruh warna diturunkan
+/// Palet "Petrol Teal CatatIM" (2026-11-13): seluruh warna diturunkan
 /// dari logo aplikasi (karung burlap, syal teal, koin emas, aksen koral).
 /// Light memakai latar off-white ber-tint teal; dark memakai graphite
 /// netral (2026-11-14) agar teal hanya jadi aksen, bukan warna latar.

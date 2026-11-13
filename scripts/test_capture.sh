@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# CatatIn — Skrip Uji Capture: Injeksi Notifikasi Bank Simulasi
+# CatatIM — Skrip Uji Capture: Injeksi Notifikasi Bank Simulasi
 # ==============================================================================
 # Mengirim notifikasi simulasi ke device via Android BroadcastReceiver
 # tanpa perlu transfer uang asli. Khusus build debug (receiver menolak
@@ -92,7 +92,7 @@ test_guard() {
 }
 
 show_help() {
-  echo "CatatIn Capture Notification Injection Tool"
+  echo "CatatIM Capture Notification Injection Tool"
   echo ""
   echo "Perintah:"
   echo "  $0 all                    Menjalankan seluruh variasi preset"

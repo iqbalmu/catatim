@@ -8,8 +8,8 @@ import 'storage/repository.dart';
 import 'theme/quest.dart';
 import 'ui/home_screen.dart';
 
-class CatatInApp extends StatelessWidget {
-  const CatatInApp({
+class CatatIMApp extends StatelessWidget {
+  const CatatIMApp({
     super.key,
     required this.repository,
     required this.pipeline,
@@ -30,7 +30,7 @@ class CatatInApp extends StatelessWidget {
       builder: (context, snapshot) {
         final themeMode = snapshot.data ?? ThemeMode.system;
         return MaterialApp(
-          title: 'CatatIn',
+          title: 'CatatIM',
           locale: const Locale('id'),
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,

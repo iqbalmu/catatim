@@ -6,7 +6,7 @@
 
     <application
         android:allowBackup="false"
-        android:label="CatatIn"
+        android:label="CatatIM"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"

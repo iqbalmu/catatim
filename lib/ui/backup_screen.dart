@@ -109,7 +109,7 @@ class _BackupScreenState extends State<BackupScreen>
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(path)],
-          text: 'Backup data CatatIn: simpan dan ingat PIN-nya!',
+          text: 'Backup data CatatIM: simpan dan ingat PIN-nya!',
         ),
       );
     } finally {

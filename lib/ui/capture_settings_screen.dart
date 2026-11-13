@@ -665,7 +665,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                         const SizedBox(height: 2),
                         Text(
                           _listenerEnabled
-                              ? 'CatatIn bisa membaca notifikasi bank.'
+                              ? 'CatatIM bisa membaca notifikasi bank.'
                               : 'Izin ini diperlukan untuk mendeteksi transaksi dari notifikasi.',
                           style: context.qSmall(12).copyWith(color: q.muted),
                         ),
@@ -942,9 +942,9 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
             _vendorItem(
               brand: 'Xiaomi / POCO / Redmi (MIUI / HyperOS)',
               steps: [
-                'Buka Info Aplikasi CatatIn → aktifkan "Mulai Otomatis" (Autostart).',
+                'Buka Info Aplikasi CatatIM → aktifkan "Mulai Otomatis" (Autostart).',
                 'Di Penghemat Baterai → pilih "Tidak Ada Pembatasan".',
-                'Buka Recent Apps → tekan & tahan kartu CatatIn → tap ikon "Gembok".',
+                'Buka Recent Apps → tekan & tahan kartu CatatIM → tap ikon "Gembok".',
               ],
               q: q,
             ),
@@ -952,9 +952,9 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
             _vendorItem(
               brand: 'Samsung (One UI)',
               steps: [
-                'Buka Pengaturan HP → Aplikasi → CatatIn → Baterai.',
+                'Buka Pengaturan HP → Aplikasi → CatatIM → Baterai.',
                 'Pilih opsi "Tidak Dibatasi" (Unrestricted).',
-                'Pastikan CatatIn tidak ada di daftar "Aplikasi yang Dinonaktifkan" (Sleeping Apps).',
+                'Pastikan CatatIM tidak ada di daftar "Aplikasi yang Dinonaktifkan" (Sleeping Apps).',
               ],
               q: q,
             ),
@@ -962,8 +962,8 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
             _vendorItem(
               brand: 'OPPO & Realme (ColorOS / Realme UI)',
               steps: [
-                'Buka Info Aplikasi CatatIn → Penggunaan Baterai → izinkan "Aktivitas di Latar Belakang" & "Mulai Otomatis".',
-                'Buka Recent Apps → tap titik tiga di kartu CatatIn → pilih "Kunci" (Lock).',
+                'Buka Info Aplikasi CatatIM → Penggunaan Baterai → izinkan "Aktivitas di Latar Belakang" & "Mulai Otomatis".',
+                'Buka Recent Apps → tap titik tiga di kartu CatatIM → pilih "Kunci" (Lock).',
               ],
               q: q,
             ),
@@ -971,7 +971,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
             _vendorItem(
               brand: 'Vivo & iQOO (Funtouch OS / OriginOS)',
               steps: [
-                'Buka Pengaturan HP → Baterai → Konsumsi Daya Latar Belakang Tinggi → izinkan CatatIn.',
+                'Buka Pengaturan HP → Baterai → Konsumsi Daya Latar Belakang Tinggi → izinkan CatatIM.',
                 'Di Pengaturan Aplikasi / Izin → aktifkan "Mulai Otomatis".',
               ],
               q: q,

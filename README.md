@@ -1,4 +1,4 @@
-# CatatIn
+# CatatIM
 
 Pencatat keuangan pribadi, offline-first, untuk Android. Transaksi dari
 notifikasi aplikasi bank/e-wallet tertangkap otomatis lewat
@@ -30,7 +30,7 @@ kontekstual di tengah navbar.
   30 hari muncul sebagai badge di navbar.
 - **Notifikasi**: pusat perhatian (izin mati, batas terlampaui, bon tua)
   dan tab tangkapan mentah untuk melatih rules.
-- **CatatIn Quest**: maskot Pochy mencerminkan kondisi batas, streak
+- **CatatIM Quest**: maskot Pochy mencerminkan kondisi batas, streak
   disiplin dari data asli (milestone 3/7/14/21/30/60/100 hari).
 - **Multi-akun**: bank, e-wallet, dan tunai; tiap akun punya saldo awal
   dan saldo berjalan.
@@ -60,7 +60,7 @@ Butuh Flutter yang menyediakan Dart SDK `^3.12.1` (lihat `pubspec.yaml`)
 dan Android SDK.
 
 Alur pertama kali: Pengaturan → **Catat otomatis** → *Mulai* → baca
-disclosure → "Saya mengerti" → centang CatatIn di *Notification access*
+disclosure → "Saya mengerti" → centang CatatIM di *Notification access*
 Android. Untuk melihat aplikasi hidup tanpa data asli, Pengaturan menyediakan
 **Isi Data Contoh** (hanya build debug).
 

@@ -1,4 +1,4 @@
-# Rencana Audit Total — CatatIn
+# Rencana Audit Total — CatatIM
 
 Audit menyeluruh per aspek, dibasahkan ke struktur repo nyata (bukan
 checklist generik): tiap butir punya target file dan metode verifikasi.

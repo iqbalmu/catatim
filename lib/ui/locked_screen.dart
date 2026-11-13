@@ -12,13 +12,13 @@ import 'restore_flow.dart';
 
 /// App utama saat database tak bisa dibuka dengan kunci perangkat ini
 /// — mis. data dipulihkan/pindah ke HP lain tanpa kuncinya (audit A-06).
-class CatatInLockedApp extends StatelessWidget {
-  const CatatInLockedApp({super.key});
+class CatatIMLockedApp extends StatelessWidget {
+  const CatatIMLockedApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'CatatIn',
+      title: 'CatatIM',
       locale: const Locale('id'),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
