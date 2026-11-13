@@ -29,9 +29,11 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
   /// font scale besar (temuan device 1,3×: overflow 8px).
   final double textScale;
 
+  /// Judul (20×1,45 = 29) + subjudul (12×1,4 = 17) butuh 46px konten,
+  /// ditambah padding atas 8 + bawah 16 → tinggi minimum 70.
   @override
   Size get preferredSize =>
-      Size.fromHeight(68 * textScale.clamp(1.0, 2.0));
+      Size.fromHeight(70 * textScale.clamp(1.0, 2.0));
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +87,10 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
                   children: [
                     Text(
                       title,
+                      // Satu baris + ellipsis: membuat preferredSize jadi
+                      // batas keras — teks panjang tidak menambah tinggi.
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: compact
                           ? context
                                 .qSmall(13)
@@ -95,7 +101,12 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
                           : context.qTitle(20),
                     ),
                     if (!compact && subtitle != null)
-                      Text(subtitle!, style: context.qSmall(12)),
+                      Text(
+                        subtitle!,
+                        style: context.qSmall(12),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                   ],
                 ),
               ),

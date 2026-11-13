@@ -283,9 +283,13 @@ class _RencanaBatasState extends State<RencanaBatas> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Alokasi Anggaran Kategori',
-                  style: context.qTitle(15),
+                Expanded(
+                  child: Text(
+                    'Alokasi Anggaran Kategori',
+                    style: context.qTitle(15),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 QuestPress(
                   onTap: () => showAddCategoryFlow(
