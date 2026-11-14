@@ -87,8 +87,6 @@ class SettingsScreen extends StatelessWidget {
                     MascotStage(
                       mood: summary?.mood ?? MascotMood.idle,
                       size: 56,
-                      glow: SeedColors.honeyBright.withValues(alpha: 0.28),
-                      glowStrength: 0.55,
                     ),
                     const SizedBox(width: Spacing.sm),
                     Expanded(

@@ -100,8 +100,6 @@ class GamificationSheet extends StatelessWidget {
                       MascotStage(
                         mood: mood,
                         size: 88,
-                        glow: SeedColors.honeyBright.withValues(alpha: 0.28),
-                        glowStrength: 0.55,
                       ),
                       const SizedBox(width: Spacing.sm),
                       Expanded(

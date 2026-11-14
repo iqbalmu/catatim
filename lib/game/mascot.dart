@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../theme/quest.dart';
 import '../theme/tokens.dart';
 
 enum MascotMood { idle, happy, sleepy, celebrate, worried, broke }
@@ -95,36 +96,38 @@ class _MascotState extends State<Mascot> with SingleTickerProviderStateMixin {
   }
 }
 
-/// Panggung maskot: glow lembut + bayangan tanah, karakter berdiri di
-/// atasnya. Dipakai di hero & meter agar Duit terasa "berpanggung",
-/// bukan tempelan kecil di sudut kartu.
+/// Panggung maskot: latar lembut yang mengikuti ekspresi + bayangan
+/// tanah. Warna & kekuatan dipetakan dari mood di satu tempat; puncak
+/// alpha sengaja rendah (≤ 0,30) — halo terang justru menelan warna
+/// render 3D maskot. Dipakai di hero & meter agar Duit terasa
+/// "berpanggung", bukan tempelan kecil di sudut kartu.
 class MascotStage extends StatelessWidget {
-  const MascotStage({
-    super.key,
-    required this.mood,
-    this.size = 124,
-    this.glow = SeedColors.surface,
-    this.glowStrength = 0.8,
-  });
+  const MascotStage({super.key, required this.mood, this.size = 124});
 
   final MascotMood mood;
   final double size;
 
-  /// Warna glow panggung — pemanggil pilih kontras dengan kartu induknya.
-  final Color glow;
-
-  /// Kekuatan glow (0–1) — atur sendiri untuk latar yang sudah berwarna.
-  final double glowStrength;
-
+  /// Warna & kekuatan latar per ekspresi:
+  /// celebrate merayakan (emas), happy/positif (teal), broke merah
+  /// seperti label defisit, worried amber waspada, sisanya netral.
   @override
   Widget build(BuildContext context) {
+    final q = context.q;
+    final (tint, strength) = switch (mood) {
+      MascotMood.celebrate => (SeedColors.honeyBright, 0.30),
+      MascotMood.happy => (q.good, 0.22),
+      MascotMood.worried => (q.warn, 0.22),
+      MascotMood.broke => (q.bad, 0.22),
+      MascotMood.idle => (q.surface, 0.40),
+      MascotMood.sleepy => (q.surface, 0.25),
+    };
     return SizedBox(
       width: size * 1.08,
       height: size + 16,
       child: Stack(
         alignment: Alignment.bottomCenter,
         children: [
-          // Glow panggung — spotlight lembut di belakang karakter.
+          // Latar ekspresi — kabur lembut di belakang karakter.
           Positioned(
             bottom: 2,
             child: Container(
@@ -134,10 +137,10 @@ class MascotStage extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    glow.withValues(alpha: glowStrength),
-                    glow.withValues(alpha: 0),
+                    tint.withValues(alpha: strength),
+                    tint.withValues(alpha: 0),
                   ],
-                  stops: const [0.5, 1],
+                  stops: const [0.4, 1],
                 ),
               ),
             ),
