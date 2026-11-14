@@ -393,28 +393,28 @@ class ProgressService extends ChangeNotifier {
       SaverBadge(
         id: 'shield_7d',
         title: 'Perisai Hemat',
-        description: '7 hari belanja dalam batas',
+        description: '7 hari dalam batas',
         icon: Icons.shield_rounded,
         unlocked: streak >= 7,
       ),
       SaverBadge(
         id: 'streak_30d',
         title: 'Api 30 Hari',
-        description: '30 hari berturut-turut dalam batas',
+        description: '30 hari dalam batas',
         icon: Icons.local_fire_department_rounded,
         unlocked: streak >= 30,
       ),
       SaverBadge(
         id: 'target_safe',
         title: 'Target Terjaga',
-        description: 'Pengeluaran bulan ini aman dalam batas',
+        description: 'Bulan ini dalam batas',
         icon: Icons.track_changes_rounded,
         unlocked: snapshot.hasData && snapshot.worstLevel != BudgetLevel.over,
       ),
       SaverBadge(
         id: 'active_logger',
         title: 'Pencatat Tangkas',
-        description: 'Sudah mencatat pengeluaran di 10 hari berbeda',
+        description: 'Catat 10 hari berbeda',
         icon: Icons.edit_note_rounded,
         unlocked: activeDays.length >= 10,
       ),
@@ -559,29 +559,26 @@ class ProgressService extends ChangeNotifier {
   ) {
     final critical = snap.criticalLine;
     if (critical != null && critical.level == BudgetLevel.over) {
-      return 'Yah, ${critical.label} lewat batas (${critical.usedPercent}%). '
-          'Tarik napas, rapikan pelan-pelan ya';
+      return 'Yah, ${critical.label} lewat batas (${critical.usedPercent}%)';
     }
     if (critical != null) {
-      return '${critical.label} sudah ${critical.usedPercent}% terpakai. '
-          'Masih sempat dijaga kok';
+      return '${critical.label} ${critical.usedPercent}% terpakai';
     }
     if (streakPaused) {
-      return 'Atur batas harian dulu yuk, biar semangatmu nyala lagi';
+      return 'Atur batas harian dulu yuk';
     }
     if (!snap.hasData) {
-      return 'Bulan ini masih sepi. Ayo catat transaksi pertamamu';
+      return 'Masih sepi, yuk catat transaksimu';
     }
     if (snap.outTrend == TrendDirection.worse) {
-      return 'Keluaran naik dibanding bulan lalu. Yuk kita rapikan '
-          'pelan-pelan';
+      return 'Keluaran naik, ayo rapikan lagi';
     }
     if (recordedToday) {
-      final praise = snap.outTrend == TrendDirection.better
-          ? 'Hebat! Anggaran aman, keluaran turun. '
-          : 'Keren! Masih dalam batas. ';
-      return '$praise$streak hari berturut-turut';
+      // Streak sudah tampil di sub-baris sheet gamifikasi — jangan diulang.
+      return snap.outTrend == TrendDirection.better
+          ? 'Hebat! Anggaran aman, keluaran turun'
+          : 'Keren! Masih dalam batas';
     }
-    return 'Tenang, semua masih dalam batas, jaga jatah harianmu ya';
+    return 'Semua masih dalam batas, jaga ya';
   }
 }
