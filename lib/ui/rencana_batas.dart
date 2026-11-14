@@ -66,7 +66,7 @@ Future<void> showAddCategoryFlow(
     if (!context.mounted) return;
     questSnack(
       context,
-      'Kategori "${category.name}" berhasil ditambahkan.',
+      'Beres! Kategori "${category.name}" nambah.',
       icon: Icons.check_rounded,
     );
   } catch (_) {
@@ -595,8 +595,8 @@ class _RencanaBatasState extends State<RencanaBatas> {
     questSnack(
       context,
       parts.isEmpty
-          ? '${scope.label} tersimpan'
-          : '${scope.label} tersimpan — ${parts.join(' · ')}',
+          ? '${scope.label} tersimpan!'
+          : '${scope.label} tersimpan! — ${parts.join(' · ')}',
       icon: Icons.check_rounded,
     );
   }
@@ -641,7 +641,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
         context,
         title: 'Hapus Kategori?',
         content: Text(
-          'Kategori "${category.name}" akan dihapus dan transaksinya dipindah ke kategori "Lainnya".',
+          'Kategori "${category.name}" bakal dihapus dan transaksinya pindah ke kategori "Lainnya".',
           style: context.qBody(13),
         ),
         actions: [
@@ -703,7 +703,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
       if (!mounted) return;
       questSnack(
         context,
-        'Anggaran ${result.name.isNotEmpty ? result.name : category.name} tersimpan.',
+        'Beres! Anggaran ${result.name.isNotEmpty ? result.name : category.name} tersimpan.',
         icon: Icons.check_rounded,
       );
     } else {
@@ -720,7 +720,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
         );
       } else {
         if (!mounted) return;
-        questSnack(context, 'Perubahan tersimpan.', icon: Icons.check_rounded);
+        questSnack(context, 'Sip, perubahan tersimpan!', icon: Icons.check_rounded);
       }
     }
   }

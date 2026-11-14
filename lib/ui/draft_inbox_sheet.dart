@@ -149,7 +149,7 @@ class _DraftInboxViewState extends State<DraftInboxView> {
     if (mounted) {
       questSnack(
         context,
-        'Transaksi berhasil dicatat ke pembukuan!',
+        'Beres! Transaksinya masuk pembukuan!',
         icon: Icons.check_circle_outline_rounded,
       );
     }
@@ -169,7 +169,7 @@ class _DraftInboxViewState extends State<DraftInboxView> {
             Text('Abaikan Notifikasi', style: sheetContext.qTitle(16)),
             const SizedBox(height: Spacing.xs),
             Text(
-              'Pilih perlakuan untuk draf notifikasi ini:',
+              'Mau diapain draf ini?',
               style:
                   sheetContext.qSmall(12).copyWith(color: sheetContext.q.muted),
             ),
@@ -231,7 +231,7 @@ class _DraftInboxViewState extends State<DraftInboxView> {
       if (mounted) {
         questSnack(
           context,
-          'Pola "$pattern" berhasil diabaikan seterusnya.',
+          'Beres! Pola "$pattern" diabaikan seterusnya.',
           icon: Icons.check_circle_outline_rounded,
         );
       }
@@ -397,7 +397,7 @@ class _DraftInboxViewState extends State<DraftInboxView> {
             ],
             const SizedBox(height: Spacing.s),
             Text(
-              'Kedua draf akan disatukan sebagai transfer dan tidak dihitung sebagai pengeluaran baru di anggaran/laporan.',
+              'Kedua draf disatukan jadi transfer — nggak dihitung sebagai pengeluaran baru di anggaran/laporan.',
               style: sheetContext.qSmall(11.5).copyWith(
                 color: sheetContext.q.muted,
               ),

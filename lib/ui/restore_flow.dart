@@ -27,8 +27,8 @@ Future<String?> askBackupPin(BuildContext context, {required bool repeat}) async
         Text(
           repeat
               ? 'Masukkan PIN yang kamu buat saat menyimpan backup ini.'
-              : 'Buat PIN untuk mengunci file backup. Ingat baik-baik, '
-                    'tanpa PIN ini backup tidak bisa dibuka.',
+              : 'Bikin PIN buat kunci file backup-nya. Ingat baik-baik ya, '
+                    'tanpa PIN ini backup nggak bisa dibuka.',
           style: context.qBody(13),
         ),
         const SizedBox(height: Spacing.m),

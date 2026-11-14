@@ -67,7 +67,9 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      // SettingsScreen menampilkan Pochy beranimasi (loop) — pump manual.
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 400));
 
       // Cari tile 'Tema Tampilan'
       final themeTile = find.text('Tema Tampilan');
@@ -76,7 +78,8 @@ void main() {
 
       // Tap tile Tema Tampilan untuk membuka bottom sheet
       await tester.tap(themeTile);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 400));
 
       // Verifikasi opsi-opsi tema di bottom sheet
       // 'Sistem' tampil di baris pengaturan dan di opsi lembar.
@@ -88,7 +91,7 @@ void main() {
       await tester.tap(find.text('Gelap'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Verifikasi nilai tersimpan di repository
       expect(await repo.getThemeMode(), equals(ThemeMode.dark));

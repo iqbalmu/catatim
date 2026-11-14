@@ -265,7 +265,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
     Navigator.pop(context);
     questSnack(
       context,
-      ok ? 'Teks berhasil diproses menjadi draf!' : 'Gagal memproses teks.',
+      ok ? 'Beres! Teksnya jadi draf.' : 'Yah, gagal memproses teksnya.',
       icon: ok
           ? Icons.check_circle_outline_rounded
           : Icons.info_outline_rounded,
@@ -445,9 +445,9 @@ class _TransactionSheetState extends State<TransactionSheet> {
       title: isDraft ? 'Buang draf ini?' : 'Hapus transaksi?',
       content: Text(
         isDraft
-            ? 'Drafnya tidak jadi dicatat. Kalau berubah pikiran, '
+            ? 'Drafnya nggak jadi dicatat. Kalau berubah pikiran, '
                   'kamu bisa catat manual.'
-            : 'Setelah dihapus, transaksinya tidak bisa dikembalikan lagi.',
+            : 'Setelah dihapus, transaksinya nggak bisa dikembalikan lagi.',
         style: context.qBody(),
       ),
       actions: [

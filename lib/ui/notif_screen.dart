@@ -90,7 +90,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       context,
       title: 'Abaikan semua tangkapan?',
       content: Text(
-        'Ada ${drafts.length} tangkapan bank yang belum dicatat. Semua akan dihapus dari daftar.',
+        'Ada ${drafts.length} tangkapan bank yang belum dicatat. Semuanya bakal dihapus dari daftar.',
         style: context.qBody(13),
       ),
       actions: [
@@ -104,7 +104,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     if (sure == true && mounted) {
       await _repo.discardDrafts(drafts.map((d) => d.id));
       if (mounted) {
-        questSnack(context, '${drafts.length} tangkapan berhasil diabaikan.');
+        questSnack(context, '${drafts.length} tangkapan udah diabaikan.');
       }
     }
   }
@@ -298,7 +298,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         child: Padding(
           padding: const EdgeInsets.all(Spacing.l),
           child: QuestEmpty(
-            title: 'Tidak ada peringatan',
+            title: 'Belum ada peringatan',
             hint:
                 'Semua aman: anggaran terkendali, bon lancar, dan izin capture aktif.',
           ),

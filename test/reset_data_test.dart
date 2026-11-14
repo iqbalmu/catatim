@@ -126,18 +126,21 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      // SettingsScreen menampilkan Pochy beranimasi (loop) — pump manual.
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 400));
 
       // Scroll ke bawah hingga menemukan 'Kosongkan Data Aplikasi'
       final tileFinder = find.text('Kosongkan Data Aplikasi');
       await tester.scrollUntilVisible(tileFinder, 300);
       await tester.ensureVisible(tileFinder);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
       expect(tileFinder, findsOneWidget);
 
       // Tap Kosongkan Data Aplikasi
       await tester.tap(tileFinder);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 400));
 
       // Dialog konfirmasi muncul
       expect(find.text('Kosongkan Seluruh Data?'), findsOneWidget);
@@ -146,13 +149,15 @@ void main() {
 
       // Batal terlebih dahulu
       await tester.tap(find.text('Batal'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('Kosongkan Seluruh Data?'), findsNothing);
       expect(await db.select(db.transactions).get(), isNotEmpty);
 
       // Buka lagi dialog lalu konfirmasi Kosongkan Data
       await tester.tap(tileFinder);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 400));
       await tester.tap(find.text('Kosongkan Data'));
       for (var i = 0; i < 10; i++) {
         await tester.runAsync(
@@ -162,12 +167,11 @@ void main() {
       }
 
       // Verifikasi snackbar muncul dan data kosong
-      expect(find.text('Seluruh data berhasil dikosongkan.'), findsOneWidget);
+      expect(find.text('Beres! Semua data udah dibersihkan.'), findsOneWidget);
       expect(await db.select(db.transactions).get(), isEmpty);
 
-      await tester.pumpAndSettle();
       await tester.pump(const Duration(milliseconds: 350));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 350));
       await db.close();
     });
 
@@ -177,6 +181,25 @@ void main() {
 
       // Set batas bulanan awal
       await repo.setSetting(kKeyMonthlyTotal, '1500000');
+
+      // Seed satu transaksi keluar bulan ini: tanpa data, snapshot
+      // kosong dan kartu batas menampilkan "Belum diatur" sejak awal.
+      final cats = await repo.getCategories();
+      final accounts = await repo.getAccounts();
+      await db.into(db.transactions).insert(
+        TransactionsCompanion.insert(
+          uuid: 'rencana-reset-1',
+          bankId: 'manual',
+          amount: 150000,
+          direction: Direction.outgoing,
+          kind: TxKind.payment,
+          source: TxSource.manual,
+          occurredAt: DateTime.now(),
+          counterparty: const Value('Warung Nasi'),
+          accountId: Value(accounts.first.id),
+          categoryId: Value(cats.first.id),
+        ),
+      );
 
       await tester.pumpWidget(
         MaterialApp(
@@ -188,7 +211,14 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      // RencanaBatas memakai skeleton shimmer beranimasi (loop) — pump
+      // manual + runAsync: stream Drift emit di real-async, tidak jalan
+      // di fake-time pumpAndSettle.
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 300));
+      });
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 400));
 
       // Memastikan batas 1.500.000 tampil
       expect(find.textContaining('1.500.000'), findsWidgets);
@@ -201,7 +231,8 @@ void main() {
         );
         await tester.pump(const Duration(milliseconds: 20));
       }
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 400));
 
       // Memastikan batas 1.500.000 sudah hilang dan berubah menjadi Belum diatur
       expect(find.textContaining('1.500.000'), findsNothing);

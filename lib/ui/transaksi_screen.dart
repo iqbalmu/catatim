@@ -573,7 +573,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                         index: 4,
                         replayKey: _filterRevision,
                         child: QuestEmpty(
-                          title: 'Tidak ada transaksi',
+                          title: 'Belum ada transaksi',
                           hint: _searchQuery.isNotEmpty
                               ? 'Coba kata kunci pencarian yang lain.'
                               : 'Belum ada transaksi di bulan ${idMonthYear(_selectedMonth)}.',

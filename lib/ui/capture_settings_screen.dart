@@ -168,13 +168,13 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
       if (created > 0) {
         questSnack(
           context,
-          'Berhasil membuat $created draf dari notifikasi lampau.',
+          'Beres! $created draf dibuat dari notifikasi lampau.',
           icon: Icons.history_toggle_off_rounded,
         );
       } else {
         questSnack(
           context,
-          'Tidak ada notifikasi baru yang dapat diproses.',
+          'Belum ada notifikasi baru yang bisa diproses.',
           icon: Icons.info_outline_rounded,
         );
       }
@@ -182,7 +182,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
       if (mounted) {
         questSnack(
           context,
-          'Gagal memproses ulang notifikasi.',
+          'Yah, gagal memproses ulang notifikasinya.',
           icon: Icons.error_outline_rounded,
         );
       }
@@ -195,8 +195,8 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     questSnack(
       context,
       count > 0
-          ? '$count notifikasi aktif ditarik dan diproses menjadi draf.'
-          : 'Tidak ada notifikasi baru dari bank terhubung yang sedang tayang.',
+          ? 'Beres! $count notifikasi aktif jadi draf.'
+          : 'Belum ada notifikasi baru dari bank yang terhubung.',
       icon: count > 0
           ? Icons.check_circle_outline_rounded
           : Icons.info_outline_rounded,
@@ -220,7 +220,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Notifikasi yang mengandung kata kunci ini akan otomatis dibuang dan tidak diproses menjadi draf.',
+                'Notifikasi yang mengandung kata kunci ini langsung dibuang, nggak jadi draf.',
                 style: context.qBody(13),
               ),
               const SizedBox(height: Spacing.m),
@@ -298,7 +298,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
       if (mounted) {
         questSnack(
           context,
-          'Pola "$pattern" berhasil ditambahkan ke daftar abaikan.',
+          'Beres! Pola "$pattern" masuk daftar abaikan.',
           icon: Icons.check_circle_outline_rounded,
         );
       }
@@ -491,7 +491,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
             child: QuestEmpty(
               title: 'Bank tidak ditemukan',
               hint:
-                  'Gunakan kata kunci lain atau daftarkan lewat Mode Belajar di bawah.',
+                  'Coba kata kunci lain, atau daftarkan lewat Mode Belajar di bawah.',
             ),
           ),
         ],
@@ -666,7 +666,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                         Text(
                           _listenerEnabled
                               ? 'CatatIM bisa membaca notifikasi bank.'
-                              : 'Izin ini diperlukan untuk mendeteksi transaksi dari notifikasi.',
+                              : 'Izin ini biar CatatIM bisa nangkep transaksi dari notifikasi.',
                           style: context.qSmall(12).copyWith(color: q.muted),
                         ),
                       ],
@@ -1171,7 +1171,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
           ],
         ),
         Text(
-          'Notifikasi yang mengandung kata kunci di bawah akan otomatis dibuang dan tidak menjadi draf.',
+          'Notifikasi dengan kata kunci di bawah langsung dibuang, nggak jadi draf.',
           style: context.qSmall(12).copyWith(color: q.muted),
         ),
         const SizedBox(height: Spacing.xs),
@@ -1240,7 +1240,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                             context,
                             title: 'Hapus Pola Abaikan?',
                             content: Text(
-                              'Pola "${ignoredList[i].label}" akan dihapus. Notifikasi yang mengandung kata kunci ini akan diproses kembali.',
+                              'Pola "${ignoredList[i].label}" dihapus. Notifikasi dengan kata kunci ini bakal diproses ulang.',
                               style: context.qBody(13),
                             ),
                             actions: [
@@ -1290,7 +1290,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
             if (customTemplates.isEmpty) {
               return QuestCard(
                 child: Text(
-                  'Belum ada template kustom. Template otomatis terbentuk ketika kamu menyesuaikan pembacaan notifikasi mentah.',
+                  'Belum ada template kustom. Template kebentuk otomatis pas kamu atur ulang pembacaan notifikasi mentah.',
                   style: context.qSmall(12).copyWith(color: q.muted),
                 ),
               );
@@ -1340,7 +1340,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                             context,
                             title: 'Hapus Template Aturan?',
                             content: Text(
-                              'Aturan "${customTemplates[i].template.name}" akan dihapus.',
+                              'Aturan "${customTemplates[i].template.name}" bakal dihapus.',
                               style: context.qBody(13),
                             ),
                             actions: [
@@ -1388,7 +1388,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
               children: [
                 const QuestSectionHeader(title: 'Duplikat yang Diabaikan'),
                 Text(
-                  'Notifikasi ini dianggap duplikat (bank, nominal, & arah sama dalam 2 menit) sehingga tidak menjadi draf ganda. Geser ke kiri untuk menghapus.',
+                  'Dianggap duplikat (bank, nominal, & arah sama dalam 2 menit), jadi nggak dibuat dua kali. Geser ke kiri buat hapus.',
                   style: context.qSmall(12).copyWith(color: q.muted),
                 ),
                 const SizedBox(height: Spacing.xs),
@@ -1517,7 +1517,7 @@ class _AppPickerSheetState extends State<_AppPickerSheet> {
                 Text('Hubungkan App', style: context.qTitle(15)),
                 const SizedBox(height: Spacing.xs),
                 Text(
-                  'Pilih app bank/e-wallet. Notifikasinya akan jadi draf '
+                  'Pilih app bank/e-wallet. Notifikasinya bakal jadi draf '
                   'yang kamu putuskan.',
                   style: context.qSmall(12).copyWith(color: q.muted),
                 ),
@@ -1536,7 +1536,7 @@ class _AppPickerSheetState extends State<_AppPickerSheet> {
             child: filtered.isEmpty
                 ? Center(
                     child: Text(
-                      'Tidak ada app yang cocok.',
+                      'Belum ada app yang cocok.',
                       style: context.qSmall(12).copyWith(color: q.muted),
                     ),
                   )

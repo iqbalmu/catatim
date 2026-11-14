@@ -42,7 +42,7 @@ class LockedScreen extends StatelessWidget {
       context,
       title: 'Mulai dari awal?',
       content: Text(
-        'Semua catatan yang ada di HP ini akan dihapus permanen dan '
+        'Semua catatan di HP ini bakal dihapus permanen dan '
         'app mulai kosong lagi. Kalau kamu punya file backup, lebih '
         'baik pulihkan daripada mulai awal.',
         style: context.qBody(13),

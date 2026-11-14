@@ -168,7 +168,7 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
     if (mounted) {
       questSnack(
         context,
-        '${bank.displayName} berhasil terhubung.',
+        '${bank.displayName} nyambung.',
         icon: Icons.link_rounded,
       );
     }
@@ -212,7 +212,7 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
         await widget.repository.setOpeningBalance(account.id, opening);
       }
       if (mounted) {
-        questSnack(context, 'Perubahan berhasil disimpan.', icon: Icons.check_rounded);
+        questSnack(context, 'Sip, perubahan tersimpan!', icon: Icons.check_rounded);
         Navigator.pop(context);
       }
     } catch (_) {
@@ -254,7 +254,7 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
     }
     await widget.repository.deleteAccount(account.id);
     if (mounted) {
-      questSnack(context, '${account.name} berhasil dihapus.');
+      questSnack(context, '${account.name} dihapus.');
       Navigator.pop(context);
     }
   }

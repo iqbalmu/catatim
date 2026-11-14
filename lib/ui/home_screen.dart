@@ -94,8 +94,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       questSnack(
         context,
         ok
-            ? 'Teks dibagikan berhasil diproses menjadi draf!'
-            : 'Gagal memproses teks dibagikan.',
+            ? 'Beres! Teks yang kamu bagikan jadi draf!'
+            : 'Yah, gagal memproses teksnya.',
         icon: ok
             ? Icons.check_circle_outline_rounded
             : Icons.info_outline_rounded,

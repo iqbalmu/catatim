@@ -52,7 +52,7 @@ class OcrScreen extends StatefulWidget {
                 ),
                 const SizedBox(height: Spacing.xs),
                 Text(
-                  'Pilih sumber gambar untuk mengenali nominal & pihak secara otomatis.',
+                  'Mau pakai gambar dari mana? Nominal & pihaknya diisi otomatis.',
                   style: ctx.qSmall(12).copyWith(color: ctx.q.muted),
                 ),
                 const SizedBox(height: Spacing.m),
@@ -146,7 +146,7 @@ class OcrScreen extends StatefulWidget {
         if (!context.mounted) return;
         questSnack(
           context,
-          'Tidak dapat membuka kamera/galeri: $e',
+          'Nggak bisa buka kamera/galeri: $e',
           icon: Icons.error_outline_rounded,
         );
         return;
@@ -277,13 +277,13 @@ class _OcrScreenState extends State<OcrScreen> {
     if (errorReason != null && mounted) {
       questSnack(
         context,
-        'Gagal membaca teks struk: $errorReason',
+        'Yah, gagal baca teks struknya: $errorReason',
         icon: Icons.warning_amber_rounded,
       );
     } else if (data == null && mounted) {
       questSnack(
         context,
-        'Teks struk tidak terdeteksi. Silakan lengkapi manual atau coba foto ulang.',
+        'Nominalnya nggak kebaca. Isi manual aja, atau coba foto ulang.',
         icon: Icons.info_outline_rounded,
       );
     }
@@ -374,7 +374,7 @@ class _OcrScreenState extends State<OcrScreen> {
       }
     } catch (e) {
       if (mounted) {
-        questSnack(context, 'Tidak dapat membuka kamera/galeri: $e');
+        questSnack(context, 'Nggak bisa buka kamera/galeri: $e');
       }
     }
   }
@@ -434,7 +434,7 @@ class _OcrScreenState extends State<OcrScreen> {
         Navigator.pop(context);
         questSnack(
           context,
-          'Draf transaksi struk berhasil disimpan. Periksa di Notifikasi!',
+          'Beres! Draf struk tersimpan. Cek di Notifikasi ya!',
           icon: Icons.check_circle_outline_rounded,
         );
       }
@@ -449,7 +449,7 @@ class _OcrScreenState extends State<OcrScreen> {
     if (amount <= 0) {
       questSnack(
         context,
-        'Nominal transaksi harus lebih dari 0',
+        'Nominal harus lebih dari 0 ya.',
         icon: Icons.warning_amber_rounded,
       );
       return;
@@ -676,7 +676,7 @@ class _OcrScreenState extends State<OcrScreen> {
                       if (_candidateAmounts.isNotEmpty) ...[
                         const SizedBox(height: Spacing.s),
                         Text(
-                          'Pilihan angka terdeteksi pada struk:',
+                          'Angka-angka yang kebaca di struk:',
                           style: context
                               .qSmall(11.5)
                               .copyWith(color: q.muted, fontWeight: FontWeight.w600),

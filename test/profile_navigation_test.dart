@@ -66,22 +66,25 @@ void main() {
       expect(profileHeaderBtn, findsOneWidget);
 
       await tester.tap(profileHeaderBtn);
-      await tester.pumpAndSettle();
+      // SettingsScreen menampilkan Pochy beranimasi (loop) — pump manual,
+      // bukan pumpAndSettle yang tidak akan pernah settle.
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 400));
 
-      // Layar Profil & Pengaturan tampil secara mandiri dengan tombol back (tanpa navbar)
+      // Layar Profil & Pengaturan tampil secara mandiri dengan tombol tutup (tanpa navbar)
       expect(find.byType(SettingsScreen), findsOneWidget);
       expect(find.text('Profil & Pengaturan'), findsOneWidget);
-      expect(find.byIcon(Icons.arrow_back_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.close_rounded), findsOneWidget);
 
-      // Verifikasi 2 grup terstruktur: Manajemen Keuangan & Pengaturan Sistem
-      expect(find.text('Akun Bank & Dompet'), findsOneWidget);
-      expect(find.text('Anggaran & Kategori'), findsOneWidget);
-      expect(find.text('Laporan Finansial'), findsOneWidget);
+      // Seksi Manajemen Keuangan dipindah dari settings: Akun Bank &
+      // Dompet dibuka dari kartu saldo Beranda, Anggaran dari kartu
+      // jatah harian, Laporan dari navbar.
 
-      // Tekan tombol back di halaman Profil untuk kembali ke Beranda
-      final settingsBackButton = find.byIcon(Icons.arrow_back_rounded);
-      await tester.tap(settingsBackButton);
-      await tester.pumpAndSettle();
+      // Tekan tombol tutup di halaman Profil untuk kembali ke Beranda
+      final settingsCloseButton = find.byIcon(Icons.close_rounded);
+      await tester.tap(settingsCloseButton);
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump(const Duration(milliseconds: 400));
 
       // Sudah kembali ke Beranda
       expect(find.byType(SettingsScreen), findsNothing);

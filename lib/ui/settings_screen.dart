@@ -429,7 +429,7 @@ class SettingsScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Transaksi contoh, batas harian/mingguan/bulanan, saldo awal akun, dan alokasi kategori akan diisi. Data yang sudah ada tidak dihapus.',
+            'Transaksi contoh, batas harian/mingguan/bulanan, saldo awal akun, dan alokasi kategori bakal diisi. Data yang udah ada nggak dihapus.',
             style: context.qBody(13),
           ),
         ],
@@ -455,7 +455,7 @@ class SettingsScreen extends StatelessWidget {
       if (context.mounted) {
         questSnack(
           context,
-          'Data contoh berhasil diisi.',
+          'Beres! Data contoh terisi.',
           icon: Icons.check_circle_outline_rounded,
         );
       }
@@ -471,7 +471,7 @@ class SettingsScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Semua riwayat transaksi, saldo akun, draf notifikasi, bon/utang, alokasi anggaran, dan preferensi akan dihapus bersih.',
+            'Semua riwayat transaksi, saldo akun, draf notifikasi, bon/utang, alokasi anggaran, dan preferensi bakal dihapus bersih.',
             style: context.qBody(13),
           ),
           const SizedBox(height: Spacing.s),
@@ -522,7 +522,7 @@ class SettingsScreen extends StatelessWidget {
       if (context.mounted) {
         questSnack(
           context,
-          'Seluruh data berhasil dikosongkan.',
+          'Beres! Semua data udah dibersihkan.',
           icon: Icons.check_circle_outline_rounded,
         );
       }

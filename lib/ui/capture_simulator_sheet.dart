@@ -150,13 +150,13 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
       if (draftId != null) {
         questSnack(
           context,
-          'Berhasil didorong ke antrean! Draf #$draftId telah dibuat.',
+          'Beres! Draf #$draftId udah jadi.',
           icon: Icons.check_circle_rounded,
         );
       } else {
         questSnack(
           context,
-          'Notifikasi diproses (diabaikan atau dianggap duplikat).',
+          'Notifikasi diproses — ternyata diabaikan atau duplikat.',
           icon: Icons.info_outline_rounded,
         );
       }
@@ -164,7 +164,7 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
       if (mounted) {
         questSnack(
           context,
-          'Gagal mendorong notifikasi: $e',
+          'Yah, gagal dorong notifikasi: $e',
           icon: Icons.error_outline_rounded,
         );
       }
@@ -187,15 +187,15 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
       questSnack(
         context,
         deleted > 0
-            ? '$deleted draf simulasi berhasil dibersihkan.'
-            : 'Tidak ada data simulasi yang tersisa.',
+            ? '$deleted draf simulasi udah dibersihkan.'
+            : 'Data simulasi udah habis.',
         icon: Icons.delete_sweep_rounded,
       );
     } catch (e) {
       if (mounted) {
         questSnack(
           context,
-          'Gagal membersihkan data: $e',
+          'Yah, gagal bersih-bersih data: $e',
           icon: Icons.error_outline_rounded,
         );
       }

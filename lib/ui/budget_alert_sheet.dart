@@ -199,8 +199,8 @@ class _BudgetAlertSheetState extends State<BudgetAlertSheet> {
               const SizedBox(height: Spacing.s),
               Text(
                 'Peringatan bunyi saat terpakai $_threshold% atau lebih. '
-                'Melewati 100% (batas terlampaui) juga diberi tahu '
-                'sekali, terpisah dari ambang ini.',
+                'Lewat 100% juga tetap dikabari sekali, '
+                'terpisah dari ambang ini.',
                 style: context.qSmall(11.5).copyWith(color: q.muted),
               ),
             ],
@@ -217,7 +217,7 @@ class _BudgetAlertSheetState extends State<BudgetAlertSheet> {
                   style: context.qTitle(14.5),
                 ),
                 subtitle: Text(
-                  'Uji izin dan tampilan tanpa menunggu transaksi.',
+                  'Coba izin & tampilannya langsung, tanpa nunggu transaksi.',
                   style: context.qSmall(11.5).copyWith(color: q.muted),
                 ),
                 onTap: _sendTest,

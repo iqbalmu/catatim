@@ -67,8 +67,8 @@ class _UnparsedLogsSheetState extends State<UnparsedLogsSheet> {
       questSnack(
         context,
         created > 0
-            ? '$created draf baru berhasil dibuat dari pemindaian ulang!'
-            : 'Tidak ada notifikasi baru yang cocok.',
+            ? 'Beres! $created draf baru dari pemindaian ulang!'
+            : 'Belum ada notifikasi yang cocok.',
         icon: created > 0
             ? Icons.check_circle_rounded
             : Icons.info_outline_rounded,
@@ -77,7 +77,7 @@ class _UnparsedLogsSheetState extends State<UnparsedLogsSheet> {
       if (mounted) {
         questSnack(
           context,
-          'Gagal memindai ulang: $e',
+          'Yah, gagal pindai ulang: $e',
           icon: Icons.error_outline_rounded,
         );
       }
@@ -195,7 +195,7 @@ class _UnparsedLogsSheetState extends State<UnparsedLogsSheet> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Tidak ada notifikasi bank yang tertinggal atau gagal terbaca.',
+                            'Belum ada notifikasi bank yang tertinggal atau gagal kebaca.',
                             style: context.qSmall(12).copyWith(color: q.muted),
                             textAlign: TextAlign.center,
                           ),

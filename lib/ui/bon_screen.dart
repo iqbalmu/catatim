@@ -61,8 +61,8 @@ class _BonScreenState extends State<BonScreen> {
         context,
         title: 'Batalkan Status Lunas?',
         content: Text(
-          'Status bon ${bon.person} akan dikembalikan menjadi Belum Lunas. '
-          'Transaksi kas pelunasan terkait juga akan dihapus.',
+          'Status bon ${bon.person} balik jadi Belum Lunas. '
+          'Transaksi kas pelunasannya juga ikut dihapus.',
           style: context.qBody(13),
         ),
         actions: [
@@ -81,7 +81,7 @@ class _BonScreenState extends State<BonScreen> {
       if (confirmCancel != true || !mounted) return;
 
       await widget.repository.unsettleBon(bon.id);
-      if (mounted) questSnack(context, 'Status lunas dibatalkan dan transaksi kas dihapus.');
+      if (mounted) questSnack(context, 'Status lunas dibatalkan, transaksi kasnya ikut dihapus.');
       return;
     }
 
@@ -90,7 +90,7 @@ class _BonScreenState extends State<BonScreen> {
     if (!mounted) return;
 
     if (accounts.isEmpty) {
-      questSnack(context, 'Tambahkan akun terlebih dahulu di pengaturan.');
+      questSnack(context, 'Tambah akun dulu ya di pengaturan.');
       return;
     }
 
@@ -235,7 +235,7 @@ class _BonScreenState extends State<BonScreen> {
           onPressed: () {
             final amt = Money.tryParseGroup(amountController.text) ?? (isUncalculated ? 0 : bon.amount);
             if (amt <= 0) {
-              questSnack(context, 'Masukkan nominal pembayaran.');
+              questSnack(context, 'Isi nominalnya dulu yuk.');
               return;
             }
             Navigator.pop(context, true);
@@ -258,7 +258,7 @@ class _BonScreenState extends State<BonScreen> {
     await widget.progress?.onTransactionRecorded();
 
     if (mounted) {
-      questSnack(context, 'Bon ${bon.person} berhasil dilunasi!');
+      questSnack(context, 'Beres! Bon ${bon.person} lunas!');
     }
   }
 
@@ -563,8 +563,8 @@ class _BonScreenState extends State<BonScreen> {
         child: QuestEmpty(
           title: isLunas ? 'Belum ada riwayat bon lunas.' : 'Semua bon sudah lunas!',
           hint: isLunas
-              ? 'Bon yang sudah dilunasi akan tercatat di sini.'
-              : 'Catat bon baru jika ada pinjam-meminjam uang.',
+              ? 'Bon yang udah lunas bakal nongol di sini.'
+              : 'Ada pinjam-meminjam? Catat bon barunya di sini ya.',
         ),
       );
     }
@@ -923,7 +923,7 @@ class _BonSheetState extends State<BonSheet> {
     final person = _personCtrl.text.trim();
     final amount = Money.tryParseGroup(_amountCtrl.text) ?? 0;
     if (person.isEmpty) {
-      questSnack(context, 'Nama pihak atau warung tidak boleh kosong.');
+      questSnack(context, 'Nama pihaknya diisi dulu yuk.');
       return;
     }
     final note = _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim();
@@ -965,8 +965,8 @@ class _BonSheetState extends State<BonSheet> {
       title: 'Hapus catatan bon?',
       content: Text(
         isUncalc
-            ? 'Bon ${existing.person} (Belum Dihitung) akan dihapus permanen.'
-            : 'Bon ${existing.person} sebesar ${Money.format(existing.amount)} akan dihapus permanen.',
+            ? 'Bon ${existing.person} (Belum Dihitung) bakal dihapus permanen.'
+            : 'Bon ${existing.person} sebesar ${Money.format(existing.amount)} bakal dihapus permanen.',
         style: context.qBody(13),
       ),
       actions: [
@@ -994,20 +994,20 @@ class _BonSheetState extends State<BonSheet> {
 
     final person = _personCtrl.text.trim();
     if (person.isEmpty) {
-      questSnack(context, 'Nama pihak atau warung tidak boleh kosong.');
+      questSnack(context, 'Nama pihaknya diisi dulu yuk.');
       return;
     }
     final amount = Money.tryParseGroup(_amountCtrl.text) ?? 0;
     if (amount <= 0) {
-      questSnack(context, 'Masukkan nominal pembayaran.');
+      questSnack(context, 'Isi nominalnya dulu yuk.');
       return;
     }
     if (_accountId == null) {
-      questSnack(context, 'Pilih sumber dana / akun.');
+      questSnack(context, 'Pilih sumber dananya dulu yuk.');
       return;
     }
     if (_categoryId == null) {
-      questSnack(context, 'Pilih kategori.');
+      questSnack(context, 'Pilih kategorinya dulu yuk.');
       return;
     }
 
@@ -1036,7 +1036,7 @@ class _BonSheetState extends State<BonSheet> {
 
     if (mounted) {
       Navigator.pop(context);
-      questSnack(context, 'Bon $person berhasil dilunasi!');
+      questSnack(context, 'Beres! Bon $person lunas!');
     }
   }
 
@@ -1047,7 +1047,7 @@ class _BonSheetState extends State<BonSheet> {
     await widget.repository.unsettleBon(existing.id);
     if (mounted) {
       Navigator.pop(context);
-      questSnack(context, 'Status lunas dibatalkan dan transaksi kas dihapus.');
+      questSnack(context, 'Status lunas dibatalkan, transaksi kasnya ikut dihapus.');
     }
   }
 

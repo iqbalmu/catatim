@@ -458,7 +458,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
           ],
         ),
         const SizedBox(height: Spacing.m),
-        Text('Yang akan terjadi:', style: context.qBody(13)),
+        Text('Yang bakal terjadi:', style: context.qBody(13)),
         const SizedBox(height: Spacing.xs),
         _FactRow(
           icon: Icons.notifications_active_rounded,
@@ -565,7 +565,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
         ),
         const SizedBox(height: Spacing.m),
         Text(
-          '${bank.displayName} berhasil terhubung!',
+          '${bank.displayName} nyambung!',
           style: context.qTitle(17),
           textAlign: TextAlign.center,
         ),

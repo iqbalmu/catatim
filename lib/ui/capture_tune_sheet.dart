@@ -221,14 +221,14 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
       Navigator.pop(context, true);
       questSnack(
         context,
-        'Template disimpan! $created draf berhasil diproses.',
+        'Template tersimpan! $created draf jadi.',
         icon: Icons.check_circle_rounded,
       );
     } catch (e) {
       if (mounted) {
         questSnack(
           context,
-          'Gagal menyimpan template: $e',
+          'Yah, gagal simpan template: $e',
           icon: Icons.error_outline_rounded,
         );
       }
@@ -297,7 +297,7 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Sesuaikan kata kunci agar notifikasi berikutnya terbaca otomatis.',
+                        'Rapikan kata kuncinya biar notifikasi berikutnya kebaca otomatis.',
                         style: context.qSmall(12).copyWith(color: q.muted),
                       ),
                     ],
@@ -611,7 +611,7 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
                       Text(
                         previewAmount != null
                             ? Money.format(previewAmount)
-                            : 'Tidak terdeteksi',
+                            : 'Nggak kebaca',
                         style: context
                             .qTitle(14)
                             .copyWith(
