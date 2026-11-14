@@ -10,6 +10,7 @@ import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
+import 'bank_accounts_screen.dart';
 import 'bon_screen.dart';
 import 'home_cards.dart';
 import 'laporan_screen.dart';
@@ -302,6 +303,19 @@ class _BerandaTabState extends State<_BerandaTab> {
     unawaited(widget.progress.refresh());
   }
 
+  /// Kartu Total Saldo di Beranda membuka manajemen Akun Bank & Dompet.
+  void _openAccounts() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BankAccountsScreen(
+          repository: widget.repository,
+          pipeline: widget.pipeline,
+          ruleSet: widget.ruleSet,
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     widget.progress.removeListener(_onProgressChanged);
@@ -362,6 +376,7 @@ class _BerandaTabState extends State<_BerandaTab> {
                 pipeline: widget.pipeline,
                 ruleSet: widget.ruleSet,
                 onOpenAnggaran: widget.onOpenAnggaran,
+                onOpenAccounts: _openAccounts,
               ),
             ),
             RecentTransactionsCard(

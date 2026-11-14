@@ -12,13 +12,10 @@ import '../storage/seed_dummy.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'backup_screen.dart';
-import 'bank_accounts_screen.dart';
 import 'budget_alert_sheet.dart';
 import 'capture_settings_screen.dart';
 import 'gamification_sheet.dart';
-import 'laporan_screen.dart';
 import 'quest.dart';
-import 'rencana_screen.dart';
 
 typedef ProfileSettingsScreen = SettingsScreen;
 
@@ -29,8 +26,6 @@ class SettingsScreen extends StatelessWidget {
     required this.pipeline,
     required this.ruleSet,
     this.progress,
-    this.onOpenAnggaran,
-    this.onOpenBon,
     this.showBack = true,
   });
 
@@ -38,8 +33,6 @@ class SettingsScreen extends StatelessWidget {
   final CapturePipeline pipeline;
   final RuleSet ruleSet;
   final ProgressService? progress;
-  final VoidCallback? onOpenAnggaran;
-  final VoidCallback? onOpenBon;
   final bool showBack;
 
   /// Satu baris status streak untuk kartu gamifikasi — tiap kondisi
@@ -201,119 +194,9 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
-          // ── Grup 1: MANAJEMEN KEUANGAN ──
-          QuestTabEnter(
-            index: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const QuestSectionHeader(title: 'Manajemen Keuangan'),
-                QuestCard(
-                  padding: EdgeInsets.zero,
-                  child: Column(
-                    children: [
-                      // 1. Akun Bank & Dompet
-                      StreamBuilder<List<Account>>(
-                        stream: repository.watchAccounts(),
-                        builder: (context, snapshot) {
-                          final accounts = snapshot.data ?? const [];
-                          return QuestListTile(
-                            leading: _SettingIcon(icon: Icons.account_balance_wallet_rounded),
-                            title: Text(
-                              'Akun Bank & Dompet',
-                              style: context.qTitle(15),
-                            ),
-                            subtitle: Text(
-                              '${accounts.length} akun',
-                              style: context.qSmall(12),
-                            ),
-                            trailing: Icon(
-                              Icons.chevron_right_rounded,
-                              color: q.muted,
-                            ),
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => BankAccountsScreen(
-                                  repository: repository,
-                                  pipeline: pipeline,
-                                  ruleSet: ruleSet,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      Divider(height: 1, thickness: 1, color: q.line),
-
-                      // 2. Anggaran & Kategori
-                      StreamBuilder<List<Category>>(
-                        stream: repository.watchCategories(),
-                        builder: (context, snapshot) {
-                          final categories = snapshot.data ?? const [];
-                          return QuestListTile(
-                            leading: _SettingIcon(icon: Icons.pie_chart_outline_rounded),
-                            title: Text(
-                              'Anggaran & Kategori',
-                              style: context.qTitle(15),
-                            ),
-                            subtitle: Text(
-                              '${categories.length} kategori, batas bulanan',
-                              style: context.qSmall(12),
-                            ),
-                            trailing: Icon(
-                              Icons.chevron_right_rounded,
-                              color: q.muted,
-                            ),
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => RencanaScreen(
-                                  repository: repository,
-                                  progress: progress,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      Divider(height: 1, thickness: 1, color: q.line),
-
-                      // 3. Laporan Finansial
-                      QuestListTile(
-                        leading: _SettingIcon(icon: Icons.bar_chart_rounded),
-                        title: Text(
-                          'Laporan Finansial',
-                          style: context.qTitle(15),
-                        ),
-                        subtitle: Text(
-                          'Arus kas, tren, dan komposisi pengeluaran',
-                          style: context.qSmall(12),
-                        ),
-                        trailing: Icon(
-                          Icons.chevron_right_rounded,
-                          color: q.muted,
-                        ),
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => LaporanScreen(
-                              repository: repository,
-                              progress: progress,
-                              showBack: true,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
           // ── Grup 2: PENGATURAN & SISTEM ──
           QuestTabEnter(
-            index: 3,
+            index: 2,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

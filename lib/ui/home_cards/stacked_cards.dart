@@ -20,6 +20,7 @@ class StackedHeroCards extends StatefulWidget {
     required this.pipeline,
     required this.ruleSet,
     required this.onOpenAnggaran,
+    this.onOpenAccounts,
     this.initialCard = 0,
   });
 
@@ -28,6 +29,9 @@ class StackedHeroCards extends StatefulWidget {
   final CapturePipeline pipeline;
   final RuleSet ruleSet;
   final VoidCallback onOpenAnggaran;
+
+  /// Tap kartu Total Saldo → manajemen Akun Bank & Dompet.
+  final VoidCallback? onOpenAccounts;
   final int initialCard;
 
   @override
@@ -266,6 +270,7 @@ class _StackedHeroCardsState extends State<StackedHeroCards>
         ruleSet: widget.ruleSet,
         progress: widget.progress,
         margin: EdgeInsets.zero,
+        onTap: widget.onOpenAccounts,
         initialObscured: _balanceObscured,
         onObscuredChanged: (val) {
           if (mounted && _balanceObscured != val) {

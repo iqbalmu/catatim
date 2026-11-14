@@ -241,8 +241,6 @@ class HomeTopBar extends StatelessWidget {
                       pipeline: pipeline,
                       ruleSet: ruleSet,
                       progress: progress,
-                      onOpenAnggaran: onOpenAnggaran,
-                      onOpenBon: onOpenBon,
                       showBack: true,
                     ),
                   ),

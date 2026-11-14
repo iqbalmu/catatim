@@ -12,6 +12,7 @@ class TotalBalanceCard extends StatefulWidget {
     this.margin,
     this.initialObscured = false,
     this.onObscuredChanged,
+    this.onTap,
   });
 
   final LedgerRepository repository;
@@ -21,6 +22,9 @@ class TotalBalanceCard extends StatefulWidget {
   final EdgeInsetsGeometry? margin;
   final bool initialObscured;
   final ValueChanged<bool>? onObscuredChanged;
+
+  /// Tap kartu (di luar kontrol internal) — pembuka manajemen akun.
+  final VoidCallback? onTap;
 
   @override
   State<TotalBalanceCard> createState() => _TotalBalanceCardState();
@@ -78,6 +82,7 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
 
               return QuestCard(
                 variant: QuestCardVariant.hero,
+                onTap: widget.onTap,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
