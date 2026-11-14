@@ -334,19 +334,31 @@ class _NewCategory {
   final int? limit;
 }
 
-/// Form state holder agar tombol dialog bisa membaca isi TextField.
+/// Form tambah kategori. Controllers dibuat pemanggil (tombol aksi dialog
+/// hidup di luar subtree ini, tidak bisa baca lewat
+/// findAncestorStateOfType) dan dilepas di State.dispose() — baru jalan
+/// setelah sheet benar-benar unmount, aman dari animasi keluar.
 
 class _NewCategoryForm extends StatefulWidget {
-  static _NewCategoryFormState? maybeOf(BuildContext context) =>
-      context.findAncestorStateOfType<_NewCategoryFormState>();
+  const _NewCategoryForm({
+    required this.nameCtrl,
+    required this.limitCtrl,
+  });
+
+  final TextEditingController nameCtrl;
+  final TextEditingController limitCtrl;
 
   @override
   State<_NewCategoryForm> createState() => _NewCategoryFormState();
 }
 
 class _NewCategoryFormState extends State<_NewCategoryForm> {
-  final nameCtrl = TextEditingController();
-  final limitCtrl = TextEditingController();
+  @override
+  void dispose() {
+    widget.nameCtrl.dispose();
+    widget.limitCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -358,7 +370,7 @@ class _NewCategoryFormState extends State<_NewCategoryForm> {
         const QuestFieldLabel('Nama Kategori'),
         const SizedBox(height: Spacing.xs),
         TextField(
-          controller: nameCtrl,
+          controller: widget.nameCtrl,
           autofocus: true,
           textCapitalization: TextCapitalization.words,
           style: TextStyle(
@@ -375,7 +387,7 @@ class _NewCategoryFormState extends State<_NewCategoryForm> {
         const QuestFieldLabel('Alokasi Bulanan (Opsional)'),
         const SizedBox(height: Spacing.xs),
         TextField(
-          controller: limitCtrl,
+          controller: widget.limitCtrl,
           keyboardType: TextInputType.number,
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,

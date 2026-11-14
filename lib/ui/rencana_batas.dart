@@ -21,10 +21,18 @@ Future<void> showAddCategoryFlow(
   BuildContext context,
   LedgerRepository repository,
 ) async {
+  // Controllers milik flow ini, bukan state form: tombol aksi dirender
+  // di luar subtree content, jadi tidak bisa membaca lewat
+  // findAncestorStateOfType (selalu null → dialog selalu tutup kosong).
+  // Dispose diserahkan ke _NewCategoryFormState.dispose() — future sheet
+  // selesai saat pop, sebelum animasi keluar tuntas, jadi dispose di sini
+  // bikin controller used-after-disposed saat konten masih rebuild.
+  final nameCtrl = TextEditingController();
+  final limitCtrl = TextEditingController();
   final result = await showQuestDialog<_NewCategory>(
     context,
     title: 'Tambah Kategori Baru',
-    content: _NewCategoryForm(),
+    content: _NewCategoryForm(nameCtrl: nameCtrl, limitCtrl: limitCtrl),
     actions: [
       QuestButton(
         label: 'Batal',
@@ -35,22 +43,16 @@ Future<void> showAddCategoryFlow(
         label: 'Tambah',
         icon: Icons.add_rounded,
         onPressed: () {
-          final state = _NewCategoryForm.maybeOf(context);
           Navigator.pop(
             context,
-            state == null
-                ? null
-                : _NewCategory(
-                    name: state.nameCtrl.text,
-                    limit: state.limitCtrl.text.trim().isEmpty
-                        ? null
-                        : int.tryParse(
-                            state.limitCtrl.text.replaceAll(
-                              RegExp(r'[^0-9]'),
-                              '',
-                            ),
-                          ),
-                  ),
+            _NewCategory(
+              name: nameCtrl.text,
+              limit: limitCtrl.text.trim().isEmpty
+                  ? null
+                  : int.tryParse(
+                      limitCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''),
+                    ),
+            ),
           );
         },
       ),
