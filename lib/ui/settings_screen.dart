@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../capture/pipeline.dart';
+import '../game/mascot.dart';
 import '../game/progress.dart';
 import '../rules/rule_set.dart';
 import '../storage/database.dart';
@@ -41,6 +42,22 @@ class SettingsScreen extends StatelessWidget {
   final VoidCallback? onOpenBon;
   final bool showBack;
 
+  /// Satu baris status streak untuk kartu gamifikasi — tiap kondisi
+  /// singkat agar muat tanpa membungkus.
+  String _streakLine(ProgressSummary? summary, SaverStats? stats) {
+    final streakDays = summary?.streakDays ?? 0;
+    if (summary?.streakPaused ?? false) {
+      return 'Belum mulai · atur batas harian dulu';
+    }
+    if (streakDays > 0) {
+      return '$streakDays hari berturut-turut';
+    }
+    if (stats != null) {
+      return 'Catat rutin untuk mulai streak';
+    }
+    return 'Catat rutin untuk naik level';
+  }
+
   @override
   Widget build(BuildContext context) {
     final q = context.q;
@@ -73,33 +90,112 @@ class SettingsScreen extends StatelessWidget {
               child: QuestCard(
                 child: Row(
                   children: [
+                    // Pochy ikut bereaksi ke kondisi keuangan (mood-aware),
+                    // satu jangkar visual yang sama dengan sheet gamifikasi.
+                    MascotStage(
+                      mood: summary?.mood ?? MascotMood.idle,
+                      size: 56,
+                      glow: SeedColors.honeyBright.withValues(alpha: 0.28),
+                      glowStrength: 0.55,
+                    ),
+                    const SizedBox(width: Spacing.sm),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            stats?.title ?? 'Disiplin mencatat',
-                            style: context.qTitle(17),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          Row(
+                            children: [
+                              if (stats != null) ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: context.q.primarySolid,
+                                    borderRadius:
+                                        BorderRadius.circular(AppRadius.pill),
+                                  ),
+                                  child: Text(
+                                    'Level ${stats.level}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: context.q.onPrimary,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: Spacing.s),
+                              ],
+                              Expanded(
+                                child: Text(
+                                  stats?.title ?? 'Disiplin mencatat',
+                                  style: context.qTitle(15.5),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            [
-                              if (stats != null) 'Level ${stats.level}',
-                              if (streakDays > 0) '$streakDays hari berturut-turut',
-                              if (stats == null && streakDays == 0)
-                                'Catat rutin untuk naik level',
-                            ].join(' · '),
-                            style: context.qSmall(12.5),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          const SizedBox(height: Spacing.xs),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.local_fire_department_rounded,
+                                size: 14,
+                                color: streakDays > 0 && !(summary?.streakPaused ?? false)
+                                    ? context.q.warn
+                                    : context.q.muted,
+                              ),
+                              const SizedBox(width: Spacing.xs),
+                              Expanded(
+                                child: Text(
+                                  _streakLine(summary, stats),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: context.q.muted,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
+                          if (stats != null) ...[
+                            const SizedBox(height: Spacing.s),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: QuestProgressBar(
+                                    value: stats.progress.clamp(0.0, 1.0),
+                                    color: context.q.primary,
+                                    backgroundColor: context.q.surface2,
+                                    minHeight: 6,
+                                  ),
+                                ),
+                                const SizedBox(width: Spacing.s),
+                                Text(
+                                  '${stats.currentXp} / ${stats.nextLevelXp} XP',
+                                  style: TextStyle(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w700,
+                                    color: context.q.muted,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
-                    if (progress != null)
+                    if (progress != null) ...[
+                      const SizedBox(width: Spacing.xs),
                       Icon(Icons.chevron_right_rounded, color: q.muted),
+                    ],
                   ],
                 ),
               ),
