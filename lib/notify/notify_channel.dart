@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// Jembatan ke lapisan native Android (MainActivity.kt →
@@ -60,8 +61,13 @@ class NotifyChannel {
         'title': title,
         'body': body,
       });
-    } on Exception {
-      // Diam.
+    } on Exception catch (e) {
+      // Audit P-11: peringatan batas yang menghilang senyap terlihat
+      // seperti fitur rusak di mata user; MissingPluginException
+      // (platform uji non-Android) tetap diabaikan.
+      if (e is! MissingPluginException) {
+        debugPrint('NotifyChannel.show: $e');
+      }
     }
   }
 }

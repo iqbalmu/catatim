@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../core/budget.dart';
 import '../core/budget_alert.dart';
 import '../storage/repository.dart';
@@ -47,8 +49,10 @@ class BudgetAlertService {
       final message = budgetAlertMessage(plan.hits, thresholdPercent: threshold);
       if (message == null) return;
       await _channel.showBudgetAlert(title: message.title, body: message.body);
-    } catch (_) {
+    } catch (e) {
       // DB tengah ditutup / channel gagal — jangan ganggu pencatatan.
+      // Audit P-11: tetap tercatat di debug console agar tak senyap.
+      debugPrint('BudgetAlertService.evaluate: $e');
     }
   }
 }

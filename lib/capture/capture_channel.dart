@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../models.dart';
@@ -12,11 +13,20 @@ class CaptureChannel {
   static const _method = MethodChannel('catatim/capture');
   static const _events = EventChannel('catatim/capture_events');
 
+  /// Audit P-11: kegagalan channel tidak lagi senyap — nilai default
+  /// tetap dikembalikan, tetapi penyebabnya terlihat di debug console.
+  /// MissingPluginException diabaikan (runner non-Android / unit test).
+  static void _log(String where, Object error) {
+    if (error is MissingPluginException) return;
+    debugPrint('CaptureChannel.$where: $error');
+  }
+
   /// Apakah user sudah memberi akses notifikasi untuk app ini.
   Future<bool> isListenerEnabled() async {
     try {
       return await _method.invokeMethod<bool>('isListenerEnabled') ?? false;
-    } catch (_) {
+    } catch (e) {
+      _log('isListenerEnabled', e);
       return false;
     }
   }
@@ -27,7 +37,8 @@ class CaptureChannel {
       final ms = await _method.invokeMethod<num>('getLastCaptureHeartbeat');
       if (ms == null || ms <= 0) return null;
       return DateTime.fromMillisecondsSinceEpoch(ms.toInt());
-    } catch (_) {
+    } catch (e) {
+      _log('getLastCaptureHeartbeat', e);
       return null;
     }
   }
@@ -51,7 +62,8 @@ class CaptureChannel {
               label: (row['label'] ?? '') as String,
             ),
       ];
-    } catch (_) {
+    } catch (e) {
+      _log('listLaunchableApps', e);
       return const [];
     }
   }
@@ -65,7 +77,8 @@ class CaptureChannel {
       return parseCaptureLines([
         for (final line in lines ?? const <dynamic>[]) line as String,
       ]);
-    } catch (_) {
+    } catch (e) {
+      _log('getActiveNotifications', e);
       return const [];
     }
   }
@@ -85,7 +98,8 @@ class CaptureChannel {
         text: map['text'] as String?,
         path: map['path'] as String?,
       );
-    } catch (_) {
+    } catch (e) {
+      _log('consumeSharedPayload', e);
       return null;
     }
   }
@@ -96,8 +110,10 @@ class CaptureChannel {
   Future<void> setAllowedPackages(Set<String> packages) async {
     try {
       await _method.invokeMethod<void>('setAllowedPackages', packages.toList());
-    } catch (_) {
-      // diabaikan — bukan platform yang didukung
+    } catch (e) {
+      // diabaikan — bukan platform yang didukung (_log memfilter
+      // MissingPluginException); selain itu tercatat di debug console.
+      _log('setAllowedPackages', e);
     }
   }
 
@@ -106,8 +122,10 @@ class CaptureChannel {
   Future<void> learnBankPackage(String packageName) async {
     try {
       await _method.invokeMethod<void>('learnBankPackage', packageName);
-    } catch (_) {
-      // diabaikan — bukan platform yang didukung
+    } catch (e) {
+      // diabaikan — bukan platform yang didukung (_log memfilter
+      // MissingPluginException); selain itu tercatat di debug console.
+      _log('learnBankPackage', e);
     }
   }
 
@@ -132,7 +150,8 @@ class CaptureChannel {
         'postedAt': (postedAt ?? DateTime.now()).millisecondsSinceEpoch,
       });
       return res ?? true;
-    } catch (_) {
+    } catch (e) {
+      _log('simulateNotification', e);
       return false;
     }
   }
@@ -146,7 +165,8 @@ class CaptureChannel {
       return parseCaptureLines([
         for (final line in lines ?? const <dynamic>[]) line as String,
       ]);
-    } catch (_) {
+    } catch (e) {
+      _log('drainQueue', e);
       return const [];
     }
   }
@@ -168,11 +188,13 @@ String encodeCaptureLine(RawCapture capture) => jsonEncode({
   'postedAt': capture.postedAt.millisecondsSinceEpoch,
 });
 
-/// Parse satu JSON line notifikasi; null bila baris korup.
+/// Parse satu JSON line notifikasi; null bila baris korup. Audit P-11:
+/// korupsi tercatat di debug console — sebelumnya dilewati tanpa jejak.
 RawCapture? tryParseCaptureLine(String line) {
   try {
     return RawCapture.fromLine(line);
-  } catch (_) {
+  } catch (e) {
+    debugPrint('tryParseCaptureLine: baris korup dilewati: $e');
     return null;
   }
 }
