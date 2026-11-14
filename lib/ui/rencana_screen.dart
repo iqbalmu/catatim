@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../game/progress.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
+import 'quest.dart';
 import 'rencana_batas.dart';
 
 class RencanaScreen extends StatelessWidget {
@@ -15,17 +16,9 @@ class RencanaScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.q.bg,
-      appBar: AppBar(
-        title: QuestTabEnter(
-          index: 0,
-          child: Text(
-            'Anggaran',
-            style: context.qTitle(20),
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
+      appBar: const QuestHeader(
+        title: 'Anggaran',
+        showBack: true,
       ),
       body: RencanaBatas(repository: repository, progress: progress),
     );

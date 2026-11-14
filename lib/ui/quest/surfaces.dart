@@ -52,30 +52,6 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (showBack) ...[
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: context.q.surface,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: context.q.line),
-                    boxShadow: context.q.cardShadow,
-                  ),
-                  child: IconButton(
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                    icon: Icon(
-                      Icons.arrow_back_rounded,
-                      color: context.q.text,
-                      size: 20,
-                    ),
-                    tooltip: 'Kembali',
-                    onPressed: () => Navigator.maybePop(context),
-                  ),
-                ),
-                const SizedBox(width: Spacing.s),
-              ],
               if (leading != null) ...[
                 leading!,
                 const SizedBox(width: Spacing.s),
@@ -111,6 +87,32 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
               ...actions,
+              // Tombol tutup di pojok kanan — pola close, bukan panah
+              // kembali; gesture sistem Back tetap berfungsi normal.
+              if (showBack) ...[
+                const SizedBox(width: Spacing.s),
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: context.q.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: context.q.line),
+                    boxShadow: context.q.cardShadow,
+                  ),
+                  child: IconButton(
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    icon: Icon(
+                      Icons.close_rounded,
+                      color: context.q.text,
+                      size: 20,
+                    ),
+                    tooltip: 'Tutup',
+                    onPressed: () => Navigator.maybePop(context),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
