@@ -79,6 +79,54 @@ class LaporanScreenState extends State<LaporanScreen> {
   late Stream<List<TxWithCategory>> _prevStream;
   late Stream<List<Account>> _accountsStream;
 
+  // Audit P-3: memo hasil agregasi laporan. _ReportMetrics.compute
+  // O(n log n) dipanggil di setiap build StreamBuilder — termasuk tiap
+  // pindah tab (IndexedStack rebuild semua tab, laporan tetap ter-mount)
+  // dan tiap setState filter — padahal rows/prevRows tidak berubah.
+  // Invalidate: identitas list Drift berubah saat data berubah; selain
+  // itu window, filter akun, dan warna tema ikut jadi kunci.
+  List<TxWithCategory>? _memoRows;
+  List<TxWithCategory>? _memoPrevRows;
+  DateTime? _memoStart;
+  DateTime? _memoEnd;
+  int? _memoAccount;
+  Color? _memoColor;
+  _ReportMetrics? _memoReportValue;
+
+  _ReportMetrics _reportFor(
+    List<TxWithCategory> rows,
+    List<TxWithCategory> prevRows, {
+    required DateTime start,
+    required DateTime endExclusive,
+    required Color uncategorizedColor,
+  }) {
+    final cached = _memoReportValue;
+    if (cached != null &&
+        identical(rows, _memoRows) &&
+        identical(prevRows, _memoPrevRows) &&
+        _memoStart == start &&
+        _memoEnd == endExclusive &&
+        _memoAccount == _accountId &&
+        _memoColor == uncategorizedColor) {
+      return cached;
+    }
+    final report = _ReportMetrics.compute(
+      rows: rows,
+      prevRows: prevRows,
+      start: start,
+      endExclusive: endExclusive,
+      uncategorizedColor: uncategorizedColor,
+    );
+    _memoRows = rows;
+    _memoPrevRows = prevRows;
+    _memoStart = start;
+    _memoEnd = endExclusive;
+    _memoAccount = _accountId;
+    _memoColor = uncategorizedColor;
+    _memoReportValue = report;
+    return report;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -429,9 +477,9 @@ class LaporanScreenState extends State<LaporanScreen> {
                     final rows = curSnap.data ?? const <TxWithCategory>[];
                     final prevRows = prevSnap.data ?? const <TxWithCategory>[];
 
-                    final report = _ReportMetrics.compute(
-                      rows: rows,
-                      prevRows: prevRows,
+                    final report = _reportFor(
+                      rows,
+                      prevRows,
                       start: win.start,
                       endExclusive: win.end,
                       uncategorizedColor: context.q.muted,
