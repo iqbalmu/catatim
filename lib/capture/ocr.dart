@@ -34,9 +34,8 @@ class OcrReceiptData {
 class OcrService {
   const OcrService();
 
-  // Audit P-6: pola didefinisikan sekali — sebelumnya RegExp
-  // dikompilasi di dalam loop per baris (±150–200 kompilasi per nota,
-  // semuanya di main isolate).
+  // Pola dikompilasi sekali — dulu ±150–200 kompilasi RegExp per nota
+  // di main isolate.
   static final _datePrefix = RegExp(r'^\d{1,2}[./\-]\d{1,2}[./\-]\d{2,4}');
   static final _timePrefix = RegExp(r'^\d{2}:\d{2}');
   static final _digitsOnly = RegExp(r'^\d+$');

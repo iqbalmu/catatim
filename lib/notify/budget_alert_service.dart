@@ -51,7 +51,7 @@ class BudgetAlertService {
       await _channel.showBudgetAlert(title: message.title, body: message.body);
     } catch (e) {
       // DB tengah ditutup / channel gagal — jangan ganggu pencatatan.
-      // Audit P-11: tetap tercatat di debug console agar tak senyap.
+      // Tetap tercatat di console agar tak senyap.
       debugPrint('BudgetAlertService.evaluate: $e');
     }
   }

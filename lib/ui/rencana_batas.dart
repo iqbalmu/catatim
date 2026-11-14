@@ -13,7 +13,7 @@ import 'quest.dart';
 
 /// Alur tambah kategori baru + alokasi awal opsional.
 
-// Dipecah ke part files (audit I-01).
+// Dipecah ke part files.
 part 'rencana/cards.dart';
 part 'rencana/dialogs.dart';
 
@@ -21,12 +21,10 @@ Future<void> showAddCategoryFlow(
   BuildContext context,
   LedgerRepository repository,
 ) async {
-  // Controllers milik flow ini, bukan state form: tombol aksi dirender
-  // di luar subtree content, jadi tidak bisa membaca lewat
-  // findAncestorStateOfType (selalu null → dialog selalu tutup kosong).
-  // Dispose diserahkan ke _NewCategoryFormState.dispose() — future sheet
-  // selesai saat pop, sebelum animasi keluar tuntas, jadi dispose di sini
-  // bikin controller used-after-disposed saat konten masih rebuild.
+  // Controllers milik flow ini, bukan state form: tombol aksi dirender di
+  // luar subtree content (findAncestorStateOfType selalu null → dialog
+  // tutup kosong). Dispose diserahkan ke _NewCategoryFormState.dispose()
+  // — dispose di sini bikin controller used-after-disposed.
   final nameCtrl = TextEditingController();
   final limitCtrl = TextEditingController();
   final result = await showQuestDialog<_NewCategory>(

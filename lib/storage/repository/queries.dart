@@ -17,7 +17,7 @@ extension QueriesRepo on LedgerRepository {
       ),
     ]);
     if (start != null && end != null) {
-      // Periode [start, end) — ujung atas eksklusif (audit B-02);
+      // Periode [start, end) — ujung atas eksklusif;
       // transaksi tepat 00:00 bulan berikutnya milik bulan itu sendiri.
       query.where(
         _db.transactions.occurredAt.isBiggerOrEqualValue(start) &

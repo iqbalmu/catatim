@@ -248,7 +248,6 @@ class _OcrScreenState extends State<OcrScreen> {
           .firstOrNull;
       accId = match?.id;
     }
-    // Default to Cash / Tunai
     accId ??=
         accounts.where((a) => a.kind == AccountKind.cash).firstOrNull?.id ??
         accounts.firstOrNull?.id;
@@ -607,7 +606,6 @@ class _OcrScreenState extends State<OcrScreen> {
                       ),
                       const SizedBox(height: Spacing.m),
 
-                      // Nama Toko / Merchant
                       const QuestFieldLabel('Nama Toko / Pihak'),
                       const SizedBox(height: Spacing.xs),
                       TextField(
@@ -619,7 +617,6 @@ class _OcrScreenState extends State<OcrScreen> {
                       ),
                       const SizedBox(height: Spacing.m),
 
-                      // Tanggal & Waktu Struk
                       const QuestFieldLabel('Tanggal & Waktu Transaksi'),
                       const SizedBox(height: Spacing.xs),
                       Semantics(
@@ -661,7 +658,6 @@ class _OcrScreenState extends State<OcrScreen> {
                       ),
                       const SizedBox(height: Spacing.m),
 
-                      // Nominal
                       const QuestFieldLabel('Total Nominal (Rupiah)'),
                       const SizedBox(height: Spacing.xs),
                       TextField(
@@ -674,7 +670,6 @@ class _OcrScreenState extends State<OcrScreen> {
                         onChanged: (_) => setState(() {}),
                       ),
 
-                      // Chip Pilihan Nominal Alternatif
                       if (_candidateAmounts.isNotEmpty) ...[
                         const SizedBox(height: Spacing.s),
                         Text(
@@ -715,7 +710,6 @@ class _OcrScreenState extends State<OcrScreen> {
                       ],
                       const SizedBox(height: Spacing.m),
 
-                      // Kategori Cerdas
                       StreamBuilder<List<Category>>(
                         stream: widget.pipeline.repository.watchCategories(),
                         builder: (context, catSnap) {
@@ -751,7 +745,6 @@ class _OcrScreenState extends State<OcrScreen> {
                       ),
                       const SizedBox(height: Spacing.m),
 
-                      // Akun Pembayaran
                       StreamBuilder<List<Account>>(
                         stream: widget.pipeline.repository.watchAccounts(),
                         builder: (context, accSnap) {
@@ -790,7 +783,6 @@ class _OcrScreenState extends State<OcrScreen> {
                       ),
                       const SizedBox(height: Spacing.m),
 
-                      // Arah
                       Text(
                         'Arah Transaksi',
                         style: context
@@ -819,7 +811,6 @@ class _OcrScreenState extends State<OcrScreen> {
                 ),
                 const SizedBox(height: Spacing.m),
 
-                // Collapsible raw OCR text
                 QuestCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -864,7 +855,6 @@ class _OcrScreenState extends State<OcrScreen> {
                 ),
                 const SizedBox(height: Spacing.l),
 
-                // ── Tombol Aksi ──
                 QuestButton(
                   label: _isSaving ? 'Memproses...' : 'Langsung Catat Transaksi',
                   icon: Icons.check_circle_rounded,

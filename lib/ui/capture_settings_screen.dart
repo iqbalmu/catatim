@@ -103,7 +103,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
   Future<void> _toggleBank(BankRules bank, bool connected) async {
     await widget.repository.setBankConnected(bank.id, connected);
     if (connected) {
-      // Pastikan ada akun padanan di database
       await widget.repository.ensureBankAccount(
         bankId: bank.id,
         name: bank.displayName,
@@ -349,7 +348,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
 
           return Column(
             children: [
-              // ── Sub-Tabs Segmented Bar ──
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   Spacing.m,
@@ -378,7 +376,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                 ),
               ),
 
-              // ── PageView Konten Tab ──
               Expanded(
                 child: PageView(
                   controller: _pageCtrl,
@@ -397,9 +394,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     );
   }
 
-  // ═════════════════════════════════════════════════════════════════════════════
-  // TAB 0: BANK & E-WALLET
-  // ═════════════════════════════════════════════════════════════════════════════
+  // Tab 0: bank & e-wallet.
   Widget _buildBankTab(Set<String> connected, QuestPalette q) {
     final allBanks = widget.ruleSet.banks;
     final filtered = _searchQuery.isEmpty
@@ -447,7 +442,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         ),
         const SizedBox(height: Spacing.m),
 
-        // Search Bar
         TextField(
           controller: _searchCtrl,
           onChanged: (v) =>
@@ -468,7 +462,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         ),
         const SizedBox(height: Spacing.s),
 
-        // 1. Bank Terhubung (Aktif)
         if (connectedList.isNotEmpty) ...[
           QuestSectionHeader(
             title: 'Terhubung (${connectedList.length})',
@@ -488,7 +481,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
           const SizedBox(height: Spacing.m),
         ],
 
-        // 2. Bank Tersedia (Belum Terhubung)
         if (availableList.isNotEmpty) ...[
           QuestSectionHeader(
             title: connectedList.isNotEmpty
@@ -510,7 +502,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
           const SizedBox(height: Spacing.m),
         ],
 
-        // Jika pencarian kosong
         if (connectedList.isEmpty && availableList.isEmpty) ...[
           const Padding(
             padding: EdgeInsets.symmetric(vertical: Spacing.xl),
@@ -522,7 +513,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
           ),
         ],
 
-        // 3. Mode Belajar (App Lain dari HP)
         const QuestSectionHeader(title: 'App Lain: Mode Belajar'),
         QuestCard(
           child: Column(
@@ -631,9 +621,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     );
   }
 
-  // ═════════════════════════════════════════════════════════════════════════════
-  // TAB 1: IZIN & SISTEM
-  // ═════════════════════════════════════════════════════════════════════════════
+  // Tab 1: izin & sistem.
   Widget _buildPermissionTab(Set<String> connected, QuestPalette q) {
     return ListView(
       key: const PageStorageKey('capture_tab_permissions'),
@@ -644,12 +632,10 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         Spacing.xl,
       ),
       children: [
-        // 1. Indikator Kesehatan Penangkap (Lampu Sehat)
         const QuestSectionHeader(title: 'Kesehatan Penangkap (Lampu Sehat)'),
         _buildLampuSehatCard(connected, q),
         const SizedBox(height: Spacing.m),
 
-        // 2. Status Izin Notifikasi Sistem
         const QuestSectionHeader(title: 'Izin Akses Notifikasi'),
         QuestCard(
           child: Column(
@@ -730,7 +716,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         ),
         const SizedBox(height: Spacing.m),
 
-        // 2. Ketahanan Latar Belakang (Baterai)
         const QuestSectionHeader(title: 'Ketahanan Latar Belakang'),
         QuestCard(
           child: Column(
@@ -777,7 +762,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         ),
         const SizedBox(height: Spacing.m),
 
-        // 3. Panduan Khusus per Merk HP (Vendor Tips)
         const QuestSectionHeader(title: 'Panduan Khusus Vendor HP'),
         _buildVendorGuideCard(q),
       ],
@@ -1052,9 +1036,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     );
   }
 
-  // ═════════════════════════════════════════════════════════════════════════════
-  // TAB 2: ATURAN & ALAT
-  // ═════════════════════════════════════════════════════════════════════════════
+  // Tab 2: aturan & alat.
   Widget _buildRulesAndDiagnosticsTab(Set<String> connected, QuestPalette q) {
     return ListView(
       key: const PageStorageKey('capture_tab_rules'),
@@ -1065,7 +1047,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         Spacing.xl,
       ),
       children: [
-        // 1. Alat Diagnostik & Pemulihan
         const QuestSectionHeader(title: 'Alat Diagnostik & Pemulihan'),
         QuestCard(
           padding: EdgeInsets.zero,
@@ -1163,7 +1144,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         ),
         const SizedBox(height: Spacing.m),
 
-        // 2. Pola Notifikasi yang Diabaikan (Blacklist)
         Row(
           children: [
             const Expanded(
@@ -1302,7 +1282,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         ),
         const SizedBox(height: Spacing.m),
 
-        // 3. Aturan & Template Kustom
         const QuestSectionHeader(title: 'Aturan & Template Kustom'),
         Text(
           'Template yang kamu buat dari penyesuaian draf/log. Pola ini diprioritaskan saat memproses notifikasi bank.',
@@ -1402,7 +1381,6 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         ),
         const SizedBox(height: Spacing.m),
 
-        // 4. Duplikat yang Diabaikan (Dedup)
         StreamBuilder<List<CaptureLog>>(
           stream: _ignoredDuplicatesStream,
           builder: (context, dupSnap) {

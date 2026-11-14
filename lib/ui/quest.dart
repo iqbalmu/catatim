@@ -11,7 +11,7 @@ import '../theme/tokens.dart';
 /// chip game, header custom, nav custom. Satu-satunya tempat gaya visual
 /// didefinisikan agar tidak ada default Material yang bocor.
 
-// Dipecah ke part files (audit I-01) — satu library, semua nama tetap.
+// Dipecah ke part files — satu library, semua nama tetap.
 part 'quest/controls.dart';
 part 'quest/card.dart';
 part 'quest/segmented.dart';

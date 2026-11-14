@@ -25,7 +25,7 @@ import 'transaction_tile.dart';
 
 /// Header bagian atas Beranda: Brand logo + streak chip netral + lonceng + settings
 
-// Dipecah ke part files (audit I-01).
+// Dipecah ke part files.
 part 'home_cards/daily_pace_hero.dart';
 part 'home_cards/draft_banner.dart';
 part 'home_cards/recent_tx.dart';
@@ -194,7 +194,7 @@ class _HomeTopBarState extends State<HomeTopBar> {
             stream: _draftsStream,
             builder: (context, snapshot) {
               final draftCount = (snapshot.data ?? const []).length;
-              // Label semantik untuk pembaca layar (audit H-01).
+              // Label semantik untuk pembaca layar.
               return Tooltip(
                 message: 'Notifikasi',
                 child: Semantics(

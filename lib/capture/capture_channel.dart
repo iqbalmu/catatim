@@ -13,8 +13,7 @@ class CaptureChannel {
   static const _method = MethodChannel('catatim/capture');
   static const _events = EventChannel('catatim/capture_events');
 
-  /// Audit P-11: kegagalan channel tidak lagi senyap — nilai default
-  /// tetap dikembalikan, tetapi penyebabnya terlihat di debug console.
+  /// Nilai default tetap dikembalikan; penyebabnya terlihat di console.
   /// MissingPluginException diabaikan (runner non-Android / unit test).
   static void _log(String where, Object error) {
     if (error is MissingPluginException) return;
@@ -188,8 +187,7 @@ String encodeCaptureLine(RawCapture capture) => jsonEncode({
   'postedAt': capture.postedAt.millisecondsSinceEpoch,
 });
 
-/// Parse satu JSON line notifikasi; null bila baris korup. Audit P-11:
-/// korupsi tercatat di debug console — sebelumnya dilewati tanpa jejak.
+/// Parse satu JSON line notifikasi; null bila korup (tercatat di console).
 RawCapture? tryParseCaptureLine(String line) {
   try {
     return RawCapture.fromLine(line);

@@ -91,9 +91,8 @@ class TransaksiScreenState extends State<TransaksiScreen> {
   int? _selectedAccountId;
   Direction? _selectedDirection;
 
-  // Stream bulan di-cache di state (audit O-01): tanpa ini tiap setState
-  // (termasuk tiap keystroke pencarian) membangun stream Drift baru →
-  // unsubscribe + re-query + skeleton berkedip.
+  // Stream bulan di-cache di state: tanpa ini tiap setState membangun
+  // stream Drift baru → unsubscribe + re-query + skeleton berkedip.
   Stream<List<TxWithCategory>>? _txStream;
   (DateTime, int?)? _txStreamKey;
 
@@ -208,7 +207,6 @@ class TransaksiScreenState extends State<TransaksiScreen> {
 
     return Column(
       children: [
-        // Top Header: Title (Kiri) + Action Icons (Kanan)
         QuestTabEnter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -221,7 +219,6 @@ class TransaksiScreenState extends State<TransaksiScreen> {
               children: [
                 Text('Transaksi', style: context.qTitle(20)),
                 const Spacer(),
-                // Search Toggle
                 Container(
                   width: 36,
                   height: 36,
@@ -264,7 +261,6 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                   ),
                 ),
                 const SizedBox(width: Spacing.xs),
-                // Filter Drawer Button
                 Builder(
                   builder: (context) {
                     final hasFilter = _selectedDirection != null ||
@@ -322,7 +318,6 @@ class TransaksiScreenState extends State<TransaksiScreen> {
           ),
         ),
 
-        // Search Input (Muncul saat ikon cari ditekan)
         if (_isSearchVisible)
           QuestTabEnter(
             index: 1,
@@ -359,7 +354,6 @@ class TransaksiScreenState extends State<TransaksiScreen> {
             ),
           ),
 
-        // Full-Width Month Navigator Bar (seperti di Halaman Laporan)
         QuestTabEnter(
           index: 2,
           child: Padding(
@@ -454,7 +448,6 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                   ),
                 ),
 
-                // Active Filter Quick Reset Pill (bila ada filter arah/akun)
                 if (_selectedDirection != null || _selectedAccountId != null) ...[
                   const SizedBox(height: Spacing.xs),
                   Align(
@@ -521,7 +514,6 @@ class TransaksiScreenState extends State<TransaksiScreen> {
         ),
         const SizedBox(height: Spacing.sm),
 
-        // Transactions Stream List & Monthly Cashflow Summary
         Expanded(
           child: StreamBuilder<List<TxWithCategory>>(
             stream: _txStream,
@@ -646,9 +638,8 @@ class TransaksiScreenState extends State<TransaksiScreen> {
 
                         return QuestTabEnter(
                           key: entry.key,
-                          // Cap 8 langkah: tanpa ini, 30+ transaksi menunda
-                          // item terakhir >2 detik dan kaskade masuk terlihat
-                          // seperti jarak antar item yang tidak konsisten.
+                          // Cap 8 langkah stagger: tanpa ini 30+ transaksi
+                          // menunda item terakhir >2 detik, kaskade tak konsisten.
                           index: 4 + i.clamp(0, 8),
                           replayKey: _filterRevision,
                           child: child,

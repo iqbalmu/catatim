@@ -20,7 +20,7 @@ import 'transaction_sheet.dart';
 import 'transaction_tile.dart';
 import 'quest.dart';
 
-// Bagian-bagian kartu laporan dipecah ke part files (audit I-01) —
+// Bagian-bagian kartu laporan dipecah ke part files —
 // satu library, nama privat tetap berlaku lintas file.
 part 'laporan/metrics.dart';
 part 'laporan/executive_summary.dart';
@@ -80,12 +80,9 @@ class LaporanScreenState extends State<LaporanScreen> {
   late Stream<List<TxWithCategory>> _prevStream;
   late Stream<List<Account>> _accountsStream;
 
-  // Audit P-3: memo hasil agregasi laporan. _ReportMetrics.compute
-  // O(n log n) dipanggil di setiap build StreamBuilder — termasuk tiap
-  // pindah tab (IndexedStack rebuild semua tab, laporan tetap ter-mount)
-  // dan tiap setState filter — padahal rows/prevRows tidak berubah.
-  // Invalidate: identitas list Drift berubah saat data berubah; selain
-  // itu window, filter akun, dan warna tema ikut jadi kunci.
+  // Memo agregasi: O(n log n), jangan dihitung ulang per build —
+  // IndexedStack tetap membuild tab tersembunyi. Invalidate saat
+  // identitas rows berubah atau window/akun/tema berganti.
   List<TxWithCategory>? _memoRows;
   List<TxWithCategory>? _memoPrevRows;
   DateTime? _memoStart;
@@ -496,7 +493,6 @@ class LaporanScreenState extends State<LaporanScreen> {
                         (isPushed ? Spacing.xl : 104) + MediaQuery.paddingOf(context).bottom,
                       ),
                       children: [
-                        // ── Top Bar: Title + Account Filter ────────────────
                         QuestTabEnter(
                           child:
                         Row(
@@ -610,7 +606,6 @@ class LaporanScreenState extends State<LaporanScreen> {
                         ),
                         const SizedBox(height: Spacing.m),
 
-                        // ── Dedicated Full-Width Period Navigator Bar ──────
                         QuestTabEnter(
                           index: 1,
                           child:
@@ -710,7 +705,6 @@ class LaporanScreenState extends State<LaporanScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                // ── 01 · RINGKASAN ARUS KAS ────────────────
                                 QuestTabEnter(
                                   index: 2,
                                   child: Column(
@@ -736,7 +730,6 @@ class LaporanScreenState extends State<LaporanScreen> {
                                     ),
                                   )
                                 else ...[
-                                  // ── 02 · TREN ARUS KAS ───────────────────
                                   QuestTabEnter(
                                     index: 3,
                                     child: Column(
@@ -768,7 +761,6 @@ class LaporanScreenState extends State<LaporanScreen> {
                                   ),
                                   const SizedBox(height: Spacing.m),
 
-                                  // ── 03 · KOMPOSISI KATEGORI ──────────────
                                   QuestTabEnter(
                                     index: 4,
                                     child: Column(
@@ -805,7 +797,6 @@ class LaporanScreenState extends State<LaporanScreen> {
                                     ),
                                   ),
 
-                                  // ── 04 · PENGELUARAN TERBESAR ────────────
                                   if (report.topExpenses.isNotEmpty) ...[
                                     const SizedBox(height: Spacing.m),
                                     QuestTabEnter(
@@ -848,7 +839,3 @@ class LaporanScreenState extends State<LaporanScreen> {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// DATA COMPUTATION MODEL
-// ═══════════════════════════════════════════════════════════════════════════

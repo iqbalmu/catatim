@@ -10,7 +10,7 @@ import '../rules/rule_set.dart' show CustomTemplate;
 import 'database.dart';
 
 
-// Dipecah ke part files (audit I-01) — satu library, semua nama tetap.
+// Dipecah ke part files — satu library, semua nama tetap.
 part 'repository/capture_logs.dart';
 part 'repository/manual_transactions.dart';
 part 'repository/categories.dart';

@@ -11,7 +11,7 @@ import 'quest.dart';
 import 'restore_flow.dart';
 
 /// App utama saat database tak bisa dibuka dengan kunci perangkat ini
-/// — mis. data dipulihkan/pindah ke HP lain tanpa kuncinya (audit A-06).
+/// — mis. data dipulihkan/pindah ke HP lain tanpa kuncinya.
 class CatatIMLockedApp extends StatelessWidget {
   const CatatIMLockedApp({super.key});
 

@@ -41,8 +41,8 @@ class _BonScreenState extends State<BonScreen> {
   int _bonSubTab = 0; // 0 = Belum Lunas, 1 = Lunas
   late final PageController _bonPageCtrl = PageController(initialPage: _bonSubTab);
 
-  // Stream di-hoist dari build (audit O-02): tanpa ini tiap geser
-  // PageView / ganti sub-tab membuat ulang 4 stream Drift sekaligus.
+  // Stream di-hoist dari build: tanpa ini tiap geser PageView membuat
+  // ulang 4 stream Drift sekaligus.
   late final Stream<List<Bon>> _bonsStream = widget.repository.watchBons();
   late final Stream<List<Category>> _categoriesStream =
       widget.repository.watchCategories();
@@ -270,7 +270,6 @@ class _BonScreenState extends State<BonScreen> {
         bottom: false,
         child: Column(
           children: [
-            // Header
             QuestTabEnter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
@@ -307,7 +306,6 @@ class _BonScreenState extends State<BonScreen> {
               ),
             ),
 
-            // Piutang vs Utang Summary Cards
             StreamBuilder<List<Bon>>(
               stream: _bonsStream,
               builder: (context, snapshot) {
@@ -472,7 +470,6 @@ class _BonScreenState extends State<BonScreen> {
             ),
             const SizedBox(height: Spacing.s),
 
-            // Sub Tabs: [Belum Lunas] vs [Lunas] via QuestSegmented
             QuestTabEnter(
               index: 3,
               child: Padding(
@@ -499,7 +496,7 @@ class _BonScreenState extends State<BonScreen> {
             ),
             const SizedBox(height: Spacing.s),
 
-            // Bon List via PageView for smooth horizontal slide transitions
+            // PageView: geser antar sub-tab harus mulus horizontal.
             Expanded(
               child: StreamBuilder<List<Bon>>(
                 stream: _bonsStream,
@@ -714,7 +711,6 @@ class _BonScreenState extends State<BonScreen> {
                           ),
                         ),
                       const SizedBox(height: 4),
-                      // Quick Settle Button
                       Semantics(
                         button: true,
                         label:

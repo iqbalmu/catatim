@@ -186,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         if (_tab != 0) _switchTab(0);
       },
       child: AnnotatedRegion<SystemUiOverlayStyle>(
-        // Edge-to-edge (audit A-03): ikon status bar kontras dengan tema.
+        // Edge-to-edge: ikon status bar kontras dengan tema.
         value: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness:

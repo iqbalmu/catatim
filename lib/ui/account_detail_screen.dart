@@ -322,7 +322,6 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // ── Header Kompak: Icon, Nama, Status, & Aksi ──
                         Row(
                           children: [
                             Container(
@@ -385,7 +384,6 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                         Divider(height: 1, thickness: 1, color: q.line),
                         const SizedBox(height: Spacing.s),
 
-                        // ── Strip Saldo Ringkas & Padat ──
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
@@ -457,7 +455,6 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                           ),
                         ),
 
-                        // ── Notifikasi Otomatis (Hanya bila akun Bank/E-wallet) ──
                         if (bank != null) ...[
                           const SizedBox(height: Spacing.s),
                           _AutoReadCard(
@@ -469,7 +466,6 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                           ),
                         ],
 
-                        // ── Form Input Langsung & Padat ──
                         if (_loaded) ...[
                           const SizedBox(height: Spacing.m),
                           const QuestFieldLabel('Nama Tampilan'),

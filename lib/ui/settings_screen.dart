@@ -223,7 +223,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ),
-          // ── Grup 2: PENGATURAN & SISTEM ──
           QuestTabEnter(
             index: 2,
             child: Column(
@@ -234,7 +233,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   padding: EdgeInsets.zero,
                   child: Column(
                     children: [
-                      // 1. Tema Tampilan (Light / Dark / System)
                       StreamBuilder<ThemeMode>(
                         stream: _themeModeStream,
                         initialData: ThemeMode.system,
@@ -282,7 +280,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       Divider(height: 1, thickness: 1, color: q.line),
 
-                      // 2. Capture Notifikasi Bank
                       QuestListTile(
                         leading: const _SettingIcon(icon: Icons.notifications_active_rounded),
                         title: Text(
@@ -310,7 +307,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       Divider(height: 1, thickness: 1, color: q.line),
 
-                      // 3. Peringatan Batas (notifikasi Android)
                       StreamBuilder<bool>(
                         stream: _budgetAlertsStream,
                         initialData: false,
@@ -338,7 +334,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       Divider(height: 1, thickness: 1, color: q.line),
 
-                      // 4. Backup & Pulihkan Data
                       QuestListTile(
                         leading: const _SettingIcon(icon: Icons.shield_outlined),
                         title: Text(
@@ -363,7 +358,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       Divider(height: 1, thickness: 1, color: q.line),
 
-                      // 5. Isi Data Contoh (hanya build debug)
                       if (kDebugMode) ...[
                         Divider(height: 1, thickness: 1, color: q.line),
                         QuestListTile(
@@ -384,7 +378,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ],
 
-                      // 6. Kosongkan Data Aplikasi (Danger Zone di bagian paling akhir)
                       QuestListTile(
                         leading: const _SettingIcon(icon: Icons.delete_forever_rounded, danger: true),
                         title: Text(

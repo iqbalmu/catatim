@@ -230,5 +230,3 @@ IconData _iconForCategory(Category? cat) {
     _ => Icons.category_rounded,
   };
 }
-
-// ═══════════════════════════════════════════════════════════════════════════

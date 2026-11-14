@@ -132,14 +132,14 @@ class CapturePipeline extends ChangeNotifier {
       await _tail;
     } catch (e) {
       // drain gagal (channel belum siap) — live stream tetap dipasang.
-      // Audit P-11: kegagalan catch-up antrean tidak boleh senyap.
+      // Kegagalan catch-up antrean tidak boleh senyap.
       debugPrint('CapturePipeline.drainQueue: $e');
     }
     _subscription = channel.stream().listen(
       _submit,
       onError: (Object e) {
-        // Audit P-11: event sink native mati = capture berhenti; tanpa
-        // log ini gagalnya tak terbedakan dari "memang tidak ada notif".
+        // Event sink mati = capture berhenti; log agar tak tertukar
+        // dengan "memang tidak ada notif".
         debugPrint('CapturePipeline.stream error: $e');
       },
     );
@@ -218,8 +218,7 @@ class CapturePipeline extends ChangeNotifier {
       handledCount++;
       notifyListeners();
     } catch (e) {
-      // Audit P-11: error asli dicatat — bug DB/pipeline dulu tampak
-      // sebagai "draf mentah misterius" tanpa penjelasan.
+      // Log error asli — dulu bug DB tampak sebagai "draf mentah misterius".
       debugPrint('CapturePipeline._handle(${raw.packageName}): $e');
       try {
         await repository.recordUnparsedCapture(raw);

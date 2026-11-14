@@ -1,9 +1,5 @@
 part of '../laporan_screen.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// SHEETS: ACCOUNT OPTION & PERIOD PICKER
-// ═══════════════════════════════════════════════════════════════════════════
-
 class _AccountOptionTile extends StatelessWidget {
   const _AccountOptionTile({
     required this.label,

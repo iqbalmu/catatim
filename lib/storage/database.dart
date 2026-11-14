@@ -222,7 +222,7 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 11) {
         // Index kolom panas & komposit: query periode/watch, filter akun,
-        // serta kalkulasi saldo tidak lagi full table scan (audit E-02 & perf).
+        // serta kalkulasi saldo tidak lagi full table scan.
         await customStatement(
           'CREATE INDEX IF NOT EXISTS idx_transactions_occurred_at '
           'ON transactions (occurred_at)',
@@ -271,7 +271,7 @@ class AppDatabase extends _$AppDatabase {
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
-      // Self-heal index v11 (audit E-02 & optimasi performa) untuk DB baru maupun lama.
+      // Self-heal index v11 untuk DB baru maupun lama.
       await customStatement(
         'CREATE INDEX IF NOT EXISTS idx_transactions_occurred_at '
         'ON transactions (occurred_at)',

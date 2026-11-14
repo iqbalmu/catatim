@@ -520,7 +520,6 @@ class _DraftInboxViewState extends State<DraftInboxView> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header Transaksi
               Row(
                 children: [
                   Container(
@@ -558,7 +557,6 @@ class _DraftInboxViewState extends State<DraftInboxView> {
               ),
               const SizedBox(height: Spacing.m),
 
-              // Nominal Card
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: Spacing.m,
@@ -617,7 +615,6 @@ class _DraftInboxViewState extends State<DraftInboxView> {
               ),
               const SizedBox(height: Spacing.m),
 
-              // Detail Pesan Notifikasi Asli
               if (rawBody.isNotEmpty || rawTitle.isNotEmpty) ...[
                 Container(
                   padding: const EdgeInsets.all(Spacing.m),
@@ -675,7 +672,6 @@ class _DraftInboxViewState extends State<DraftInboxView> {
                 const SizedBox(height: Spacing.s),
               ],
 
-              // Action Buttons
               if (!isUnparsed) ...[
                 QuestButton(
                   label: 'Catat Transaksi',
@@ -780,7 +776,6 @@ class _DraftInboxViewState extends State<DraftInboxView> {
             Spacing.m,
           ),
           children: [
-            // Pairs
             for (var i = 0; i < pairs.length; i++)
               FutureBuilder<String>(
                 future: _bankName(pairs[i].outDraft.bankId),
@@ -798,7 +793,6 @@ class _DraftInboxViewState extends State<DraftInboxView> {
                 ),
               ),
 
-            // Singles
             for (var i = 0; i < singles.length; i++)
               FutureBuilder<String>(
                 future: _bankName(singles[i].bankId),

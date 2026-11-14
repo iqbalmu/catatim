@@ -62,9 +62,8 @@ class NotifyChannel {
         'body': body,
       });
     } on Exception catch (e) {
-      // Audit P-11: peringatan batas yang menghilang senyap terlihat
-      // seperti fitur rusak di mata user; MissingPluginException
-      // (platform uji non-Android) tetap diabaikan.
+      // Peringatan yang hilang senyap terlihat seperti fitur rusak;
+      // MissingPluginException (runner non-Android) tetap diabaikan.
       if (e is! MissingPluginException) {
         debugPrint('NotifyChannel.show: $e');
       }

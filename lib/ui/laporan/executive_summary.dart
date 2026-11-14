@@ -1,8 +1,5 @@
 part of '../laporan_screen.dart';
 
-// SECTION HEADER & CARDS
-// ═══════════════════════════════════════════════════════════════════════════
-
 class _ReportSectionHeader extends StatelessWidget {
   const _ReportSectionHeader({
     this.step,
