@@ -77,7 +77,6 @@ class _BankAccountsScreenState extends State<BankAccountsScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -120,7 +119,8 @@ class _BankAccountsScreenState extends State<BankAccountsScreen> {
                           index: 1,
                           child: QuestEmpty(
                             title: 'Belum ada akun',
-                            hint: 'Yuk mulai dengan menambahkan dompet tunai, '
+                            hint:
+                                'Yuk mulai dengan menambahkan dompet tunai, '
                                 'atau hubungkan bank dan e-walletmu.',
                             actionLabel: 'Tambah akun',
                             onAction: () => _openAddSheet(context),
@@ -132,9 +132,11 @@ class _BankAccountsScreenState extends State<BankAccountsScreen> {
                             index: 1 + i,
                             child: _AccountTile(
                               account: accounts[i],
-                              balance: balances[accounts[i].id] ??
+                              balance:
+                                  balances[accounts[i].id] ??
                                   accounts[i].openingBalance,
-                              connected: accounts[i].bankId != null &&
+                              connected:
+                                  accounts[i].bankId != null &&
                                   connected.contains(accounts[i].bankId),
                               onTap: () => _openDetail(context, accounts[i]),
                             ),
@@ -158,23 +160,25 @@ class _BankAccountsScreenState extends State<BankAccountsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                      const QuestSectionHeader(title: 'Kalau ada kendala'),
-                      QuestCard(
-                        padding: EdgeInsets.zero,
-                        child: Column(
-                          children: [
-                            _CareRow(
-                              icon: Icons.battery_saver_rounded,
-                              color: context.q.text,
-                              title: 'Cek pengaturan baterai',
-                              subtitle:
-                                  'Kalau HP-mu sering menutup aplikasi '
-                                  'di belakang',
-                              onTap: pipeline.channel.openBatterySettings,
+                            const QuestSectionHeader(
+                              title: 'Kalau ada kendala',
                             ),
-                          ],
-                        ),
-                      ),
+                            QuestCard(
+                              padding: EdgeInsets.zero,
+                              child: Column(
+                                children: [
+                                  _CareRow(
+                                    icon: Icons.battery_saver_rounded,
+                                    color: context.q.text,
+                                    title: 'Cek pengaturan baterai',
+                                    subtitle:
+                                        'Kalau HP-mu sering menutup aplikasi '
+                                        'di belakang',
+                                    onTap: pipeline.channel.openBatterySettings,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -313,7 +317,9 @@ class _AccountTile extends StatelessWidget {
                       if (connected || account.bankId != null)
                         Text(
                           connected ? ' · Terhubung' : ' · Belum terhubung',
-                          style: context.qSmall(11.5).copyWith(
+                          style: context
+                              .qSmall(11.5)
+                              .copyWith(
                                 color: connected ? q.good : q.muted,
                                 fontWeight: FontWeight.w600,
                               ),

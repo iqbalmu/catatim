@@ -161,7 +161,8 @@ class LaporanScreenState extends State<LaporanScreen> {
 
   void _syncStreams() {
     final win = _window;
-    final key = '${win.start.millisecondsSinceEpoch}|'
+    final key =
+        '${win.start.millisecondsSinceEpoch}|'
         '${win.end.millisecondsSinceEpoch}|$_accountId';
     if (key == _streamKey) return;
     _streamKey = key;
@@ -181,7 +182,11 @@ class LaporanScreenState extends State<LaporanScreen> {
       if (isCurrentMonth) {
         final daysElapsed = now.day;
         final prevMonthEnd = DateTime(prevMonth.year, prevMonth.month + 1);
-        final fairEnd = DateTime(prevMonth.year, prevMonth.month, daysElapsed + 1);
+        final fairEnd = DateTime(
+          prevMonth.year,
+          prevMonth.month,
+          daysElapsed + 1,
+        );
         prevWin = (
           start: prevMonth,
           end: fairEnd.isBefore(prevMonthEnd) ? fairEnd : prevMonthEnd,
@@ -236,18 +241,21 @@ class LaporanScreenState extends State<LaporanScreen> {
   }
 
   Future<void> _openPeriodPicker() async {
-    final picked = await showModalBottomSheet<({DateTime? month, DateTimeRange? range})>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: context.q.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
-      ),
-      builder: (_) => _LaporanPeriodSheet(
-        initialMonth: _month,
-        initialRange: _customRange,
-      ),
-    );
+    final picked =
+        await showModalBottomSheet<({DateTime? month, DateTimeRange? range})>(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: context.q.surface,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppRadius.sheet),
+            ),
+          ),
+          builder: (_) => _LaporanPeriodSheet(
+            initialMonth: _month,
+            initialRange: _customRange,
+          ),
+        );
     if (picked == null || !mounted) return;
     unawaited(HapticFeedback.selectionClick());
     setState(() {
@@ -269,7 +277,9 @@ class LaporanScreenState extends State<LaporanScreen> {
       isScrollControlled: true,
       backgroundColor: context.q.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.sheet),
+        ),
       ),
       builder: (ctx) => SafeArea(
         child: ConstrainedBox(
@@ -277,7 +287,12 @@ class LaporanScreenState extends State<LaporanScreen> {
             maxHeight: MediaQuery.sizeOf(ctx).height * 0.75,
           ),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.s, Spacing.m, Spacing.m),
+            padding: const EdgeInsets.fromLTRB(
+              Spacing.m,
+              Spacing.s,
+              Spacing.m,
+              Spacing.m,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,7 +332,8 @@ class LaporanScreenState extends State<LaporanScreen> {
                             },
                             icon: switch (acc.kind) {
                               AccountKind.bank => Icons.account_balance_rounded,
-                              AccountKind.ewallet => Icons.phone_android_rounded,
+                              AccountKind.ewallet =>
+                                Icons.phone_android_rounded,
                               AccountKind.cash => Icons.payments_outlined,
                             },
                             selected: _accountId == acc.id,
@@ -348,7 +364,9 @@ class LaporanScreenState extends State<LaporanScreen> {
       isScrollControlled: true,
       backgroundColor: context.q.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.sheet),
+        ),
       ),
       builder: (ctx) => DraggableScrollableSheet(
         expand: false,
@@ -358,7 +376,12 @@ class LaporanScreenState extends State<LaporanScreen> {
         builder: (ctx, scrollCtrl) => Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.s, Spacing.m, Spacing.s),
+              padding: const EdgeInsets.fromLTRB(
+                Spacing.m,
+                Spacing.s,
+                Spacing.m,
+                Spacing.s,
+              ),
               child: Column(
                 children: [
                   Container(
@@ -459,9 +482,10 @@ class LaporanScreenState extends State<LaporanScreen> {
             final accounts = accSnap.data ?? const <Account>[];
             final activeAccount = _accountId == null
                 ? null
-                : accounts
-                      .cast<Account?>()
-                      .firstWhere((a) => a?.id == _accountId, orElse: () => null);
+                : accounts.cast<Account?>().firstWhere(
+                    (a) => a?.id == _accountId,
+                    orElse: () => null,
+                  );
 
             return StreamBuilder<List<TxWithCategory>>(
               stream: _currentStream,
@@ -483,212 +507,235 @@ class LaporanScreenState extends State<LaporanScreen> {
                       uncategorizedColor: context.q.muted,
                     );
 
-                    final isPushed = widget.showBack || Navigator.canPop(context);
+                    final isPushed =
+                        widget.showBack || Navigator.canPop(context);
 
                     return ListView(
                       padding: EdgeInsets.fromLTRB(
                         Spacing.m,
                         Spacing.s,
                         Spacing.m,
-                        (isPushed ? Spacing.xl : 104) + MediaQuery.paddingOf(context).bottom,
+                        (isPushed ? Spacing.xl : 104) +
+                            MediaQuery.paddingOf(context).bottom,
                       ),
                       children: [
                         QuestTabEnter(
-                          child:
-                        Row(
-                          children: [
-                            if (isPushed) ...[
-                              Padding(
-                                padding: const EdgeInsets.only(right: Spacing.s),
-                                child: Container(
-                                  width: 38,
-                                  height: 38,
-                                  decoration: BoxDecoration(
-                                    color: context.q.surface,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: context.q.line),
-                                    boxShadow: context.q.cardShadow,
+                          child: Row(
+                            children: [
+                              if (isPushed) ...[
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    right: Spacing.s,
                                   ),
-                                  child: IconButton(
-                                    visualDensity: VisualDensity.compact,
-                                    padding: EdgeInsets.zero,
-                                    tooltip: 'Kembali',
-                                    icon: Icon(
-                                      Icons.arrow_back_rounded,
-                                      color: context.q.text,
-                                      size: 20,
+                                  child: Container(
+                                    width: 38,
+                                    height: 38,
+                                    decoration: BoxDecoration(
+                                      color: context.q.surface,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: context.q.line),
+                                      boxShadow: context.q.cardShadow,
                                     ),
-                                    onPressed: () => Navigator.maybePop(context),
+                                    child: IconButton(
+                                      visualDensity: VisualDensity.compact,
+                                      padding: EdgeInsets.zero,
+                                      tooltip: 'Kembali',
+                                      icon: Icon(
+                                        Icons.arrow_back_rounded,
+                                        color: context.q.text,
+                                        size: 20,
+                                      ),
+                                      onPressed: () =>
+                                          Navigator.maybePop(context),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Laporan', style: context.qTitle(20)),
+                                    Text(
+                                      'Arus kas & pengeluaran',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: context.qSmall(),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: Spacing.s),
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 160,
+                                ),
+                                child: Material(
+                                  color: context.q.surface,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.pill,
+                                  ),
+                                  child: Semantics(
+                                    button: true,
+                                    label:
+                                        'Filter akun, ${activeAccount?.name ?? 'semua akun'}',
+                                    child: InkWell(
+                                      onTap: () => _openAccountPicker(accounts),
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadius.pill,
+                                      ),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 7,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            AppRadius.pill,
+                                          ),
+                                          border: Border.all(
+                                            color: activeAccount != null
+                                                ? context.q.primary.withValues(
+                                                    alpha: 0.4,
+                                                  )
+                                                : context.q.line,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons
+                                                  .account_balance_wallet_outlined,
+                                              size: 15,
+                                              color: activeAccount != null
+                                                  ? context.q.primary
+                                                  : context.q.muted,
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Flexible(
+                                              child: Text(
+                                                activeAccount?.name ??
+                                                    'Semua Akun',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: activeAccount != null
+                                                      ? context.q.primary
+                                                      : context.q.text,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 2),
+                                            Icon(
+                                              Icons.keyboard_arrow_down_rounded,
+                                              size: 16,
+                                              color: context.q.muted,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
                             ],
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Laporan', style: context.qTitle(20)),
-                                  Text(
-                                    'Arus kas & pengeluaran',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: context.qSmall(),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: Spacing.s),
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 160),
-                              child: Material(
-                                color: context.q.surface,
-                                borderRadius: BorderRadius.circular(AppRadius.pill),
-                                child: Semantics(
-                                  button: true,
-                                  label:
-                                      'Filter akun, ${activeAccount?.name ?? 'semua akun'}',
-                                  child: InkWell(
-                                  onTap: () => _openAccountPicker(accounts),
-                                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 7,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                                      border: Border.all(
-                                        color: activeAccount != null
-                                            ? context.q.primary.withValues(alpha: 0.4)
-                                            : context.q.line,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.account_balance_wallet_outlined,
-                                          size: 15,
-                                          color: activeAccount != null
-                                              ? context.q.primary
-                                              : context.q.muted,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Flexible(
-                                          child: Text(
-                                            activeAccount?.name ?? 'Semua Akun',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w700,
-                                              color: activeAccount != null
-                                                  ? context.q.primary
-                                                  : context.q.text,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 2),
-                                        Icon(
-                                          Icons.keyboard_arrow_down_rounded,
-                                          size: 16,
-                                          color: context.q.muted,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
                         ),
                         const SizedBox(height: Spacing.m),
 
                         QuestTabEnter(
                           index: 1,
-                          child:
-                        Container(
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: context.q.surface,
-                            borderRadius: BorderRadius.circular(AppRadius.tile),
-                            border: Border.all(color: context.q.line),
-                            boxShadow: context.q.cardShadow,
-                          ),
-                          child: Row(
-                            children: [
-                              IconButton(
-                                visualDensity: VisualDensity.compact,
-                                tooltip: 'Bulan sebelumnya',
-                                icon: Icon(
-                                  Icons.chevron_left_rounded,
-                                  color: context.q.text,
-                                  size: 22,
-                                ),
-                                onPressed: () => _shiftMonth(-1),
+                          child: Container(
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: context.q.surface,
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.tile,
                               ),
-                              Expanded(
-                                child: Semantics(
-                                  button: true,
-                                  label: 'Pilih periode laporan',
-                                  child: InkWell(
-                                  onTap: _openPeriodPicker,
-                                  borderRadius: BorderRadius.circular(AppRadius.cell),
-                                  child: Center(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.calendar_today_rounded,
-                                            size: 14,
-                                            color: context.q.primaryText,
+                              border: Border.all(color: context.q.line),
+                              boxShadow: context.q.cardShadow,
+                            ),
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  tooltip: 'Bulan sebelumnya',
+                                  icon: Icon(
+                                    Icons.chevron_left_rounded,
+                                    color: context.q.text,
+                                    size: 22,
+                                  ),
+                                  onPressed: () => _shiftMonth(-1),
+                                ),
+                                Expanded(
+                                  child: Semantics(
+                                    button: true,
+                                    label: 'Pilih periode laporan',
+                                    child: InkWell(
+                                      onTap: _openPeriodPicker,
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadius.cell,
+                                      ),
+                                      child: Center(
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
                                           ),
-                                          const SizedBox(width: 7),
-                                          Flexible(
-                                            child: QuestSwap(
-                                              child: Text(
-                                                _periodLabel,
-                                                key: ValueKey(_periodLabel),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: TextStyle(
-                                                  fontSize: 13.5,
-                                                  fontWeight: FontWeight.w800,
-                                                  color: context.q.text,
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(
+                                                Icons.calendar_today_rounded,
+                                                size: 14,
+                                                color: context.q.primaryText,
+                                              ),
+                                              const SizedBox(width: 7),
+                                              Flexible(
+                                                child: QuestSwap(
+                                                  child: Text(
+                                                    _periodLabel,
+                                                    key: ValueKey(_periodLabel),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: TextStyle(
+                                                      fontSize: 13.5,
+                                                      fontWeight:
+                                                          FontWeight.w800,
+                                                      color: context.q.text,
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
-                                            ),
+                                              const SizedBox(width: 4),
+                                              Icon(
+                                                Icons.unfold_more_rounded,
+                                                size: 16,
+                                                color: context.q.muted,
+                                              ),
+                                            ],
                                           ),
-                                          const SizedBox(width: 4),
-                                          Icon(
-                                            Icons.unfold_more_rounded,
-                                            size: 16,
-                                            color: context.q.muted,
-                                          ),
-                                        ],
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              ),
-                              IconButton(
-                                visualDensity: VisualDensity.compact,
-                                tooltip: 'Bulan berikutnya',
-                                icon: Icon(
-                                  Icons.chevron_right_rounded,
-                                  color: context.q.text,
-                                  size: 22,
+                                IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  tooltip: 'Bulan berikutnya',
+                                  icon: Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: context.q.text,
+                                    size: 22,
+                                  ),
+                                  onPressed: () => _shiftMonth(1),
                                 ),
-                                onPressed: () => _shiftMonth(1),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
                         ),
                         const SizedBox(height: Spacing.m),
 
@@ -781,8 +828,8 @@ class LaporanScreenState extends State<LaporanScreen> {
                                             }
                                             HapticFeedback.selectionClick();
                                             setState(
-                                              () => _showIncomingCategories =
-                                                  val,
+                                              () =>
+                                                  _showIncomingCategories = val,
                                             );
                                           },
                                           outStats: report.outCategories,

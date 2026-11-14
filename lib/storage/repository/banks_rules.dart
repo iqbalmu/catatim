@@ -192,5 +192,4 @@ extension BanksRulesRepo on LedgerRepository {
       jsonEncode([for (final p in current) p.toJson()]),
     );
   }
-
 }

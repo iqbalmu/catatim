@@ -52,11 +52,7 @@ class _CategoryStructureCard extends StatelessWidget {
                       label: 'Pengeluaran ($outTxCount)',
                       icon: null,
                     ),
-                    (
-                      value: true,
-                      label: 'Pemasukan ($inTxCount)',
-                      icon: null,
-                    ),
+                    (value: true, label: 'Pemasukan ($inTxCount)', icon: null),
                   ],
                 ),
 
@@ -184,7 +180,9 @@ class _CategoryTableRow extends StatelessWidget {
   final Object? replayKey;
   @override
   Widget build(BuildContext context) {
-    final share = grandTotal > 0 ? (stat.amount / grandTotal).clamp(0.0, 1.0) : 0.0;
+    final share = grandTotal > 0
+        ? (stat.amount / grandTotal).clamp(0.0, 1.0)
+        : 0.0;
     final pct = (share * 100).round();
 
     return Semantics(
@@ -192,104 +190,107 @@ class _CategoryTableRow extends StatelessWidget {
       label:
           '${stat.name}, ${Money.format(stat.amount)}, $pct% dari total pengeluaran',
       child: InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: stat.color.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(11),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Spacing.m,
+            vertical: 12,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: stat.color.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(stat.icon, size: 19, color: stat.color),
               ),
-              child: Icon(stat.icon, size: 19, color: stat.color),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          stat.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w700,
-                            color: context.q.text,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 125),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: QuestMoney(
-                            amount: stat.amount,
-                            alignment: Alignment.centerRight,
-                            replayKey: replayKey,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            stat.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 13.5,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               color: context.q.text,
-                              fontFeatures: _tabular,
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: QuestProgressBar(
-                          value: share,
-                          color: stat.color,
-                          minHeight: 5,
-                          replayKey: replayKey,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 96),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: QuestCountUp(
-                            value: pct,
-                            replayKey: replayKey,
-                            builder: (context, currentPct) => Text(
-                              '$currentPct% · ${stat.items.length} trx',
+                        const SizedBox(width: 8),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 125),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: QuestMoney(
+                              amount: stat.amount,
+                              alignment: Alignment.centerRight,
+                              replayKey: replayKey,
                               style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: context.q.muted,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w800,
+                                color: context.q.text,
                                 fontFeatures: _tabular,
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: QuestProgressBar(
+                            value: share,
+                            color: stat.color,
+                            minHeight: 5,
+                            replayKey: replayKey,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 96),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: QuestCountUp(
+                              value: pct,
+                              replayKey: replayKey,
+                              builder: (context, currentPct) => Text(
+                                '$currentPct% · ${stat.items.length} trx',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: context.q.muted,
+                                  fontFeatures: _tabular,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.chevron_right_rounded,
-              size: 18,
-              color: context.q.muted.withValues(alpha: 0.5),
-            ),
-          ],
+              const SizedBox(width: 4),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18,
+                color: context.q.muted.withValues(alpha: 0.5),
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

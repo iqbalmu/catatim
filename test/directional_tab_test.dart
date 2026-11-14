@@ -4,54 +4,59 @@ import 'package:flutter_test/flutter_test.dart';
 var disposeCountPage1 = 0;
 
 void main() {
-  testWidgets('Inactive tabs preserve state during flight and are not disposed', (tester) async {
-    disposeCountPage1 = 0;
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: _TestContainer(),
-      ),
-    );
-    expect(find.text('Page 0'), findsOneWidget);
+  testWidgets(
+    'Inactive tabs preserve state during flight and are not disposed',
+    (tester) async {
+      disposeCountPage1 = 0;
+      await tester.pumpWidget(const MaterialApp(home: _TestContainer()));
+      expect(find.text('Page 0'), findsOneWidget);
 
-    // Switch to tab 1
-    await tester.tap(find.text('Go to 1'));
-    await tester.pumpAndSettle();
-    expect(find.text('Page 1 count: 0'), findsOneWidget);
+      // Switch to tab 1
+      await tester.tap(find.text('Go to 1'));
+      await tester.pumpAndSettle();
+      expect(find.text('Page 1 count: 0'), findsOneWidget);
 
-    // Increment counter on Page 1
-    await tester.tap(find.text('Increment Page 1'));
-    await tester.pump();
-    expect(find.text('Page 1 count: 1'), findsOneWidget);
+      // Increment counter on Page 1
+      await tester.tap(find.text('Increment Page 1'));
+      await tester.pump();
+      expect(find.text('Page 1 count: 1'), findsOneWidget);
 
-    // Switch to tab 0
-    await tester.tap(find.text('Go to 0'));
-    await tester.pumpAndSettle();
-    expect(find.text('Page 0'), findsOneWidget);
+      // Switch to tab 0
+      await tester.tap(find.text('Go to 0'));
+      await tester.pumpAndSettle();
+      expect(find.text('Page 0'), findsOneWidget);
 
-    // Switch to tab 2 (Page 1 is neither 'from' nor 'to')
-    await tester.tap(find.text('Go to 2'));
-    // In the middle of animation
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(disposeCountPage1, 0, reason: 'Page 1 must NOT be disposed during flight between 0 and 2');
+      // Switch to tab 2 (Page 1 is neither 'from' nor 'to')
+      await tester.tap(find.text('Go to 2'));
+      // In the middle of animation
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(
+        disposeCountPage1,
+        0,
+        reason: 'Page 1 must NOT be disposed during flight between 0 and 2',
+      );
 
-    await tester.pumpAndSettle();
-    expect(find.text('Page 2'), findsOneWidget);
-    expect(disposeCountPage1, 0, reason: 'Page 1 must NOT be disposed after flight lands');
+      await tester.pumpAndSettle();
+      expect(find.text('Page 2'), findsOneWidget);
+      expect(
+        disposeCountPage1,
+        0,
+        reason: 'Page 1 must NOT be disposed after flight lands',
+      );
 
-    // Return to Page 1
-    await tester.tap(find.text('Go to 1'));
-    await tester.pumpAndSettle();
-    // Counter on Page 1 must still be 1!
-    expect(find.text('Page 1 count: 1'), findsOneWidget);
-    expect(disposeCountPage1, 0);
-  });
+      // Return to Page 1
+      await tester.tap(find.text('Go to 1'));
+      await tester.pumpAndSettle();
+      // Counter on Page 1 must still be 1!
+      expect(find.text('Page 1 count: 1'), findsOneWidget);
+      expect(disposeCountPage1, 0);
+    },
+  );
 
-  testWidgets('Rapid tab switches do not crash or leave inconsistent state', (tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: _TestContainer(),
-      ),
-    );
+  testWidgets('Rapid tab switches do not crash or leave inconsistent state', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MaterialApp(home: _TestContainer()));
 
     // Rapid taps: 1 -> 2 -> 0 without pumpAndSettle
     await tester.tap(find.text('Go to 1'));
@@ -153,7 +158,8 @@ class _TestTabView extends StatefulWidget {
   State<_TestTabView> createState() => _TestTabViewState();
 }
 
-class _TestTabViewState extends State<_TestTabView> with SingleTickerProviderStateMixin {
+class _TestTabViewState extends State<_TestTabView>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 200),
@@ -224,18 +230,12 @@ class _TestTabViewState extends State<_TestTabView> with SingleTickerProviderSta
     ];
     final flight = _flight;
     if (flight == null) {
-      return IndexedStack(
-        index: _shown,
-        children: pages,
-      );
+      return IndexedStack(index: _shown, children: pages);
     }
     return Stack(
       children: [
         for (var i = 0; i < widget.children.length; i++)
-          if (i != flight.from && i != flight.to)
-            Offstage(
-              child: pages[i],
-            ),
+          if (i != flight.from && i != flight.to) Offstage(child: pages[i]),
         SlideTransition(position: _outgoingSlide, child: pages[flight.from]),
         SlideTransition(position: _incomingSlide, child: pages[flight.to]),
       ],

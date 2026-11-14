@@ -115,5 +115,4 @@ extension ManualTransactionsRepo on LedgerRepository {
       await (_db.delete(_db.transactions)..where((t) => t.id.equals(id))).go();
     });
   }
-
 }

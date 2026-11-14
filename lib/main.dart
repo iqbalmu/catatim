@@ -54,11 +54,7 @@ class _CatatIMBootstrapState extends State<CatatIMBootstrap> {
     // DB lama tak terbaca dengan kunci perangkat ini (mis. pindah HP)
     // → layar pemulihan, bukan crash generik.
     try {
-      await db
-          .customSelect(
-            'SELECT count(*) AS c FROM sqlite_master',
-          )
-          .get();
+      await db.customSelect('SELECT count(*) AS c FROM sqlite_master').get();
     } catch (_) {
       await db.close();
       if (mounted) setState(() => _locked = true);

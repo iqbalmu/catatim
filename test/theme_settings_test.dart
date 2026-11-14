@@ -52,7 +52,9 @@ void main() {
       expect(await repo.getThemeMode(), equals(ThemeMode.system));
     });
 
-    testWidgets('SettingsScreen: buka lembar pilih tema dan ganti ke Gelap', (tester) async {
+    testWidgets('SettingsScreen: buka lembar pilih tema dan ganti ke Gelap', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: QuestSchemes.light(),

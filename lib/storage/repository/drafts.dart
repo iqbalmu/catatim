@@ -513,5 +513,4 @@ extension DraftsRepo on LedgerRepository {
       _db.accounts,
     )..where((a) => a.id.equals(id))).getSingle());
   }
-
 }

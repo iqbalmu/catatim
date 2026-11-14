@@ -194,10 +194,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
       return;
     }
     try {
-      final account = await widget.repository.addAccount(
-        name,
-        kind,
-      );
+      final account = await widget.repository.addAccount(name, kind);
       final opening = int.tryParse(
         _cashOpeningCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''),
       );
@@ -236,9 +233,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
       _AddStep.success => _buildSuccess(),
     };
 
-    return SingleChildScrollView(
-      child: content,
-    );
+    return SingleChildScrollView(child: content);
   }
 
   Widget _buildPick() {
@@ -275,7 +270,10 @@ class _AddAccountSheetState extends State<AddAccountSheet>
           }),
         ),
         const SizedBox(height: Spacing.m),
-        if (_kind == AccountKind.cash) ..._buildCashForm() else ..._buildBankList(),
+        if (_kind == AccountKind.cash)
+          ..._buildCashForm()
+        else
+          ..._buildBankList(),
       ],
     );
   }
@@ -308,11 +306,13 @@ class _AddAccountSheetState extends State<AddAccountSheet>
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Text(
                 'ATAU CATAT MANUAL',
-                style: context.qSmall(11).copyWith(
-                  color: context.q.muted,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
-                ),
+                style: context
+                    .qSmall(11)
+                    .copyWith(
+                      color: context.q.muted,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
               ),
             ),
             Expanded(child: Divider(color: context.q.line)),
@@ -365,9 +365,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
         controller: _cashOpeningCtrl,
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        decoration: const InputDecoration(
-          hintText: 'Misalnya: 500000',
-        ),
+        decoration: const InputDecoration(hintText: 'Misalnya: 500000'),
       ),
       const SizedBox(height: Spacing.m),
       Row(
@@ -412,9 +410,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
         controller: _cashOpeningCtrl,
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        decoration: const InputDecoration(
-          hintText: 'Misalnya: 250000',
-        ),
+        decoration: const InputDecoration(hintText: 'Misalnya: 250000'),
       ),
       const SizedBox(height: Spacing.m),
       Row(
@@ -466,12 +462,14 @@ class _AddAccountSheetState extends State<AddAccountSheet>
         ),
         const _FactRow(
           icon: Icons.edit_note_rounded,
-          text: 'Langsung jadi draf, baru tersimpan saat kamu menekan '
+          text:
+              'Langsung jadi draf, baru tersimpan saat kamu menekan '
               'Catat',
         ),
         const _FactRow(
           icon: Icons.lock_rounded,
-          text: 'Datanya hanya ada di HP ini: terenkripsi, tak dikirim ke '
+          text:
+              'Datanya hanya ada di HP ini: terenkripsi, tak dikirim ke '
               'mana pun',
         ),
         const _FactRow(
@@ -556,11 +554,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
             width: 64,
             height: 64,
             decoration: BoxDecoration(color: q.good, shape: BoxShape.circle),
-            child: Icon(
-              Icons.check_rounded,
-              color: q.onPrimary,
-              size: 36,
-            ),
+            child: Icon(Icons.check_rounded, color: q.onPrimary, size: 36),
           ),
         ),
         const SizedBox(height: Spacing.m),
@@ -658,9 +652,7 @@ class _BankAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final q = context.q;
-    final initial = name.isEmpty
-        ? '?'
-        : name.characters.first.toUpperCase();
+    final initial = name.isEmpty ? '?' : name.characters.first.toUpperCase();
     return Container(
       width: size,
       height: size,
@@ -734,7 +726,7 @@ class _StepRow extends StatelessWidget {
             child: Text(
               number,
               style: TextStyle(
-          color: q.primaryText,
+                color: q.primaryText,
                 fontWeight: FontWeight.w800,
                 fontSize: 14,
               ),

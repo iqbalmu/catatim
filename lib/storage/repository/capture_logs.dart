@@ -172,5 +172,4 @@ extension CaptureLogsRepo on LedgerRepository {
           ),
         );
   }
-
 }

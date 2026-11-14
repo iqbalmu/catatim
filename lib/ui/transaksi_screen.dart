@@ -35,8 +35,14 @@ bool matchesQuery(TxWithCategory item, String query) {
     tx.amount.toString(),
     Money.format(tx.amount),
   ].map((s) => s.toLowerCase());
-  return haystacks.any((h) => h.contains(q) || (cleanQ.isNotEmpty && h.replaceAll(RegExp(r'[^0-9a-z]'), '').contains(cleanQ)));
+  return haystacks.any(
+    (h) =>
+        h.contains(q) ||
+        (cleanQ.isNotEmpty &&
+            h.replaceAll(RegExp(r'[^0-9a-z]'), '').contains(cleanQ)),
+  );
 }
+
 class TransaksiScreen extends StatefulWidget {
   const TransaksiScreen({
     super.key,
@@ -65,14 +71,15 @@ class TransaksiScreenState extends State<TransaksiScreen> {
     final accounts = await widget.repository.getAccounts();
     if (!mounted) return;
 
-    final result = await showQuestSheet<({Direction? direction, int? accountId})>(
-      context,
-      (ctx) => _TransactionFilterSheet(
-        initialDirection: _selectedDirection,
-        initialAccountId: _selectedAccountId,
-        accounts: accounts,
-      ),
-    );
+    final result =
+        await showQuestSheet<({Direction? direction, int? accountId})>(
+          context,
+          (ctx) => _TransactionFilterSheet(
+            initialDirection: _selectedDirection,
+            initialAccountId: _selectedAccountId,
+            accounts: accounts,
+          ),
+        );
 
     if (result != null && mounted) {
       unawaited(HapticFeedback.selectionClick());
@@ -126,11 +133,18 @@ class TransaksiScreenState extends State<TransaksiScreen> {
       isScrollControlled: true,
       backgroundColor: context.q.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.sheet),
+        ),
       ),
       builder: (ctx) => SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.s, Spacing.m, Spacing.m),
+          padding: const EdgeInsets.fromLTRB(
+            Spacing.m,
+            Spacing.s,
+            Spacing.m,
+            Spacing.m,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -263,7 +277,8 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                 const SizedBox(width: Spacing.xs),
                 Builder(
                   builder: (context) {
-                    final hasFilter = _selectedDirection != null ||
+                    final hasFilter =
+                        _selectedDirection != null ||
                         _selectedAccountId != null;
                     return Container(
                       width: 36,
@@ -329,28 +344,28 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                 Spacing.sm,
               ),
               child: TextField(
-                  controller: _searchCtrl,
-                  autofocus: true,
-                  onChanged: (val) => setState(() => _searchQuery = val),
-                  style: context.qBody(13.5),
-                  decoration: InputDecoration(
-                    prefixIcon: Icon(
-                      Icons.search_rounded,
-                      size: 18,
-                      color: context.q.muted,
-                    ),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear_rounded, size: 18),
-                            onPressed: () {
-                              _searchCtrl.clear();
-                              setState(() => _searchQuery = '');
-                            },
-                          )
-                        : null,
-                    hintText: 'Cari transaksi, toko, nominal...',
+                controller: _searchCtrl,
+                autofocus: true,
+                onChanged: (val) => setState(() => _searchQuery = val),
+                style: context.qBody(13.5),
+                decoration: InputDecoration(
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    size: 18,
+                    color: context.q.muted,
                   ),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear_rounded, size: 18),
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                        )
+                      : null,
+                  hintText: 'Cari transaksi, toko, nominal...',
                 ),
+              ),
             ),
           ),
 
@@ -392,47 +407,51 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                           button: true,
                           label: 'Pilih bulan',
                           child: InkWell(
-                          onTap: _openMonthPicker,
-                          borderRadius: BorderRadius.circular(AppRadius.cell),
-                          child: Center(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 6),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.calendar_today_rounded,
-                                    size: 14,
-                                    color: context.q.primaryText,
-                                  ),
-                                  const SizedBox(width: 7),
-                                  Flexible(
-                                    child: QuestSwap(
-                                      child: Text(
-                                        idMonthYear(_selectedMonth),
-                                        key: ValueKey(idMonthYear(_selectedMonth)),
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontFamily: 'Nunito',
-                                          fontSize: 13.5,
-                                          fontWeight: FontWeight.w700,
-                                          color: context.q.text,
+                            onTap: _openMonthPicker,
+                            borderRadius: BorderRadius.circular(AppRadius.cell),
+                            child: Center(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.calendar_today_rounded,
+                                      size: 14,
+                                      color: context.q.primaryText,
+                                    ),
+                                    const SizedBox(width: 7),
+                                    Flexible(
+                                      child: QuestSwap(
+                                        child: Text(
+                                          idMonthYear(_selectedMonth),
+                                          key: ValueKey(
+                                            idMonthYear(_selectedMonth),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontFamily: 'Nunito',
+                                            fontSize: 13.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: context.q.text,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Icon(
-                                    Icons.unfold_more_rounded,
-                                    size: 16,
-                                    color: context.q.muted,
-                                  ),
-                                ],
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      Icons.unfold_more_rounded,
+                                      size: 16,
+                                      color: context.q.muted,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                            ),
-                          ),
+                        ),
                       ),
                       IconButton(
                         visualDensity: VisualDensity.compact,
@@ -448,7 +467,8 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                   ),
                 ),
 
-                if (_selectedDirection != null || _selectedAccountId != null) ...[
+                if (_selectedDirection != null ||
+                    _selectedAccountId != null) ...[
                   const SizedBox(height: Spacing.xs),
                   Align(
                     alignment: Alignment.centerLeft,
@@ -483,7 +503,8 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              _selectedDirection != null && _selectedAccountId != null
+                              _selectedDirection != null &&
+                                      _selectedAccountId != null
                                   ? '${_selectedDirection == Direction.outgoing ? 'Keluar' : 'Masuk'} · Filter Akun'
                                   : switch (_selectedDirection) {
                                       Direction.outgoing => 'Keluar',
@@ -518,7 +539,8 @@ class TransaksiScreenState extends State<TransaksiScreen> {
           child: StreamBuilder<List<TxWithCategory>>(
             stream: _txStream,
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+              if (snapshot.connectionState == ConnectionState.waiting &&
+                  !snapshot.hasData) {
                 return const Padding(
                   padding: EdgeInsets.all(Spacing.m),
                   child: QuestSkeleton(rows: 4),
@@ -527,10 +549,12 @@ class TransaksiScreenState extends State<TransaksiScreen> {
 
               final allItems = snapshot.data ?? const [];
               final filtered = allItems.where((item) {
-                if (_selectedDirection != null && item.tx.direction != _selectedDirection) {
+                if (_selectedDirection != null &&
+                    item.tx.direction != _selectedDirection) {
                   return false;
                 }
-                if (_searchQuery.isNotEmpty && !matchesQuery(item, _searchQuery)) {
+                if (_searchQuery.isNotEmpty &&
+                    !matchesQuery(item, _searchQuery)) {
                   return false;
                 }
                 return true;
@@ -586,10 +610,12 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                     .where((item) => item.tx.direction == Direction.outgoing)
                     .fold<int>(0, (sum, item) => sum + item.tx.amount);
 
-                flatItems.add(_FlatDayHeaderItem(
-                  day: day,
-                  totalOut: dayTotalOut > 0 ? dayTotalOut : null,
-                ));
+                flatItems.add(
+                  _FlatDayHeaderItem(
+                    day: day,
+                    totalOut: dayTotalOut > 0 ? dayTotalOut : null,
+                  ),
+                );
 
                 for (final item in items) {
                   flatItems.add(_FlatTxEntryItem(item));
@@ -613,7 +639,8 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                           final strKey = key.value;
                           for (var i = 0; i < flatItems.length; i++) {
                             final itemKey = flatItems[i].key;
-                            if (itemKey is ValueKey<String> && itemKey.value == strKey) {
+                            if (itemKey is ValueKey<String> &&
+                                itemKey.value == strKey) {
                               return i;
                             }
                           }
@@ -624,16 +651,16 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                         final entry = flatItems[i];
                         final Widget child = switch (entry) {
                           _FlatDayHeaderItem h => TransactionDayHeader(
-                              key: h.key,
-                              day: h.day,
-                              totalOut: h.totalOut,
-                            ),
+                            key: h.key,
+                            day: h.day,
+                            totalOut: h.totalOut,
+                          ),
                           _FlatTxEntryItem t => TransactionTile(
-                              key: t.key,
-                              item: t.item,
-                              repository: widget.repository,
-                              progress: widget.progress,
-                            ),
+                            key: t.key,
+                            item: t.item,
+                            repository: widget.repository,
+                            progress: widget.progress,
+                          ),
                         };
 
                         return QuestTabEnter(

@@ -80,12 +80,12 @@ class QuestPalette {
   /// light 3% slate (halus), dark 32% hitam di atas graphite. Menggantikan
   /// AppShadows statis yang tak pernah flip di dark (audit T-01).
   List<BoxShadow> get cardShadow => [
-        BoxShadow(offset: const Offset(0, 4), blurRadius: 16, color: shadow),
-      ];
+    BoxShadow(offset: const Offset(0, 4), blurRadius: 16, color: shadow),
+  ];
 
   List<BoxShadow> get elevatedShadow => [
-        BoxShadow(offset: const Offset(0, 8), blurRadius: 24, color: shadow),
-      ];
+    BoxShadow(offset: const Offset(0, 8), blurRadius: 24, color: shadow),
+  ];
   final Color incomingTint;
   final Color outgoingTint;
 
@@ -142,9 +142,8 @@ class QuestPalette {
     incomingTint: DarkColors.incomingTint,
     outgoingTint: DarkColors.outgoingTint,
   );
-
-
 }
+
 /// Akses cepat palet + tipografi khas Quest dari BuildContext.
 extension QuestTheme on BuildContext {
   /// Palet dinamis mengikuti tema sistem (light/dark).
@@ -284,9 +283,7 @@ class QuestPageTransitionsBuilder extends PageTransitionsBuilder {
             ),
           ],
         ),
-      ).animate(
-        CurvedAnimation(parent: animation, curve: QuestMotion.easeOut),
-      ),
+      ).animate(CurvedAnimation(parent: animation, curve: QuestMotion.easeOut)),
       child: child,
     );
 
@@ -384,7 +381,9 @@ class _QuestEnterState extends State<QuestEnter>
   int _delayMs = 0;
 
   void _configureAndRun() {
-    _delayMs = 110 + (widget.index.clamp(0, 10) * QuestMotion.staggerStep.inMilliseconds);
+    _delayMs =
+        110 +
+        (widget.index.clamp(0, 10) * QuestMotion.staggerStep.inMilliseconds);
     final animMs = QuestMotion.enter.inMilliseconds;
     final totalMs = _delayMs + animMs;
     _controller.duration = Duration(milliseconds: totalMs);
@@ -432,10 +431,7 @@ class _QuestEnterState extends State<QuestEnter>
       delayMs: _delayMs,
       child: FadeTransition(
         opacity: _opacity,
-        child: SlideTransition(
-          position: _slide,
-          child: widget.child,
-        ),
+        child: SlideTransition(position: _slide, child: widget.child),
       ),
     );
   }
@@ -771,9 +767,8 @@ class QuestMoney extends StatelessWidget {
             Transform.translate(
               offset: Offset(
                 0,
-                -baseSize * QuestSignStyle.riseEmFor(
-                  QuestSignStyle.ratioFor(baseSize),
-                ),
+                -baseSize *
+                    QuestSignStyle.riseEmFor(QuestSignStyle.ratioFor(baseSize)),
               ),
               child: Text(
                 sign,
@@ -1010,10 +1005,7 @@ class _QuestTabEnterState extends State<QuestTabEnter>
       delayMs: _delayMs,
       child: FadeTransition(
         opacity: _opacity,
-        child: SlideTransition(
-          position: _slide,
-          child: widget.child,
-        ),
+        child: SlideTransition(position: _slide, child: widget.child),
       ),
     );
   }
@@ -1134,7 +1126,11 @@ class QuestSchemes {
       chipTheme: ChipThemeData(
         backgroundColor: p.surface2,
         selectedColor: p.primaryLight,
-        labelStyle: TextStyle(fontWeight: FontWeight.w700, color: p.text, fontSize: 12),
+        labelStyle: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: p.text,
+          fontSize: 12,
+        ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.pill),
           side: BorderSide(color: p.line),

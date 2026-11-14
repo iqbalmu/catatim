@@ -9,7 +9,6 @@ import '../rules/engine.dart' show RuleEngine;
 import '../rules/rule_set.dart' show CustomTemplate;
 import 'database.dart';
 
-
 // Dipecah ke part files — satu library, semua nama tetap.
 part 'repository/capture_logs.dart';
 part 'repository/manual_transactions.dart';
@@ -36,7 +35,7 @@ class LedgerRepository {
 
   final AppDatabase _db;
 
-/// Akses database untuk kebutuhan di luar repository (mis. seeder data
+  /// Akses database untuk kebutuhan di luar repository (mis. seeder data
   /// contoh pada build debug).
   AppDatabase get db => _db;
 

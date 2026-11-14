@@ -38,10 +38,7 @@ void main() {
 
     // Tanda `−` (U+2212) berdiri sendiri sebagai marker.
     final sign = tester.widget<Text>(find.text('−'));
-    expect(
-      sign.style?.fontSize,
-      closeTo(28 * QuestSignStyle.largeRatio, 0.01),
-    );
+    expect(sign.style?.fontSize, closeTo(28 * QuestSignStyle.largeRatio, 0.01));
     expect(sign.style?.fontWeight, FontWeight.w700);
     final color = sign.style?.color;
     expect(color, isNotNull);
@@ -52,9 +49,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      host(
-        const QuestMoney(amount: -840000, style: heroStyle),
-      ),
+      host(const QuestMoney(amount: -840000, style: heroStyle)),
     );
     await tester.pump();
 
@@ -101,10 +96,7 @@ void main() {
     await tester.pump();
 
     final sign = tester.widget<Text>(find.text('−'));
-    expect(
-      sign.style?.fontSize,
-      closeTo(12 * QuestSignStyle.smallRatio, 0.01),
-    );
+    expect(sign.style?.fontSize, closeTo(12 * QuestSignStyle.smallRatio, 0.01));
     expect(sign.style?.color!.a, closeTo(QuestSignStyle.smallOpacity, 0.01));
   });
 }

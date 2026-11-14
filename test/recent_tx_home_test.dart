@@ -20,10 +20,7 @@ void main() {
     (tester) async {
       final db = AppDatabase(NativeDatabase.memory());
       final repo = LedgerRepository(db);
-      final ruleSet = RuleSet.fromJson({
-        'version': 1,
-        'banks': [],
-      });
+      final ruleSet = RuleSet.fromJson({'version': 1, 'banks': []});
       final pipeline = CapturePipeline(
         channel: const CaptureChannel(),
         engine: RuleEngine(ruleSet),

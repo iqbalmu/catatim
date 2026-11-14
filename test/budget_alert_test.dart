@@ -30,11 +30,11 @@ void main() {
     });
   });
 
-  ({int used, int? limit, String? note}) line(int used, {int? limit, String? note}) => (
-        used: used,
-        limit: limit,
-        note: note,
-      );
+  ({int used, int? limit, String? note}) line(
+    int used, {
+    int? limit,
+    String? note,
+  }) => (used: used, limit: limit, note: note);
 
   group('planBudgetAlerts', () {
     final now = DateTime(2026, 11, 13, 10);
@@ -155,13 +155,10 @@ void main() {
         state: const {},
         now: now,
       );
-      expect(
-        plan.hits.map((h) => h.scope).toList(),
-        [
-          LimitScope.daily,
-          LimitScope.monthly,
-        ],
-      );
+      expect(plan.hits.map((h) => h.scope).toList(), [
+        LimitScope.daily,
+        LimitScope.monthly,
+      ]);
       // State lengkap disimpan, termasuk scope yang tidak menembak
       // (tetap apa adanya dari state lama).
       expect(plan.newState, hasLength(2));
@@ -170,70 +167,55 @@ void main() {
 
   group('budgetAlertMessage', () {
     test('null tanpa hit', () {
-      expect(
-        budgetAlertMessage(const [], thresholdPercent: 80),
-        isNull,
-      );
+      expect(budgetAlertMessage(const [], thresholdPercent: 80), isNull);
     });
 
     test('satu garis: judul spesifik + isi nominal dan sisa', () {
-      final msg = budgetAlertMessage(
-        const [
-          BudgetAlertHit(
-            scope: LimitScope.daily,
-            used: 82_000,
-            limit: 100_000,
-            percent: 82,
-            over: false,
-          ),
-        ],
-        thresholdPercent: 80,
-      );
+      final msg = budgetAlertMessage(const [
+        BudgetAlertHit(
+          scope: LimitScope.daily,
+          used: 82_000,
+          limit: 100_000,
+          percent: 82,
+          over: false,
+        ),
+      ], thresholdPercent: 80);
       expect(msg!.title, 'Batas Harian: 80% terpakai');
-      expect(
-        msg.body,
-        'Harian: Rp82.000 dari Rp100.000 — sisa Rp18.000',
-      );
+      expect(msg.body, 'Harian: Rp82.000 dari Rp100.000 — sisa Rp18.000');
     });
 
     test('garis over: judul berbeda + penanda lewat', () {
-      final msg = budgetAlertMessage(
-        const [
-          BudgetAlertHit(
-            scope: LimitScope.weekly,
-            used: 1_200_000,
-            limit: 1_000_000,
-            percent: 120,
-            over: true,
-          ),
-        ],
-        thresholdPercent: 80,
-      );
+      final msg = budgetAlertMessage(const [
+        BudgetAlertHit(
+          scope: LimitScope.weekly,
+          used: 1_200_000,
+          limit: 1_000_000,
+          percent: 120,
+          over: true,
+        ),
+      ], thresholdPercent: 80);
       expect(msg!.title, 'Batas Mingguan terlampaui');
       expect(msg.body, contains('(lewat)'));
       expect(msg.body, contains('sisa Rp0'));
     });
 
     test('banyak garis: judul gabungan + body per baris', () {
-      final msg = budgetAlertMessage(
-        const [
-          BudgetAlertHit(
-            scope: LimitScope.daily,
-            used: 90,
-            limit: 100,
-            percent: 90,
-            over: false,
-          ),
-          BudgetAlertHit(
-            scope: LimitScope.monthly,
-            used: 2_500_000,
-            limit: 3_000_000,
-            percent: 83,
-            over: false,
-          ),
-        ],
-        thresholdPercent: 80,
-      );
+      final msg = budgetAlertMessage(const [
+        BudgetAlertHit(
+          scope: LimitScope.daily,
+          used: 90,
+          limit: 100,
+          percent: 90,
+          over: false,
+        ),
+        BudgetAlertHit(
+          scope: LimitScope.monthly,
+          used: 2_500_000,
+          limit: 3_000_000,
+          percent: 83,
+          over: false,
+        ),
+      ], thresholdPercent: 80);
       expect(msg!.title, 'Batas pengeluaran menyentuh 80%');
       expect(msg.body.split('\n'), hasLength(2));
       expect(msg.body, contains('Harian: Rp90 dari Rp100'));

@@ -541,15 +541,17 @@ class _RenderStackedDeck extends RenderBox
     final double totalHeight = activeCardHeight + _kPeekLipHeight;
 
     final double peekWidth = (maxWidth - 16.0).clamp(0.0, double.infinity);
-    final double peekHeight =
-        (totalHeight - 14.0).clamp(_kPeekLipHeight, double.infinity);
-
-    peek.layout(
-      BoxConstraints.tightFor(width: peekWidth, height: peekHeight),
+    final double peekHeight = (totalHeight - 14.0).clamp(
+      _kPeekLipHeight,
+      double.infinity,
     );
 
-    (peek.parentData! as _StackedDeckParentData).offset =
-        const Offset(8.0, 14.0);
+    peek.layout(BoxConstraints.tightFor(width: peekWidth, height: peekHeight));
+
+    (peek.parentData! as _StackedDeckParentData).offset = const Offset(
+      8.0,
+      14.0,
+    );
     (card0.parentData! as _StackedDeckParentData).offset = Offset.zero;
     (card1.parentData! as _StackedDeckParentData).offset = Offset.zero;
 
@@ -570,8 +572,10 @@ class _RenderStackedDeck extends RenderBox
 
     final RenderBox topCard = _topCardIndex == 0 ? card0 : card1;
     final RenderBox bottomCard = _topCardIndex == 0 ? card1 : card0;
-    final double activeCardHeight =
-        (size.height - _kPeekLipHeight).clamp(0.0, double.infinity);
+    final double activeCardHeight = (size.height - _kPeekLipHeight).clamp(
+      0.0,
+      double.infinity,
+    );
 
     // 2. Gambar kartu bawah (tetap di dalam scene graph agar layer GPU hangat,
     //    namun dipotong agar tidak pernah menembus bibir _BackCardPeek)
@@ -582,21 +586,14 @@ class _RenderStackedDeck extends RenderBox
             (size.width - 32.0).clamp(0.0, double.infinity),
             (activeCardHeight - 32.0).clamp(0.0, double.infinity),
           )
-        : Rect.fromLTRB(
-            -size.width,
-            -40.0,
-            size.width * 2,
-            activeCardHeight,
-          );
+        : Rect.fromLTRB(-size.width, -40.0, size.width * 2, activeCardHeight);
 
-    context.pushClipRect(
-      needsCompositing,
-      offset,
-      clipRect,
-      (PaintingContext ctx, Offset ofs) {
-        ctx.paintChild(bottomCard, ofs);
-      },
-    );
+    context.pushClipRect(needsCompositing, offset, clipRect, (
+      PaintingContext ctx,
+      Offset ofs,
+    ) {
+      ctx.paintChild(bottomCard, ofs);
+    });
 
     // 3. Gambar kartu paling atas (solid penuh, tanpa Opacity saveLayer)
     context.paintChild(topCard, offset);
@@ -682,10 +679,7 @@ class _BackCardPeekState extends State<_BackCardPeek> {
           decoration: BoxDecoration(
             color: q.surface2,
             borderRadius: BorderRadius.circular(AppRadius.sheet),
-            border: Border.all(
-              color: q.line,
-              width: 1.2,
-            ),
+            border: Border.all(color: q.line, width: 1.2),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -785,10 +779,9 @@ class _BackCardPeekState extends State<_BackCardPeek> {
     QuestPalette q,
     int total,
   ) {
-    final mutedStyle = context.qSmall(11.5).copyWith(
-      color: q.muted,
-      fontWeight: FontWeight.w600,
-    );
+    final mutedStyle = context
+        .qSmall(11.5)
+        .copyWith(color: q.muted, fontWeight: FontWeight.w600);
 
     return Row(
       key: const ValueKey<String>('peek-balance'),
@@ -817,10 +810,9 @@ class _BackCardPeekState extends State<_BackCardPeek> {
                   'Total Saldo',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: context.qSmall(11.5).copyWith(
-                        color: q.text,
-                        fontWeight: FontWeight.w800,
-                      ),
+                  style: context
+                      .qSmall(11.5)
+                      .copyWith(color: q.text, fontWeight: FontWeight.w800),
                 ),
               ),
               Text('  ·  ', style: mutedStyle),
@@ -863,11 +855,7 @@ class _BackCardPeekState extends State<_BackCardPeek> {
             color: q.primaryLight,
             borderRadius: BorderRadius.circular(6),
           ),
-          child: Icon(
-            Icons.speed_rounded,
-            size: 12,
-            color: q.primaryText,
-          ),
+          child: Icon(Icons.speed_rounded, size: 12, color: q.primaryText),
         ),
         const SizedBox(width: 7),
         Flexible(
@@ -878,14 +866,15 @@ class _BackCardPeekState extends State<_BackCardPeek> {
               children: [
                 TextSpan(
                   text: 'Jatah hari ini',
-                  style: context.qSmall(11.5).copyWith(
-                        color: q.text,
-                        fontWeight: FontWeight.w800,
-                      ),
+                  style: context
+                      .qSmall(11.5)
+                      .copyWith(color: q.text, fontWeight: FontWeight.w800),
                 ),
                 TextSpan(
                   text: '  ·  $subtitle',
-                  style: context.qSmall(11.5).copyWith(
+                  style: context
+                      .qSmall(11.5)
+                      .copyWith(
                         color: subtitleColor,
                         fontWeight: FontWeight.w600,
                       ),

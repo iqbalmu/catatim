@@ -93,15 +93,9 @@ class _HomeTopBarState extends State<HomeTopBar> {
       );
     }
     if (hour >= 15 && hour < 18) {
-      return (
-        title: 'Selamat sore',
-        subtitle: 'Yuk rekap belanjaan hari ini',
-      );
+      return (title: 'Selamat sore', subtitle: 'Yuk rekap belanjaan hari ini');
     }
-    return (
-      title: 'Selamat malam',
-      subtitle: 'Waktunya cek sisa anggaranmu',
-    );
+    return (title: 'Selamat malam', subtitle: 'Waktunya cek sisa anggaranmu');
   }
 
   @override
@@ -159,7 +153,10 @@ class _HomeTopBarState extends State<HomeTopBar> {
             child: QuestPress(
               onTap: () => GamificationSheet.show(context, progress),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: q.surface2,
                   borderRadius: BorderRadius.circular(AppRadius.pill),

@@ -40,9 +40,12 @@ class OcrService {
   static final _timePrefix = RegExp(r'^\d{2}:\d{2}');
   static final _digitsOnly = RegExp(r'^\d+$');
   static final _rpAmount = RegExp(r'[Rr][Pp]\.?\s*([\d][\d.,]*)');
-  static final _groupedAmount =
-      RegExp(r'\b(\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?)\b');
-  static final _fullDate = RegExp(r'\b(\d{1,2})[./\-](\d{1,2})[./\-](\d{2,4})\b');
+  static final _groupedAmount = RegExp(
+    r'\b(\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?)\b',
+  );
+  static final _fullDate = RegExp(
+    r'\b(\d{1,2})[./\-](\d{1,2})[./\-](\d{2,4})\b',
+  );
   static final _fullTime = RegExp(r'\b(\d{1,2}):(\d{2})(?::(\d{2}))?\b');
 
   /// Jalankan OCR pada file gambar di [imagePath].
@@ -79,7 +82,11 @@ class OcrService {
         .toList();
 
     final merchant = _extractMerchant(lines);
-    final (amount, candidates) = _extractAmountsAndCandidates(lines, rawText, engine);
+    final (amount, candidates) = _extractAmountsAndCandidates(
+      lines,
+      rawText,
+      engine,
+    );
     final direction = _extractDirection(rawText);
     final occurredAt = _extractDate(lines, rawText);
     final suggestedCategory = _suggestCategory(merchant, rawText);
@@ -481,7 +488,9 @@ class OcrService {
     final lower = fullText.toLowerCase();
     if (lower.contains('qris')) return 'QRIS';
     if (lower.contains('blu') || lower.contains('bca')) return 'blu by BCA';
-    if (lower.contains('nagari') || lower.contains('ollin')) return 'Bank Nagari';
+    if (lower.contains('nagari') || lower.contains('ollin')) {
+      return 'Bank Nagari';
+    }
     if (lower.contains('tunai') || lower.contains('cash')) return 'Tunai';
     return null;
   }

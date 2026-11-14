@@ -189,82 +189,84 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         // Edge-to-edge: ikon status bar kontras dengan tema.
         value: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness:
-              isDark ? Brightness.light : Brightness.dark, // Android
-          statusBarBrightness:
-              isDark ? Brightness.dark : Brightness.light, // iOS
+          statusBarIconBrightness: isDark
+              ? Brightness.light
+              : Brightness.dark, // Android
+          statusBarBrightness: isDark
+              ? Brightness.dark
+              : Brightness.light, // iOS
         ),
         child: Scaffold(
-        backgroundColor: context.q.bg,
-        extendBody: true,
-        body: IndexedStack(
-          index: _tab,
-          children: [
-            QuestStage(
-              token: _tabTokens[0],
-              child: TickerMode(
-                enabled: _tab == 0,
-                child: _BerandaTab(
-                  repository: widget.repository,
-                  pipeline: widget.pipeline,
-                  progress: widget.progress,
-                  ruleSet: widget.ruleSet,
-                  onOpenTransaksi: _openTransaksi,
-                  onOpenAnggaran: _openAnggaran,
-                  onOpenBon: _openBon,
+          backgroundColor: context.q.bg,
+          extendBody: true,
+          body: IndexedStack(
+            index: _tab,
+            children: [
+              QuestStage(
+                token: _tabTokens[0],
+                child: TickerMode(
+                  enabled: _tab == 0,
+                  child: _BerandaTab(
+                    repository: widget.repository,
+                    pipeline: widget.pipeline,
+                    progress: widget.progress,
+                    ruleSet: widget.ruleSet,
+                    onOpenTransaksi: _openTransaksi,
+                    onOpenAnggaran: _openAnggaran,
+                    onOpenBon: _openBon,
+                  ),
                 ),
               ),
-            ),
-            QuestStage(
-              token: _tabTokens[1],
-              child: TickerMode(
-                enabled: _tab == 1,
-                child: TransaksiScreen(
-                  repository: widget.repository,
-                  progress: widget.progress,
-                  pipeline: widget.pipeline,
-                  ruleSet: widget.ruleSet,
+              QuestStage(
+                token: _tabTokens[1],
+                child: TickerMode(
+                  enabled: _tab == 1,
+                  child: TransaksiScreen(
+                    repository: widget.repository,
+                    progress: widget.progress,
+                    pipeline: widget.pipeline,
+                    ruleSet: widget.ruleSet,
+                  ),
                 ),
               ),
-            ),
-            QuestStage(
-              token: _tabTokens[2],
-              child: TickerMode(
-                enabled: _tab == 2,
-                child: BonScreen(
-                  repository: widget.repository,
-                  progress: widget.progress,
+              QuestStage(
+                token: _tabTokens[2],
+                child: TickerMode(
+                  enabled: _tab == 2,
+                  child: BonScreen(
+                    repository: widget.repository,
+                    progress: widget.progress,
+                  ),
                 ),
               ),
-            ),
-            QuestStage(
-              token: _tabTokens[3],
-              child: TickerMode(
-                enabled: _tab == 3,
-                child: LaporanScreen(
-                  repository: widget.repository,
-                  progress: widget.progress,
+              QuestStage(
+                token: _tabTokens[3],
+                child: TickerMode(
+                  enabled: _tab == 3,
+                  child: LaporanScreen(
+                    repository: widget.repository,
+                    progress: widget.progress,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
+          bottomNavigationBar: StreamBuilder<List<Bon>>(
+            stream: _bonsWatch,
+            builder: (context, snapshot) {
+              final hasOld = (snapshot.data ?? const <Bon>[]).any(
+                (b) => b.settledAt == null && bonNeedsBadge(b.occurredAt),
+              );
+              return QuestBottomNav(
+                index: _tab,
+                onChanged: _onTabChanged,
+                destinations: HomeScreen._destinations,
+                badges: hasOld ? const {2} : const <int>{},
+                centerAction: _getCenterAction(),
+              );
+            },
+          ),
         ),
-        bottomNavigationBar: StreamBuilder<List<Bon>>(
-          stream: _bonsWatch,
-          builder: (context, snapshot) {
-            final hasOld = (snapshot.data ?? const <Bon>[]).any(
-              (b) => b.settledAt == null && bonNeedsBadge(b.occurredAt),
-            );
-            return QuestBottomNav(
-              index: _tab,
-              onChanged: _onTabChanged,
-              destinations: HomeScreen._destinations,
-              badges: hasOld ? const {2} : const <int>{},
-              centerAction: _getCenterAction(),
-            );
-          },
-        ),
-      ),
       ),
     );
   }

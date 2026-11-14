@@ -419,9 +419,10 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
             // Arah Transaksi
             Text(
               'Arah Aliran Dana',
-              style: context
-                  .qSmall()
-                  .copyWith(color: q.muted, fontWeight: FontWeight.w700),
+              style: context.qSmall().copyWith(
+                color: q.muted,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: Spacing.xs),
             QuestSegmented<Direction>(
@@ -445,9 +446,10 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
             // Jenis Transaksi
             Text(
               'Jenis Transaksi',
-              style: context
-                  .qSmall()
-                  .copyWith(color: q.muted, fontWeight: FontWeight.w700),
+              style: context.qSmall().copyWith(
+                color: q.muted,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: Spacing.xs),
             QuestSegmented<TxKind>(
@@ -467,15 +469,19 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
               children: [
                 Text(
                   'Kata Kunci Wajib (Cocokkan Teks)',
-                  style: context
-                      .qSmall()
-                      .copyWith(color: q.muted, fontWeight: FontWeight.w700),
+                  style: context.qSmall().copyWith(
+                    color: q.muted,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 Text(
                   '${_selectedKeywords.length} terpilih',
                   style: context
                       .qSmall(11.5)
-                      .copyWith(color: q.primaryText, fontWeight: FontWeight.w800),
+                      .copyWith(
+                        color: q.primaryText,
+                        fontWeight: FontWeight.w800,
+                      ),
                 ),
               ],
             ),
@@ -631,9 +637,9 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
                       ),
                       Text(
                         '${_direction == Direction.incoming ? 'Masuk' : 'Keluar'} · ${_kind.name}',
-                        style: context
-                            .qSmall()
-                            .copyWith(fontWeight: FontWeight.w700),
+                        style: context.qSmall().copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ],
                   ),

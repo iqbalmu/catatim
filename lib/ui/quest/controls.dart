@@ -204,8 +204,8 @@ class QuestIconButton extends StatelessWidget {
         label: tooltip == null
             ? null
             : badge
-                ? '$tooltip, ada pemberitahuan'
-                : tooltip,
+            ? '$tooltip, ada pemberitahuan'
+            : tooltip,
         button: true,
         enabled: onPressed != null,
         child: QuestPress(
@@ -264,9 +264,7 @@ class QuestSwitch extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadius.pill),
                 // Track mati diberi garis: di dark, surface2 hanya 1,2:1
                 // terhadap kartu sehingga bentuk toggle bisa tenggelam.
-                border: Border.all(
-                  color: value ? Colors.transparent : q.line,
-                ),
+                border: Border.all(color: value ? Colors.transparent : q.line),
               ),
               child: AnimatedAlign(
                 duration: QuestMotion.fast,

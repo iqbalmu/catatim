@@ -23,8 +23,9 @@ String budgetAlertPeriodKey(LimitScope scope, DateTime now) {
   return switch (scope) {
     LimitScope.daily => 'd${stamp(today)}',
     LimitScope.weekly => 'w${stamp(monday)}',
-    LimitScope.monthly => 'm${today.year.toString().padLeft(4, '0')}-'
-        '${today.month.toString().padLeft(2, '0')}',
+    LimitScope.monthly =>
+      'm${today.year.toString().padLeft(4, '0')}-'
+          '${today.month.toString().padLeft(2, '0')}',
   };
 }
 
@@ -99,14 +100,16 @@ BudgetAlertPlan planBudgetAlerts({
     final shouldFire = over || (used * 100 ~/ limit) >= thresholdPercent;
     final key = _stateKey(scope, over: over);
     if (!shouldFire || next[key] == period) continue;
-    hits.add(BudgetAlertHit(
-      scope: scope,
-      used: used,
-      limit: limit,
-      percent: used * 100 ~/ limit,
-      over: over,
-      note: line.note,
-    ));
+    hits.add(
+      BudgetAlertHit(
+        scope: scope,
+        used: used,
+        limit: limit,
+        percent: used * 100 ~/ limit,
+        over: over,
+        note: line.note,
+      ),
+    );
     next[key] = period;
   }
 

@@ -66,11 +66,12 @@ class _TopExpenseRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tx = item.tx;
-    final party = (tx.counterparty != null && tx.counterparty!.trim().isNotEmpty)
+    final party =
+        (tx.counterparty != null && tx.counterparty!.trim().isNotEmpty)
         ? tx.counterparty!.trim()
         : (tx.rawTitle != null && tx.rawTitle!.trim().isNotEmpty)
-            ? tx.rawTitle!.trim()
-            : tx.kind.label;
+        ? tx.rawTitle!.trim()
+        : tx.kind.label;
     final catName = item.category?.name ?? 'Tanpa Kategori';
     final sharePct = totalOut > 0 ? ((tx.amount / totalOut) * 100).round() : 0;
 
@@ -79,76 +80,81 @@ class _TopExpenseRow extends StatelessWidget {
       label:
           '$party, $catName, ${Money.format(tx.amount)}, $sharePct% dari pengeluaran',
       child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.card),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: Spacing.m, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: rank == 1 ? context.q.outgoingTint : context.q.surface2,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '#$rank',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                  color: rank == 1 ? context.q.bad : context.q.muted,
-                  fontFeatures: _tabular,
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Spacing.m,
+            vertical: 12,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: rank == 1
+                      ? context.q.outgoingTint
+                      : context.q.surface2,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    party,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w700,
-                      color: context.q.text,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${idDayMonth(tx.occurredAt)} · $catName · $sharePct% total',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.qSmall(11),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 120),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: QuestMoney(
-                  amount: tx.amount,
-                  tone: MoneyTone.outgoing,
-                  alignment: Alignment.centerRight,
+                child: Text(
+                  '#$rank',
                   style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w800,
-                    color: context.q.bad,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    color: rank == 1 ? context.q.bad : context.q.muted,
                     fontFeatures: _tabular,
                   ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      party,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: context.q.text,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${idDayMonth(tx.occurredAt)} · $catName · $sharePct% total',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.qSmall(11),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 120),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: QuestMoney(
+                    amount: tx.amount,
+                    tone: MoneyTone.outgoing,
+                    alignment: Alignment.centerRight,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w800,
+                      color: context.q.bad,
+                      fontFeatures: _tabular,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

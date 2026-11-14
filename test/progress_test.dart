@@ -39,11 +39,11 @@ void main() {
         repo.setSetting(kKeyDailyLimit, '$limit');
 
     Future<void> transferAt(DateTime when, int amount) => repo.addManual(
-          amount: amount,
-          direction: Direction.outgoing,
-          kind: TxKind.internal,
-          occurredAt: when,
-        );
+      amount: amount,
+      direction: Direction.outgoing,
+      kind: TxKind.internal,
+      occurredAt: when,
+    );
 
     test('3 hari dalam jatah → streak 3', () async {
       await setDaily(5000);
@@ -117,15 +117,17 @@ void main() {
       expect(progress.latest!.streakDays, 2);
     });
 
-    test('tanpa transaksi & tanpa limit: streak 0, pause, mood sleepy',
-        () async {
-      await progress.refresh();
-      final p = progress.latest!;
-      expect(p.streakDays, 0);
-      expect(p.streakPaused, isTrue);
-      expect(p.recordedToday, isFalse);
-      expect(p.mood, MascotMood.sleepy);
-    });
+    test(
+      'tanpa transaksi & tanpa limit: streak 0, pause, mood sleepy',
+      () async {
+        await progress.refresh();
+        final p = progress.latest!;
+        expect(p.streakDays, 0);
+        expect(p.streakPaused, isTrue);
+        expect(p.recordedToday, isFalse);
+        expect(p.mood, MascotMood.sleepy);
+      },
+    );
 
     test('milestone streak 7 dirayakan saat hari ini dalam jatah', () async {
       await setDaily(5000);
@@ -236,10 +238,7 @@ void main() {
       await repo.setSetting(kKeyDailyLimit, '5000');
       await progress.onTransactionRecorded();
       expect(progress.latest!.mood, MascotMood.celebrate);
-      expect(
-        await progress.consumePendingRecovery(),
-        contains('Batas harian'),
-      );
+      expect(await progress.consumePendingRecovery(), contains('Batas harian'));
       expect(await progress.consumePendingRecovery(), isNull);
     });
 
@@ -270,19 +269,21 @@ void main() {
       expect(progress.latest!.moodLine, contains('terpakai'));
     });
 
-    test('saldo gabungan negatif → mood broke, bahkan saat budget aman',
-        () async {
-      final accounts = await repo.getAccounts();
-      await repo.setOpeningBalance(accounts.first.id, -50000);
-      await progress.refresh();
-      expect(progress.latest!.mood, MascotMood.broke);
-      expect(progress.latest!.moodLine, contains('minus'));
+    test(
+      'saldo gabungan negatif → mood broke, bahkan saat budget aman',
+      () async {
+        final accounts = await repo.getAccounts();
+        await repo.setOpeningBalance(accounts.first.id, -50000);
+        await progress.refresh();
+        expect(progress.latest!.mood, MascotMood.broke);
+        expect(progress.latest!.moodLine, contains('minus'));
 
-      // Pulih: saldo positif kembali ke mood budget.
-      await repo.setOpeningBalance(accounts.first.id, 100000);
-      await progress.refresh();
-      expect(progress.latest!.mood, isNot(MascotMood.broke));
-    });
+        // Pulih: saldo positif kembali ke mood budget.
+        await repo.setOpeningBalance(accounts.first.id, 100000);
+        await progress.refresh();
+        expect(progress.latest!.mood, isNot(MascotMood.broke));
+      },
+    );
 
     test('alokasi ber-scope akun hanya menghitung akun itu', () async {
       final cats = await repo.watchCategories().first;
@@ -308,8 +309,9 @@ void main() {
       );
 
       await progress.refresh();
-      final line = progress.latest!.snapshot.lines
-          .firstWhere((l) => l.label.contains('Makanan'));
+      final line = progress.latest!.snapshot.lines.firstWhere(
+        (l) => l.label.contains('Makanan'),
+      );
       expect(line.label, 'Makanan · blu by BCA');
       expect(line.used, 2000);
       expect(line.level, BudgetLevel.over);
@@ -343,8 +345,9 @@ void main() {
       // 50rb - 40rb = 10rb.
       expect(progress.latest!.dailyPace!.safeToSpend, 10000);
       expect(progress.latest!.monthOut, 40000);
-      final dayLine = progress.latest!.snapshot.lines
-          .firstWhere((l) => l.label == 'Batas harian');
+      final dayLine = progress.latest!.snapshot.lines.firstWhere(
+        (l) => l.label == 'Batas harian',
+      );
       expect(dayLine.used, 40000);
       // Transfer antar-akun bukan belanja: pace tak berubah.
       await repo.addManual(

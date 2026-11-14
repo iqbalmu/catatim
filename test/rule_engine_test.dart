@@ -224,7 +224,8 @@ void main() {
       final tf = engine.parse(
         packageName: 'com.bca',
         title: 'm-BCA',
-        body: 'm-Transfer berhasil ke rek 1234567890 a.n. BUDI sebesar Rp 1.500.000',
+        body:
+            'm-Transfer berhasil ke rek 1234567890 a.n. BUDI sebesar Rp 1.500.000',
       );
       expect(tf, isNotNull);
       expect(tf!.bankId, 'bca');
@@ -249,7 +250,8 @@ void main() {
       final tfMasuk = engine.parse(
         packageName: 'id.bmri.livin',
         title: 'Livin by Mandiri',
-        body: 'Kamu menerima transfer masuk sebesar Rp 500.000 dari SITI AMINAH',
+        body:
+            'Kamu menerima transfer masuk sebesar Rp 500.000 dari SITI AMINAH',
       );
       expect(tfMasuk, isNotNull);
       expect(tfMasuk!.bankId, 'mandiri');
@@ -445,47 +447,63 @@ void main() {
   group('Deteksi Notifikasi Non-Transaksi & Pola Abaikan', () {
     test('deteksi OTP dan kode keamanan', () {
       expect(
-        RuleEngine.isNonTransactionNotification('Kode OTP Anda adalah 123456. Jangan berikan ke siapa pun.'),
+        RuleEngine.isNonTransactionNotification(
+          'Kode OTP Anda adalah 123456. Jangan berikan ke siapa pun.',
+        ),
         isTrue,
       );
       expect(
-        RuleEngine.isNonTransactionNotification('BCA: Kode verifikasi m-Token Anda 849201 untuk login.'),
+        RuleEngine.isNonTransactionNotification(
+          'BCA: Kode verifikasi m-Token Anda 849201 untuk login.',
+        ),
         isTrue,
       );
     });
 
     test('deteksi login baru dan alert keamanan akun', () {
       expect(
-        RuleEngine.isNonTransactionNotification('Login baru berhasil dari Chrome Windows pada 12:30 WIB.'),
+        RuleEngine.isNonTransactionNotification(
+          'Login baru berhasil dari Chrome Windows pada 12:30 WIB.',
+        ),
         isTrue,
       );
       expect(
-        RuleEngine.isNonTransactionNotification('Perangkat baru terdeteksi masuk ke akun blu Anda.'),
+        RuleEngine.isNonTransactionNotification(
+          'Perangkat baru terdeteksi masuk ke akun blu Anda.',
+        ),
         isTrue,
       );
     });
 
     test('deteksi promo dan penawaran pemasaran', () {
       expect(
-        RuleEngine.isNonTransactionNotification('Dapatkan cashback hingga Rp 50.000 dengan bayar QRIS. S&K berlaku.'),
+        RuleEngine.isNonTransactionNotification(
+          'Dapatkan cashback hingga Rp 50.000 dengan bayar QRIS. S&K berlaku.',
+        ),
         isTrue,
       );
     });
 
     test('deteksi sisa saldo murni tanpa mutasi transaksi', () {
       expect(
-        RuleEngine.isNonTransactionNotification('Sisa saldo rekening Anda saat ini adalah Rp 1.500.000.'),
+        RuleEngine.isNonTransactionNotification(
+          'Sisa saldo rekening Anda saat ini adalah Rp 1.500.000.',
+        ),
         isTrue,
       );
     });
 
     test('transaksi riil tidak dianggap non-transaksi', () {
       expect(
-        RuleEngine.isNonTransactionNotification('Transfer masuk sebesar Rp 500.000 dari BUDI'),
+        RuleEngine.isNonTransactionNotification(
+          'Transfer masuk sebesar Rp 500.000 dari BUDI',
+        ),
         isFalse,
       );
       expect(
-        RuleEngine.isNonTransactionNotification('Pembayaran QRIS Rp 25.000 di Kopi Kenangan berhasil'),
+        RuleEngine.isNonTransactionNotification(
+          'Pembayaran QRIS Rp 25.000 di Kopi Kenangan berhasil',
+        ),
         isFalse,
       );
     });
@@ -511,12 +529,27 @@ void main() {
       );
 
       // Cocok dengan pola global
-      expect(customEngine.isIgnored('Mohon isi survey kepuasan pelanggan blu'), isTrue);
+      expect(
+        customEngine.isIgnored('Mohon isi survey kepuasan pelanggan blu'),
+        isTrue,
+      );
 
       // Cocok dengan pola spesifik bank
-      expect(customEngine.isIgnored('Tagihan kartu kredit Anda jatuh tempo', bankId: 'bca'), isTrue);
+      expect(
+        customEngine.isIgnored(
+          'Tagihan kartu kredit Anda jatuh tempo',
+          bankId: 'bca',
+        ),
+        isTrue,
+      );
       // Tidak cocok jika bank berbeda
-      expect(customEngine.isIgnored('Tagihan kartu kredit Anda jatuh tempo', bankId: 'mandiri'), isFalse);
+      expect(
+        customEngine.isIgnored(
+          'Tagihan kartu kredit Anda jatuh tempo',
+          bankId: 'mandiri',
+        ),
+        isFalse,
+      );
     });
   });
 }

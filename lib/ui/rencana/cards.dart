@@ -115,8 +115,8 @@ class _LimitMiniCard extends StatelessWidget {
                     over
                         ? 'lewat ${_ringkasRp(used - limit!)} · batas ${_ringkasRp(limit!)}'
                         : (used > 0
-                            ? 'sisa ${_ringkasRp(limit! - used)} · batas ${_ringkasRp(limit!)}'
-                            : 'batas ${_ringkasRp(limit!)}'),
+                              ? 'sisa ${_ringkasRp(limit! - used)} · batas ${_ringkasRp(limit!)}'
+                              : 'batas ${_ringkasRp(limit!)}'),
                     style: TextStyle(
                       fontSize: 10.5,
                       fontWeight: over ? FontWeight.w700 : FontWeight.w500,
@@ -339,9 +339,7 @@ class _BatasBulananCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: hasLimit
-                      ? (isOver
-                            ? q.outgoingTint
-                            : q.incomingTint)
+                      ? (isOver ? q.outgoingTint : q.incomingTint)
                       : q.surface2,
                   borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),

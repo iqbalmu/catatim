@@ -8,10 +8,7 @@ import '../theme/tokens.dart';
 import 'quest.dart';
 
 class GamificationSheet extends StatelessWidget {
-  const GamificationSheet({
-    super.key,
-    required this.progress,
-  });
+  const GamificationSheet({super.key, required this.progress});
 
   final ProgressService progress;
 
@@ -58,17 +55,19 @@ class GamificationSheet extends StatelessWidget {
           // Header: satu baris tenang tanpa divider — konten langsung
           // memberi napas lewat spacing, bukan garis.
           Padding(
-            padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.xs, Spacing.xs, Spacing.s),
+            padding: const EdgeInsets.fromLTRB(
+              Spacing.m,
+              Spacing.xs,
+              Spacing.xs,
+              Spacing.s,
+            ),
             child: Row(
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Pochy, Sahabat Hematmu',
-                        style: context.qTitle(16),
-                      ),
+                      Text('Pochy, Sahabat Hematmu', style: context.qTitle(16)),
                       Text(
                         'Nemenin kamu ngatur uang tiap hari',
                         style: context.qSmall(),
@@ -88,7 +87,12 @@ class GamificationSheet extends StatelessWidget {
           // Scrollable Body
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.s, Spacing.m, Spacing.m),
+              padding: const EdgeInsets.fromLTRB(
+                Spacing.m,
+                Spacing.s,
+                Spacing.m,
+                Spacing.m,
+              ),
               children: [
                 // 1. Panggung Maskot & Mood + Streak — digabung satu baris
                 // agar seluruh isi sheet muat tanpa scroll: maskot jangkar,
@@ -96,10 +100,7 @@ class GamificationSheet extends StatelessWidget {
                 QuestEnter(
                   child: Row(
                     children: [
-                      MascotStage(
-                        mood: mood,
-                        size: 88,
-                      ),
+                      MascotStage(mood: mood, size: 88),
                       const SizedBox(width: Spacing.sm),
                       Expanded(
                         child: Column(
@@ -107,7 +108,9 @@ class GamificationSheet extends StatelessWidget {
                           children: [
                             Text(
                               summary?.moodLine ?? 'Pochy memantau keuanganmu',
-                              style: context.qTitle(14.5).copyWith(height: 1.25),
+                              style: context
+                                  .qTitle(14.5)
+                                  .copyWith(height: 1.25),
                             ),
                             const SizedBox(height: Spacing.xs),
                             Row(
@@ -160,73 +163,75 @@ class GamificationSheet extends StatelessWidget {
                     index: 2,
                     child: QuestCard(
                       child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 3,
-                                      ),
-                                      decoration: BoxDecoration(
-                                      color: context.q.primarySolid,
-                                        borderRadius: BorderRadius.circular(AppRadius.pill),
-                                      ),
-                                      child: Text(
-                                        'Level ${stats.level}',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w800,
-                                          color: context.q.onPrimary,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: context.q.primarySolid,
+                                          borderRadius: BorderRadius.circular(
+                                            AppRadius.pill,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'Level ${stats.level}',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w800,
+                                            color: context.q.onPrimary,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(width: Spacing.xs),
-                                    Text(
-                                      stats.title,
-                                      style: context.qTitle(15),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            QuestCountUp(
-                              value: stats.currentXp,
-                              builder: (context, xp) => Text(
-                                '$xp dari ${stats.nextLevelXp} poin',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: context.q.primaryText,
-                                  fontFeatures: const [
-                                    FontFeature.tabularFigures(),
-                                  ],
+                                      const SizedBox(width: Spacing.xs),
+                                      Text(
+                                        stats.title,
+                                        style: context.qTitle(15),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              QuestCountUp(
+                                value: stats.currentXp,
+                                builder: (context, xp) => Text(
+                                  '$xp dari ${stats.nextLevelXp} poin',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: context.q.primaryText,
+                                    fontFeatures: const [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: Spacing.s),
-                        QuestProgressBar(
-                          value: stats.progress.clamp(0.0, 1.0),
-                          color: context.q.primary,
-                          backgroundColor: context.q.surface2,
-                        ),
-                        const SizedBox(height: Spacing.xs),
-                        Text(
-                          'Catat & jaga batas harian, poinnya jalan sendiri.',
-                        style: context.qSmall(11.5),
+                            ],
+                          ),
+                          const SizedBox(height: Spacing.s),
+                          QuestProgressBar(
+                            value: stats.progress.clamp(0.0, 1.0),
+                            color: context.q.primary,
+                            backgroundColor: context.q.surface2,
+                          ),
+                          const SizedBox(height: Spacing.xs),
+                          Text(
+                            'Catat & jaga batas harian, poinnya jalan sendiri.',
+                            style: context.qSmall(11.5),
+                          ),
+                        ],
                       ),
-                      ],
                     ),
-                  ),
                   ),
                   const SizedBox(height: Spacing.sm),
                   // 4. Lencana Disiplin Section
@@ -235,10 +240,7 @@ class GamificationSheet extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Lencanamu',
-                          style: context.qTitle(15),
-                        ),
+                        Text('Lencanamu', style: context.qTitle(15)),
                         Text(
                           '${stats.badges.where((b) => b.unlocked).length} dari ${stats.badges.length} Terbuka',
                           style: context.qSmall(),
@@ -254,7 +256,9 @@ class GamificationSheet extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(child: _BadgeTile(badge: stats.badges[r * 2])),
+                          Expanded(
+                            child: _BadgeTile(badge: stats.badges[r * 2]),
+                          ),
                           const SizedBox(width: Spacing.s),
                           Expanded(
                             child: r * 2 + 1 < stats.badges.length
@@ -268,9 +272,12 @@ class GamificationSheet extends StatelessWidget {
                 ],
 
                 // 5. Jejak Disiplin Bulan Ini
-                if (summary?.disciplineMonth != null && summary!.disciplineMonth.isNotEmpty) ...[
+                if (summary?.disciplineMonth != null &&
+                    summary!.disciplineMonth.isNotEmpty) ...[
                   QuestEnter(
-                    index: stats != null ? 4 + (stats.badges.length / 2).ceil() : 2,
+                    index: stats != null
+                        ? 4 + (stats.badges.length / 2).ceil()
+                        : 2,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -293,7 +300,12 @@ class GamificationSheet extends StatelessWidget {
                                 dotColor = context.q.bad;
                               }
                               return Tooltip(
-                                message: 'Tgl ${d.day.day}: ${d.future ? "Belum lewat" : d.within ? "Aman" : "Lewat batas"}',
+                                message:
+                                    'Tgl ${d.day.day}: ${d.future
+                                        ? "Belum lewat"
+                                        : d.within
+                                        ? "Aman"
+                                        : "Lewat batas"}',
                                 child: SizedBox(
                                   width: 36,
                                   height: 36,
@@ -303,7 +315,9 @@ class GamificationSheet extends StatelessWidget {
                                       height: 28,
                                       alignment: Alignment.center,
                                       decoration: BoxDecoration(
-                                        color: dotColor.withValues(alpha: d.future ? 0.5 : 0.18),
+                                        color: dotColor.withValues(
+                                          alpha: d.future ? 0.5 : 0.18,
+                                        ),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
@@ -311,7 +325,9 @@ class GamificationSheet extends StatelessWidget {
                                         style: TextStyle(
                                           fontSize: 10.5,
                                           fontWeight: FontWeight.w700,
-                                          color: d.future ? context.q.muted : dotColor,
+                                          color: d.future
+                                              ? context.q.muted
+                                              : dotColor,
                                         ),
                                       ),
                                     ),

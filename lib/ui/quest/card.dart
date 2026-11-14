@@ -66,8 +66,7 @@ class QuestCard extends StatelessWidget {
           QuestCardVariant.flat => null,
         };
 
-    final BoxBorder effectiveBorder =
-        border ?? Border.all(color: q.line);
+    final BoxBorder effectiveBorder = border ?? Border.all(color: q.line);
 
     final card = Container(
       padding: effectivePadding,
@@ -126,9 +125,7 @@ class QuestChip extends StatelessWidget {
           child: AnimatedContainer(
             duration: QuestMotion.fast,
             curve: QuestMotion.easeOut,
-            constraints: BoxConstraints(
-              minHeight: compact ? 38 : 48,
-            ),
+            constraints: BoxConstraints(minHeight: compact ? 38 : 48),
             alignment: Alignment.center,
             padding: EdgeInsets.symmetric(
               horizontal: compact ? 14 : 16,
@@ -150,10 +147,7 @@ class QuestChip extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (leading != null) ...[
-                    leading!,
-                    const SizedBox(width: 6),
-                  ],
+                  if (leading != null) ...[leading!, const SizedBox(width: 6)],
                   Text(label),
                 ],
               ),

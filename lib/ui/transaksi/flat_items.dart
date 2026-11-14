@@ -8,10 +8,7 @@ sealed class _FlatTxItem {
 class _FlatDayHeaderItem extends _FlatTxItem {
   final DateTime day;
   final int? totalOut;
-  const _FlatDayHeaderItem({
-    required this.day,
-    this.totalOut,
-  });
+  const _FlatDayHeaderItem({required this.day, this.totalOut});
 
   @override
   Key get key => ValueKey('day_${day.millisecondsSinceEpoch}');

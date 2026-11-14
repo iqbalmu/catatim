@@ -107,8 +107,7 @@ class Bons extends Table {
   DateTimeColumn get settledAt => dateTime().nullable()();
   IntColumn get categoryId =>
       integer().nullable().references(Categories, #id)();
-  IntColumn get accountId =>
-      integer().nullable().references(Accounts, #id)();
+  IntColumn get accountId => integer().nullable().references(Accounts, #id)();
   IntColumn get settlementTransactionId =>
       integer().nullable().references(Transactions, #id)();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();

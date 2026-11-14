@@ -24,7 +24,8 @@ class _InteractiveTrendCard extends StatelessWidget {
         break;
       }
     }
-    final activeIdx = (selectedIndex != null &&
+    final activeIdx =
+        (selectedIndex != null &&
             selectedIndex! >= 0 &&
             selectedIndex! < buckets.length)
         ? selectedIndex!
@@ -53,7 +54,9 @@ class _InteractiveTrendCard extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(
-                isMonthlyGranularity ? 'Perbandingan Bulanan' : 'Perbandingan Mingguan',
+                isMonthlyGranularity
+                    ? 'Perbandingan Bulanan'
+                    : 'Perbandingan Mingguan',
                 style: context.qTitle(15),
               ),
               Row(
@@ -135,49 +138,55 @@ class _InteractiveTrendCard extends StatelessWidget {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 const yAxisWidth = 46.0;
-                final plotWidth = math.max(1.0, constraints.maxWidth - yAxisWidth);
+                final plotWidth = math.max(
+                  1.0,
+                  constraints.maxWidth - yAxisWidth,
+                );
 
                 return Semantics(
                   container: true,
-                  label: 'Grafik ${isMonthlyGranularity ? 'bulanan' : 'mingguan'}, '
+                  label:
+                      'Grafik ${isMonthlyGranularity ? 'bulanan' : 'mingguan'}, '
                       '${buckets.length} periode. Terpilih '
                       '${activeBucket.label}: masuk '
                       '${Money.format(activeBucket.incoming)}, keluar '
                       '${Money.format(activeBucket.outgoing)}',
                   child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTapDown: (details) {
-                    final dx = details.localPosition.dx - yAxisWidth;
-                    if (dx < 0) return;
-                    final idx = (dx / (plotWidth / buckets.length))
-                        .floor()
-                        .clamp(0, buckets.length - 1);
-                    onSelectIndex(idx);
-                  },
-                  child: QuestReplay(
-                    duration:
-                        (MediaQuery.maybeDisableAnimationsOf(context) ?? false)
-                        ? Duration.zero
-                        : const Duration(milliseconds: 720),
-                    curve: Curves.linear,
-                    builder: (context, chartProgress) => CustomPaint(
-                      size: Size(constraints.maxWidth, 176),
-                      painter: _StructuredTrendPainter(
-                        buckets: buckets,
-                        maxValue: maxVal,
-                        selectedIndex: activeIdx,
-                        progress: chartProgress,
-                        yAxisWidth: yAxisWidth,
-                        inColor: context.q.good,
-                        outColor: context.q.bad,
-                        gridColor: context.q.line,
-                        highlightColor:
-                            context.q.primaryLight.withValues(alpha: 0.7),
-                        labelColor: context.q.muted,
-                        activeLabelColor: context.q.primaryText,
+                    behavior: HitTestBehavior.opaque,
+                    onTapDown: (details) {
+                      final dx = details.localPosition.dx - yAxisWidth;
+                      if (dx < 0) return;
+                      final idx = (dx / (plotWidth / buckets.length))
+                          .floor()
+                          .clamp(0, buckets.length - 1);
+                      onSelectIndex(idx);
+                    },
+                    child: QuestReplay(
+                      duration:
+                          (MediaQuery.maybeDisableAnimationsOf(context) ??
+                              false)
+                          ? Duration.zero
+                          : const Duration(milliseconds: 720),
+                      curve: Curves.linear,
+                      builder: (context, chartProgress) => CustomPaint(
+                        size: Size(constraints.maxWidth, 176),
+                        painter: _StructuredTrendPainter(
+                          buckets: buckets,
+                          maxValue: maxVal,
+                          selectedIndex: activeIdx,
+                          progress: chartProgress,
+                          yAxisWidth: yAxisWidth,
+                          inColor: context.q.good,
+                          outColor: context.q.bad,
+                          gridColor: context.q.line,
+                          highlightColor: context.q.primaryLight.withValues(
+                            alpha: 0.7,
+                          ),
+                          labelColor: context.q.muted,
+                          activeLabelColor: context.q.primaryText,
+                        ),
                       ),
                     ),
-                  ),
                   ),
                 );
               },
@@ -316,7 +325,12 @@ class _StructuredTrendPainter extends CustomPainter {
       if (isSelected) {
         canvas.drawRRect(
           RRect.fromRectAndRadius(
-            Rect.fromLTWH(groupLeft + 2, 0, math.max(0, groupW - 4), chartH + topPad),
+            Rect.fromLTWH(
+              groupLeft + 2,
+              0,
+              math.max(0, groupW - 4),
+              chartH + topPad,
+            ),
             const Radius.circular(8),
           ),
           Paint()..color = highlightColor,
@@ -324,15 +338,15 @@ class _StructuredTrendPainter extends CustomPainter {
       }
 
       final baseY = topPad + chartH;
-      final spread =
-          buckets.length > 1 ? (i / (buckets.length - 1)) * 0.34 : 0.0;
+      final spread = buckets.length > 1
+          ? (i / (buckets.length - 1)) * 0.34
+          : 0.0;
       final localRaw = ((progress - spread) / (1.0 - spread)).clamp(0.0, 1.0);
       final barProgress = Curves.easeOutCubic.transform(localRaw);
 
       // Incoming bar
       if (b.incoming > 0 && maxValue > 0 && barProgress > 0) {
-        final h =
-            math.max(4.0, (b.incoming / maxValue) * chartH) * barProgress;
+        final h = math.max(4.0, (b.incoming / maxValue) * chartH) * barProgress;
         canvas.drawRRect(
           RRect.fromRectAndCorners(
             Rect.fromLTWH(centerX - barGap / 2 - barW, baseY - h, barW, h),
@@ -345,8 +359,7 @@ class _StructuredTrendPainter extends CustomPainter {
 
       // Outgoing bar
       if (b.outgoing > 0 && maxValue > 0 && barProgress > 0) {
-        final h =
-            math.max(4.0, (b.outgoing / maxValue) * chartH) * barProgress;
+        final h = math.max(4.0, (b.outgoing / maxValue) * chartH) * barProgress;
         canvas.drawRRect(
           RRect.fromRectAndCorners(
             Rect.fromLTWH(centerX + barGap / 2, baseY - h, barW, h),

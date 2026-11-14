@@ -15,8 +15,7 @@ class RecentTransactionsCard extends StatefulWidget {
   final VoidCallback onSeeAll;
 
   @override
-  State<RecentTransactionsCard> createState() =>
-      _RecentTransactionsCardState();
+  State<RecentTransactionsCard> createState() => _RecentTransactionsCardState();
 }
 
 class _RecentTransactionsCardState extends State<RecentTransactionsCard> {

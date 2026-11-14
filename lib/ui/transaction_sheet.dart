@@ -477,7 +477,9 @@ class _TransactionSheetState extends State<TransactionSheet> {
   Widget _buildCategoryChips() {
     final q = context.q;
     final cats = _categories.where((c) {
-      if (_direction == Direction.outgoing && c.name == 'Transfer') return false;
+      if (_direction == Direction.outgoing && c.name == 'Transfer') {
+        return false;
+      }
       return true;
     }).toList();
     return SingleChildScrollView(
@@ -603,18 +605,20 @@ class _TransactionSheetState extends State<TransactionSheet> {
                     label:
                         'Nominal ${_amount > 0 ? Money.format(_amount) : 'nol'}',
                     child: Text(
-                    _amount > 0 ? Money.format(_amount) : 'Rp0',
-                    style: TextStyle(
-                      fontFamily: 'Nunito',
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      color: _amount > 0
-                          ? (_direction == Direction.outgoing ? q.bad : q.good)
-                          : q.muted.withValues(alpha: 0.5),
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                      _amount > 0 ? Money.format(_amount) : 'Rp0',
+                      style: TextStyle(
+                        fontFamily: 'Nunito',
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        color: _amount > 0
+                            ? (_direction == Direction.outgoing
+                                  ? q.bad
+                                  : q.good)
+                            : q.muted.withValues(alpha: 0.5),
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
                     ),
                   ),
-                    ),
                 ),
               ),
             ],
@@ -722,7 +726,9 @@ class _TransactionSheetState extends State<TransactionSheet> {
                         fontFamily: 'Nunito',
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
-                        color: _direction == Direction.outgoing ? q.bad : q.good,
+                        color: _direction == Direction.outgoing
+                            ? q.bad
+                            : q.good,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -740,7 +746,10 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: q.surface,
                     borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -783,13 +792,13 @@ class _TransactionSheetState extends State<TransactionSheet> {
                   labelText: _kind == TxKind.internal
                       ? 'Dari Akun'
                       : (_direction == Direction.outgoing
-                          ? 'Sumber Dana'
-                          : 'Masuk ke Akun'),
+                            ? 'Sumber Dana'
+                            : 'Masuk ke Akun'),
                   sheetTitle: _kind == TxKind.internal
                       ? 'Pilih Akun Asal'
                       : (_direction == Direction.outgoing
-                          ? 'Pilih Sumber Dana'
-                          : 'Pilih Akun Masuk'),
+                            ? 'Pilih Sumber Dana'
+                            : 'Pilih Akun Masuk'),
                   value: _accounts.any((a) => a.id == _accountId)
                       ? _accountId
                       : (_accounts.isNotEmpty ? _accounts.first.id : null),
@@ -827,11 +836,16 @@ class _TransactionSheetState extends State<TransactionSheet> {
                         value: k,
                         label: k.label,
                         subtitle: switch (k) {
-                          TxKind.payment => 'Belanja, tagihan, atau kebutuhan harian',
-                          TxKind.transfer => 'Kirim uang ke orang atau pihak lain',
-                          TxKind.internal => 'Pindah dana antar rekening / e-wallet sendiri',
-                          TxKind.topup => 'Isi saldo e-wallet atau uang elektronik',
-                          TxKind.withdrawal => 'Tarik tunai dari ATM atau kasir',
+                          TxKind.payment =>
+                            'Belanja, tagihan, atau kebutuhan harian',
+                          TxKind.transfer =>
+                            'Kirim uang ke orang atau pihak lain',
+                          TxKind.internal =>
+                            'Pindah dana antar rekening / e-wallet sendiri',
+                          TxKind.topup =>
+                            'Isi saldo e-wallet atau uang elektronik',
+                          TxKind.withdrawal =>
+                            'Tarik tunai dari ATM atau kasir',
                           TxKind.other => 'Transaksi jenis lainnya',
                         },
                         icon: switch (k) {
@@ -852,8 +866,10 @@ class _TransactionSheetState extends State<TransactionSheet> {
                           _toAccountId == null &&
                           _accounts.length > 1) {
                         _toAccountId = _accounts
-                            .firstWhere((a) => a.id != _accountId,
-                                orElse: () => _accounts.last)
+                            .firstWhere(
+                              (a) => a.id != _accountId,
+                              orElse: () => _accounts.last,
+                            )
                             .id;
                       }
                     });
@@ -873,11 +889,13 @@ class _TransactionSheetState extends State<TransactionSheet> {
                     value: _accounts.any((a) => a.id == _toAccountId)
                         ? _toAccountId
                         : (_accounts.length > 1
-                            ? _accounts
-                                .firstWhere((a) => a.id != _accountId,
-                                    orElse: () => _accounts.last)
-                                .id
-                            : null),
+                              ? _accounts
+                                    .firstWhere(
+                                      (a) => a.id != _accountId,
+                                      orElse: () => _accounts.last,
+                                    )
+                                    .id
+                              : null),
                     options: [
                       for (final a in _accounts)
                         QuestSelectOption(
@@ -948,9 +966,12 @@ class _TransactionSheetState extends State<TransactionSheet> {
                             setState(() {
                               _linkedBonId = v;
                               if (v != null) {
-                                final selected = matchingBons.firstWhere((b) => b.id == v);
+                                final selected = matchingBons.firstWhere(
+                                  (b) => b.id == v,
+                                );
                                 if (_counterpartyCtrl.text.isEmpty) {
-                                  _counterpartyCtrl.text = 'Pelunasan bon: ${selected.person}';
+                                  _counterpartyCtrl.text =
+                                      'Pelunasan bon: ${selected.person}';
                                 }
                                 if (_amount == 0 && selected.amount > 0) {
                                   _amount = selected.amount;

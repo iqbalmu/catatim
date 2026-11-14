@@ -35,22 +35,23 @@ void main() {
       int monthIn = 0,
       int lastMonthIn = 0,
       bool hasData = true,
-    }) =>
-        BudgetSnapshot(
-          lines: lines,
-          monthOut: monthOut,
-          lastMonthOut: lastMonthOut,
-          monthIn: monthIn,
-          lastMonthIn: lastMonthIn,
-          hasData: hasData,
-        );
+    }) => BudgetSnapshot(
+      lines: lines,
+      monthOut: monthOut,
+      lastMonthOut: lastMonthOut,
+      monthIn: monthIn,
+      lastMonthIn: lastMonthIn,
+      hasData: hasData,
+    );
 
     test('worstLevel over menang atas warning dan ok', () {
-      final s = snap(lines: const [
-        LimitLine(label: 'a', used: 10, limit: 100),
-        LimitLine(label: 'b', used: 80, limit: 100),
-        LimitLine(label: 'c', used: 120, limit: 100),
-      ]);
+      final s = snap(
+        lines: const [
+          LimitLine(label: 'a', used: 10, limit: 100),
+          LimitLine(label: 'b', used: 80, limit: 100),
+          LimitLine(label: 'c', used: 120, limit: 100),
+        ],
+      );
       expect(s.worstLevel, BudgetLevel.over);
       expect(s.overLines.single.label, 'c');
       expect(s.warningLines.single.label, 'b');
@@ -58,50 +59,61 @@ void main() {
     });
 
     test('criticalLine warning terburuk berdasar persentase', () {
-      final s = snap(lines: const [
-        LimitLine(label: 'a', used: 76, limit: 100),
-        LimitLine(label: 'b', used: 90, limit: 100),
-      ]);
+      final s = snap(
+        lines: const [
+          LimitLine(label: 'a', used: 76, limit: 100),
+          LimitLine(label: 'b', used: 90, limit: 100),
+        ],
+      );
       expect(s.criticalLine!.label, 'b');
     });
 
     test('tanpa masalah criticalLine null', () {
-      final s = snap(lines: const [
-        LimitLine(label: 'a', used: 10, limit: 100),
-      ]);
+      final s = snap(
+        lines: const [LimitLine(label: 'a', used: 10, limit: 100)],
+      );
       expect(s.criticalLine, isNull);
     });
 
     test('tren keluar: turun membaik, naik memburuk, ±5% datar', () {
-      expect(snap(monthOut: 900, lastMonthOut: 1000).outTrend,
-          TrendDirection.better);
-      expect(snap(monthOut: 1100, lastMonthOut: 1000).outTrend,
-          TrendDirection.worse);
-      expect(snap(monthOut: 1020, lastMonthOut: 1000).outTrend,
-          TrendDirection.flat);
+      expect(
+        snap(monthOut: 900, lastMonthOut: 1000).outTrend,
+        TrendDirection.better,
+      );
+      expect(
+        snap(monthOut: 1100, lastMonthOut: 1000).outTrend,
+        TrendDirection.worse,
+      );
+      expect(
+        snap(monthOut: 1020, lastMonthOut: 1000).outTrend,
+        TrendDirection.flat,
+      );
     });
 
     test('tren keluar saat bulan lalu kosong', () {
       // Bulan lalu 0, sekarang ada → memburuk.
-      expect(snap(monthOut: 100).outTrend,
-          TrendDirection.worse);
+      expect(snap(monthOut: 100).outTrend, TrendDirection.worse);
       // Dua-duanya kosong → datar.
-      expect(snap().outTrend,
-          TrendDirection.flat);
+      expect(snap().outTrend, TrendDirection.flat);
     });
 
     test('tren masuk: naik membaik', () {
-      expect(snap(monthIn: 1200, lastMonthIn: 1000).inTrend,
-          TrendDirection.better);
-      expect(snap(monthIn: 800, lastMonthIn: 1000).inTrend,
-          TrendDirection.worse);
+      expect(
+        snap(monthIn: 1200, lastMonthIn: 1000).inTrend,
+        TrendDirection.better,
+      );
+      expect(
+        snap(monthIn: 800, lastMonthIn: 1000).inTrend,
+        TrendDirection.worse,
+      );
     });
 
     test('label tren konsisten arah', () {
-      expect(trendLabel(TrendDirection.better, incoming: false),
-          'keluar turun');
-      expect(trendLabel(TrendDirection.worse, incoming: false),
-          'keluar naik');
+      expect(
+        trendLabel(TrendDirection.better, incoming: false),
+        'keluar turun',
+      );
+      expect(trendLabel(TrendDirection.worse, incoming: false), 'keluar naik');
       expect(trendLabel(TrendDirection.better, incoming: true), 'masuk naik');
     });
   });
@@ -173,12 +185,7 @@ void main() {
 
     test('tanpa batas apa pun: null', () {
       expect(
-        dailyPace(
-          now: now,
-          dayOut: 0,
-          weekOut: 0,
-          monthOut: 0,
-        ).safeToSpend,
+        dailyPace(now: now, dayOut: 0, weekOut: 0, monthOut: 0).safeToSpend,
         isNull,
       );
     });
@@ -235,10 +242,7 @@ void main() {
 
     test('bulanan dibagi hari bulan', () {
       expect(dailyBar(now: now, monthlyTotal: 3100000), 100000);
-      expect(
-        dailyBar(now: DateTime(2024, 2, 15), monthlyTotal: 290000),
-        10000,
-      );
+      expect(dailyBar(now: DateTime(2024, 2, 15), monthlyTotal: 290000), 10000);
     });
 
     test('nol/negatif dilewati', () {
@@ -258,57 +262,66 @@ void main() {
     });
   });
 
-
-
   group('heroBudgetLine', () {
     BudgetSnapshot snapOf(List<LimitLine> lines) => BudgetSnapshot(
-          lines: lines,
-          monthIn: 0,
-          monthOut: 0,
-          lastMonthIn: 0,
-          lastMonthOut: 0,
-          hasData: true,
-        );
+      lines: lines,
+      monthIn: 0,
+      monthOut: 0,
+      lastMonthIn: 0,
+      lastMonthOut: 0,
+      hasData: true,
+    );
 
-    test('hanya batas harian: tampil baris harian, bukan tanpa anggaran',
-        () {
-      final line = heroBudgetLine(snapOf(const [
-        LimitLine(label: 'Batas harian', used: 40000, limit: 50000),
-        LimitLine(label: 'Batas mingguan', used: 0),
-        LimitLine(label: 'Total bulan ini', used: 0),
-      ]));
+    test('hanya batas harian: tampil baris harian, bukan tanpa anggaran', () {
+      final line = heroBudgetLine(
+        snapOf(const [
+          LimitLine(label: 'Batas harian', used: 40000, limit: 50000),
+          LimitLine(label: 'Batas mingguan', used: 0),
+          LimitLine(label: 'Total bulan ini', used: 0),
+        ]),
+      );
       expect(line, isNotNull);
       expect(line!.label, 'Batas harian');
     });
 
     test('harian over menang atas bulanan yang masih ok', () {
-      final line = heroBudgetLine(snapOf(const [
-        LimitLine(label: 'Batas harian', used: 60000, limit: 50000),
-        LimitLine(label: 'Batas mingguan', used: 0),
-        LimitLine(label: 'Total bulan ini', used: 1000000, limit: 3100000),
-      ]));
+      final line = heroBudgetLine(
+        snapOf(const [
+          LimitLine(label: 'Batas harian', used: 60000, limit: 50000),
+          LimitLine(label: 'Batas mingguan', used: 0),
+          LimitLine(label: 'Total bulan ini', used: 1000000, limit: 3100000),
+        ]),
+      );
       expect(line!.label, 'Batas harian');
       expect(line.level, BudgetLevel.over);
     });
 
     test('tanpa batas di mana pun: null', () {
       expect(
-        heroBudgetLine(snapOf(const [
-          LimitLine(label: 'Batas harian', used: 40000),
-          LimitLine(label: 'Batas mingguan', used: 0),
-          LimitLine(label: 'Total bulan ini', used: 1000000),
-        ])),
+        heroBudgetLine(
+          snapOf(const [
+            LimitLine(label: 'Batas harian', used: 40000),
+            LimitLine(label: 'Batas mingguan', used: 0),
+            LimitLine(label: 'Total bulan ini', used: 1000000),
+          ]),
+        ),
         isNull,
       );
     });
 
     test('alokasi kategori over tanpa garis global: tetap null', () {
       expect(
-        heroBudgetLine(snapOf(const [
-          LimitLine(label: 'Batas harian', used: 0),
-          LimitLine(
-              label: 'Makanan', used: 150000, limit: 100000, isCategory: true),
-        ])),
+        heroBudgetLine(
+          snapOf(const [
+            LimitLine(label: 'Batas harian', used: 0),
+            LimitLine(
+              label: 'Makanan',
+              used: 150000,
+              limit: 100000,
+              isCategory: true,
+            ),
+          ]),
+        ),
         isNull,
       );
     });
@@ -331,5 +344,4 @@ void main() {
       expect(deltaLabel(1000000, 1000000), '±0%');
     });
   });
-
 }

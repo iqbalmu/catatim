@@ -65,7 +65,9 @@ void main() {
             direction: Direction.outgoing,
             kind: TxKind.payment,
             accountId: longAcc.id,
-            categoryId: i.isEven ? longCat.id : categories[i % categories.length].id,
+            categoryId: i.isEven
+                ? longCat.id
+                : categories[i % categories.length].id,
             counterparty:
                 'Pembayaran Tagihan Rutin Nomor $i Dengan Nama Merchant Sangat Panjang',
             occurredAt: thisMonthDay,
@@ -76,9 +78,9 @@ void main() {
         MaterialApp(
           theme: QuestSchemes.light(),
           builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              textScaler: const TextScaler.linear(1.3),
-            ),
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(1.3)),
             child: child!,
           ),
           home: LaporanScreen(repository: repo),
@@ -171,9 +173,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: QuestSchemes.light(),
-          home: Scaffold(
-            body: LaporanScreen(repository: repo),
-          ),
+          home: Scaffold(body: LaporanScreen(repository: repo)),
         ),
       );
       await tester.pumpAndSettle();

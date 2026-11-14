@@ -255,7 +255,8 @@ const List<CaptureScenario> kSimulatorPresets = [
     name: 'Kode OTP Rahasia',
     packageName: 'com.bcadigital.blu',
     title: 'blu by BCA',
-    body: 'JANGAN BERIKAN KODE OTP 948210 kepada siapa pun termasuk pihak bank.',
+    body:
+        'JANGAN BERIKAN KODE OTP 948210 kepada siapa pun termasuk pihak bank.',
     expectedParsed: false,
     isNegative: true,
   ),
@@ -265,7 +266,8 @@ const List<CaptureScenario> kSimulatorPresets = [
     name: 'Iklan / Promo Cashback',
     packageName: 'com.bcadigital.blu',
     title: 'blu by BCA',
-    body: 'Dapatkan cashback belanja hingga 50% untuk transaksi di merchant favoritmu!',
+    body:
+        'Dapatkan cashback belanja hingga 50% untuk transaksi di merchant favoritmu!',
     expectedParsed: false,
     isNegative: true,
   ),
@@ -306,16 +308,23 @@ class NotificationSimulator {
         if (scenario.expectedAmount != null &&
             draft.amount != scenario.expectedAmount) {
           passed = false;
-          failures.add('Nominal beda: dapat ${draft.amount}, ingin ${scenario.expectedAmount}');
+          failures.add(
+            'Nominal beda: dapat ${draft.amount}, ingin ${scenario.expectedAmount}',
+          );
         }
         if (scenario.expectedDirection != null &&
             draft.direction != scenario.expectedDirection) {
           passed = false;
-          failures.add('Arah beda: dapat ${draft.direction.name}, ingin ${scenario.expectedDirection!.name}');
+          failures.add(
+            'Arah beda: dapat ${draft.direction.name}, ingin ${scenario.expectedDirection!.name}',
+          );
         }
-        if (scenario.expectedKind != null && draft.kind != scenario.expectedKind) {
+        if (scenario.expectedKind != null &&
+            draft.kind != scenario.expectedKind) {
           passed = false;
-          failures.add('Jenis beda: dapat ${draft.kind.name}, ingin ${scenario.expectedKind!.name}');
+          failures.add(
+            'Jenis beda: dapat ${draft.kind.name}, ingin ${scenario.expectedKind!.name}',
+          );
         }
       }
 

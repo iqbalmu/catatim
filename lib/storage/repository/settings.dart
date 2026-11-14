@@ -32,14 +32,18 @@ extension SettingsRepo on LedgerRepository {
 
   /// Persen ambang peringatan (1–100; nilai rusak → bawaan 80).
   Future<int> budgetAlertThreshold() async {
-    final raw = int.tryParse(await getSetting(LedgerRepository.budgetAlertThresholdKey) ?? '');
+    final raw = int.tryParse(
+      await getSetting(LedgerRepository.budgetAlertThresholdKey) ?? '',
+    );
     return (raw == null || raw < 1 || raw > 100)
         ? LedgerRepository.defaultBudgetAlertThreshold
         : raw;
   }
 
-  Future<void> setBudgetAlertThreshold(int percent) =>
-      setSetting(LedgerRepository.budgetAlertThresholdKey, percent.clamp(1, 100).toString());
+  Future<void> setBudgetAlertThreshold(int percent) => setSetting(
+    LedgerRepository.budgetAlertThresholdKey,
+    percent.clamp(1, 100).toString(),
+  );
 
   /// State dedup peringatan: {scope#jenis: periodKey}. Disimpan agar
   /// satu garis hanya menembak sekali per periode.
@@ -50,8 +54,7 @@ extension SettingsRepo on LedgerRepository {
       final decoded = jsonDecode(raw);
       if (decoded is! Map) return const {};
       return {
-        for (final entry in decoded.entries)
-          '${entry.key}': '${entry.value}',
+        for (final entry in decoded.entries) '${entry.key}': '${entry.value}',
       };
     } catch (_) {
       return const {};
@@ -92,11 +95,10 @@ extension SettingsRepo on LedgerRepository {
   /// Stream nilai beberapa key app_settings sekaligus (satu query) —
   /// dipakai layar Anggaran untuk batas + filter kategorinya.
   Stream<Map<String, String>> watchSettings(List<String> keys) {
-    final query = _db.select(_db.appSettings)
-      ..where((s) => s.key.isIn(keys));
+    final query = _db.select(_db.appSettings)..where((s) => s.key.isIn(keys));
     return query.watch().map(
-          (rows) => {for (final r in rows) r.key: r.valueText},
-        );
+      (rows) => {for (final r in rows) r.key: r.valueText},
+    );
   }
 
   /// Mode tema aplikasi: system, light, atau dark.
@@ -111,16 +113,17 @@ extension SettingsRepo on LedgerRepository {
 
   /// Stream reaktif mode tema aplikasi.
   Stream<ThemeMode> watchThemeMode() {
-    return (_db.select(
-      _db.appSettings,
-    )..where((s) => s.key.equals(LedgerRepository.themeModeKey))).watchSingleOrNull().map((row) {
-      final raw = row?.valueText;
-      return switch (raw) {
-        'light' => ThemeMode.light,
-        'dark' => ThemeMode.dark,
-        _ => ThemeMode.system,
-      };
-    });
+    return (_db.select(_db.appSettings)
+          ..where((s) => s.key.equals(LedgerRepository.themeModeKey)))
+        .watchSingleOrNull()
+        .map((row) {
+          final raw = row?.valueText;
+          return switch (raw) {
+            'light' => ThemeMode.light,
+            'dark' => ThemeMode.dark,
+            _ => ThemeMode.system,
+          };
+        });
   }
 
   /// Ubah dan simpan mode tema aplikasi.
@@ -132,5 +135,4 @@ extension SettingsRepo on LedgerRepository {
     };
     return setSetting(LedgerRepository.themeModeKey, val);
   }
-
 }

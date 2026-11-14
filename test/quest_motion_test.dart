@@ -110,8 +110,8 @@ void main() {
     final progress = ProgressService(repository: repo);
 
     Future<void> breathe() => tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 80)),
-        );
+      () => Future<void>.delayed(const Duration(milliseconds: 80)),
+    );
 
     await tester.pumpWidget(
       MaterialApp(
@@ -297,9 +297,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('QuestTabEnter menetas tiap token panggung naik', (
-    tester,
-  ) async {
+  testWidgets('QuestTabEnter menetas tiap token panggung naik', (tester) async {
     var token = 0;
     late void Function(void Function()) setOuter;
     await tester.pumpWidget(
@@ -320,7 +318,10 @@ void main() {
       ),
     );
 
-    double opacity() => tester.widget<FadeTransition>(find.byType(FadeTransition)).opacity.value;
+    double opacity() => tester
+        .widget<FadeTransition>(find.byType(FadeTransition))
+        .opacity
+        .value;
 
     await tester.pump();
     expect(opacity(), lessThan(1.0)); // menetas, belum penuh
@@ -377,7 +378,10 @@ void main() {
     double factor() => tester
         .widget<FractionallySizedBox>(find.byType(FractionallySizedBox))
         .widthFactor!;
-    double opacity() => tester.widget<FadeTransition>(find.byType(FadeTransition)).opacity.value;
+    double opacity() => tester
+        .widget<FadeTransition>(find.byType(FadeTransition))
+        .opacity
+        .value;
 
     // Buka tab Anggaran (bar) — seperti _onTabChanged: tab + token.
     setOuter(() {
@@ -469,7 +473,8 @@ void main() {
       final replayFirst = tester
           .widgetList<FadeTransition>(find.byType(FadeTransition))
           .first
-          .opacity.value;
+          .opacity
+          .value;
       expect(replayFirst, equals(0.0));
       expect(find.text('Item 0: 1'), findsOneWidget);
 
@@ -579,7 +584,8 @@ void main() {
                 )
                 .first,
           )
-          .opacity.value;
+          .opacity
+          .value;
       expect(cardOpacity, lessThan(1.0));
 
       await tester.pumpAndSettle();

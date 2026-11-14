@@ -79,7 +79,6 @@ class _BackupScreenState extends State<BackupScreen>
         '-${n.hour.toString().padLeft(2, '0')}${n.minute.toString().padLeft(2, '0')}';
   }
 
-
   Future<void> _backup() => _run(() async {
     final pin = await askBackupPin(context, repeat: false);
     if (pin == null) return;
@@ -132,12 +131,7 @@ class _BackupScreenState extends State<BackupScreen>
         showBack: true,
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          Spacing.m,
-          0,
-          Spacing.m,
-          Spacing.m,
-        ),
+        padding: const EdgeInsets.fromLTRB(Spacing.m, 0, Spacing.m, Spacing.m),
         children: [
           if (_busy)
             const Padding(
@@ -145,31 +139,26 @@ class _BackupScreenState extends State<BackupScreen>
               child: LinearProgressIndicator(),
             ),
           QuestEnter(
-            child:
-          QuestCard(
-            padding: EdgeInsets.zero,
-            child: Column(
-              children: [
-                _ActionRow(
-                  icon: Icons.backup_outlined,
-                  title: 'Simpan datamu',
-                  subtitle: 'Buat salinan terkunci PIN',
-                  onTap: _busy ? null : _backup,
-                ),
-                Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: context.q.line,
-                ),
-                _ActionRow(
-                  icon: Icons.restore_outlined,
-                  title: 'Pulihkan data',
-                  subtitle: 'Kembalikan dari file backup + PIN',
-                  onTap: _busy ? null : _restore,
-                ),
-              ],
+            child: QuestCard(
+              padding: EdgeInsets.zero,
+              child: Column(
+                children: [
+                  _ActionRow(
+                    icon: Icons.backup_outlined,
+                    title: 'Simpan datamu',
+                    subtitle: 'Buat salinan terkunci PIN',
+                    onTap: _busy ? null : _backup,
+                  ),
+                  Divider(height: 1, thickness: 1, color: context.q.line),
+                  _ActionRow(
+                    icon: Icons.restore_outlined,
+                    title: 'Pulihkan data',
+                    subtitle: 'Kembalikan dari file backup + PIN',
+                    onTap: _busy ? null : _restore,
+                  ),
+                ],
+              ),
             ),
-          ),
           ),
           const SizedBox(height: Spacing.m),
           QuestEnter(

@@ -180,14 +180,18 @@ class _RencanaBatasState extends State<RencanaBatas> {
     return StreamBuilder<Map<String, String>>(
       stream: _scopeCatsStream,
       builder: (context, catsSnap) {
-        final scopeCats =
-            _scopeCategories(catsSnap.data ?? const {}, categoryNames);
+        final scopeCats = _scopeCategories(
+          catsSnap.data ?? const {},
+          categoryNames,
+        );
         return StreamBuilder<Map<String, String>>(
           stream: _limitsStream,
           builder: (context, limitsSnap) {
             final limits = limitsSnap.data ?? const <String, String>{};
-            final monthlyTotal =
-                _intSetting(limits, LimitScope.monthly.limitKey);
+            final monthlyTotal = _intSetting(
+              limits,
+              LimitScope.monthly.limitKey,
+            );
             final weeklyLimit = _intSetting(limits, LimitScope.weekly.limitKey);
             final dailyLimit = _intSetting(limits, LimitScope.daily.limitKey);
             return StreamBuilder<({int day, int week, int month})>(
@@ -292,10 +296,7 @@ class _RencanaBatasState extends State<RencanaBatas> {
                   ),
                 ),
                 QuestPress(
-                  onTap: () => showAddCategoryFlow(
-                    context,
-                    widget.repository,
-                  ),
+                  onTap: () => showAddCategoryFlow(context, widget.repository),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -362,10 +363,8 @@ class _RencanaBatasState extends State<RencanaBatas> {
                               'Tambah kategori pertama untuk mulai '
                               'mengalokasikan anggaran.',
                           actionLabel: 'Tambah Kategori',
-                          onAction: () => showAddCategoryFlow(
-                            context,
-                            widget.repository,
-                          ),
+                          onAction: () =>
+                              showAddCategoryFlow(context, widget.repository),
                         ),
                       );
                     }
@@ -524,11 +523,9 @@ class _RencanaBatasState extends State<RencanaBatas> {
   /// Filter kategori tersimpan per scope batas (belum dipruning — pruning
   /// terhadap kategori yang masih ada dilakukan saat tampilan).
   Future<Map<LimitScope, Set<int>?>> _storedScopeCategories() async {
-    final raw = await widget.repository
-        .watchSettings([
-          for (final scope in LimitScope.values) scope.categoriesKey,
-        ])
-        .first;
+    final raw = await widget.repository.watchSettings([
+      for (final scope in LimitScope.values) scope.categoriesKey,
+    ]).first;
     return {
       for (final scope in LimitScope.values)
         scope: parseLimitCategories(raw[scope.categoriesKey]),
@@ -720,7 +717,11 @@ class _RencanaBatasState extends State<RencanaBatas> {
         );
       } else {
         if (!mounted) return;
-        questSnack(context, 'Sip, perubahan tersimpan!', icon: Icons.check_rounded);
+        questSnack(
+          context,
+          'Sip, perubahan tersimpan!',
+          icon: Icons.check_rounded,
+        );
       }
     }
   }

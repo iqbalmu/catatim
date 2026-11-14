@@ -135,8 +135,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: context.q.primarySolid,
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.pill),
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.pill,
+                                    ),
                                   ),
                                   child: Text(
                                     'Level ${stats.level}',
@@ -165,7 +166,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               Icon(
                                 Icons.local_fire_department_rounded,
                                 size: 14,
-                                color: streakDays > 0 && !(summary?.streakPaused ?? false)
+                                color:
+                                    streakDays > 0 &&
+                                        !(summary?.streakPaused ?? false)
                                     ? context.q.warn
                                     : context.q.muted,
                               ),
@@ -237,8 +240,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         stream: _themeModeStream,
                         initialData: ThemeMode.system,
                         builder: (context, snapshot) {
-                          final currentMode =
-                              snapshot.data ?? ThemeMode.system;
+                          final currentMode = snapshot.data ?? ThemeMode.system;
                           final modeTitle = switch (currentMode) {
                             ThemeMode.system => 'Sistem',
                             ThemeMode.light => 'Terang',
@@ -281,7 +283,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Divider(height: 1, thickness: 1, color: q.line),
 
                       QuestListTile(
-                        leading: const _SettingIcon(icon: Icons.notifications_active_rounded),
+                        leading: const _SettingIcon(
+                          icon: Icons.notifications_active_rounded,
+                        ),
                         title: Text(
                           'Capture Notifikasi Bank',
                           style: context.qTitle(15),
@@ -335,7 +339,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Divider(height: 1, thickness: 1, color: q.line),
 
                       QuestListTile(
-                        leading: const _SettingIcon(icon: Icons.shield_outlined),
+                        leading: const _SettingIcon(
+                          icon: Icons.shield_outlined,
+                        ),
                         title: Text(
                           'Backup & Pulihkan Data',
                           style: context.qTitle(15),
@@ -361,7 +367,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       if (kDebugMode) ...[
                         Divider(height: 1, thickness: 1, color: q.line),
                         QuestListTile(
-                          leading: const _SettingIcon(icon: Icons.dataset_outlined),
+                          leading: const _SettingIcon(
+                            icon: Icons.dataset_outlined,
+                          ),
                           title: Text(
                             'Isi Data Contoh',
                             style: context.qTitle(15),
@@ -379,7 +387,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
 
                       QuestListTile(
-                        leading: const _SettingIcon(icon: Icons.delete_forever_rounded, danger: true),
+                        leading: const _SettingIcon(
+                          icon: Icons.delete_forever_rounded,
+                          danger: true,
+                        ),
                         title: Text(
                           'Kosongkan Data Aplikasi',
                           style: context.qTitle(15).copyWith(color: q.bad),
@@ -503,7 +514,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             child: Row(
               children: [
-                Icon(Icons.warning_amber_rounded, color: context.q.bad, size: 18),
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: context.q.bad,
+                  size: 18,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -686,14 +701,10 @@ class _ThemeOptionCard extends StatelessWidget {
         curve: QuestMotion.easeOut,
         padding: const EdgeInsets.all(Spacing.m),
         decoration: BoxDecoration(
-          color: selected
-              ? q.primary.withValues(alpha: 0.08)
-              : q.surface,
+          color: selected ? q.primary.withValues(alpha: 0.08) : q.surface,
           borderRadius: BorderRadius.circular(AppRadius.card),
           border: Border.all(
-            color: selected
-                ? q.primary
-                : q.line.withValues(alpha: 0.6),
+            color: selected ? q.primary : q.line.withValues(alpha: 0.6),
             width: selected ? 1.6 : 1.0,
           ),
         ),
@@ -721,17 +732,21 @@ class _ThemeOptionCard extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: context.qTitle(15).copyWith(
+                    style: context
+                        .qTitle(15)
+                        .copyWith(
                           color: selected ? q.primary : q.text,
-                          fontWeight: selected ? FontWeight.w800 : FontWeight.w700,
+                          fontWeight: selected
+                              ? FontWeight.w800
+                              : FontWeight.w700,
                         ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     desc,
                     style: context.qSmall().copyWith(
-                          color: selected ? q.text : q.muted,
-                        ),
+                      color: selected ? q.text : q.muted,
+                    ),
                   ),
                 ],
               ),

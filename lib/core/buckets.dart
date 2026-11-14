@@ -18,7 +18,10 @@ String _monthLabel(DateTime m) =>
 /// Bucket bulanan untuk tiap bulan yang bersinggungan [start, end]
 /// (inklusif). Dibatasi 24 bulan.
 List<TrendBucket> rangedMonthlyBuckets(
-    List<AmountPoint> rows, DateTime start, DateTime end) {
+  List<AmountPoint> rows,
+  DateTime start,
+  DateTime end,
+) {
   final months = <DateTime>[];
   var m = DateTime(start.year, start.month);
   final last = DateTime(end.year, end.month);
@@ -34,20 +37,23 @@ List<TrendBucket> rangedMonthlyBuckets(
       (
         label: _monthLabel(month),
         incoming: _sum(
-            rows,
-            (r) =>
-                r.direction == Direction.incoming && inMonth(r, month)),
+          rows,
+          (r) => r.direction == Direction.incoming && inMonth(r, month),
+        ),
         outgoing: _sum(
-            rows,
-            (r) =>
-                r.direction == Direction.outgoing && inMonth(r, month)),
+          rows,
+          (r) => r.direction == Direction.outgoing && inMonth(r, month),
+        ),
       ),
   ];
 }
 
 /// Bucket 7-harian mundur dari [end] hingga menutup [start].
 List<TrendBucket> rangedWeeklyBuckets(
-    List<AmountPoint> rows, DateTime start, DateTime end) {
+  List<AmountPoint> rows,
+  DateTime start,
+  DateTime end,
+) {
   final e = _day(end);
   final s = _day(start);
   final span = e.difference(s).inDays;
@@ -64,9 +70,13 @@ List<TrendBucket> rangedWeeklyBuckets(
     out.add((
       label: idDayMonth(wStart),
       incoming: _sum(
-          rows, (r) => r.direction == Direction.incoming && inWindow(r)),
+        rows,
+        (r) => r.direction == Direction.incoming && inWindow(r),
+      ),
       outgoing: _sum(
-          rows, (r) => r.direction == Direction.outgoing && inWindow(r)),
+        rows,
+        (r) => r.direction == Direction.outgoing && inWindow(r),
+      ),
     ));
   }
   return out;
@@ -75,7 +85,10 @@ List<TrendBucket> rangedWeeklyBuckets(
 /// Pilih granularitas otomatis: rentang > 62 hari → bulanan, sisanya
 /// mingguan. [start]/[end] inklusif.
 List<TrendBucket> trendBuckets(
-    List<AmountPoint> rows, DateTime start, DateTime end) {
+  List<AmountPoint> rows,
+  DateTime start,
+  DateTime end,
+) {
   final span = _day(end).difference(_day(start)).inDays;
   if (span > 62) return rangedMonthlyBuckets(rows, start, end);
   return rangedWeeklyBuckets(rows, start, end);

@@ -178,10 +178,10 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
           QuestButton(
             label: 'Terapkan Filter',
             onPressed: () {
-              Navigator.pop(
-                context,
-                (direction: _direction, accountId: _accountId),
-              );
+              Navigator.pop(context, (
+                direction: _direction,
+                accountId: _accountId,
+              ));
             },
           ),
         ],
@@ -286,11 +286,7 @@ class _FilterOptionChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(
-                icon,
-                size: 14,
-                color: selected ? q.primary : q.muted,
-              ),
+              Icon(icon, size: 14, color: selected ? q.primary : q.muted),
               const SizedBox(width: 5),
             ],
             Text(

@@ -160,8 +160,8 @@ class _ReportMetrics {
     final todayEnd = DateTime(now.year, now.month, now.day + 1);
     final effectiveEnd =
         endExclusive.isAfter(todayEnd) && start.isBefore(todayEnd)
-            ? todayEnd
-            : endExclusive;
+        ? todayEnd
+        : endExclusive;
     final activeDays = math.max(1, effectiveEnd.difference(start).inDays);
 
     final endInclusive = endExclusive.subtract(const Duration(days: 1));

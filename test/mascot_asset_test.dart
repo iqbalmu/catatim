@@ -7,12 +7,15 @@ import 'package:catatim/theme/tokens.dart';
 
 void main() {
   for (final mood in MascotMood.values) {
-    testWidgets('Mascot mood ${mood.name} memuat asetnya tanpa error',
-        (tester) async {
+    testWidgets('Mascot mood ${mood.name} memuat asetnya tanpa error', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: QuestSchemes.light(),
-          home: Scaffold(body: Center(child: Mascot(mood: mood))),
+          home: Scaffold(
+            body: Center(child: Mascot(mood: mood)),
+          ),
         ),
       );
       // AnimationController maskot repeat() tanpa henti — pumpAndSettle
@@ -41,11 +44,11 @@ void main() {
     }
 
     Widget stage(MascotMood mood) => MaterialApp(
-          theme: QuestSchemes.light(),
-          home: Scaffold(
-            body: Center(child: MascotStage(mood: mood)),
-          ),
-        );
+      theme: QuestSchemes.light(),
+      home: Scaffold(
+        body: Center(child: MascotStage(mood: mood)),
+      ),
+    );
 
     final expected = {
       MascotMood.celebrate: SeedColors.honeyBright.withValues(alpha: 0.30),

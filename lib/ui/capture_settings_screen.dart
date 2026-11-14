@@ -37,8 +37,11 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     with WidgetsBindingObserver {
   bool _listenerEnabled = false;
   DateTime? _lastHeartbeat;
-  int _currentTab = 0; // 0 = Bank & E-Wallet, 1 = Izin & Sistem, 2 = Aturan & Alat
-  late final PageController _pageCtrl = PageController(initialPage: _currentTab);
+  int _currentTab =
+      0; // 0 = Bank & E-Wallet, 1 = Izin & Sistem, 2 = Aturan & Alat
+  late final PageController _pageCtrl = PageController(
+    initialPage: _currentTab,
+  );
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';
 
@@ -400,15 +403,19 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     final filtered = _searchQuery.isEmpty
         ? allBanks
         : allBanks
-            .where((b) =>
-                b.displayName.toLowerCase().contains(_searchQuery) ||
-                b.id.toLowerCase().contains(_searchQuery))
-            .toList();
+              .where(
+                (b) =>
+                    b.displayName.toLowerCase().contains(_searchQuery) ||
+                    b.id.toLowerCase().contains(_searchQuery),
+              )
+              .toList();
 
-    final connectedList =
-        filtered.where((b) => connected.contains(b.id)).toList();
-    final availableList =
-        filtered.where((b) => !connected.contains(b.id)).toList();
+    final connectedList = filtered
+        .where((b) => connected.contains(b.id))
+        .toList();
+    final availableList = filtered
+        .where((b) => !connected.contains(b.id))
+        .toList();
 
     return ListView(
       key: const PageStorageKey('capture_tab_banks'),
@@ -463,9 +470,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         const SizedBox(height: Spacing.s),
 
         if (connectedList.isNotEmpty) ...[
-          QuestSectionHeader(
-            title: 'Terhubung (${connectedList.length})',
-          ),
+          QuestSectionHeader(title: 'Terhubung (${connectedList.length})'),
           QuestCard(
             padding: EdgeInsets.zero,
             child: Column(
@@ -593,16 +598,10 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: isConnected
-              ? q.primary.withValues(alpha: 0.12)
-              : q.surface2,
+          color: isConnected ? q.primary.withValues(alpha: 0.12) : q.surface2,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(
-          icon,
-          color: isConnected ? q.primary : q.muted,
-          size: 19,
-        ),
+        child: Icon(icon, color: isConnected ? q.primary : q.muted, size: 19),
       ),
       title: Text(bank.displayName, style: context.qTitle(14.5)),
       subtitle: Text(
@@ -648,9 +647,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: _listenerEnabled
-                          ? q.incomingTint
-                          : q.outgoingTint,
+                      color: _listenerEnabled ? q.incomingTint : q.outgoingTint,
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
@@ -670,7 +667,9 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                           _listenerEnabled
                               ? 'Akses Notifikasi Aktif'
                               : 'Akses Notifikasi Belum Aktif',
-                          style: context.qTitle(15).copyWith(
+                          style: context
+                              .qTitle(15)
+                              .copyWith(
                                 color: _listenerEnabled ? q.good : q.bad,
                               ),
                         ),
@@ -703,10 +702,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                   icon: const Icon(Icons.tune_rounded, size: 16),
                   label: const Text(
                     'Cek ulang di Pengaturan Sistem',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                   onPressed: widget.pipeline.channel.openListenerSettings,
                 ),
@@ -778,7 +774,8 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         final daysSinceCapture = latestLog != null
             ? now.difference(latestLog.postedAt).inDays
             : null;
-        final bool isStale = hasConnected &&
+        final bool isStale =
+            hasConnected &&
             ((daysSinceCapture != null && daysSinceCapture >= 7) ||
                 (latestLog == null &&
                     _lastHeartbeat != null &&
@@ -792,8 +789,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         if (!_listenerEnabled) {
           statusColor = q.bad;
           statusTitle = 'Tidak aktif';
-          statusDesc =
-              'Akses notifikasi belum diaktifkan di Android.';
+          statusDesc = 'Akses notifikasi belum diaktifkan di Android.';
           statusIcon = Icons.error_outline_rounded;
         } else if (isStale) {
           statusColor = q.warn;
@@ -804,14 +800,12 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         } else if (_lastHeartbeat == null && latestLog == null) {
           statusColor = q.primary;
           statusTitle = 'Menunggu';
-          statusDesc =
-              'Aktif. Menunggu notifikasi transaksi pertama.';
+          statusDesc = 'Aktif. Menunggu notifikasi transaksi pertama.';
           statusIcon = Icons.hourglass_empty_rounded;
         } else {
           statusColor = q.good;
           statusTitle = 'Berjalan normal';
-          statusDesc =
-              'Notifikasi bank terbaca normal.';
+          statusDesc = 'Notifikasi bank terbaca normal.';
           statusIcon = Icons.check_circle_outline_rounded;
         }
 
@@ -840,9 +834,9 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                           children: [
                             Text(
                               statusTitle,
-                              style: context.qTitle(15).copyWith(
-                                    color: statusColor,
-                                  ),
+                              style: context
+                                  .qTitle(15)
+                                  .copyWith(color: statusColor),
                             ),
                           ],
                         ),
@@ -858,32 +852,38 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
               ),
               const SizedBox(height: Spacing.m),
               Column(
-                  children: [
-                    _buildHealthMetricRow(
-                      q: q,
-                      label: 'Aktivitas terakhir',
-                      value: _lastHeartbeat != null
-                          ? idTimeAgo(_lastHeartbeat!, now)
-                          : 'Belum tercatat',
-                    ),
-                    Divider(height: Spacing.m, color: q.line.withValues(alpha: 0.4)),
-                    _buildHealthMetricRow(
-                      q: q,
-                      label: 'Notifikasi terakhir',
-                      value: latestLog != null
-                          ? '${latestLog.packageName.split('.').last} • ${idTimeAgo(latestLog.postedAt, now)}'
-                          : 'Belum ada',
-                    ),
-                    Divider(height: Spacing.m, color: q.line.withValues(alpha: 0.4)),
-                    _buildHealthMetricRow(
-                      q: q,
-                      label: 'Bank terhubung',
-                      value: hasConnected
-                          ? '${connected.length} bank aktif'
-                          : 'Belum ada bank terhubung',
-                    ),
-                  ],
-                ),
+                children: [
+                  _buildHealthMetricRow(
+                    q: q,
+                    label: 'Aktivitas terakhir',
+                    value: _lastHeartbeat != null
+                        ? idTimeAgo(_lastHeartbeat!, now)
+                        : 'Belum tercatat',
+                  ),
+                  Divider(
+                    height: Spacing.m,
+                    color: q.line.withValues(alpha: 0.4),
+                  ),
+                  _buildHealthMetricRow(
+                    q: q,
+                    label: 'Notifikasi terakhir',
+                    value: latestLog != null
+                        ? '${latestLog.packageName.split('.').last} • ${idTimeAgo(latestLog.postedAt, now)}'
+                        : 'Belum ada',
+                  ),
+                  Divider(
+                    height: Spacing.m,
+                    color: q.line.withValues(alpha: 0.4),
+                  ),
+                  _buildHealthMetricRow(
+                    q: q,
+                    label: 'Bank terhubung',
+                    value: hasConnected
+                        ? '${connected.length} bank aktif'
+                        : 'Belum ada bank terhubung',
+                  ),
+                ],
+              ),
             ],
           ),
         );
@@ -937,15 +937,26 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
               color: q.primaryLight,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(Icons.phone_android_rounded, color: q.primary, size: 20),
+            child: Icon(
+              Icons.phone_android_rounded,
+              color: q.primary,
+              size: 20,
+            ),
           ),
-          title: Text('Panduan Khusus per Merk HP', style: context.qTitle(14.5)),
+          title: Text(
+            'Panduan Khusus per Merk HP',
+            style: context.qTitle(14.5),
+          ),
           subtitle: Text(
             'Xiaomi, Samsung, OPPO, Realme, & Vivo',
             style: context.qSmall(11.5).copyWith(color: q.muted),
           ),
-          childrenPadding:
-              const EdgeInsets.fromLTRB(Spacing.m, 0, Spacing.m, Spacing.m),
+          childrenPadding: const EdgeInsets.fromLTRB(
+            Spacing.m,
+            0,
+            Spacing.m,
+            Spacing.m,
+          ),
           children: [
             Divider(height: 1, thickness: 1, color: q.line),
             const SizedBox(height: Spacing.s),
@@ -1060,10 +1071,16 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                     color: q.primaryLight,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(Icons.refresh_rounded, color: q.primary, size: 20),
+                  child: Icon(
+                    Icons.refresh_rounded,
+                    color: q.primary,
+                    size: 20,
+                  ),
                 ),
-                title: Text('Pindai Ulang Notifikasi Lampau',
-                    style: context.qTitle(14.5)),
+                title: Text(
+                  'Pindai Ulang Notifikasi Lampau',
+                  style: context.qTitle(14.5),
+                ),
                 subtitle: Text(
                   'Coba proses ulang notifikasi yang belum terbaca',
                   style: context.qSmall(11.5),
@@ -1079,10 +1096,16 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                     color: q.primaryLight,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(Icons.download_rounded, color: q.primary, size: 20),
+                  child: Icon(
+                    Icons.download_rounded,
+                    color: q.primary,
+                    size: 20,
+                  ),
                 ),
-                title: Text('Tarik Notifikasi yang Masih Tayang',
-                    style: context.qTitle(14.5)),
+                title: Text(
+                  'Tarik Notifikasi yang Masih Tayang',
+                  style: context.qTitle(14.5),
+                ),
                 subtitle: Text(
                   'Tarik notifikasi bank yang ada di bar status saat ini',
                   style: context.qSmall(11.5),
@@ -1098,11 +1121,16 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                     color: q.surface2,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(Icons.mark_email_unread_rounded,
-                      color: q.text, size: 20),
+                  child: Icon(
+                    Icons.mark_email_unread_rounded,
+                    color: q.text,
+                    size: 20,
+                  ),
                 ),
-                title: Text('Buka Log Notifikasi Belum Terbaca',
-                    style: context.qTitle(14.5)),
+                title: Text(
+                  'Buka Log Notifikasi Belum Terbaca',
+                  style: context.qTitle(14.5),
+                ),
                 subtitle: Text(
                   'Lihat notifikasi mentah yang gagal terbaca untuk dilatih',
                   style: context.qSmall(11.5),
@@ -1123,11 +1151,12 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                     color: q.surface2,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(Icons.science_rounded,
-                      color: q.accent, size: 20),
+                  child: Icon(Icons.science_rounded, color: q.accent, size: 20),
                 ),
-                title: Text('Simulator & Validasi Notifikasi',
-                    style: context.qTitle(14.5)),
+                title: Text(
+                  'Simulator & Validasi Notifikasi',
+                  style: context.qTitle(14.5),
+                ),
                 subtitle: Text(
                   'Uji coba parsing format notifikasi bank tanpa transaksi nyata',
                   style: context.qSmall(11.5),
@@ -1147,7 +1176,9 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         Row(
           children: [
             const Expanded(
-              child: QuestSectionHeader(title: 'Pola Notifikasi yang Diabaikan'),
+              child: QuestSectionHeader(
+                title: 'Pola Notifikasi yang Diabaikan',
+              ),
             ),
             QuestPress(
               onTap: _showAddIgnoredPatternDialog,
@@ -1189,8 +1220,11 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
               return QuestCard(
                 child: Row(
                   children: [
-                    Icon(Icons.filter_alt_off_rounded,
-                        color: q.muted, size: 20),
+                    Icon(
+                      Icons.filter_alt_off_rounded,
+                      color: q.muted,
+                      size: 20,
+                    ),
                     const SizedBox(width: Spacing.s),
                     Expanded(
                       child: Text(
@@ -1229,10 +1263,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                       subtitle: Text(
                         'Pola: "${ignoredList[i].pattern}"'
                         '${ignoredList[i].bankId != null ? ' · Bank: ${ignoredList[i].bankId}' : ''}',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: q.muted,
-                        ),
+                        style: TextStyle(fontSize: 11.5, color: q.muted),
                       ),
                       trailing: IconButton(
                         icon: Icon(
@@ -1263,8 +1294,9 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                             ],
                           );
                           if (confirmed == true) {
-                            await widget.repository
-                                .deleteIgnoredPattern(ignoredList[i].id);
+                            await widget.repository.deleteIgnoredPattern(
+                              ignoredList[i].id,
+                            );
                             await widget.pipeline.refreshRules();
                             if (!mounted) return;
                             questSnack(context, 'Pola abaikan dihapus.');
@@ -1328,10 +1360,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                         '${widget.ruleSet.bank(customTemplates[i].bankId)?.displayName ?? customTemplates[i].bankId} · '
                         '${customTemplates[i].template.direction == Direction.incoming ? 'Masuk' : 'Keluar'} · '
                         'Kata kunci: ${[...customTemplates[i].template.matchAll, ...customTemplates[i].template.matchAny].join(', ')}',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: q.muted,
-                        ),
+                        style: TextStyle(fontSize: 11.5, color: q.muted),
                       ),
                       trailing: IconButton(
                         icon: Icon(
@@ -1362,8 +1391,9 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                             ],
                           );
                           if (confirmed == true) {
-                            await widget.repository
-                                .deleteCustomTemplate(customTemplates[i].id);
+                            await widget.repository.deleteCustomTemplate(
+                              customTemplates[i].id,
+                            );
                             await widget.pipeline.refreshRules();
                             if (!mounted) return;
                             questSnack(context, 'Template aturan dihapus.');
@@ -1411,8 +1441,9 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                             padding: const EdgeInsets.only(right: Spacing.m),
                             decoration: BoxDecoration(
                               color: q.bad.withValues(alpha: 0.12),
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.card),
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.card,
+                              ),
                             ),
                             child: Icon(
                               Icons.delete_outline_rounded,
@@ -1505,82 +1536,89 @@ class _AppPickerSheetState extends State<_AppPickerSheet> {
           color: q.bg,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
-      child: Column(
-        children: [
-          const QuestGrabber(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              Spacing.m,
-              0,
-              Spacing.m,
-              Spacing.s,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Hubungkan App', style: context.qTitle(15)),
-                const SizedBox(height: Spacing.xs),
-                Text(
-                  'Pilih app bank/e-wallet. Notifikasinya bakal jadi draf '
-                  'yang kamu putuskan.',
-                  style: context.qSmall().copyWith(color: q.muted),
-                ),
-                const SizedBox(height: Spacing.s),
-                TextField(
-                  onChanged: (v) => setState(() => _query = v),
-                  decoration: const InputDecoration(
-                    hintText: 'Cari nama app…',
-                    prefixIcon: Icon(Icons.search_rounded, size: 20),
+        child: Column(
+          children: [
+            const QuestGrabber(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Spacing.m,
+                0,
+                Spacing.m,
+                Spacing.s,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Hubungkan App', style: context.qTitle(15)),
+                  const SizedBox(height: Spacing.xs),
+                  Text(
+                    'Pilih app bank/e-wallet. Notifikasinya bakal jadi draf '
+                    'yang kamu putuskan.',
+                    style: context.qSmall().copyWith(color: q.muted),
                   ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: filtered.isEmpty
-                ? Center(
-                    child: Text(
-                      'Belum ada app yang cocok.',
-                      style: context.qSmall().copyWith(color: q.muted),
+                  const SizedBox(height: Spacing.s),
+                  TextField(
+                    onChanged: (v) => setState(() => _query = v),
+                    decoration: const InputDecoration(
+                      hintText: 'Cari nama app…',
+                      prefixIcon: Icon(Icons.search_rounded, size: 20),
                     ),
-                  )
-                : ListView.builder(
-                    itemCount: filtered.length,
-                    itemBuilder: (_, i) {
-                      final app = filtered[i];
-                      final isOn = connectedPkgs.contains(app.package);
-                      return QuestListTile(
-                        onTap: () => Navigator.pop(context, app),
-                        leading: Container(
-                          width: 36,
-                          height: 36,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: isOn ? q.incomingTint : q.surface2,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            app.label.characters.first.toUpperCase(),
-                            style: TextStyle(
-                              color: isOn ? q.good : q.text,
-                              fontWeight: FontWeight.w800,
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: filtered.isEmpty
+                  ? Center(
+                      child: Text(
+                        'Belum ada app yang cocok.',
+                        style: context.qSmall().copyWith(color: q.muted),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (_, i) {
+                        final app = filtered[i];
+                        final isOn = connectedPkgs.contains(app.package);
+                        return QuestListTile(
+                          onTap: () => Navigator.pop(context, app),
+                          leading: Container(
+                            width: 36,
+                            height: 36,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: isOn ? q.incomingTint : q.surface2,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              app.label.characters.first.toUpperCase(),
+                              style: TextStyle(
+                                color: isOn ? q.good : q.text,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
-                        ),
-                        title: Text(app.label, style: context.qTitle(13.5)),
-                        subtitle: Text(
-                          app.package,
-                          style: context.qSmall(10).copyWith(color: q.muted),
-                        ),
-                        trailing: isOn
-                            ? Icon(Icons.link_rounded, size: 18, color: q.good)
-                            : const Icon(Icons.chevron_right_rounded, size: 22),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
+                          title: Text(app.label, style: context.qTitle(13.5)),
+                          subtitle: Text(
+                            app.package,
+                            style: context.qSmall(10).copyWith(color: q.muted),
+                          ),
+                          trailing: isOn
+                              ? Icon(
+                                  Icons.link_rounded,
+                                  size: 18,
+                                  color: q.good,
+                                )
+                              : const Icon(
+                                  Icons.chevron_right_rounded,
+                                  size: 22,
+                                ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

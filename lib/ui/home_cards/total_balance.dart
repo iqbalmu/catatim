@@ -62,7 +62,9 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
     final q = context.q;
 
     return Padding(
-      padding: widget.margin ?? const EdgeInsets.fromLTRB(Spacing.m, Spacing.m, Spacing.m, 0),
+      padding:
+          widget.margin ??
+          const EdgeInsets.fromLTRB(Spacing.m, Spacing.m, Spacing.m, 0),
       child: StreamBuilder<Map<int, int>>(
         stream: _balancesStream,
         builder: (context, balanceSnap) {
@@ -92,7 +94,9 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                       children: [
                         Text(
                           'TOTAL SALDO',
-                          style: context.qSmall(11.5).copyWith(
+                          style: context
+                              .qSmall(11.5)
+                              .copyWith(
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.5,
                                 color: q.muted,
@@ -180,9 +184,9 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                           duration: const Duration(milliseconds: 520),
                           // Saldo minus tampil merah — sinyal sama dengan
                           // label "Defisit" di kartu jatah harian.
-                          style: context.qDisplay(34).copyWith(
-                                color: total < 0 ? q.bad : null,
-                              ),
+                          style: context
+                              .qDisplay(34)
+                              .copyWith(color: total < 0 ? q.bad : null),
                         ),
                         hiddenChild: Text(
                           '••••••••',
@@ -209,21 +213,17 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                                 const SizedBox(width: 4),
                                 Text(
                                   'Saldo disembunyikan',
-                                  style: context
-                                      .qSmall()
-                                      .copyWith(
-                                        color: q.primaryText,
-                                        fontWeight: FontWeight.w700,
-                                      ),
+                                  style: context.qSmall().copyWith(
+                                    color: q.primaryText,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ],
                             )
                           : Text(
                               '${accounts.length} akun terdaftar',
                               key: ValueKey('subtitle-${accounts.length}'),
-                              style: context
-                                  .qSmall()
-                                  .copyWith(color: q.muted),
+                              style: context.qSmall().copyWith(color: q.muted),
                             ),
                     ),
 
@@ -264,8 +264,12 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                                 ruleSet: widget.ruleSet,
                               ),
                               child: Container(
-                                constraints: const BoxConstraints(minHeight: 48),
-                                margin: const EdgeInsets.only(right: Spacing.xs),
+                                constraints: const BoxConstraints(
+                                  minHeight: 48,
+                                ),
+                                margin: const EdgeInsets.only(
+                                  right: Spacing.xs,
+                                ),
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
                                   vertical: 9,
@@ -357,60 +361,60 @@ class _AccountChip extends StatelessWidget {
             alignment: Alignment.center,
             child: Row(
               mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: q.text),
-              const SizedBox(width: 6),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    account.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w700,
-                      color: q.text,
-                    ),
-                  ),
-                  _PrivacyBalanceReveal(
-                    obscured: obscured,
-                    compact: true,
-                    staggerMs: staggerIndex.clamp(0, 5) * 40,
-                    visibleChild: QuestMoney(
-                      key: const ValueKey('chip-visible'),
-                      amount: balance,
-                      replayKey: obscured,
-                      duration: const Duration(milliseconds: 460),
+              children: [
+                Icon(icon, size: 16, color: q.text),
+                const SizedBox(width: 6),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      account.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: q.muted,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                    hiddenChild: Text(
-                      '••••••',
-                      key: const ValueKey('chip-hidden'),
-                      style: TextStyle(
-                        fontSize: 11,
+                        fontSize: 11.5,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: 1.5,
-                        color: q.primaryText,
-                        fontFeatures: const [FontFeature.tabularFigures()],
+                        color: q.text,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    _PrivacyBalanceReveal(
+                      obscured: obscured,
+                      compact: true,
+                      staggerMs: staggerIndex.clamp(0, 5) * 40,
+                      visibleChild: QuestMoney(
+                        key: const ValueKey('chip-visible'),
+                        amount: balance,
+                        replayKey: obscured,
+                        duration: const Duration(milliseconds: 460),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: q.muted,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                      hiddenChild: Text(
+                        '••••••',
+                        key: const ValueKey('chip-hidden'),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.5,
+                          color: q.primaryText,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
 
 /// Transisi privasi saldo (Show/Hide): efek kabur kaca (frosted blur) +

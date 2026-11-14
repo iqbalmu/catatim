@@ -25,12 +25,16 @@ class Insets {
   Insets._();
 
   /// Baris kartu kecil: item bon, log capture, tile transaksi, input.
-  static const EdgeInsets tile =
-      EdgeInsets.symmetric(horizontal: 14, vertical: 12);
+  static const EdgeInsets tile = EdgeInsets.symmetric(
+    horizontal: 14,
+    vertical: 12,
+  );
 
   /// Pil/badge mini: chip delta, badge status, pil tanggal.
-  static const EdgeInsets chip =
-      EdgeInsets.symmetric(horizontal: 10, vertical: 5);
+  static const EdgeInsets chip = EdgeInsets.symmetric(
+    horizontal: 10,
+    vertical: 5,
+  );
 }
 
 class AppRadius {
@@ -63,7 +67,6 @@ class AppRadius {
 /// AppShadows statis yang tak pernah flip di dark (audit T-01).
 
 class SeedColors {
-
   // ── Netral teal (dari logo) ────────────────────────────────────
   /// Latar app — off-white ber-tint teal.
   static const Color bg = Color(0xFFF3F8F7);
@@ -101,7 +104,6 @@ class SeedColors {
   /// agar tetap terbaca di surface.
   static const Color accent = Color(0xFFC75B1E);
 
-
   // ── Emas koin ──────────────────────────────────────────────────
   /// Koin "Rp" logo (#FAC750) — glow/garis badge gamifikasi.
   static const Color honeyBright = Color(0xFFFAC750);
@@ -111,7 +113,6 @@ class SeedColors {
 
   /// Tint emas: latar badge terbuka.
   static const Color honey100 = Color(0xFFFCF1D8);
-
 
   // ── Semantik arah & status ──────────────────────────────────────
   /// Masuk / aman — hijau daun logo (#9FB595) digelapkan; AA on
@@ -128,7 +129,6 @@ class SeedColors {
   /// Tint semantik (chip status).
   static const Color incomingTint = Color(0xFFE8F4EE);
   static const Color outgoingTint = Color(0xFFFDEEEC);
-
 
   /// Warna kategori — BAHASA DATA (ADR-010): diindeks via
   /// Categories.colorIndex, tidak berubah, tidak dipakai di luar

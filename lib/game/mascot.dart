@@ -22,7 +22,6 @@ const Map<MascotMood, String> _assetFor = {
   MascotMood.sleepy: 'assets/mascot/mascot_happy.webp',
 };
 
-
 /// Maskot "Duit" — Pochy, karung uang.
 ///
 /// Mood yang punya aset 3D tampil sebagai gambar dengan bob halus
@@ -69,8 +68,7 @@ class _MascotState extends State<Mascot> with SingleTickerProviderStateMixin {
       return AnimatedBuilder(
         animation: _ctrl,
         builder: (context, _) {
-          final bob =
-              math.sin(_ctrl.value * 2 * math.pi) * widget.size * 0.02;
+          final bob = math.sin(_ctrl.value * 2 * math.pi) * widget.size * 0.02;
           return Transform.translate(offset: Offset(0, bob), child: image);
         },
       );
@@ -90,7 +88,11 @@ class _MascotState extends State<Mascot> with SingleTickerProviderStateMixin {
       animation: _ctrl,
       builder: (context, _) => CustomPaint(
         size: Size.square(widget.size),
-        painter: _PochyPainter(mood: widget.mood, t: _ctrl.value, animate: true),
+        painter: _PochyPainter(
+          mood: widget.mood,
+          t: _ctrl.value,
+          animate: true,
+        ),
       ),
     );
   }
@@ -154,10 +156,7 @@ class MascotStage extends StatelessWidget {
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [
-                    Color(0x3D6B4937),
-                    Color(0x006B4937),
-                  ],
+                  colors: [Color(0x3D6B4937), Color(0x006B4937)],
                 ),
               ),
             ),
@@ -175,11 +174,7 @@ class MascotStage extends StatelessWidget {
 /// Pochy versi vektor: karung burlap, tali cokelat, syal teal, koin emas.
 /// Warna diambil dari palet ADR-010 supaya sama dengan render 3D.
 class _PochyPainter extends CustomPainter {
-  _PochyPainter({
-    required this.mood,
-    required this.t,
-    required this.animate,
-  });
+  _PochyPainter({required this.mood, required this.t, required this.animate});
 
   final MascotMood mood;
   final double t;
@@ -304,13 +299,14 @@ class _PochyPainter extends CustomPainter {
     canvas.drawPath(
       bag,
       Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [_burlap, _burlapDeep],
-        ).createShader(
-          Rect.fromLTRB(cx - bodyHalf, knotTop, cx + bodyHalf, bottomY),
-        ),
+        ..shader =
+            const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [_burlap, _burlapDeep],
+            ).createShader(
+              Rect.fromLTRB(cx - bodyHalf, knotTop, cx + bodyHalf, bottomY),
+            ),
     );
     canvas.drawPath(bag, stroke);
 
@@ -410,22 +406,10 @@ class _PochyPainter extends CustomPainter {
     switch (mood) {
       case MascotMood.idle:
         _eyesOpen(canvas, cx, eyeY, eyeDx, eyeR, dot);
-        _arc(
-          canvas,
-          Offset(cx, eyeY + s * 0.075),
-          s * 0.055,
-          0.55,
-          stroke,
-        );
+        _arc(canvas, Offset(cx, eyeY + s * 0.075), s * 0.055, 0.55, stroke);
       case MascotMood.happy:
         _eyesOpen(canvas, cx, eyeY, eyeDx, eyeR, dot);
-        _arc(
-          canvas,
-          Offset(cx, eyeY + s * 0.07),
-          s * 0.07,
-          0.75,
-          stroke,
-        );
+        _arc(canvas, Offset(cx, eyeY + s * 0.07), s * 0.07, 0.75, stroke);
       case MascotMood.sleepy:
         for (final dx in [-eyeDx, eyeDx]) {
           canvas.drawLine(
@@ -454,15 +438,11 @@ class _PochyPainter extends CustomPainter {
             stroke,
           );
         }
-        _arc(
-          canvas,
-          Offset(cx, eyeY + s * 0.135),
-          s * 0.06,
-          -0.55,
-          stroke,
-        );
+        _arc(canvas, Offset(cx, eyeY + s * 0.135), s * 0.06, -0.55, stroke);
         // Tetes keringat di pelipis
-        final sweatY = eyeY - s * 0.02 +
+        final sweatY =
+            eyeY -
+            s * 0.02 +
             (animate ? math.sin(t * 4 * math.pi) * s * 0.012 : 0);
         canvas.drawOval(
           Rect.fromCenter(

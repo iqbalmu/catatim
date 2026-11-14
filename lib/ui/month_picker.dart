@@ -69,14 +69,14 @@ class _QuestMonthPickerState extends State<QuestMonthPicker> {
                   child: Builder(
                     builder: (context) {
                       final month = row * 3 + col + 1;
-                      final isSameMonth = selected != null &&
+                      final isSameMonth =
+                          selected != null &&
                           selected.year == _year &&
                           selected.month == month;
                       return _MonthCell(
                         label: idMonthsShort[month - 1],
                         selected: isSameMonth,
-                        onTap: () =>
-                            widget.onChanged(DateTime(_year, month)),
+                        onTap: () => widget.onChanged(DateTime(_year, month)),
                       );
                     },
                   ),

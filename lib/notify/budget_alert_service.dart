@@ -28,17 +28,19 @@ class BudgetAlertService {
       if (!await _repo.budgetAlertsEnabled()) return;
       final threshold = await _repo.budgetAlertThreshold();
       final state = await _repo.budgetAlertState();
-      ({int used, int? limit, String? note})? usage(LimitLine? line) => line ==
-              null
+      ({int used, int? limit, String? note})? usage(LimitLine? line) =>
+          line == null
           ? null
           : (used: line.used, limit: line.limit, note: line.scopeNote);
       final plan = planBudgetAlerts(
         lines: {
           LimitScope.daily: usage(snapshot.lineByLabel(LimitScope.daily.label)),
-          LimitScope.weekly:
-              usage(snapshot.lineByLabel(LimitScope.weekly.label)),
-          LimitScope.monthly:
-              usage(snapshot.lineByLabel(LimitScope.monthly.label)),
+          LimitScope.weekly: usage(
+            snapshot.lineByLabel(LimitScope.weekly.label),
+          ),
+          LimitScope.monthly: usage(
+            snapshot.lineByLabel(LimitScope.monthly.label),
+          ),
         },
         thresholdPercent: threshold,
         state: state,
@@ -46,7 +48,10 @@ class BudgetAlertService {
       );
       if (plan.hits.isEmpty) return;
       await _repo.setBudgetAlertState(plan.newState);
-      final message = budgetAlertMessage(plan.hits, thresholdPercent: threshold);
+      final message = budgetAlertMessage(
+        plan.hits,
+        thresholdPercent: threshold,
+      );
       if (message == null) return;
       await _channel.showBudgetAlert(title: message.title, body: message.body);
     } catch (e) {

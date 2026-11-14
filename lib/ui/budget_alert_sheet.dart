@@ -18,10 +18,7 @@ class BudgetAlertSheet extends StatefulWidget {
 
   final LedgerRepository repository;
 
-  static Future<void> show(
-    BuildContext context,
-    LedgerRepository repository,
-  ) {
+  static Future<void> show(BuildContext context, LedgerRepository repository) {
     return showQuestSheet<void>(
       context,
       (ctx) => BudgetAlertSheet(repository: repository),
@@ -172,9 +169,10 @@ class _BudgetAlertSheetState extends State<BudgetAlertSheet> {
                       child: Text(
                         'Izin notifikasi belum aktif — peringatan tidak '
                         'bisa tampil.',
-                        style: context.qSmall(
-                          
-                        ).copyWith(color: q.text, fontWeight: FontWeight.w600),
+                        style: context.qSmall().copyWith(
+                          color: q.text,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     const SizedBox(width: Spacing.s),

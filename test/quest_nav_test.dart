@@ -4,7 +4,9 @@ import 'package:catatim/theme/quest.dart';
 import 'package:catatim/ui/quest.dart';
 
 void main() {
-  testWidgets('QuestBottomNav switches active tabs across center button gap', (tester) async {
+  testWidgets('QuestBottomNav switches active tabs across center button gap', (
+    tester,
+  ) async {
     int currentTab = 0;
 
     await tester.pumpWidget(
@@ -17,10 +19,22 @@ void main() {
                 index: currentTab,
                 onChanged: (i) => setState(() => currentTab = i),
                 destinations: const [
-                  QuestDestination(icon: Icons.dashboard_rounded, label: 'Beranda'),
-                  QuestDestination(icon: Icons.receipt_long_rounded, label: 'Transaksi'),
-                  QuestDestination(icon: Icons.pie_chart_outline_rounded, label: 'Anggaran'),
-                  QuestDestination(icon: Icons.bar_chart_rounded, label: 'Laporan'),
+                  QuestDestination(
+                    icon: Icons.dashboard_rounded,
+                    label: 'Beranda',
+                  ),
+                  QuestDestination(
+                    icon: Icons.receipt_long_rounded,
+                    label: 'Transaksi',
+                  ),
+                  QuestDestination(
+                    icon: Icons.pie_chart_outline_rounded,
+                    label: 'Anggaran',
+                  ),
+                  QuestDestination(
+                    icon: Icons.bar_chart_rounded,
+                    label: 'Laporan',
+                  ),
                 ],
                 centerAction: (
                   tooltip: 'Catat',
@@ -49,7 +63,9 @@ void main() {
     // Tap Anggaran (index 2) across center button gap
     await tester.tap(find.text('Anggaran'));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100)); // Animating across gap
+    await tester.pump(
+      const Duration(milliseconds: 100),
+    ); // Animating across gap
     await tester.pumpAndSettle();
     expect(currentTab, 2);
 

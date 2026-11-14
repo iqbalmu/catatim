@@ -48,10 +48,7 @@ class OcrScreen extends StatefulWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Pindai Struk / Bukti Transaksi',
-                  style: ctx.qTitle(),
-                ),
+                Text('Pindai Struk / Bukti Transaksi', style: ctx.qTitle()),
                 const SizedBox(height: Spacing.xs),
                 Text(
                   'Mau pakai gambar dari mana? Nominal & pihaknya diisi otomatis.',
@@ -83,7 +80,9 @@ class OcrScreen extends StatefulWidget {
                             Text('Kamera', style: ctx.qTitle(14)),
                             Text(
                               'Foto langsung struk atau nota fisik',
-                              style: ctx.qSmall(11.5).copyWith(color: ctx.q.muted),
+                              style: ctx
+                                  .qSmall(11.5)
+                                  .copyWith(color: ctx.q.muted),
                             ),
                           ],
                         ),
@@ -118,7 +117,9 @@ class OcrScreen extends StatefulWidget {
                             Text('Galeri / Screenshot', style: ctx.qTitle(14)),
                             Text(
                               'Pilih gambar bukti transfer atau struk digital',
-                              style: ctx.qSmall(11.5).copyWith(color: ctx.q.muted),
+                              style: ctx
+                                  .qSmall(11.5)
+                                  .copyWith(color: ctx.q.muted),
                             ),
                           ],
                         ),
@@ -324,9 +325,7 @@ class _OcrScreenState extends State<OcrScreen> {
                     ),
                   ),
                   const SizedBox(width: Spacing.m),
-                  Expanded(
-                    child: Text('Kamera', style: ctx.qTitle(14)),
-                  ),
+                  Expanded(child: Text('Kamera', style: ctx.qTitle(14))),
                   Icon(Icons.chevron_right_rounded, color: ctx.q.muted),
                 ],
               ),
@@ -350,9 +349,7 @@ class _OcrScreenState extends State<OcrScreen> {
                     ),
                   ),
                   const SizedBox(width: Spacing.m),
-                  Expanded(
-                    child: Text('Galeri', style: ctx.qTitle(14)),
-                  ),
+                  Expanded(child: Text('Galeri', style: ctx.qTitle(14))),
                   Icon(Icons.chevron_right_rounded, color: ctx.q.muted),
                 ],
               ),
@@ -515,7 +512,12 @@ class _OcrScreenState extends State<OcrScreen> {
               ),
             )
           : ListView(
-              padding: const EdgeInsets.fromLTRB(Spacing.m, 0, Spacing.m, Spacing.m),
+              padding: const EdgeInsets.fromLTRB(
+                Spacing.m,
+                0,
+                Spacing.m,
+                Spacing.m,
+              ),
               children: [
                 if (_imagePath != null && File(_imagePath!).existsSync()) ...[
                   ClipRRect(
@@ -553,9 +555,7 @@ class _OcrScreenState extends State<OcrScreen> {
                   QuestCard(
                     onTap: _pickNewImage,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: Spacing.m,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: Spacing.m),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -593,10 +593,7 @@ class _OcrScreenState extends State<OcrScreen> {
                             size: 18,
                           ),
                           const SizedBox(width: Spacing.xs),
-                          Text(
-                            'Hasil Pindai Struk',
-                            style: context.qTitle(15),
-                          ),
+                          Text('Hasil Pindai Struk', style: context.qTitle(15)),
                         ],
                       ),
                       const SizedBox(height: Spacing.xs),
@@ -624,36 +621,42 @@ class _OcrScreenState extends State<OcrScreen> {
                         label:
                             'Tanggal & waktu transaksi, ${idFullDate(_occurredAt)} ${idDateTime(_occurredAt)}',
                         child: InkWell(
-                        onTap: _pickDateTime,
-                        borderRadius: BorderRadius.circular(AppRadius.tile),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: Spacing.m,
-                            vertical: Spacing.s + 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: q.surface,
-                            borderRadius: BorderRadius.circular(AppRadius.tile),
-                            border: Border.all(color: q.line),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_today_rounded,
-                                size: 18,
-                                color: q.primaryText,
+                          onTap: _pickDateTime,
+                          borderRadius: BorderRadius.circular(AppRadius.tile),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: Spacing.m,
+                              vertical: Spacing.s + 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: q.surface,
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.tile,
                               ),
-                              const SizedBox(width: Spacing.s),
-                              Expanded(
-                                child: Text(
-                                  '${idFullDate(_occurredAt)} · ${idDateTime(_occurredAt).split(' ').last}',
-                                  style: context.qTitle(13.5),
+                              border: Border.all(color: q.line),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.calendar_today_rounded,
+                                  size: 18,
+                                  color: q.primaryText,
                                 ),
-                              ),
-                              Icon(Icons.edit_rounded, size: 16, color: q.muted),
-                            ],
+                                const SizedBox(width: Spacing.s),
+                                Expanded(
+                                  child: Text(
+                                    '${idFullDate(_occurredAt)} · ${idDateTime(_occurredAt).split(' ').last}',
+                                    style: context.qTitle(13.5),
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.edit_rounded,
+                                  size: 16,
+                                  color: q.muted,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
                         ),
                       ),
                       const SizedBox(height: Spacing.m),
@@ -676,7 +679,10 @@ class _OcrScreenState extends State<OcrScreen> {
                           'Angka-angka yang kebaca di struk:',
                           style: context
                               .qSmall(11.5)
-                              .copyWith(color: q.muted, fontWeight: FontWeight.w600),
+                              .copyWith(
+                                color: q.muted,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                         const SizedBox(height: 6),
                         Wrap(
@@ -728,9 +734,14 @@ class _OcrScreenState extends State<OcrScreen> {
                                     width: 12,
                                     height: 12,
                                     decoration: BoxDecoration(
-                                      color: SeedColors.categoryColor(c.colorIndex),
+                                      color: SeedColors.categoryColor(
+                                        c.colorIndex,
+                                      ),
                                       shape: BoxShape.circle,
-                                      border: Border.all(color: context.q.line, width: 1.5),
+                                      border: Border.all(
+                                        color: context.q.line,
+                                        width: 1.5,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -767,8 +778,10 @@ class _OcrScreenState extends State<OcrScreen> {
                                     AccountKind.cash => 'Dompet Tunai',
                                   },
                                   icon: switch (a.kind) {
-                                    AccountKind.bank => Icons.account_balance_rounded,
-                                    AccountKind.ewallet => Icons.phone_android_rounded,
+                                    AccountKind.bank =>
+                                      Icons.account_balance_rounded,
+                                    AccountKind.ewallet =>
+                                      Icons.phone_android_rounded,
                                     AccountKind.cash => Icons.payments_outlined,
                                   },
                                 ),
@@ -785,9 +798,10 @@ class _OcrScreenState extends State<OcrScreen> {
 
                       Text(
                         'Arah Transaksi',
-                        style: context
-                            .qSmall()
-                            .copyWith(color: q.muted, fontWeight: FontWeight.w700),
+                        style: context.qSmall().copyWith(
+                          color: q.muted,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: Spacing.xs),
                       QuestSegmented<Direction>(
@@ -821,25 +835,25 @@ class _OcrScreenState extends State<OcrScreen> {
                         label:
                             'Teks Mentah Hasil OCR, ${_showRawText ? 'terbuka' : 'tertutup'}',
                         child: InkWell(
-                        onTap: () =>
-                            setState(() => _showRawText = !_showRawText),
-                        child: Row(
-                          children: [
-                            Icon(
-                              _showRawText
-                                  ? Icons.expand_less_rounded
-                                  : Icons.expand_more_rounded,
-                              color: q.muted,
-                            ),
-                            const SizedBox(width: Spacing.xs),
-                            Expanded(
-                              child: Text(
-                                'Teks Mentah Hasil OCR',
-                                style: context.qTitle(13.5),
+                          onTap: () =>
+                              setState(() => _showRawText = !_showRawText),
+                          child: Row(
+                            children: [
+                              Icon(
+                                _showRawText
+                                    ? Icons.expand_less_rounded
+                                    : Icons.expand_more_rounded,
+                                color: q.muted,
                               ),
-                            ),
-                          ],
-                      ),
+                              const SizedBox(width: Spacing.xs),
+                              Expanded(
+                                child: Text(
+                                  'Teks Mentah Hasil OCR',
+                                  style: context.qTitle(13.5),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       if (_showRawText) ...[
@@ -856,7 +870,9 @@ class _OcrScreenState extends State<OcrScreen> {
                 const SizedBox(height: Spacing.l),
 
                 QuestButton(
-                  label: _isSaving ? 'Memproses...' : 'Langsung Catat Transaksi',
+                  label: _isSaving
+                      ? 'Memproses...'
+                      : 'Langsung Catat Transaksi',
                   icon: Icons.check_circle_rounded,
                   onPressed: _isSaving ? null : _recordDirectly,
                 ),

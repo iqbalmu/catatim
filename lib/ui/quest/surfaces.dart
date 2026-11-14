@@ -32,8 +32,7 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
   /// Judul (20×1,45 = 29) + subjudul (12×1,4 = 17) butuh 46px konten,
   /// ditambah padding atas 8 + bawah 16 → tinggi minimum 70.
   @override
-  Size get preferredSize =>
-      Size.fromHeight(70 * textScale.clamp(1.0, 2.0));
+  Size get preferredSize => Size.fromHeight(70 * textScale.clamp(1.0, 2.0));
 
   @override
   Widget build(BuildContext context) {

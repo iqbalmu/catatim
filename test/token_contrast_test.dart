@@ -55,7 +55,11 @@ void expectGraphic(String name, Color fg, Color bg) {
 
 typedef Pair = (String, Color, Color);
 
-void checkAll(String group, List<Pair> pairs, void Function(String, Color, Color) check) {
+void checkAll(
+  String group,
+  List<Pair> pairs,
+  void Function(String, Color, Color) check,
+) {
   for (final (surface, fg, bg) in pairs) {
     test('$group @ $surface', () => check('$group @ $surface', fg, bg));
   }
@@ -146,7 +150,7 @@ void main() {
       ('surface2', p.hint, DarkColors.surface2),
       ('surface', p.hint, DarkColors.surface),
     ], expectText);
-   });
+  });
 
   test('grafik: warna batang vs permukaan kartu (non-teks)', () {
     for (final (name, p) in [

@@ -61,116 +61,118 @@ void main() {
     );
   }
 
-  testWidgets('CaptureSettingsScreen: 3-tab layout, navigasi tab, dan penambahan pola abaikan',
-      (tester) async {
-    tester.view.physicalSize = const Size(1080, 2400);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+  testWidgets(
+    'CaptureSettingsScreen: 3-tab layout, navigasi tab, dan penambahan pola abaikan',
+    (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
-    await tester.pumpWidget(buildScreen());
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(buildScreen());
+      await tester.pumpAndSettle();
 
-    // 1. Verifikasi Segmented Tab
-    expect(find.text('Bank & E-Wallet'), findsOneWidget);
-    expect(find.text('Izin & Sistem'), findsOneWidget);
-    expect(find.text('Aturan & Alat'), findsOneWidget);
+      // 1. Verifikasi Segmented Tab
+      expect(find.text('Bank & E-Wallet'), findsOneWidget);
+      expect(find.text('Izin & Sistem'), findsOneWidget);
+      expect(find.text('Aturan & Alat'), findsOneWidget);
 
-    // 2. Tab 0: Bank & E-Wallet
-    expect(find.text('Cari bank atau e-wallet…'), findsOneWidget);
-    expect(find.text('Bank Jago'), findsOneWidget);
-    expect(find.text('BCA (myBCA / BCA mobile)'), findsOneWidget);
+      // 2. Tab 0: Bank & E-Wallet
+      expect(find.text('Cari bank atau e-wallet…'), findsOneWidget);
+      expect(find.text('Bank Jago'), findsOneWidget);
+      expect(find.text('BCA (myBCA / BCA mobile)'), findsOneWidget);
 
-    // Coba pencarian
-    await tester.enterText(find.byType(TextField).first, 'Jago');
-    await tester.pumpAndSettle();
-    expect(find.text('Bank Jago'), findsOneWidget);
-    expect(find.text('BCA (myBCA / BCA mobile)'), findsNothing);
+      // Coba pencarian
+      await tester.enterText(find.byType(TextField).first, 'Jago');
+      await tester.pumpAndSettle();
+      expect(find.text('Bank Jago'), findsOneWidget);
+      expect(find.text('BCA (myBCA / BCA mobile)'), findsNothing);
 
-    // Hapus pencarian
-    await tester.enterText(find.byType(TextField).first, '');
-    await tester.pumpAndSettle();
-    expect(find.text('Bank Jago'), findsOneWidget);
-    expect(find.text('BCA (myBCA / BCA mobile)'), findsOneWidget);
+      // Hapus pencarian
+      await tester.enterText(find.byType(TextField).first, '');
+      await tester.pumpAndSettle();
+      expect(find.text('Bank Jago'), findsOneWidget);
+      expect(find.text('BCA (myBCA / BCA mobile)'), findsOneWidget);
 
-    // 3. Pindah ke Tab 1: Izin & Sistem
-    await tester.tap(find.text('Izin & Sistem'));
-    await tester.pumpAndSettle();
+      // 3. Pindah ke Tab 1: Izin & Sistem
+      await tester.tap(find.text('Izin & Sistem'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('KESEHATAN PENANGKAP (LAMPU SEHAT)'), findsOneWidget);
-    expect(find.text('Tidak aktif'), findsOneWidget);
-    expect(find.text('Aktivitas terakhir'), findsOneWidget);
-    expect(find.text('Notifikasi terakhir'), findsOneWidget);
-    expect(find.text('Bank terhubung'), findsOneWidget);
-    expect(find.text('Akses Notifikasi Belum Aktif'), findsOneWidget);
-    expect(find.text('Optimasi Baterai HP'), findsOneWidget);
-    expect(find.text('Panduan Khusus per Merk HP'), findsOneWidget);
-    expect(find.textContaining('100% Offline'), findsNothing);
+      expect(find.text('KESEHATAN PENANGKAP (LAMPU SEHAT)'), findsOneWidget);
+      expect(find.text('Tidak aktif'), findsOneWidget);
+      expect(find.text('Aktivitas terakhir'), findsOneWidget);
+      expect(find.text('Notifikasi terakhir'), findsOneWidget);
+      expect(find.text('Bank terhubung'), findsOneWidget);
+      expect(find.text('Akses Notifikasi Belum Aktif'), findsOneWidget);
+      expect(find.text('Optimasi Baterai HP'), findsOneWidget);
+      expect(find.text('Panduan Khusus per Merk HP'), findsOneWidget);
+      expect(find.textContaining('100% Offline'), findsNothing);
 
-    // Expand & collapse Panduan Khusus Vendor HP (pastikan tidak crash PageStorage cast double to bool)
-    await tester.tap(find.text('Panduan Khusus per Merk HP'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('MIUI / HyperOS'), findsOneWidget);
+      // Expand & collapse Panduan Khusus Vendor HP (pastikan tidak crash PageStorage cast double to bool)
+      await tester.tap(find.text('Panduan Khusus per Merk HP'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('MIUI / HyperOS'), findsOneWidget);
 
-    // Scroll pada listview izin
-    await tester.drag(find.byType(ListView).first, const Offset(0, -200));
-    await tester.pumpAndSettle();
+      // Scroll pada listview izin
+      await tester.drag(find.byType(ListView).first, const Offset(0, -200));
+      await tester.pumpAndSettle();
 
-    // Pindah ke Tab 0 lalu kembali ke Tab 1 untuk memicu pemulihan PageStorage
-    await tester.tap(find.text('Bank & E-Wallet'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Izin & Sistem'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('MIUI / HyperOS'), findsOneWidget);
+      // Pindah ke Tab 0 lalu kembali ke Tab 1 untuk memicu pemulihan PageStorage
+      await tester.tap(find.text('Bank & E-Wallet'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Izin & Sistem'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('MIUI / HyperOS'), findsOneWidget);
 
-    // 4. Pindah ke Tab 2: Aturan & Alat
-    await tester.tap(find.text('Aturan & Alat'));
-    await tester.pumpAndSettle();
+      // 4. Pindah ke Tab 2: Aturan & Alat
+      await tester.tap(find.text('Aturan & Alat'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Simulator & Validasi Notifikasi'), findsOneWidget);
-    expect(find.text('Tambah'), findsOneWidget);
+      expect(find.text('Simulator & Validasi Notifikasi'), findsOneWidget);
+      expect(find.text('Tambah'), findsOneWidget);
 
-    // Buka dialog "+ Tambah Pola Abaikan"
-    final tambahBtn = find.text('Tambah');
-    expect(tambahBtn, findsOneWidget);
-    await tester.ensureVisible(tambahBtn);
-    await tester.pumpAndSettle();
-    await tester.tap(tambahBtn);
-    await tester.pumpAndSettle();
+      // Buka dialog "+ Tambah Pola Abaikan"
+      final tambahBtn = find.text('Tambah');
+      expect(tambahBtn, findsOneWidget);
+      await tester.ensureVisible(tambahBtn);
+      await tester.pumpAndSettle();
+      await tester.tap(tambahBtn);
+      await tester.pumpAndSettle();
 
-    expect(find.text('Tambah Pola Abaikan'), findsOneWidget);
+      expect(find.text('Tambah Pola Abaikan'), findsOneWidget);
 
-    // Isi form dialog
-    expect(find.text('Kata Kunci / Frasa'), findsOneWidget);
-    expect(find.text('Deskripsi / Label (Opsional)'), findsOneWidget);
-    final textFields = find.byType(TextField);
-    final patternField = textFields.first;
-    final labelField = textFields.at(1);
+      // Isi form dialog
+      expect(find.text('Kata Kunci / Frasa'), findsOneWidget);
+      expect(find.text('Deskripsi / Label (Opsional)'), findsOneWidget);
+      final textFields = find.byType(TextField);
+      final patternField = textFields.first;
+      final labelField = textFields.at(1);
 
-    await tester.enterText(patternField, 'promo cashback');
-    await tester.enterText(labelField, 'Spam Promo');
-    await tester.pumpAndSettle();
+      await tester.enterText(patternField, 'promo cashback');
+      await tester.enterText(labelField, 'Spam Promo');
+      await tester.pumpAndSettle();
 
-    // Simpan pola
-    await tester.tap(find.text('Simpan'));
-    await tester.pumpAndSettle();
+      // Simpan pola
+      await tester.tap(find.text('Simpan'));
+      await tester.pumpAndSettle();
 
-    // Verifikasi pola muncul di list
-    final ignored = await repo.ignoredPatterns();
-    expect(ignored.length, 1);
-    expect(ignored.first.pattern, 'promo cashback');
-    expect(ignored.first.label, 'Spam Promo');
-    expect(find.text('Spam Promo'), findsOneWidget);
-    expect(find.text('Pola: "promo cashback"'), findsOneWidget);
+      // Verifikasi pola muncul di list
+      final ignored = await repo.ignoredPatterns();
+      expect(ignored.length, 1);
+      expect(ignored.first.pattern, 'promo cashback');
+      expect(ignored.first.label, 'Spam Promo');
+      expect(find.text('Spam Promo'), findsOneWidget);
+      expect(find.text('Pola: "promo cashback"'), findsOneWidget);
 
-    // Unmount dan bersihkan timer drift stream
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(seconds: 5));
-    await tester.pumpAndSettle();
-    await tester.runAsync(() async {
-      await Future<void>.delayed(const Duration(milliseconds: 20));
-    });
-  });
+      // Unmount dan bersihkan timer drift stream
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      });
+    },
+  );
 }

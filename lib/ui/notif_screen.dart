@@ -67,8 +67,8 @@ class NotificationScreen extends StatefulWidget {
 class _NotificationScreenState extends State<NotificationScreen> {
   late int _selectedTab = widget.initialTab;
 
-  late final Future<bool> _listenerEnabled =
-      widget.pipeline.channel.isListenerEnabled();
+  late final Future<bool> _listenerEnabled = widget.pipeline.channel
+      .isListenerEnabled();
 
   LedgerRepository get _repo => widget.repository;
 
@@ -148,7 +148,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         return Scaffold(
           backgroundColor: q.bg,
           appBar: QuestHeader(
-        textScale: MediaQuery.textScalerOf(context).scale(1.0),
+            textScale: MediaQuery.textScalerOf(context).scale(1.0),
             title: 'Notifikasi',
             subtitle: _selectedTab == 0
                 ? 'Pusat perhatian & pengingat'
@@ -242,8 +242,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                           _NotifItem(
                             icon: Icons.handshake_outlined,
                             color: q.bad,
-                            title:
-                                '$aging bon lebih dari 30 hari belum lunas',
+                            title: '$aging bon lebih dari 30 hari belum lunas',
                             subtitle: 'Ingatkan dirimu atau tandai lunas',
                             actionLabel: 'Lihat Bon',
                             onTap: () => _goTo(widget.onOpenBon),

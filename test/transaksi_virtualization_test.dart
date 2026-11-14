@@ -10,87 +10,87 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('TransaksiScreen: merender flattened list dengan header hari & transaksi individual', (tester) async {
-    final db = AppDatabase(NativeDatabase.memory());
-    final repo = LedgerRepository(db);
-    final progress = ProgressService(repository: repo);
+  testWidgets(
+    'TransaksiScreen: merender flattened list dengan header hari & transaksi individual',
+    (tester) async {
+      final db = AppDatabase(NativeDatabase.memory());
+      final repo = LedgerRepository(db);
+      final progress = ProgressService(repository: repo);
 
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day, 10);
-    final yesterday = today.subtract(const Duration(days: 1));
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day, 10);
+      final yesterday = today.subtract(const Duration(days: 1));
 
-    final acc = await repo.addAccount('BCA', AccountKind.bank);
-    final categories = await repo.getCategories();
-    final catMakan = categories.firstWhere((c) => c.name == 'Makanan');
-    final catGaji = categories.firstWhere((c) => c.name == 'Gaji');
+      final acc = await repo.addAccount('BCA', AccountKind.bank);
+      final categories = await repo.getCategories();
+      final catMakan = categories.firstWhere((c) => c.name == 'Makanan');
+      final catGaji = categories.firstWhere((c) => c.name == 'Gaji');
 
-    // Hari 1: 2 transaksi
-    await repo.addManual(
-      accountId: acc.id,
-      categoryId: catGaji.id,
-      amount: 4000000,
-      direction: Direction.incoming,
-      occurredAt: today,
-      kind: TxKind.other,
-      counterparty: 'Transfer Masuk Klien',
-    );
-    await repo.addManual(
-      accountId: acc.id,
-      categoryId: catMakan.id,
-      amount: 50000,
-      direction: Direction.outgoing,
-      occurredAt: today,
-      kind: TxKind.payment,
-      counterparty: 'Makan Siang',
-    );
+      // Hari 1: 2 transaksi
+      await repo.addManual(
+        accountId: acc.id,
+        categoryId: catGaji.id,
+        amount: 4000000,
+        direction: Direction.incoming,
+        occurredAt: today,
+        kind: TxKind.other,
+        counterparty: 'Transfer Masuk Klien',
+      );
+      await repo.addManual(
+        accountId: acc.id,
+        categoryId: catMakan.id,
+        amount: 50000,
+        direction: Direction.outgoing,
+        occurredAt: today,
+        kind: TxKind.payment,
+        counterparty: 'Makan Siang',
+      );
 
-    // Hari 2: 1 transaksi
-    await repo.addManual(
-      accountId: acc.id,
-      categoryId: catMakan.id,
-      amount: 35000,
-      direction: Direction.outgoing,
-      occurredAt: yesterday,
-      kind: TxKind.payment,
-      counterparty: 'Kopi Pagi',
-    );
+      // Hari 2: 1 transaksi
+      await repo.addManual(
+        accountId: acc.id,
+        categoryId: catMakan.id,
+        amount: 35000,
+        direction: Direction.outgoing,
+        occurredAt: yesterday,
+        kind: TxKind.payment,
+        counterparty: 'Kopi Pagi',
+      );
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: TransaksiScreen(
-            repository: repo,
-            progress: progress,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: TransaksiScreen(repository: repo, progress: progress),
           ),
         ),
-      ),
-    );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
-    // Verifikasi keberadaan TransactionDayHeader individual
-    expect(find.byType(TransactionDayHeader), findsNWidgets(2));
+      // Verifikasi keberadaan TransactionDayHeader individual
+      expect(find.byType(TransactionDayHeader), findsNWidgets(2));
 
-    // Verifikasi keberadaan TransactionTile individual
-    expect(find.byType(TransactionTile), findsNWidgets(3));
+      // Verifikasi keberadaan TransactionTile individual
+      expect(find.byType(TransactionTile), findsNWidgets(3));
 
-    // Verifikasi teks transaksi
-    expect(find.text('Transfer Masuk Klien'), findsOneWidget);
-    expect(find.text('Makan Siang'), findsOneWidget);
-    expect(find.text('Kopi Pagi'), findsOneWidget);
+      // Verifikasi teks transaksi
+      expect(find.text('Transfer Masuk Klien'), findsOneWidget);
+      expect(find.text('Makan Siang'), findsOneWidget);
+      expect(find.text('Kopi Pagi'), findsOneWidget);
 
-    // Verifikasi ringkasan pemasukan & pengeluaran bulanan.
-    // Tanda arah digambar terpisah dari nominal sebagai marker minimalis,
-    // jadi tidak lagi menyatu dalam satu string.
-    expect(find.text('Rp4.000.000'), findsNWidgets(2));
-    expect(find.text('Rp85.000'), findsOneWidget);
-    expect(find.text('+'), findsWidgets);
-    expect(find.text('−'), findsWidgets);
+      // Verifikasi ringkasan pemasukan & pengeluaran bulanan.
+      // Tanda arah digambar terpisah dari nominal sebagai marker minimalis,
+      // jadi tidak lagi menyatu dalam satu string.
+      expect(find.text('Rp4.000.000'), findsNWidgets(2));
+      expect(find.text('Rp85.000'), findsOneWidget);
+      expect(find.text('+'), findsWidgets);
+      expect(find.text('−'), findsWidgets);
 
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(seconds: 1));
-    await db.close();
-  });
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(seconds: 1));
+      await db.close();
+    },
+  );
 
   testWidgets(
     'TransaksiScreen: daftar > 8 transaksi semua terbungkus animasi berurut dari atas ke bawah',
@@ -129,10 +129,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: TransaksiScreen(
-              repository: repo,
-              progress: progress,
-            ),
+            body: TransaksiScreen(repository: repo, progress: progress),
           ),
         ),
       );
@@ -161,16 +158,24 @@ void main() {
       // Dapatkan Opacity widget di dalam QuestTabEnter untuk item 0 vs item 11
       final tile0 = find.widgetWithText(TransactionTile, 'Item Belanja 0');
       final opacityTile0 = tester.widget<FadeTransition>(
-        find.descendant(
-          of: find.ancestor(of: tile0, matching: find.byType(QuestTabEnter)).first,
-          matching: find.byType(FadeTransition),
-        ).first,
+        find
+            .descendant(
+              of: find
+                  .ancestor(of: tile0, matching: find.byType(QuestTabEnter))
+                  .first,
+              matching: find.byType(FadeTransition),
+            )
+            .first,
       );
       final opacityTile11 = tester.widget<FadeTransition>(
-        find.descendant(
-          of: find.ancestor(of: tile11, matching: find.byType(QuestTabEnter)).first,
-          matching: find.byType(FadeTransition),
-        ).first,
+        find
+            .descendant(
+              of: find
+                  .ancestor(of: tile11, matching: find.byType(QuestTabEnter))
+                  .first,
+              matching: find.byType(FadeTransition),
+            )
+            .first,
       );
 
       // Item 0 sudah mulai muncul
@@ -182,10 +187,14 @@ void main() {
 
       // Setelah animasi selesai, semua item ber-opacity 1.0
       final finalOpacityTile11 = tester.widget<FadeTransition>(
-        find.descendant(
-          of: find.ancestor(of: tile11, matching: find.byType(QuestTabEnter)).first,
-          matching: find.byType(FadeTransition),
-        ).first,
+        find
+            .descendant(
+              of: find
+                  .ancestor(of: tile11, matching: find.byType(QuestTabEnter))
+                  .first,
+              matching: find.byType(FadeTransition),
+            )
+            .first,
       );
       expect(finalOpacityTile11.opacity.value, equals(1.0));
 

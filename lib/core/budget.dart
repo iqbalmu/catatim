@@ -31,39 +31,39 @@ enum LimitScope { daily, weekly, monthly }
 extension LimitScopeInfo on LimitScope {
   /// Key app_settings untuk nilai batas (rupiah).
   String get limitKey => switch (this) {
-        LimitScope.daily => kKeyDailyLimit,
-        LimitScope.weekly => kKeyWeeklyLimit,
-        LimitScope.monthly => kKeyMonthlyTotal,
-      };
+    LimitScope.daily => kKeyDailyLimit,
+    LimitScope.weekly => kKeyWeeklyLimit,
+    LimitScope.monthly => kKeyMonthlyTotal,
+  };
 
   /// Key app_settings untuk filter kategori (JSON array id).
   String get categoriesKey => switch (this) {
-        LimitScope.daily => kKeyDailyCategories,
-        LimitScope.weekly => kKeyWeeklyCategories,
-        LimitScope.monthly => kKeyMonthlyCategories,
-      };
+    LimitScope.daily => kKeyDailyCategories,
+    LimitScope.weekly => kKeyWeeklyCategories,
+    LimitScope.monthly => kKeyMonthlyCategories,
+  };
 
   /// Label garis batas di [BudgetSnapshot] — dipakai maskot, alert, dan
   /// notifikasi lewat konstanta ini, bukan string terpisah.
   String get label => switch (this) {
-        LimitScope.daily => 'Batas harian',
-        LimitScope.weekly => 'Batas mingguan',
-        LimitScope.monthly => 'Total bulan ini',
-      };
+    LimitScope.daily => 'Batas harian',
+    LimitScope.weekly => 'Batas mingguan',
+    LimitScope.monthly => 'Total bulan ini',
+  };
 
   /// Label pendek untuk pesan notifikasi.
   String get shortLabel => switch (this) {
-        LimitScope.daily => 'Harian',
-        LimitScope.weekly => 'Mingguan',
-        LimitScope.monthly => 'Bulanan',
-      };
+    LimitScope.daily => 'Harian',
+    LimitScope.weekly => 'Mingguan',
+    LimitScope.monthly => 'Bulanan',
+  };
 
   /// Judul dialog pengaturan batas.
   String get settingTitle => switch (this) {
-        LimitScope.daily => 'Atur Batas Harian',
-        LimitScope.weekly => 'Atur Batas Mingguan',
-        LimitScope.monthly => 'Atur Batas Total Bulanan',
-      };
+    LimitScope.daily => 'Atur Batas Harian',
+    LimitScope.weekly => 'Atur Batas Mingguan',
+    LimitScope.monthly => 'Atur Batas Total Bulanan',
+  };
 }
 
 /// Baca daftar id kategori tersimpan untuk satu scope batas.
@@ -295,8 +295,10 @@ DailyPace dailyPace({
   int? monthlyTotal,
 }) {
   final monthStart = DateTime(now.year, now.month);
-  final daysInMonth =
-      DateTime(now.year, now.month + 1).difference(monthStart).inDays;
+  final daysInMonth = DateTime(
+    now.year,
+    now.month + 1,
+  ).difference(monthStart).inDays;
   final dayOfMonth = now.day;
 
   int? safe;
@@ -360,12 +362,14 @@ int? dailyBar({
   return switch (scope) {
     LimitScope.daily => dailyLimit,
     LimitScope.weekly => (weeklyLimit ?? 0) ~/ 7,
-    LimitScope.monthly => monthlyTotal == null
-        ? null
-        : monthlyTotal ~/
-            DateTime(now.year, now.month + 1)
-                .difference(DateTime(now.year, now.month))
-                .inDays,
+    LimitScope.monthly =>
+      monthlyTotal == null
+          ? null
+          : monthlyTotal ~/
+                DateTime(
+                  now.year,
+                  now.month + 1,
+                ).difference(DateTime(now.year, now.month)).inDays,
     null => null,
   };
 }

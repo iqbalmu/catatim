@@ -19,7 +19,9 @@ class DailyPaceHeroCard extends StatelessWidget {
     final q = context.q;
 
     return Padding(
-      padding: margin ?? const EdgeInsets.fromLTRB(Spacing.m, Spacing.s, Spacing.m, 0),
+      padding:
+          margin ??
+          const EdgeInsets.fromLTRB(Spacing.m, Spacing.s, Spacing.m, 0),
       child: AnimatedBuilder(
         animation: progress,
         builder: (context, _) {
@@ -46,7 +48,8 @@ class DailyPaceHeroCard extends StatelessWidget {
           final int? monthlyLimit = monthlyLine?.limit;
           final int? dailyLimit = dailyLine?.limit;
 
-          final bool hasBudget = safe != null ||
+          final bool hasBudget =
+              safe != null ||
               (dailyLimit != null && dailyLimit > 0) ||
               (monthlyLimit != null && monthlyLimit > 0);
 
@@ -77,11 +80,14 @@ class DailyPaceHeroCard extends StatelessWidget {
             statusIcon = Icons.check_circle_outline_rounded;
           }
 
-          final double monthlyFraction = (monthlyLimit != null && monthlyLimit > 0)
+          final double monthlyFraction =
+              (monthlyLimit != null && monthlyLimit > 0)
               ? (monthOut / monthlyLimit).clamp(0.0, 1.0)
               : 0.0;
           final bool isMonthOver =
-              monthlyLimit != null && monthlyLimit > 0 && monthOut > monthlyLimit;
+              monthlyLimit != null &&
+              monthlyLimit > 0 &&
+              monthOut > monthlyLimit;
           final Color monthProgressColor = isMonthOver
               ? q.bad
               : (monthlyFraction >= 0.85 ? q.warn : q.good);
@@ -98,7 +104,9 @@ class DailyPaceHeroCard extends StatelessWidget {
                   children: [
                     Text(
                       'Jatah hari ini',
-                      style: context.qSmall(12.5).copyWith(
+                      style: context
+                          .qSmall(12.5)
+                          .copyWith(
                             fontWeight: FontWeight.w700,
                             color: q.muted,
                           ),
@@ -130,19 +138,21 @@ class DailyPaceHeroCard extends StatelessWidget {
                     amount: safe != null ? safe.abs() : 0,
                     tone: isOver ? MoneyTone.outgoing : null,
                     duration: const Duration(milliseconds: 500),
-                    style: context.qDisplay(32).copyWith(
-                          color: isOver ? q.bad : q.text,
-                        ),
+                    style: context
+                        .qDisplay(32)
+                        .copyWith(color: isOver ? q.bad : q.text),
                   ),
                 ),
                 const SizedBox(height: Spacing.xxs),
 
                 Text(
-                  isOver ? 'Melebihi jatah hari ini' : 'Sisa yang boleh dipakai hari ini',
+                  isOver
+                      ? 'Melebihi jatah hari ini'
+                      : 'Sisa yang boleh dipakai hari ini',
                   style: context.qSmall().copyWith(
-                        color: q.muted,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: q.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: Spacing.s),
 
@@ -151,10 +161,9 @@ class DailyPaceHeroCard extends StatelessWidget {
                   children: [
                     Text(
                       'Keluar hari ini: ${Money.format(dayOut)}',
-                      style: context.qSmall(11.5).copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: q.text,
-                          ),
+                      style: context
+                          .qSmall(11.5)
+                          .copyWith(fontWeight: FontWeight.w700, color: q.text),
                     ),
                     if (pace != null)
                       Text(
@@ -253,10 +262,9 @@ class DailyPaceHeroCard extends StatelessWidget {
           const SizedBox(height: Spacing.s),
           Text(
             'Atur Batas Anggaran',
-            style: context.qSmall(12.5).copyWith(
-                  color: q.primaryText,
-                  fontWeight: FontWeight.w700,
-                ),
+            style: context
+                .qSmall(12.5)
+                .copyWith(color: q.primaryText, fontWeight: FontWeight.w700),
           ),
         ],
       ),

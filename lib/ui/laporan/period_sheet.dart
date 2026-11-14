@@ -25,50 +25,54 @@ class _AccountOptionTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.tile),
         child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: selected ? context.q.primaryLight : context.q.surface2,
-                borderRadius: BorderRadius.circular(10),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: selected ? context.q.primaryLight : context.q.surface2,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  size: 18,
+                  color: selected ? context.q.primaryText : context.q.muted,
+                ),
               ),
-              child: Icon(
-                icon,
-                size: 18,
-                color: selected ? context.q.primaryText : context.q.muted,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: context.q.text,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: context.q.text,
+                      ),
                     ),
-                  ),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: context.qSmall(11.5),
-                  ),
-                ],
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: context.qSmall(11.5),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            if (selected)
-              Icon(Icons.check_circle_rounded, color: context.q.primaryText, size: 20),
-          ],
-        ),
+              if (selected)
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: context.q.primaryText,
+                  size: 20,
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -96,7 +100,12 @@ class _LaporanPeriodSheetState extends State<_LaporanPeriodSheet> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.s, Spacing.m, Spacing.m),
+        padding: const EdgeInsets.fromLTRB(
+          Spacing.m,
+          Spacing.s,
+          Spacing.m,
+          Spacing.m,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -130,7 +139,8 @@ class _LaporanPeriodSheetState extends State<_LaporanPeriodSheet> {
               child: !_customMode
                   ? QuestMonthPicker(
                       initialMonth: widget.initialMonth,
-                      onChanged: (m) => Navigator.pop(context, (month: m, range: null)),
+                      onChanged: (m) =>
+                          Navigator.pop(context, (month: m, range: null)),
                     )
                   : Column(
                       mainAxisSize: MainAxisSize.min,
@@ -145,7 +155,10 @@ class _LaporanPeriodSheetState extends State<_LaporanPeriodSheet> {
                           icon: Icons.check_rounded,
                           onPressed: _range == null
                               ? null
-                              : () => Navigator.pop(context, (month: null, range: _range)),
+                              : () => Navigator.pop(context, (
+                                  month: null,
+                                  range: _range,
+                                )),
                         ),
                       ],
                     ),
@@ -207,10 +220,7 @@ class _SegmentedBarPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     // Selalu gambar track latar terlebih dahulu agar progres 0→target terlihat jelas.
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = emptyColor,
-    );
+    canvas.drawRect(Offset.zero & size, Paint()..color = emptyColor);
     final nonZero = segments.where((s) => s.weight > 0).toList();
     final total = nonZero.fold<int>(0, (sum, s) => sum + s.weight);
     if (nonZero.isEmpty || total <= 0 || progress <= 0) {

@@ -121,9 +121,7 @@ class _CashflowSummaryCard extends StatelessWidget {
                         amount: netCashflow,
                         tone: netCashflow > 0
                             ? MoneyTone.incoming
-                            : (netCashflow < 0
-                                  ? MoneyTone.outgoing
-                                  : null),
+                            : (netCashflow < 0 ? MoneyTone.outgoing : null),
                         style: TextStyle(
                           fontSize: 18.5,
                           fontWeight: FontWeight.w900,

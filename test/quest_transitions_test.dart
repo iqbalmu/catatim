@@ -3,83 +3,79 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:catatim/theme/quest.dart';
 
 void main() {
-  testWidgets('QuestPageTransitionsBuilder pushes and pops with parallax and without error', (tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: ThemeData(
-          pageTransitionsTheme: const PageTransitionsTheme(
-            builders: {
-              TargetPlatform.android: _ParallaxQuestPageTransitionsBuilder(),
-            },
+  testWidgets(
+    'QuestPageTransitionsBuilder pushes and pops with parallax and without error',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(
+            pageTransitionsTheme: const PageTransitionsTheme(
+              builders: {
+                TargetPlatform.android: _ParallaxQuestPageTransitionsBuilder(),
+              },
+            ),
           ),
+          home: const Scaffold(body: Center(child: Text('Screen A'))),
         ),
-        home: const Scaffold(
-          body: Center(child: Text('Screen A')),
+      );
+
+      expect(find.text('Screen A'), findsOneWidget);
+
+      // Push Screen B
+      final context = tester.element(find.text('Screen A'));
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const Scaffold(body: Center(child: Text('Screen B'))),
         ),
-      ),
-    );
+      );
 
-    expect(find.text('Screen A'), findsOneWidget);
+      await tester.pump(); // Start push transition
+      await tester.pump(const Duration(milliseconds: 100)); // Halfway
 
-    // Push Screen B
-    final context = tester.element(find.text('Screen A'));
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const Scaffold(
-          body: Center(child: Text('Screen B')),
-        ),
-      ),
-    );
+      // Check positions during transition: Screen B should be sliding in (>0 offset)
+      // Screen A should be slightly shifted to the left (<0 offset)
+      final aPos = tester.getTopLeft(find.text('Screen A'));
+      final bPos = tester.getTopLeft(find.text('Screen B'));
+      expect(aPos.dx, lessThan(400)); // shifted left from center
+      expect(bPos.dx, greaterThan(0)); // entering from right
 
-    await tester.pump(); // Start push transition
-    await tester.pump(const Duration(milliseconds: 100)); // Halfway
+      // Complete push
+      await tester.pumpAndSettle();
+      expect(find.text('Screen B'), findsOneWidget);
 
-    // Check positions during transition: Screen B should be sliding in (>0 offset)
-    // Screen A should be slightly shifted to the left (<0 offset)
-    final aPos = tester.getTopLeft(find.text('Screen A'));
-    final bPos = tester.getTopLeft(find.text('Screen B'));
-    expect(aPos.dx, lessThan(400)); // shifted left from center
-    expect(bPos.dx, greaterThan(0)); // entering from right
+      // Pop Screen B
+      final bContext = tester.element(find.text('Screen B'));
+      Navigator.pop(bContext);
 
-    // Complete push
-    await tester.pumpAndSettle();
-    expect(find.text('Screen B'), findsOneWidget);
+      await tester.pump(); // Start pop transition
+      await tester.pump(const Duration(milliseconds: 100)); // Halfway
+      expect(find.text('Screen A'), findsOneWidget);
+      expect(find.text('Screen B'), findsOneWidget);
 
-    // Pop Screen B
-    final bContext = tester.element(find.text('Screen B'));
-    Navigator.pop(bContext);
-
-    await tester.pump(); // Start pop transition
-    await tester.pump(const Duration(milliseconds: 100)); // Halfway
-    expect(find.text('Screen A'), findsOneWidget);
-    expect(find.text('Screen B'), findsOneWidget);
-
-    // Complete pop
-    await tester.pumpAndSettle();
-    expect(find.text('Screen A'), findsOneWidget);
-    expect(find.text('Screen B'), findsNothing);
-  });
+      // Complete pop
+      await tester.pumpAndSettle();
+      expect(find.text('Screen A'), findsOneWidget);
+      expect(find.text('Screen B'), findsNothing);
+    },
+  );
 
   testWidgets(
     'reduce motion: QuestPageTransitionsBuilder memotong instan (audit M-01)',
     (tester) async {
       Widget buildApp({required bool reduced}) => MaterialApp(
-            key: ValueKey('reduced-$reduced'),
-            theme: ThemeData(
-              pageTransitionsTheme: const PageTransitionsTheme(
-                builders: {
-                  TargetPlatform.android: QuestPageTransitionsBuilder(),
-                },
-              ),
-            ),
-            builder: (context, child) => MediaQuery(
-              data: MediaQuery.of(context)
-                  .copyWith(disableAnimations: reduced),
-              child: child!,
-            ),
-            home: const Scaffold(body: Center(child: Text('Screen A'))),
-          );
+        key: ValueKey('reduced-$reduced'),
+        theme: ThemeData(
+          pageTransitionsTheme: const PageTransitionsTheme(
+            builders: {TargetPlatform.android: QuestPageTransitionsBuilder()},
+          ),
+        ),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: reduced),
+          child: child!,
+        ),
+        home: const Scaffold(body: Center(child: Text('Screen A'))),
+      );
 
       // Kontrol: normal → transisi slide hadir.
       await tester.pumpWidget(buildApp(reduced: false));
@@ -134,10 +130,7 @@ class _ParallaxQuestPageTransitionsBuilder extends PageTransitionsBuilder {
 
     return SlideTransition(
       position: secondaryAnimation.drive(parallaxOut),
-      child: SlideTransition(
-        position: animation.drive(slideIn),
-        child: child,
-      ),
+      child: SlideTransition(position: animation.drive(slideIn), child: child),
     );
   }
 }

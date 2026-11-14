@@ -51,10 +51,7 @@ class QuestBottomNav extends StatelessWidget {
           clipBehavior: Clip.none,
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 4,
-                vertical: 6,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
               decoration: BoxDecoration(
                 color: context.q.surface,
                 borderRadius: BorderRadius.circular(AppRadius.nav),
@@ -119,7 +116,9 @@ class QuestBottomNav extends StatelessWidget {
                         child: Icon(
                           dest.icon,
                           size: 21,
-                          color: selected ? context.q.primaryText : context.q.muted,
+                          color: selected
+                              ? context.q.primaryText
+                              : context.q.muted,
                         ),
                       ),
                     ),

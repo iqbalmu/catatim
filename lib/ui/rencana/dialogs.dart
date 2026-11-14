@@ -76,8 +76,9 @@ Future<_LimitEditResult?> _askLimitWithCategories(
     text: current == null ? '' : _RupiahGroupingFormatter.grouped('$current'),
   );
   // null = semua kategori; set = kategori spesifik yang dihitung.
-  Set<int>? selected =
-      currentCategories == null ? null : {...currentCategories};
+  Set<int>? selected = currentCategories == null
+      ? null
+      : {...currentCategories};
 
   void toggle(int id) {
     final next = selected == null ? <int>{} : {...selected!};
@@ -142,7 +143,8 @@ Future<_LimitEditResult?> _askLimitWithCategories(
                   QuestChip(
                     label: 'Tanpa kategori',
                     selected:
-                        selected != null && selected!.contains(kUncategorizedId),
+                        selected != null &&
+                        selected!.contains(kUncategorizedId),
                     compact: true,
                     onTap: () => setDialogState(() => toggle(kUncategorizedId)),
                   ),
@@ -222,9 +224,7 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
                 fontWeight: FontWeight.w600,
                 color: q.text,
               ),
-              decoration: const InputDecoration(
-                hintText: 'Contoh: Makanan',
-              ),
+              decoration: const InputDecoration(hintText: 'Contoh: Makanan'),
             ),
             const SizedBox(height: Spacing.m),
             const QuestFieldLabel('Batas Bulanan'),
@@ -340,10 +340,7 @@ class _NewCategory {
 /// setelah sheet benar-benar unmount, aman dari animasi keluar.
 
 class _NewCategoryForm extends StatefulWidget {
-  const _NewCategoryForm({
-    required this.nameCtrl,
-    required this.limitCtrl,
-  });
+  const _NewCategoryForm({required this.nameCtrl, required this.limitCtrl});
 
   final TextEditingController nameCtrl;
   final TextEditingController limitCtrl;

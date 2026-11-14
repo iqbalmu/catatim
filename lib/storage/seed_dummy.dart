@@ -34,14 +34,14 @@ Future<void> seedDummyIfEmpty(
   await _purgeLegacySeed(repo, db);
   // Insert selama baris demo (uuid seed-dummy-*) belum ada — data
   // testing buatan pengguna tidak menghalangi kehadiran data demo.
-  final existingSeed = await (db.select(db.transactions)
-        ..where((t) => t.uuid.like('seed-dummy-%')))
-      .get();
+  final existingSeed = await (db.select(
+    db.transactions,
+  )..where((t) => t.uuid.like('seed-dummy-%'))).get();
   if (existingSeed.isNotEmpty) {
     if (!force) return;
-    await (db.delete(db.transactions)
-          ..where((t) => t.uuid.like('seed-dummy-%')))
-        .go();
+    await (db.delete(
+      db.transactions,
+    )..where((t) => t.uuid.like('seed-dummy-%'))).go();
   }
 
   final cats = await repo.getCategories();
@@ -52,15 +52,11 @@ Future<void> seedDummyIfEmpty(
   // ikut bergerak — transaksi tanpa akun tidak memengaruhi saldo.
   final accounts = await repo.getAccounts();
   final mainAccount = accounts
-      .firstWhere(
-        (a) => a.name == 'blu by BCA',
-        orElse: () => accounts.first,
-      )
+      .firstWhere((a) => a.name == 'blu by BCA', orElse: () => accounts.first)
       .id;
 
   final rows = <TransactionsCompanion>[
-    for (final s in _seedSpecs(DateTime.now()))
-      s.toCompanion(cat, mainAccount),
+    for (final s in _seedSpecs(DateTime.now())) s.toCompanion(cat, mainAccount),
   ];
 
   await db.batch((b) => b.insertAll(db.transactions, rows));
@@ -126,19 +122,18 @@ class _SeedTx {
   TransactionsCompanion toCompanion(
     int Function(String name) cat,
     int accountId,
-  ) =>
-      TransactionsCompanion.insert(
-        uuid: uuid,
-        bankId: source == TxSource.manual ? 'manual' : 'blu',
-        kind: kind,
-        direction: direction,
-        amount: amount,
-        counterparty: drift.Value(counterparty),
-        occurredAt: when,
-        source: source,
-        categoryId: drift.Value(cat(category)),
-        accountId: drift.Value(accountId),
-      );
+  ) => TransactionsCompanion.insert(
+    uuid: uuid,
+    bankId: source == TxSource.manual ? 'manual' : 'blu',
+    kind: kind,
+    direction: direction,
+    amount: amount,
+    counterparty: drift.Value(counterparty),
+    occurredAt: when,
+    source: source,
+    categoryId: drift.Value(cat(category)),
+    accountId: drift.Value(accountId),
+  );
 }
 
 /// Pola demo — dirakit relatif ke [now]:
@@ -176,61 +171,205 @@ List<_SeedTx> _seedSpecs(DateTime now) {
   return [
     // ── Minggu berjalan (kalender sejak Senin) ──
     if (week(0, 7, 40) case final d?)
-      _SeedTx('seed-dummy-01', d, 35000, Direction.outgoing, TxKind.payment,
-          'Transportasi', 'Pertamax 2L', TxSource.notification),
+      _SeedTx(
+        'seed-dummy-01',
+        d,
+        35000,
+        Direction.outgoing,
+        TxKind.payment,
+        'Transportasi',
+        'Pertamax 2L',
+        TxSource.notification,
+      ),
     if (week(0, 12, 30) case final d?)
-      _SeedTx('seed-dummy-02', d, 20000, Direction.outgoing, TxKind.payment,
-          'Makanan', 'Kopi Kenangan', TxSource.manual),
+      _SeedTx(
+        'seed-dummy-02',
+        d,
+        20000,
+        Direction.outgoing,
+        TxKind.payment,
+        'Makanan',
+        'Kopi Kenangan',
+        TxSource.manual,
+      ),
     if (week(0, 20, 15) case final d?)
-      _SeedTx('seed-dummy-03', d, 2500000, Direction.incoming, TxKind.payment,
-          'Transfer', 'Proyek desain logo', TxSource.manual),
+      _SeedTx(
+        'seed-dummy-03',
+        d,
+        2500000,
+        Direction.incoming,
+        TxKind.payment,
+        'Transfer',
+        'Proyek desain logo',
+        TxSource.manual,
+      ),
     if (week(1, 12, 30) case final d?)
-      _SeedTx('seed-dummy-04', d, 25000, Direction.outgoing, TxKind.payment,
-          'Makanan', 'Warung Nasi Bu Sri', TxSource.manual),
+      _SeedTx(
+        'seed-dummy-04',
+        d,
+        25000,
+        Direction.outgoing,
+        TxKind.payment,
+        'Makanan',
+        'Warung Nasi Bu Sri',
+        TxSource.manual,
+      ),
     if (week(1, 17, 45) case final d?)
-      _SeedTx('seed-dummy-05', d, 15000, Direction.outgoing, TxKind.payment,
-          'Transportasi', 'Gojek ke kantor', TxSource.auto),
+      _SeedTx(
+        'seed-dummy-05',
+        d,
+        15000,
+        Direction.outgoing,
+        TxKind.payment,
+        'Transportasi',
+        'Gojek ke kantor',
+        TxSource.auto,
+      ),
     if (week(2, 9, 40) case final d?)
-      _SeedTx('seed-dummy-06', d, 25000, Direction.outgoing, TxKind.payment,
-          'Tagihan', 'Pulsa & paket data', TxSource.manual),
+      _SeedTx(
+        'seed-dummy-06',
+        d,
+        25000,
+        Direction.outgoing,
+        TxKind.payment,
+        'Tagihan',
+        'Pulsa & paket data',
+        TxSource.manual,
+      ),
     if (week(2, 19, 5) case final d?)
-      _SeedTx('seed-dummy-07', d, 20000, Direction.outgoing, TxKind.payment,
-          'Makanan', 'Ayam Geprek Bakar', TxSource.manual),
+      _SeedTx(
+        'seed-dummy-07',
+        d,
+        20000,
+        Direction.outgoing,
+        TxKind.payment,
+        'Makanan',
+        'Ayam Geprek Bakar',
+        TxSource.manual,
+      ),
     if (week(3, 10, 20) case final d?)
-      _SeedTx('seed-dummy-08', d, 35000, Direction.outgoing, TxKind.payment,
-          'Belanja', 'Indomaret', TxSource.auto),
+      _SeedTx(
+        'seed-dummy-08',
+        d,
+        35000,
+        Direction.outgoing,
+        TxKind.payment,
+        'Belanja',
+        'Indomaret',
+        TxSource.auto,
+      ),
     if (week(4, 19, 30) case final d?)
-      _SeedTx('seed-dummy-09', d, 30000, Direction.outgoing, TxKind.payment,
-          'Makanan', 'Ayam Geprek Bakar', TxSource.manual),
+      _SeedTx(
+        'seed-dummy-09',
+        d,
+        30000,
+        Direction.outgoing,
+        TxKind.payment,
+        'Makanan',
+        'Ayam Geprek Bakar',
+        TxSource.manual,
+      ),
     if (week(5, 20, 0) case final d?)
-      _SeedTx('seed-dummy-10', d, 25000, Direction.outgoing, TxKind.payment,
-          'Lainnya', 'Nonton bioskop', TxSource.manual),
+      _SeedTx(
+        'seed-dummy-10',
+        d,
+        25000,
+        Direction.outgoing,
+        TxKind.payment,
+        'Lainnya',
+        'Nonton bioskop',
+        TxSource.manual,
+      ),
 
     // ── Bulan berjalan (dipatok tanggal) ──
     if (month(3, 10, 0) case final d?)
-      _SeedTx('seed-dummy-11', d, 200000, Direction.outgoing, TxKind.payment,
-          'Tagihan', 'Listrik PLN', TxSource.notification),
+      _SeedTx(
+        'seed-dummy-11',
+        d,
+        200000,
+        Direction.outgoing,
+        TxKind.payment,
+        'Tagihan',
+        'Listrik PLN',
+        TxSource.notification,
+      ),
     if (month(7, 14, 0) case final d?)
-      _SeedTx('seed-dummy-12', d, 220000, Direction.outgoing, TxKind.payment,
-          'Belanja', 'Belanja bulanan pasar', TxSource.manual),
+      _SeedTx(
+        'seed-dummy-12',
+        d,
+        220000,
+        Direction.outgoing,
+        TxKind.payment,
+        'Belanja',
+        'Belanja bulanan pasar',
+        TxSource.manual,
+      ),
     if (month(10, 9, 15) case final d?)
-      _SeedTx('seed-dummy-13', d, 8500000, Direction.incoming, TxKind.payment,
-          'Gaji', 'Gaji bulanan', TxSource.auto),
+      _SeedTx(
+        'seed-dummy-13',
+        d,
+        8500000,
+        Direction.incoming,
+        TxKind.payment,
+        'Gaji',
+        'Gaji bulanan',
+        TxSource.auto,
+      ),
     if (month(11, 13, 0) case final d?)
-      _SeedTx('seed-dummy-14', d, 90000, Direction.outgoing, TxKind.payment,
-          'Lainnya', 'Apotek Kimia Farma', TxSource.manual),
+      _SeedTx(
+        'seed-dummy-14',
+        d,
+        90000,
+        Direction.outgoing,
+        TxKind.payment,
+        'Lainnya',
+        'Apotek Kimia Farma',
+        TxSource.manual,
+      ),
     if (month(14, 15, 0) case final d?)
-      _SeedTx('seed-dummy-15', d, 180000, Direction.outgoing, TxKind.payment,
-          'Belanja', 'Shopee: rak sepatu', TxSource.manual),
+      _SeedTx(
+        'seed-dummy-15',
+        d,
+        180000,
+        Direction.outgoing,
+        TxKind.payment,
+        'Belanja',
+        'Shopee: rak sepatu',
+        TxSource.manual,
+      ),
     if (month(18, 20, 0) case final d?)
-      _SeedTx('seed-dummy-16', d, 120000, Direction.outgoing, TxKind.payment,
-          'Tagihan', 'Langganan streaming', TxSource.manual),
+      _SeedTx(
+        'seed-dummy-16',
+        d,
+        120000,
+        Direction.outgoing,
+        TxKind.payment,
+        'Tagihan',
+        'Langganan streaming',
+        TxSource.manual,
+      ),
     if (month(19, 19, 0) case final d?)
-      _SeedTx('seed-dummy-17', d, 1000000, Direction.incoming, TxKind.payment,
-          'Transfer', 'Bayaran freelance artikel', TxSource.notification),
+      _SeedTx(
+        'seed-dummy-17',
+        d,
+        1000000,
+        Direction.incoming,
+        TxKind.payment,
+        'Transfer',
+        'Bayaran freelance artikel',
+        TxSource.notification,
+      ),
     if (month(5, 8, 30) case final d?)
-      _SeedTx('seed-dummy-18', d, 100000, Direction.outgoing, TxKind.payment,
-          'Transportasi', 'Bensin & parkir', TxSource.manual),
+      _SeedTx(
+        'seed-dummy-18',
+        d,
+        100000,
+        Direction.outgoing,
+        TxKind.payment,
+        'Transportasi',
+        'Bensin & parkir',
+        TxSource.manual,
+      ),
   ];
 }
 
@@ -265,16 +404,17 @@ const Set<String> _legacySeedCounterparties = {
 Future<void> _purgeLegacySeed(LedgerRepository repo, AppDatabase db) async {
   final version = await repo.getSetting(_kSeedVersionKey);
   if (version == _kSeedVersion) return;
-  final legacyRows = await (db.select(db.transactions)
-        ..where((t) => t.counterparty.isIn(_legacySeedCounterparties)))
-      .get();
+  final legacyRows = await (db.select(
+    db.transactions,
+  )..where((t) => t.counterparty.isIn(_legacySeedCounterparties))).get();
   final staleUuids = legacyRows
       .where((r) => !r.uuid.startsWith('seed-dummy-'))
       .map((r) => r.uuid)
       .toList();
   if (staleUuids.isNotEmpty) {
-    await (db.delete(db.transactions)..where((t) => t.uuid.isIn(staleUuids)))
-        .go();
+    await (db.delete(
+      db.transactions,
+    )..where((t) => t.uuid.isIn(staleUuids))).go();
   }
   await repo.setSetting(_kSeedVersionKey, _kSeedVersion);
 }
@@ -313,9 +453,7 @@ Future<void> _seedLimitsAccountsBudgets(LedgerRepository repo) async {
     final cats = await repo.getCategories();
     int? catId(String name) =>
         cats.where((c) => c.name == name).map((c) => c.id).firstOrNull;
-    final seed = <String, int>{
-      'Makanan': 500000,
-    };
+    final seed = <String, int>{'Makanan': 500000};
     for (final e in seed.entries) {
       final id = catId(e.key);
       if (id != null) await repo.setBudget(id, e.value);

@@ -30,10 +30,7 @@ class _QuestRangeCalendarState extends State<QuestRangeCalendar> {
           widget.initialRange!.start.year,
           widget.initialRange!.start.month,
         )
-      : DateTime(
-          DateTime.now().year,
-          DateTime.now().month,
-        );
+      : DateTime(DateTime.now().year, DateTime.now().month);
   DateTime? _start;
   DateTime? _end;
 
@@ -132,7 +129,8 @@ class _QuestRangeCalendarState extends State<QuestRangeCalendar> {
                 child: Center(
                   child: Text(
                     d,
-                    style: context.qSmall(10)
+                    style: context
+                        .qSmall(10)
                         .copyWith(fontWeight: FontWeight.w800),
                   ),
                 ),
@@ -185,11 +183,7 @@ class _QuestRangeCalendarState extends State<QuestRangeCalendar> {
               selected: false,
               onTap: () => _applyPreset(30),
             ),
-            QuestChip(
-              label: 'Bulan ini',
-              selected: false,
-              onTap: _thisMonth,
-            ),
+            QuestChip(label: 'Bulan ini', selected: false, onTap: _thisMonth),
           ],
         ),
         const SizedBox(height: Spacing.s),
@@ -223,7 +217,10 @@ class _DayCell extends StatelessWidget {
     final isStart = start != null && _sameDay(day, start!);
     final isEnd = end != null && _sameDay(day, end!);
     final inRange =
-        start != null && end != null && day.isAfter(start!) && day.isBefore(end!);
+        start != null &&
+        end != null &&
+        day.isAfter(start!) &&
+        day.isBefore(end!);
     final isEdge = isStart || isEnd;
 
     final Color bg;
@@ -239,16 +236,15 @@ class _DayCell extends StatelessWidget {
       fg = q.text;
     }
 
-    final dateLabel =
-        '${day.day}/${day.month}/${day.year}';
+    final dateLabel = '${day.day}/${day.month}/${day.year}';
     return Semantics(
       button: true,
       selected: isEdge,
       label: isEdge
           ? dateLabel
           : inRange
-              ? '$dateLabel, dalam rentang'
-              : dateLabel,
+          ? '$dateLabel, dalam rentang'
+          : dateLabel,
       child: QuestPress(
         onTap: onTap,
         child: Container(

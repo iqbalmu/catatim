@@ -3,9 +3,8 @@ part of '../repository.dart';
 // SECTION: categories.dart
 extension CategoriesRepo on LedgerRepository {
   Stream<List<Category>> watchCategories() {
-    return (_db.select(
-      _db.categories,
-    )..orderBy([(c) => OrderingTerm.asc(c.id)]))
+    return (_db.select(_db.categories)
+          ..orderBy([(c) => OrderingTerm.asc(c.id)]))
         .watch()
         .map((cats) => [...cats]..sort(LedgerRepository.categoryDisplayOrder));
   }
@@ -82,12 +81,14 @@ extension CategoriesRepo on LedgerRepository {
   Future<void> deleteCategory(int id, {required int fallbackId}) {
     if (id == fallbackId) throw ArgumentError('tidak boleh hapus fallback');
     return _db.transaction(() async {
-      await (_db.update(_db.transactions)..where((t) => t.categoryId.equals(id)))
+      await (_db.update(_db.transactions)
+            ..where((t) => t.categoryId.equals(id)))
           .write(TransactionsCompanion(categoryId: Value(fallbackId)));
-      await (_db.delete(_db.budgets)..where((b) => b.categoryId.equals(id))).go();
+      await (_db.delete(
+        _db.budgets,
+      )..where((b) => b.categoryId.equals(id))).go();
       await (_db.delete(_db.categories)..where((c) => c.id.equals(id))).go();
       await _removeCategoryFromLimitScopes(id);
     });
   }
-
 }

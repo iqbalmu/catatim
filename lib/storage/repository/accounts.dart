@@ -63,5 +63,4 @@ extension AccountsRepo on LedgerRepository {
       await (_db.delete(_db.accounts)..where((a) => a.id.equals(id))).go();
     });
   }
-
 }

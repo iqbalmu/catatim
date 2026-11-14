@@ -40,9 +40,9 @@ extension TxKindLabel on TxKind {
 
 extension DirectionLabel on Direction {
   String get label => switch (this) {
-        Direction.incoming => 'Masuk',
-        Direction.outgoing => 'Keluar',
-      };
+    Direction.incoming => 'Masuk',
+    Direction.outgoing => 'Keluar',
+  };
 }
 
 extension TxSourceLabel on TxSource {
@@ -88,7 +88,6 @@ class ParsedDraft {
   final Direction direction;
   final int amount;
   final String? counterparty;
-
 }
 
 /// Pola pesan notifikasi yang diabaikan permanen oleh pengguna.
@@ -120,7 +119,8 @@ class IgnoredPattern {
     pattern: (json['pattern'] as String).toLowerCase(),
     label: json['label'] as String? ?? json['pattern'] as String,
     bankId: json['bankId'] as String?,
-    createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+    createdAt:
+        DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
   );
 }
 

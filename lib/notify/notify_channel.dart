@@ -57,10 +57,7 @@ class NotifyChannel {
     required String body,
   }) async {
     try {
-      await _method.invokeMethod<void>('show', {
-        'title': title,
-        'body': body,
-      });
+      await _method.invokeMethod<void>('show', {'title': title, 'body': body});
     } on Exception catch (e) {
       // Peringatan yang hilang senyap terlihat seperti fitur rusak;
       // MissingPluginException (runner non-Android) tetap diabaikan.

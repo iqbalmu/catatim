@@ -126,7 +126,11 @@ Future<T?> showQuestDialog<T>(
                             const SizedBox(height: Spacing.s),
                             Row(
                               children: [
-                                for (var i = 0; i < actions.length - 1; i++) ...[
+                                for (
+                                  var i = 0;
+                                  i < actions.length - 1;
+                                  i++
+                                ) ...[
                                   if (i > 0) const SizedBox(width: Spacing.s),
                                   Expanded(child: actions[i]),
                                 ],

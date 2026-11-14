@@ -16,10 +16,7 @@ class RencanaScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.q.bg,
-      appBar: const QuestHeader(
-        title: 'Anggaran',
-        showBack: true,
-      ),
+      appBar: const QuestHeader(title: 'Anggaran', showBack: true),
       body: RencanaBatas(repository: repository, progress: progress),
     );
   }

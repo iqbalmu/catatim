@@ -236,7 +236,9 @@ class _UnparsedLogsSheetState extends State<UnparsedLogsSheet> {
                       decoration: BoxDecoration(
                         color: q.surface,
                         borderRadius: BorderRadius.circular(AppRadius.tile),
-                        border: Border.all(color: q.line.withValues(alpha: 0.6)),
+                        border: Border.all(
+                          color: q.line.withValues(alpha: 0.6),
+                        ),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(Spacing.m),
@@ -252,15 +254,16 @@ class _UnparsedLogsSheetState extends State<UnparsedLogsSheet> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: q.surface2,
-                                    borderRadius:
-                                        BorderRadius.circular(AppRadius.pill),
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.pill,
+                                    ),
                                   ),
                                   child: Text(
                                     log.packageName.isEmpty
                                         ? 'Tempel / SMS'
                                         : (log.packageName.contains('.')
-                                            ? log.packageName.split('.').last
-                                            : log.packageName),
+                                              ? log.packageName.split('.').last
+                                              : log.packageName),
                                     style: TextStyle(
                                       fontSize: 10.5,
                                       fontWeight: FontWeight.w700,
@@ -278,7 +281,8 @@ class _UnparsedLogsSheetState extends State<UnparsedLogsSheet> {
                               ],
                             ),
                             const SizedBox(height: Spacing.xs),
-                            if (log.title.isNotEmpty && log.title != log.body) ...[
+                            if (log.title.isNotEmpty &&
+                                log.title != log.body) ...[
                               Text(
                                 log.title,
                                 style: context.qTitle(13.5),
@@ -301,7 +305,9 @@ class _UnparsedLogsSheetState extends State<UnparsedLogsSheet> {
                               children: [
                                 QuestPress(
                                   onTap: () async {
-                                    await widget.repository.deleteCaptureLog(log.id);
+                                    await widget.repository.deleteCaptureLog(
+                                      log.id,
+                                    );
                                   },
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
@@ -336,8 +342,9 @@ class _UnparsedLogsSheetState extends State<UnparsedLogsSheet> {
                                     ),
                                     decoration: BoxDecoration(
                                       color: q.primary.withValues(alpha: 0.14),
-                                      borderRadius:
-                                          BorderRadius.circular(AppRadius.pill),
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadius.pill,
+                                      ),
                                     ),
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,

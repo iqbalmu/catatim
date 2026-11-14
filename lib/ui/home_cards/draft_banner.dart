@@ -77,8 +77,9 @@ class _DraftAttentionBannerState extends State<DraftAttentionBanner> {
                   )
                 : Builder(
                     builder: (context) {
-                      final partitioned =
-                          LedgerRepository.partitionDrafts(drafts);
+                      final partitioned = LedgerRepository.partitionDrafts(
+                        drafts,
+                      );
                       final hasPair = partitioned.pairs.isNotEmpty;
 
                       final String titleText;
@@ -99,30 +100,29 @@ class _DraftAttentionBannerState extends State<DraftAttentionBanner> {
                             fontSize: 13.5,
                             fontWeight: FontWeight.w900,
                             color: q.text,
-                            fontFeatures: const [
-                              FontFeature.tabularFigures(),
-                            ],
+                            fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                         );
                         onTap = () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => NotificationScreen(
-                                  repository: repository,
-                                  pipeline: pipeline,
-                                  ruleSet: ruleSet,
-                                  progress: progress,
-                                  onOpenAnggaran: onOpenAnggaran,
-                                  onOpenBon: onOpenBon,
-                                ),
-                              ),
-                            );
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => NotificationScreen(
+                              repository: repository,
+                              pipeline: pipeline,
+                              ruleSet: ruleSet,
+                              progress: progress,
+                              onOpenAnggaran: onOpenAnggaran,
+                              onOpenBon: onOpenBon,
+                            ),
+                          ),
+                        );
                       } else if (drafts.length == 1) {
                         final draft = drafts.first;
                         final isIncoming =
                             draft.direction == Direction.incoming;
                         final bank = _bankName(draft.bankId);
-                        final party = (draft.counterparty != null &&
+                        final party =
+                            (draft.counterparty != null &&
                                 draft.counterparty!.trim().isNotEmpty)
                             ? draft.counterparty!.trim()
                             : null;
@@ -139,17 +139,15 @@ class _DraftAttentionBannerState extends State<DraftAttentionBanner> {
                             fontSize: 13.5,
                             fontWeight: FontWeight.w900,
                             color: isIncoming ? q.good : q.bad,
-                            fontFeatures: const [
-                              FontFeature.tabularFigures(),
-                            ],
+                            fontFeatures: const [FontFeature.tabularFigures()],
                           ),
                         );
                         onTap = () => TransactionSheet.show(
-                              context,
-                              repository,
-                              draft: draft,
-                              progress: progress,
-                            );
+                          context,
+                          repository,
+                          draft: draft,
+                          progress: progress,
+                        );
                       } else {
                         titleText =
                             '${drafts.length} Transaksi Bank Terdeteksi';
@@ -173,18 +171,18 @@ class _DraftAttentionBannerState extends State<DraftAttentionBanner> {
                           ),
                         );
                         onTap = () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => NotificationScreen(
-                                  repository: repository,
-                                  pipeline: pipeline,
-                                  ruleSet: ruleSet,
-                                  progress: progress,
-                                  onOpenAnggaran: onOpenAnggaran,
-                                  onOpenBon: onOpenBon,
-                                ),
-                              ),
-                            );
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => NotificationScreen(
+                              repository: repository,
+                              pipeline: pipeline,
+                              ruleSet: ruleSet,
+                              progress: progress,
+                              onOpenAnggaran: onOpenAnggaran,
+                              onOpenBon: onOpenBon,
+                            ),
+                          ),
+                        );
                       }
 
                       return Padding(

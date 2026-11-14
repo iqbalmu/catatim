@@ -1,10 +1,7 @@
 part of '../laporan_screen.dart';
 
 class _ReportSectionHeader extends StatelessWidget {
-  const _ReportSectionHeader({
-    this.step,
-    required this.title,
-  });
+  const _ReportSectionHeader({this.step, required this.title});
 
   final String? step;
   final String title;
@@ -36,10 +33,10 @@ class _ExecutiveSummaryCard extends StatelessWidget {
     final badgeText = !metrics.hasAnyActivity
         ? 'Belum ada aktivitas'
         : isSurplus
-            ? (savingsPct != null && savingsPct > 0
-                ? 'Surplus · Hemat $savingsPct%'
-                : 'Surplus')
-            : 'Defisit';
+        ? (savingsPct != null && savingsPct > 0
+              ? 'Surplus · Hemat $savingsPct%'
+              : 'Surplus')
+        : 'Defisit';
 
     final sumFlow = metrics.totalIn + metrics.totalOut;
 
@@ -55,7 +52,12 @@ class _ExecutiveSummaryCard extends StatelessWidget {
         children: [
           // Top Net Cashflow Block
           Padding(
-            padding: const EdgeInsets.fromLTRB(Spacing.m, Spacing.m, Spacing.m, Spacing.s + 4),
+            padding: const EdgeInsets.fromLTRB(
+              Spacing.m,
+              Spacing.m,
+              Spacing.m,
+              Spacing.s + 4,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -72,13 +74,16 @@ class _ExecutiveSummaryCard extends StatelessWidget {
                     const SizedBox(width: Spacing.xs),
                     Flexible(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: !metrics.hasAnyActivity
                               ? context.q.surface2
                               : isSurplus
-                                  ? context.q.incomingTint
-                                  : context.q.outgoingTint,
+                              ? context.q.incomingTint
+                              : context.q.outgoingTint,
                           borderRadius: BorderRadius.circular(AppRadius.pill),
                         ),
                         child: Text(
@@ -91,8 +96,8 @@ class _ExecutiveSummaryCard extends StatelessWidget {
                             color: !metrics.hasAnyActivity
                                 ? context.q.muted
                                 : isSurplus
-                                    ? context.q.good
-                                    : context.q.bad,
+                                ? context.q.good
+                                : context.q.bad,
                           ),
                         ),
                       ),
@@ -107,16 +112,16 @@ class _ExecutiveSummaryCard extends StatelessWidget {
                     amount: metrics.net.abs(),
                     tone: metrics.net == 0
                         ? null
-                        : (isSurplus
-                              ? MoneyTone.incoming
-                              : MoneyTone.outgoing),
-                    style: context.qDisplay(28).copyWith(
-                      color: metrics.net == 0
-                          ? context.q.text
-                          : isSurplus
+                        : (isSurplus ? MoneyTone.incoming : MoneyTone.outgoing),
+                    style: context
+                        .qDisplay(28)
+                        .copyWith(
+                          color: metrics.net == 0
+                              ? context.q.text
+                              : isSurplus
                               ? context.q.good
                               : context.q.bad,
-                    ),
+                        ),
                   ),
                 ),
                 const SizedBox(height: Spacing.s + 4),
@@ -218,7 +223,11 @@ class _ExecutiveSummaryCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  VerticalDivider(width: 1, thickness: 1, color: context.q.line),
+                  VerticalDivider(
+                    width: 1,
+                    thickness: 1,
+                    color: context.q.line,
+                  ),
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
@@ -310,10 +319,12 @@ class _FlowHalfCell extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: context.qSmall(11.5).copyWith(
-                    color: context.q.muted,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: context
+                      .qSmall(11.5)
+                      .copyWith(
+                        color: context.q.muted,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
               ),
             ],
@@ -338,13 +349,13 @@ class _FlowHalfCell extends StatelessWidget {
             runSpacing: 4,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Text(
-                '$txCount trx',
-                style: context.qSmall(11),
-              ),
+              Text('$txCount trx', style: context.qSmall(11)),
               if (delta != null && delta != 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 5,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: (isGood ?? true)
                         ? context.q.incomingTint
@@ -379,7 +390,10 @@ class _EmptyPeriodCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: Spacing.l, vertical: Spacing.xl),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Spacing.l,
+        vertical: Spacing.xl,
+      ),
       decoration: BoxDecoration(
         color: context.q.surface,
         borderRadius: BorderRadius.circular(AppRadius.card),

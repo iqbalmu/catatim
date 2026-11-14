@@ -153,309 +153,333 @@ class ProgressService extends ChangeNotifier {
   Future<void> refresh() async {
     try {
       final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final dayEnd = DateTime(now.year, now.month, now.day + 1);
-    final weekStart = today.subtract(Duration(days: now.weekday - 1));
-    final monthStart = DateTime(now.year, now.month);
-    final monthEnd = DateTime(now.year, now.month + 1);
-    // Bulan lalu, rentang hari yang sama (adil untuk tengah bulan).
-    final lastMonthStart = DateTime(now.year, now.month - 1);
-    final lastMonthEnd = lastMonthStart.add(dayEnd.difference(monthStart));
+      final today = DateTime(now.year, now.month, now.day);
+      final dayEnd = DateTime(now.year, now.month, now.day + 1);
+      final weekStart = today.subtract(Duration(days: now.weekday - 1));
+      final monthStart = DateTime(now.year, now.month);
+      final monthEnd = DateTime(now.year, now.month + 1);
+      // Bulan lalu, rentang hari yang sama (adil untuk tengah bulan).
+      final lastMonthStart = DateTime(now.year, now.month - 1);
+      final lastMonthEnd = lastMonthStart.add(dayEnd.difference(monthStart));
 
-    // Jendela evaluasi streak: ≤ 370 hari ke belakang.
-    final streakSince = today.subtract(const Duration(days: 369));
-    final counts = await _repo.txCountByDaySince(streakSince);
-    final recordedToday = (counts[today] ?? 0) > 0;
+      // Jendela evaluasi streak: ≤ 370 hari ke belakang.
+      final streakSince = today.subtract(const Duration(days: 369));
+      final counts = await _repo.txCountByDaySince(streakSince);
+      final recordedToday = (counts[today] ?? 0) > 0;
 
-    // Hari disiplin: berjalan mundur dari hari ini (atau kemarin, bila
-    // hari ini belum dicatat — hari yang belum berjalan bukan putus).
-    // Hari lolos bila belanja murni ≤ jatah harian; Rp0 lolos; over
-    // berhenti; transfer biasa tidak dihitung; berhenti di tanggal
-    // transaksi pertama (hari kosong sebelumnya bukan streak).
-    var streak = 0;
-    var streakPaused = false;
+      // Hari disiplin: berjalan mundur dari hari ini (atau kemarin, bila
+      // hari ini belum dicatat — hari yang belum berjalan bukan putus).
+      // Hari lolos bila belanja murni ≤ jatah harian; Rp0 lolos; over
+      // berhenti; transfer biasa tidak dihitung; berhenti di tanggal
+      // transaksi pertama (hari kosong sebelumnya bukan streak).
+      var streak = 0;
+      var streakPaused = false;
 
-    // Keluar (pace + garis global) = belanja murni; transfer ke pihak
-    // lain tetap masuk, perpindahan dana milik sendiri tidak.
-    // Tiap scope batas punya filter kategorinya sendiri, jadi angka
-    // "dipakai" selalu sebanding dengan plafon yang ditampilkan.
-    final categories = await _repo.watchCategories().first;
-    final existingCategoryIds = {for (final c in categories) c.id};
-    final scopeCategories = <LimitScope, Set<int>?>{};
-    for (final scope in LimitScope.values) {
-      scopeCategories[scope] = pruneLimitCategories(
-        await _repo.getLimitCategories(scope.categoriesKey),
-        existingCategoryIds,
-      );
-    }
-
-    final dayOut = await _repo.sumSpendBetween(
-      today,
-      dayEnd,
-      categories: scopeCategories[LimitScope.daily],
-    );
-    final weekOut = await _repo.sumSpendBetween(
-      weekStart,
-      dayEnd,
-      categories: scopeCategories[LimitScope.weekly],
-    );
-    final monthOut = await _repo.sumSpendBetween(
-      monthStart,
-      monthEnd,
-      categories: scopeCategories[LimitScope.monthly],
-    );
-    final monthIn = await _repo.sumIncomeBetween(monthStart, monthEnd);
-    final lastMonthOut = await _repo.sumSpendBetween(
-      lastMonthStart,
-      lastMonthEnd,
-      categories: scopeCategories[LimitScope.monthly],
-    );
-    final lastMonthIn = await _repo.sumIncomeBetween(
-      lastMonthStart,
-      lastMonthEnd,
-    );
-    final catAccountUsed = await _repo.outSpendPairsBetween(monthStart, monthEnd);
-    final budgets = await _repo.watchBudgets().first;
-    final accounts = await _repo.watchAccounts().first;
-    final dailyLimit = int.tryParse(
-      await _repo.getSetting(kKeyDailyLimit) ?? '',
-    );
-    final weekLimit = int.tryParse(
-      await _repo.getSetting(kKeyWeeklyLimit) ?? '',
-    );
-    final monthTotalLimit = int.tryParse(
-      await _repo.getSetting(kKeyMonthlyTotal) ?? '',
-    );
-    final bar = dailyBar(
-      now: now,
-      dailyLimit: dailyLimit,
-      weeklyLimit: weekLimit,
-      monthlyTotal: monthTotalLimit,
-    );
-    streakPaused = bar == null;
-    // Pengukuran disiplin harian mengikuti scope yang menetapkan jatah
-    // harian (harian → mingguan → bulanan), jadi angka "lolos" dan
-    // angka "sisa aman" memakai definisi yang sama.
-    final barScope = effectiveDailyScope(
-      dailyLimit: dailyLimit,
-      weeklyLimit: weekLimit,
-      monthlyTotal: monthTotalLimit,
-    );
-    final spendByDay = await _repo.outSpendByDaySince(
-      streakSince,
-      categories: barScope == null ? null : scopeCategories[barScope],
-    );
-    final disciplineMonth = <DailyDiscipline>[];
-    if (!streakPaused) {
-      DateTime? firstDay;
-      for (final day in counts.keys) {
-        if (firstDay == null || day.isBefore(firstDay)) firstDay = day;
-      }
-      // Tanpa transaksi apa pun belum ada bukti disiplin: streak 0
-      // (bukan jendela penuh — menghindari milestone palsu).
-      if (firstDay != null) {
-        var cursor = recordedToday
-            ? today
-            : today.subtract(const Duration(days: 1));
-        while (!cursor.isBefore(streakSince)) {
-          if (cursor.isBefore(firstDay)) break;
-          final used = spendByDay[cursor] ?? 0;
-          if (used > bar) break;
-          streak++;
-          cursor = cursor.subtract(const Duration(days: 1));
-        }
-      }
-    }
-    if (!streakPaused) {
-      for (var day = monthStart;
-          day.isBefore(monthEnd);
-          day = day.add(const Duration(days: 1))) {
-        final future = day.isAfter(today);
-        final used = future ? 0 : (spendByDay[day] ?? 0);
-        disciplineMonth.add(
-          DailyDiscipline(
-              day: day, used: used, within: used <= bar, future: future),
+      // Keluar (pace + garis global) = belanja murni; transfer ke pihak
+      // lain tetap masuk, perpindahan dana milik sendiri tidak.
+      // Tiap scope batas punya filter kategorinya sendiri, jadi angka
+      // "dipakai" selalu sebanding dengan plafon yang ditampilkan.
+      final categories = await _repo.watchCategories().first;
+      final existingCategoryIds = {for (final c in categories) c.id};
+      final scopeCategories = <LimitScope, Set<int>?>{};
+      for (final scope in LimitScope.values) {
+        scopeCategories[scope] = pruneLimitCategories(
+          await _repo.getLimitCategories(scope.categoriesKey),
+          existingCategoryIds,
         );
       }
-    }
 
-    final categoryNames = {for (final c in categories) c.id: c.name};
-    final accountNames = {for (final a in accounts) a.id: a.name};
-    // Pemakaian satu alokasi: seluruh akun (scope global) atau akun
-    // tertentu bila alokasi di-scope.
-    int usedFor(Budget b) => catAccountUsed.entries
-        .where((e) =>
-            e.key.category == b.categoryId &&
-            (b.accountId == null || e.key.account == b.accountId))
-        .fold(0, (total, e) => total + e.value);
-    final lines = <LimitLine>[
-      LimitLine(
-        label: LimitScope.daily.label,
-        used: dayOut,
-        limit: dailyLimit,
-        scopeNote: limitScopeNote(
-          scopeCategories[LimitScope.daily],
-          categoryNames,
-        ),
-      ),
-      LimitLine(
-        label: LimitScope.weekly.label,
-        used: weekOut,
-        limit: weekLimit,
-        scopeNote: limitScopeNote(
-          scopeCategories[LimitScope.weekly],
-          categoryNames,
-        ),
-      ),
-      LimitLine(
-        label: LimitScope.monthly.label,
-        used: monthOut,
-        limit: monthTotalLimit,
-        scopeNote: limitScopeNote(
-          scopeCategories[LimitScope.monthly],
-          categoryNames,
-        ),
-      ),
-      for (final b in budgets)
+      final dayOut = await _repo.sumSpendBetween(
+        today,
+        dayEnd,
+        categories: scopeCategories[LimitScope.daily],
+      );
+      final weekOut = await _repo.sumSpendBetween(
+        weekStart,
+        dayEnd,
+        categories: scopeCategories[LimitScope.weekly],
+      );
+      final monthOut = await _repo.sumSpendBetween(
+        monthStart,
+        monthEnd,
+        categories: scopeCategories[LimitScope.monthly],
+      );
+      final monthIn = await _repo.sumIncomeBetween(monthStart, monthEnd);
+      final lastMonthOut = await _repo.sumSpendBetween(
+        lastMonthStart,
+        lastMonthEnd,
+        categories: scopeCategories[LimitScope.monthly],
+      );
+      final lastMonthIn = await _repo.sumIncomeBetween(
+        lastMonthStart,
+        lastMonthEnd,
+      );
+      final catAccountUsed = await _repo.outSpendPairsBetween(
+        monthStart,
+        monthEnd,
+      );
+      final budgets = await _repo.watchBudgets().first;
+      final accounts = await _repo.watchAccounts().first;
+      final dailyLimit = int.tryParse(
+        await _repo.getSetting(kKeyDailyLimit) ?? '',
+      );
+      final weekLimit = int.tryParse(
+        await _repo.getSetting(kKeyWeeklyLimit) ?? '',
+      );
+      final monthTotalLimit = int.tryParse(
+        await _repo.getSetting(kKeyMonthlyTotal) ?? '',
+      );
+      final bar = dailyBar(
+        now: now,
+        dailyLimit: dailyLimit,
+        weeklyLimit: weekLimit,
+        monthlyTotal: monthTotalLimit,
+      );
+      streakPaused = bar == null;
+      // Pengukuran disiplin harian mengikuti scope yang menetapkan jatah
+      // harian (harian → mingguan → bulanan), jadi angka "lolos" dan
+      // angka "sisa aman" memakai definisi yang sama.
+      final barScope = effectiveDailyScope(
+        dailyLimit: dailyLimit,
+        weeklyLimit: weekLimit,
+        monthlyTotal: monthTotalLimit,
+      );
+      final spendByDay = await _repo.outSpendByDaySince(
+        streakSince,
+        categories: barScope == null ? null : scopeCategories[barScope],
+      );
+      final disciplineMonth = <DailyDiscipline>[];
+      if (!streakPaused) {
+        DateTime? firstDay;
+        for (final day in counts.keys) {
+          if (firstDay == null || day.isBefore(firstDay)) firstDay = day;
+        }
+        // Tanpa transaksi apa pun belum ada bukti disiplin: streak 0
+        // (bukan jendela penuh — menghindari milestone palsu).
+        if (firstDay != null) {
+          var cursor = recordedToday
+              ? today
+              : today.subtract(const Duration(days: 1));
+          while (!cursor.isBefore(streakSince)) {
+            if (cursor.isBefore(firstDay)) break;
+            final used = spendByDay[cursor] ?? 0;
+            if (used > bar) break;
+            streak++;
+            cursor = cursor.subtract(const Duration(days: 1));
+          }
+        }
+      }
+      if (!streakPaused) {
+        for (
+          var day = monthStart;
+          day.isBefore(monthEnd);
+          day = day.add(const Duration(days: 1))
+        ) {
+          final future = day.isAfter(today);
+          final used = future ? 0 : (spendByDay[day] ?? 0);
+          disciplineMonth.add(
+            DailyDiscipline(
+              day: day,
+              used: used,
+              within: used <= bar,
+              future: future,
+            ),
+          );
+        }
+      }
+
+      final categoryNames = {for (final c in categories) c.id: c.name};
+      final accountNames = {for (final a in accounts) a.id: a.name};
+      // Pemakaian satu alokasi: seluruh akun (scope global) atau akun
+      // tertentu bila alokasi di-scope.
+      int usedFor(Budget b) => catAccountUsed.entries
+          .where(
+            (e) =>
+                e.key.category == b.categoryId &&
+                (b.accountId == null || e.key.account == b.accountId),
+          )
+          .fold(0, (total, e) => total + e.value);
+      final lines = <LimitLine>[
         LimitLine(
-          label: (categoryNames[b.categoryId] ?? 'Kategori') +
-              (b.accountId == null
-                  ? ''
-                  : ' · ${accountNames[b.accountId] ?? 'akun'}'),
-          used: usedFor(b),
-          limit: b.monthlyLimit,
-          isCategory: true,
+          label: LimitScope.daily.label,
+          used: dayOut,
+          limit: dailyLimit,
+          scopeNote: limitScopeNote(
+            scopeCategories[LimitScope.daily],
+            categoryNames,
+          ),
         ),
-    ];
-    final snapshot = BudgetSnapshot(
-      lines: lines,
-      monthIn: monthIn,
-      monthOut: monthOut,
-      lastMonthIn: lastMonthIn,
-      lastMonthOut: lastMonthOut,
-      hasData: monthOut > 0 || monthIn > 0,
-    );
+        LimitLine(
+          label: LimitScope.weekly.label,
+          used: weekOut,
+          limit: weekLimit,
+          scopeNote: limitScopeNote(
+            scopeCategories[LimitScope.weekly],
+            categoryNames,
+          ),
+        ),
+        LimitLine(
+          label: LimitScope.monthly.label,
+          used: monthOut,
+          limit: monthTotalLimit,
+          scopeNote: limitScopeNote(
+            scopeCategories[LimitScope.monthly],
+            categoryNames,
+          ),
+        ),
+        for (final b in budgets)
+          LimitLine(
+            label:
+                (categoryNames[b.categoryId] ?? 'Kategori') +
+                (b.accountId == null
+                    ? ''
+                    : ' · ${accountNames[b.accountId] ?? 'akun'}'),
+            used: usedFor(b),
+            limit: b.monthlyLimit,
+            isCategory: true,
+          ),
+      ];
+      final snapshot = BudgetSnapshot(
+        lines: lines,
+        monthIn: monthIn,
+        monthOut: monthOut,
+        lastMonthIn: lastMonthIn,
+        lastMonthOut: lastMonthOut,
+        hasData: monthOut > 0 || monthIn > 0,
+      );
 
-    final wasCelebrating = _celebrating;
-    final activeDays = <DateTime>{
-      for (var i = 0; i < 30; i++)
-        if ((counts[today.subtract(Duration(days: i))] ?? 0) > 0)
-          today.subtract(Duration(days: i)),
-    };
-    final pace = dailyPace(
-      now: now,
-      dayOut: dayOut,
-      weekOut: weekOut,
-      monthOut: monthOut,
-      dailyLimit: dailyLimit,
-      weeklyLimit: weekLimit,
-      monthlyTotal: monthTotalLimit,
-    );
+      final wasCelebrating = _celebrating;
+      final activeDays = <DateTime>{
+        for (var i = 0; i < 30; i++)
+          if ((counts[today.subtract(Duration(days: i))] ?? 0) > 0)
+            today.subtract(Duration(days: i)),
+      };
+      final pace = dailyPace(
+        now: now,
+        dayOut: dayOut,
+        weekOut: weekOut,
+        monthOut: monthOut,
+        dailyLimit: dailyLimit,
+        weeklyLimit: weekLimit,
+        monthlyTotal: monthTotalLimit,
+      );
 
-    // Gamifikasi: Hitung XP & Level Saver (Khusus Disiplin Spending)
-    final keptDays = disciplineMonth.where((d) => !d.future && d.within).length;
-    final totalXp = (keptDays * 50) + (streak * 50) + (activeDays.length * 10);
-    
-    final int level;
-    final String levelTitle;
-    final int levelFloorXp;
-    final int nextLevelXp;
-    if (totalXp < 200) {
-      level = 1;
-      levelTitle = 'Hemat Pemula';
-      levelFloorXp = 0;
-      nextLevelXp = 200;
-    } else if (totalXp < 500) {
-      level = 2;
-      levelTitle = 'Penjaga Dompet';
-      levelFloorXp = 200;
-      nextLevelXp = 500;
-    } else if (totalXp < 1000) {
-      level = 3;
-      levelTitle = 'Ahli Anggaran';
-      levelFloorXp = 500;
-      nextLevelXp = 1000;
-    } else if (totalXp < 2000) {
-      level = 4;
-      levelTitle = 'Master Keuangan';
-      levelFloorXp = 1000;
-      nextLevelXp = 2000;
-    } else {
-      level = 5;
-      levelTitle = 'Sultan Hemat';
-      levelFloorXp = 2000;
-      nextLevelXp = 5000;
-    }
+      // Gamifikasi: Hitung XP & Level Saver (Khusus Disiplin Spending)
+      final keptDays = disciplineMonth
+          .where((d) => !d.future && d.within)
+          .length;
+      final totalXp =
+          (keptDays * 50) + (streak * 50) + (activeDays.length * 10);
 
-    final levelProgress = ((totalXp - levelFloorXp) / (nextLevelXp - levelFloorXp)).clamp(0.0, 1.0);
+      final int level;
+      final String levelTitle;
+      final int levelFloorXp;
+      final int nextLevelXp;
+      if (totalXp < 200) {
+        level = 1;
+        levelTitle = 'Hemat Pemula';
+        levelFloorXp = 0;
+        nextLevelXp = 200;
+      } else if (totalXp < 500) {
+        level = 2;
+        levelTitle = 'Penjaga Dompet';
+        levelFloorXp = 200;
+        nextLevelXp = 500;
+      } else if (totalXp < 1000) {
+        level = 3;
+        levelTitle = 'Ahli Anggaran';
+        levelFloorXp = 500;
+        nextLevelXp = 1000;
+      } else if (totalXp < 2000) {
+        level = 4;
+        levelTitle = 'Master Keuangan';
+        levelFloorXp = 1000;
+        nextLevelXp = 2000;
+      } else {
+        level = 5;
+        levelTitle = 'Sultan Hemat';
+        levelFloorXp = 2000;
+        nextLevelXp = 5000;
+      }
 
-    final badges = [
-      SaverBadge(
-        id: 'shield_7d',
-        title: 'Perisai Hemat',
-        description: '7 hari dalam batas',
-        icon: Icons.shield_rounded,
-        unlocked: streak >= 7,
-      ),
-      SaverBadge(
-        id: 'streak_30d',
-        title: 'Api 30 Hari',
-        description: '30 hari dalam batas',
-        icon: Icons.local_fire_department_rounded,
-        unlocked: streak >= 30,
-      ),
-      SaverBadge(
-        id: 'target_safe',
-        title: 'Target Terjaga',
-        description: 'Bulan ini dalam batas',
-        icon: Icons.track_changes_rounded,
-        unlocked: snapshot.hasData && snapshot.worstLevel != BudgetLevel.over,
-      ),
-      SaverBadge(
-        id: 'active_logger',
-        title: 'Pencatat Tangkas',
-        description: 'Catat 10 hari berbeda',
-        icon: Icons.edit_note_rounded,
-        unlocked: activeDays.length >= 10,
-      ),
-    ];
+      final levelProgress =
+          ((totalXp - levelFloorXp) / (nextLevelXp - levelFloorXp)).clamp(
+            0.0,
+            1.0,
+          );
 
-    final saverStats = SaverStats(
-      level: level,
-      title: levelTitle,
-      currentXp: totalXp,
-      nextLevelXp: nextLevelXp,
-      progress: levelProgress,
-      badges: badges,
-    );
+      final badges = [
+        SaverBadge(
+          id: 'shield_7d',
+          title: 'Perisai Hemat',
+          description: '7 hari dalam batas',
+          icon: Icons.shield_rounded,
+          unlocked: streak >= 7,
+        ),
+        SaverBadge(
+          id: 'streak_30d',
+          title: 'Api 30 Hari',
+          description: '30 hari dalam batas',
+          icon: Icons.local_fire_department_rounded,
+          unlocked: streak >= 30,
+        ),
+        SaverBadge(
+          id: 'target_safe',
+          title: 'Target Terjaga',
+          description: 'Bulan ini dalam batas',
+          icon: Icons.track_changes_rounded,
+          unlocked: snapshot.hasData && snapshot.worstLevel != BudgetLevel.over,
+        ),
+        SaverBadge(
+          id: 'active_logger',
+          title: 'Pencatat Tangkas',
+          description: 'Catat 10 hari berbeda',
+          icon: Icons.edit_note_rounded,
+          unlocked: activeDays.length >= 10,
+        ),
+      ];
 
-    // Karung kosong: total saldo seluruh akun negatif.
-    final balances = await _repo.watchAccountBalances().first;
-    final isBroke =
-        balances.values.fold(0, (sum, value) => sum + value) < 0;
+      final saverStats = SaverStats(
+        level: level,
+        title: levelTitle,
+        currentXp: totalXp,
+        nextLevelXp: nextLevelXp,
+        progress: levelProgress,
+        badges: badges,
+      );
 
-    latest = ProgressSummary(
-      streakDays: streak,
-      streakPaused: streakPaused,
-      recordedToday: recordedToday,
-      mood: _moodFor(snapshot, recordedToday, streak, wasCelebrating, isBroke),
-      moodLine: _moodLineFor(
-        snapshot,
-        recordedToday,
-        streak,
-        streakPaused,
-        isBroke,
-      ),
-      snapshot: snapshot,
-      dayOut: dayOut,
-      monthIn: monthIn,
-      monthOut: monthOut,
-      dailyPace: pace,
-      activeDays: activeDays,
-      disciplineMonth: disciplineMonth,
-      saverStats: saverStats,
-    );
-    notifyListeners();
+      // Karung kosong: total saldo seluruh akun negatif.
+      final balances = await _repo.watchAccountBalances().first;
+      final isBroke = balances.values.fold(0, (sum, value) => sum + value) < 0;
+
+      latest = ProgressSummary(
+        streakDays: streak,
+        streakPaused: streakPaused,
+        recordedToday: recordedToday,
+        mood: _moodFor(
+          snapshot,
+          recordedToday,
+          streak,
+          wasCelebrating,
+          isBroke,
+        ),
+        moodLine: _moodLineFor(
+          snapshot,
+          recordedToday,
+          streak,
+          streakPaused,
+          isBroke,
+        ),
+        snapshot: snapshot,
+        dayOut: dayOut,
+        monthIn: monthIn,
+        monthOut: monthOut,
+        dailyPace: pace,
+        activeDays: activeDays,
+        disciplineMonth: disciplineMonth,
+        saverStats: saverStats,
+      );
+      notifyListeners();
     } catch (_) {
       // Database mungkin sedang ditutup atau stream queries dibatalkan.
     }

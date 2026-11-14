@@ -21,10 +21,7 @@ void main() {
     (tester) async {
       final db = AppDatabase(NativeDatabase.memory());
       final repo = LedgerRepository(db);
-      final ruleSet = RuleSet.fromJson({
-        'version': 1,
-        'banks': [],
-      });
+      final ruleSet = RuleSet.fromJson({'version': 1, 'banks': []});
       final pipeline = CapturePipeline(
         channel: const CaptureChannel(),
         engine: RuleEngine(ruleSet),
@@ -101,9 +98,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: QuestSchemes.light(),
-          home: Scaffold(
-            body: BonScreen(repository: repo),
-          ),
+          home: Scaffold(body: BonScreen(repository: repo)),
         ),
       );
       await tester.pumpAndSettle();
@@ -138,7 +133,10 @@ void main() {
       final cashAccount = accounts.first;
       await repo.setOpeningBalance(cashAccount.id, 500000);
       final categories = await repo.getCategories();
-      final foodCat = categories.firstWhere((c) => c.name.toLowerCase().contains('makan'), orElse: () => categories.first);
+      final foodCat = categories.firstWhere(
+        (c) => c.name.toLowerCase().contains('makan'),
+        orElse: () => categories.first,
+      );
 
       await repo.addBon(
         person: 'Warung Bu Tejo',
@@ -152,9 +150,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: QuestSchemes.light(),
-          home: Scaffold(
-            body: BonScreen(repository: repo),
-          ),
+          home: Scaffold(body: BonScreen(repository: repo)),
         ),
       );
       await tester.pumpAndSettle();

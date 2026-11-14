@@ -4,7 +4,9 @@ import 'package:catatim/theme/quest.dart';
 import 'package:catatim/ui/quest.dart';
 
 void main() {
-  testWidgets('QuestSegmented slides indicator smoothly between options', (tester) async {
+  testWidgets('QuestSegmented slides indicator smoothly between options', (
+    tester,
+  ) async {
     bool selected = false;
 
     await tester.pumpWidget(
@@ -39,7 +41,9 @@ void main() {
     // Tap second option
     await tester.tap(find.text('Pemasukan (3)'));
     await tester.pump(); // Start animation
-    await tester.pump(const Duration(milliseconds: 100)); // Halfway through slide
+    await tester.pump(
+      const Duration(milliseconds: 100),
+    ); // Halfway through slide
 
     // Check AnimatedAlign is animating
     await tester.pumpAndSettle(); // Complete slide

@@ -97,7 +97,9 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
   }
 
   Future<void> _refreshTrackedDrafts() async {
-    final count = await NotificationSimulator.countTrackedDrafts(widget.repository);
+    final count = await NotificationSimulator.countTrackedDrafts(
+      widget.repository,
+    );
     if (mounted) {
       setState(() => _trackedDraftCount = count);
     }
@@ -117,7 +119,9 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
     setState(() => _isRunningBatch = true);
 
     await Future<void>.delayed(const Duration(milliseconds: 150));
-    final report = NotificationSimulator.runBatch(engine: widget.pipeline.engine);
+    final report = NotificationSimulator.runBatch(
+      engine: widget.pipeline.engine,
+    );
 
     if (mounted) {
       setState(() {
@@ -256,8 +260,16 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
             // Tab Segmented Control
             QuestSegmented<int>(
               options: const [
-                (value: 0, label: 'Uji Interaktif', icon: Icons.science_rounded),
-                (value: 1, label: 'Batch Test (Semua)', icon: Icons.fact_check_rounded),
+                (
+                  value: 0,
+                  label: 'Uji Interaktif',
+                  icon: Icons.science_rounded,
+                ),
+                (
+                  value: 1,
+                  label: 'Batch Test (Semua)',
+                  icon: Icons.fact_check_rounded,
+                ),
               ],
               selected: _tabIndex,
               onChanged: (val) {
@@ -408,12 +420,7 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
         q.incomingTint,
         q.good,
       ),
-      (true, _, false) => (
-        'Mismatched Skenario',
-        q.bad,
-        q.outgoingTint,
-        q.bad,
-      ),
+      (true, _, false) => ('Mismatched Skenario', q.bad, q.outgoingTint, q.bad),
       (false, true, _) => (
         'Pola Heuristik (Fallback)',
         q.warn,
@@ -426,12 +433,7 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
         q.primaryLight,
         q.primary,
       ),
-      (false, false, false) => (
-        'Tidak Dikenali',
-        q.muted,
-        q.surface2,
-        null,
-      ),
+      (false, false, false) => ('Tidak Dikenali', q.muted, q.surface2, null),
     };
 
     return QuestCard(
@@ -453,9 +455,9 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
                 Text(
                   eval.bankName!,
                   style: context.qSmall().copyWith(
-                        color: q.muted,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: q.muted,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
             ],
           ),
@@ -469,7 +471,9 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
               children: [
                 Text(
                   Money.format(eval.amount!),
-                  style: context.qDisplay(24).copyWith(
+                  style: context
+                      .qDisplay(24)
+                      .copyWith(
                         color: eval.direction == Direction.incoming
                             ? q.good
                             : q.text,
@@ -480,11 +484,11 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
                 Text(
                   eval.direction == Direction.incoming ? 'Masuk' : 'Keluar',
                   style: context.qSmall().copyWith(
-                        color: eval.direction == Direction.incoming
-                            ? q.good
-                            : q.bad,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    color: eval.direction == Direction.incoming
+                        ? q.good
+                        : q.bad,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -497,11 +501,23 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
             runSpacing: Spacing.xs,
             children: [
               if (eval.templateName != null)
-                _buildMiniPill(context, Icons.rule_rounded, 'Aturan: ${eval.templateName}'),
+                _buildMiniPill(
+                  context,
+                  Icons.rule_rounded,
+                  'Aturan: ${eval.templateName}',
+                ),
               if (eval.kind != null)
-                _buildMiniPill(context, Icons.category_rounded, 'Jenis: ${eval.kind!.name}'),
+                _buildMiniPill(
+                  context,
+                  Icons.category_rounded,
+                  'Jenis: ${eval.kind!.name}',
+                ),
               if (eval.counterparty != null && eval.counterparty!.isNotEmpty)
-                _buildMiniPill(context, Icons.person_rounded, eval.counterparty!),
+                _buildMiniPill(
+                  context,
+                  Icons.person_rounded,
+                  eval.counterparty!,
+                ),
             ],
           ),
           const SizedBox(height: Spacing.s),
@@ -510,8 +526,8 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
           Text(
             eval.message,
             style: context.qSmall().copyWith(
-                  color: eval.passedExpectation ? q.muted : q.bad,
-                ),
+              color: eval.passedExpectation ? q.muted : q.bad,
+            ),
           ),
         ],
       ),
@@ -531,10 +547,7 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
         children: [
           Icon(icon, size: 13, color: q.muted),
           const SizedBox(width: 4),
-          Text(
-            text,
-            style: context.qSmall(11.5).copyWith(color: q.text),
-          ),
+          Text(text, style: context.qSmall(11.5).copyWith(color: q.text)),
         ],
       ),
     );
@@ -547,9 +560,7 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
     if (_isRunningBatch || report == null) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: Spacing.xl),
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
+        child: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -567,14 +578,18 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
                 children: [
                   Text(
                     '${report.passed} / ${report.total} Lolos',
-                    style: context.qTitle(20).copyWith(
+                    style: context
+                        .qTitle(20)
+                        .copyWith(
                           color: report.isAllPassed ? q.good : q.bad,
                           fontWeight: FontWeight.w800,
                         ),
                   ),
                   const Spacer(),
                   QuestStatusBadge(
-                    label: report.isAllPassed ? '100% Lulus' : 'Ada Ketidakcocokan',
+                    label: report.isAllPassed
+                        ? '100% Lulus'
+                        : 'Ada Ketidakcocokan',
                     color: report.isAllPassed ? q.good : q.bad,
                     bgColor: report.isAllPassed
                         ? q.incomingTint
@@ -651,7 +666,9 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
                   const SizedBox(height: 6),
                   Text(
                     item.message,
-                    style: context.qSmall(11).copyWith(
+                    style: context
+                        .qSmall(11)
+                        .copyWith(
                           color: item.passedExpectation ? q.muted : q.bad,
                         ),
                   ),

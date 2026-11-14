@@ -49,7 +49,8 @@ void main() {
         expect(
           evaluation.passedExpectation,
           isTrue,
-          reason: 'Gagal pada preset ${evaluation.scenario?.name}: ${evaluation.message}',
+          reason:
+              'Gagal pada preset ${evaluation.scenario?.name}: ${evaluation.message}',
         );
       }
       expect(report.failed, 0);
@@ -57,46 +58,60 @@ void main() {
       expect(report.passRate, 100.0);
     });
 
-    test('evaluate mendeteksi skenario negatif OTP dan tidak mem-parse transaksi', () {
-      final eval = NotificationSimulator.evaluate(
-        engine: engine,
-        packageName: 'com.bcadigital.blu',
-        title: 'blu by BCA',
-        body: 'JANGAN BERIKAN KODE OTP 123456 kepada siapa pun.',
-      );
-      expect(eval.parsed, isFalse);
-    });
+    test(
+      'evaluate mendeteksi skenario negatif OTP dan tidak mem-parse transaksi',
+      () {
+        final eval = NotificationSimulator.evaluate(
+          engine: engine,
+          packageName: 'com.bcadigital.blu',
+          title: 'blu by BCA',
+          body: 'JANGAN BERIKAN KODE OTP 123456 kepada siapa pun.',
+        );
+        expect(eval.parsed, isFalse);
+      },
+    );
 
-    test('injectEndToEnd mendorong notifikasi ke antrean draf dan bisa dibersihkan', () async {
-      final initialCount = await NotificationSimulator.countTrackedDrafts(repository);
-      expect(initialCount, 0);
+    test(
+      'injectEndToEnd mendorong notifikasi ke antrean draf dan bisa dibersihkan',
+      () async {
+        final initialCount = await NotificationSimulator.countTrackedDrafts(
+          repository,
+        );
+        expect(initialCount, 0);
 
-      // Injeksi 1 preset blu transfer masuk
-      final draftId = await NotificationSimulator.injectEndToEnd(
-        pipeline: pipeline,
-        repository: repository,
-        packageName: 'com.bcadigital.blu',
-        title: 'blu',
-        body: 'Transfer masuk dari BUDI SANTOSO sebesar Rp 250.000 berhasil.',
-      );
+        // Injeksi 1 preset blu transfer masuk
+        final draftId = await NotificationSimulator.injectEndToEnd(
+          pipeline: pipeline,
+          repository: repository,
+          packageName: 'com.bcadigital.blu',
+          title: 'blu',
+          body: 'Transfer masuk dari BUDI SANTOSO sebesar Rp 250.000 berhasil.',
+        );
 
-      expect(draftId, isNotNull);
+        expect(draftId, isNotNull);
 
-      final drafts = await repository.watchDrafts().first;
-      expect(drafts.any((d) => d.id == draftId), isTrue);
+        final drafts = await repository.watchDrafts().first;
+        expect(drafts.any((d) => d.id == draftId), isTrue);
 
-      final trackedCount = await NotificationSimulator.countTrackedDrafts(repository);
-      expect(trackedCount, 1);
+        final trackedCount = await NotificationSimulator.countTrackedDrafts(
+          repository,
+        );
+        expect(trackedCount, 1);
 
-      // Bersihkan data uji coba
-      final deleted = await NotificationSimulator.cleanupSimulatedData(repository);
-      expect(deleted, 1);
+        // Bersihkan data uji coba
+        final deleted = await NotificationSimulator.cleanupSimulatedData(
+          repository,
+        );
+        expect(deleted, 1);
 
-      final remainingDrafts = await repository.watchDrafts().first;
-      expect(remainingDrafts.any((d) => d.id == draftId), isFalse);
+        final remainingDrafts = await repository.watchDrafts().first;
+        expect(remainingDrafts.any((d) => d.id == draftId), isFalse);
 
-      final trackedAfter = await NotificationSimulator.countTrackedDrafts(repository);
-      expect(trackedAfter, 0);
-    });
+        final trackedAfter = await NotificationSimulator.countTrackedDrafts(
+          repository,
+        );
+        expect(trackedAfter, 0);
+      },
+    );
   });
 }

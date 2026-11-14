@@ -251,12 +251,16 @@ extension QueriesRepo on LedgerRepository {
     final inSum = _db.transactions.amount.sum(
       filter:
           _db.transactions.direction.equalsValue(Direction.incoming) &
-          _db.transactions.kind.isInValues(LedgerRepository._internalKinds).not(),
+          _db.transactions.kind
+              .isInValues(LedgerRepository._internalKinds)
+              .not(),
     );
     final outSum = _db.transactions.amount.sum(
       filter:
           _db.transactions.direction.equalsValue(Direction.outgoing) &
-          _db.transactions.kind.isInValues(LedgerRepository._internalKinds).not(),
+          _db.transactions.kind
+              .isInValues(LedgerRepository._internalKinds)
+              .not(),
     );
 
     final query = _db.selectOnly(_db.transactions)
@@ -294,7 +298,9 @@ extension QueriesRepo on LedgerRepository {
       ..addColumns([amountSum])
       ..where(
         _db.transactions.direction.equalsValue(Direction.outgoing) &
-            _db.transactions.kind.isInValues(LedgerRepository._internalKinds).not() &
+            _db.transactions.kind
+                .isInValues(LedgerRepository._internalKinds)
+                .not() &
             _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
             _db.transactions.occurredAt.isSmallerThanValue(end),
       );
@@ -324,7 +330,9 @@ extension QueriesRepo on LedgerRepository {
       ..addColumns([amountSum])
       ..where(
         _db.transactions.direction.equalsValue(Direction.incoming) &
-            _db.transactions.kind.isInValues(LedgerRepository._internalKinds).not() &
+            _db.transactions.kind
+                .isInValues(LedgerRepository._internalKinds)
+                .not() &
             _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
             _db.transactions.occurredAt.isSmallerThanValue(end),
       );
@@ -348,7 +356,9 @@ extension QueriesRepo on LedgerRepository {
       ])
       ..where(
         _db.transactions.direction.equalsValue(Direction.outgoing) &
-            _db.transactions.kind.isInValues(LedgerRepository._internalKinds).not() &
+            _db.transactions.kind
+                .isInValues(LedgerRepository._internalKinds)
+                .not() &
             _db.transactions.occurredAt.isBiggerOrEqualValue(start) &
             _db.transactions.occurredAt.isSmallerThanValue(end),
       )
@@ -428,5 +438,4 @@ extension QueriesRepo on LedgerRepository {
   }
 
   static int _intOf(Object? value) => (value as num?)?.toInt() ?? 0;
-
 }

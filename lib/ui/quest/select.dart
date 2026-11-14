@@ -118,7 +118,11 @@ class QuestSelectField<T> extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Divider(height: 1, thickness: 1, color: q.line.withValues(alpha: 0.6)),
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: q.line.withValues(alpha: 0.6),
+                  ),
                   Flexible(
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
@@ -151,14 +155,18 @@ class QuestSelectField<T> extends StatelessWidget {
                                 onAdd!();
                               },
                               child: Container(
-                                constraints: const BoxConstraints(minHeight: 48),
+                                constraints: const BoxConstraints(
+                                  minHeight: 48,
+                                ),
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 14,
                                   vertical: 12,
                                 ),
                                 decoration: BoxDecoration(
                                   color: q.surface2,
-                                  borderRadius: BorderRadius.circular(AppRadius.tile),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.tile,
+                                  ),
                                   border: Border.all(
                                     color: q.line.withValues(alpha: 0.8),
                                   ),
@@ -289,7 +297,8 @@ class _SelectOptionTile<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final q = context.q;
 
-    final leadingWidget = option.leading ??
+    final leadingWidget =
+        option.leading ??
         (option.icon != null
             ? Container(
                 width: 36,
@@ -309,17 +318,22 @@ class _SelectOptionTile<T> extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: '${option.label}${option.subtitle != null ? ', ${option.subtitle}' : ''}',
+      label:
+          '${option.label}${option.subtitle != null ? ', ${option.subtitle}' : ''}',
       child: QuestPress(
         onTap: onTap,
         child: Container(
           constraints: const BoxConstraints(minHeight: 48),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: selected ? q.primaryLight.withValues(alpha: 0.5) : Colors.transparent,
+            color: selected
+                ? q.primaryLight.withValues(alpha: 0.5)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(AppRadius.tile),
             border: Border.all(
-              color: selected ? q.primary.withValues(alpha: 0.35) : Colors.transparent,
+              color: selected
+                  ? q.primary.withValues(alpha: 0.35)
+                  : Colors.transparent,
             ),
           ),
           child: Row(
@@ -340,7 +354,9 @@ class _SelectOptionTile<T> extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: 'Nunito',
                         fontSize: 14,
-                        fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                        fontWeight: selected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
                         color: selected ? q.primaryText : q.text,
                       ),
                     ),

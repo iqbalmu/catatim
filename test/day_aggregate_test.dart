@@ -17,18 +17,19 @@ void main() {
     Direction direction = Direction.outgoing,
     int amount = 1000,
     TxKind kind = TxKind.payment,
-  }) =>
-      db.into(db.transactions).insert(
-            TransactionsCompanion.insert(
-              uuid: DateTime.now().microsecondsSinceEpoch.toString(),
-              bankId: 'bca',
-              kind: kind,
-              direction: direction,
-              amount: amount,
-              occurredAt: occurredAt,
-              source: TxSource.manual,
-            ),
-          );
+  }) => db
+      .into(db.transactions)
+      .insert(
+        TransactionsCompanion.insert(
+          uuid: DateTime.now().microsecondsSinceEpoch.toString(),
+          bankId: 'bca',
+          kind: kind,
+          direction: direction,
+          amount: amount,
+          occurredAt: occurredAt,
+          source: TxSource.manual,
+        ),
+      );
 
   setUp(() {
     db = AppDatabase(NativeDatabase.memory());
@@ -53,8 +54,11 @@ void main() {
     final since = DateTime(2026, 11);
     await addTx(DateTime(2026, 11, 2, 3), amount: 5000);
     await addTx(DateTime(2026, 11, 2, 4), amount: 3000);
-    await addTx(DateTime(2026, 11, 2, 5),
-        direction: Direction.incoming, amount: 9000);
+    await addTx(
+      DateTime(2026, 11, 2, 5),
+      direction: Direction.incoming,
+      amount: 9000,
+    );
     await addTx(DateTime(2026, 11, 2, 6), amount: 7000, kind: TxKind.internal);
 
     final sums = await repo.outSpendByDaySince(since);

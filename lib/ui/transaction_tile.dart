@@ -12,11 +12,7 @@ import 'transaction_sheet.dart';
 
 /// Header hari ("Hari ini", "Kemarin", "Sen, 11 Okt").
 class TransactionDayHeader extends StatelessWidget {
-  const TransactionDayHeader({
-    super.key,
-    required this.day,
-    this.totalOut,
-  });
+  const TransactionDayHeader({super.key, required this.day, this.totalOut});
 
   final DateTime day;
 
@@ -82,7 +78,11 @@ class TransactionTile extends StatelessWidget {
     final tx = item.tx;
     final incoming = tx.direction == Direction.incoming;
     final (srcIcon, srcLabel, srcColor) = switch (tx.source) {
-      TxSource.auto => (Icons.bolt_rounded, 'Dicatat otomatis', context.q.primary),
+      TxSource.auto => (
+        Icons.bolt_rounded,
+        'Dicatat otomatis',
+        context.q.primary,
+      ),
       TxSource.notification => (
         Icons.mark_email_read_rounded,
         'Dikonfirmasi dari notifikasi',
@@ -116,9 +116,7 @@ class TransactionTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: context.q.surface,
             borderRadius: BorderRadius.circular(AppRadius.tile),
-            border: Border.all(
-              color: context.q.line.withValues(alpha: 0.6),
-            ),
+            border: Border.all(color: context.q.line.withValues(alpha: 0.6)),
           ),
           child: Row(
             children: [

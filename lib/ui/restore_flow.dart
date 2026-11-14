@@ -14,7 +14,10 @@ import 'quest.dart';
 ///
 /// Dipakai alur simpan backup (buat PIN baru, dua kali) maupun pulihkan
 /// (masukkan PIN yang sama).
-Future<String?> askBackupPin(BuildContext context, {required bool repeat}) async {
+Future<String?> askBackupPin(
+  BuildContext context, {
+  required bool repeat,
+}) async {
   final firstCtrl = TextEditingController();
   final secondCtrl = TextEditingController();
   final pin = await showQuestDialog<String>(
@@ -81,13 +84,19 @@ Future<String?> askBackupPin(BuildContext context, {required bool repeat}) async
   if (pin == null || pin.isEmpty) return null;
   // PIN pendek mudah dipaksa (brute force offline pada file backup).
   if (pin.length < 6) {
-    questSnack(context, 'PIN minimal 6 angka.',
-        icon: Icons.info_outline_rounded);
+    questSnack(
+      context,
+      'PIN minimal 6 angka.',
+      icon: Icons.info_outline_rounded,
+    );
     return null;
   }
   if (!repeat && pin != secondCtrl.text.trim()) {
-    questSnack(context, 'PIN tidak sama, coba lagi.',
-        icon: Icons.info_outline_rounded);
+    questSnack(
+      context,
+      'PIN tidak sama, coba lagi.',
+      icon: Icons.info_outline_rounded,
+    );
     return null;
   }
   return pin;
@@ -141,9 +150,7 @@ Future<void> startRestoreFlow(BuildContext context) async {
   final deviceKey = await currentPassphrase();
   final probe = AppDatabase(encryptedExecutor(File(stagingPath), pin));
   try {
-    await probe.customSelect(
-      'SELECT count(*) AS c FROM sqlite_master',
-    ).get();
+    await probe.customSelect('SELECT count(*) AS c FROM sqlite_master').get();
     await probe.customStatement("PRAGMA rekey = '$deviceKey'");
   } catch (_) {
     await probe.close();

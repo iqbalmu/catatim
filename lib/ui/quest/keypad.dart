@@ -121,7 +121,7 @@ class QuestKeypad extends StatelessWidget {
             child: Container(
               height: 48,
               decoration: BoxDecoration(
-              color: enabled ? q.primarySolid : q.surface2,
+                color: enabled ? q.primarySolid : q.surface2,
                 borderRadius: BorderRadius.circular(AppRadius.tile),
                 boxShadow: enabled ? q.cardShadow : null,
               ),

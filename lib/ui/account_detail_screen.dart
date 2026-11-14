@@ -210,8 +210,9 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
       await _completeConnect(bank);
       return;
     }
-    final understood =
-        await _confirmDisclosure('Hubungkan ${bank.displayName}?');
+    final understood = await _confirmDisclosure(
+      'Hubungkan ${bank.displayName}?',
+    );
     if (!understood || !mounted) return;
     setState(() => _pendingConnect = bank);
     await widget.pipeline.channel.openListenerSettings();
@@ -231,7 +232,11 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
         await widget.repository.setOpeningBalance(account.id, opening);
       }
       if (mounted) {
-        questSnack(context, 'Sip, perubahan tersimpan!', icon: Icons.check_rounded);
+        questSnack(
+          context,
+          'Sip, perubahan tersimpan!',
+          icon: Icons.check_rounded,
+        );
         Navigator.pop(context);
       }
     } catch (_) {
@@ -333,7 +338,8 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                               ),
                               child: Icon(
                                 switch (account.kind) {
-                                  AccountKind.bank => Icons.account_balance_rounded,
+                                  AccountKind.bank =>
+                                    Icons.account_balance_rounded,
                                   AccountKind.ewallet => Icons.wallet_rounded,
                                   AccountKind.cash => Icons.payments_rounded,
                                 },
@@ -357,11 +363,13 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                                     autoOn
                                         ? '${account.kind.label} · Auto-sync aktif'
                                         : (account.bankId != null
-                                            ? '${account.kind.label} · Belum terhubung'
-                                            : '${account.kind.label} · Manual'),
+                                              ? '${account.kind.label} · Belum terhubung'
+                                              : '${account.kind.label} · Manual'),
                                     style: TextStyle(
                                       fontSize: 11.5,
-                                      fontWeight: autoOn ? FontWeight.w700 : FontWeight.w500,
+                                      fontWeight: autoOn
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
                                       color: autoOn ? q.good : q.muted,
                                     ),
                                   ),
@@ -385,7 +393,10 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                         const SizedBox(height: Spacing.s),
 
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
                             color: q.surface2.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(12),
@@ -411,16 +422,23 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                                       fontSize: 19,
                                       fontWeight: FontWeight.w800,
                                       color: balance < 0 ? q.bad : q.text,
-                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                      fontFeatures: const [
+                                        FontFeature.tabularFigures(),
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: q.surface,
-                                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.pill,
+                                  ),
                                   border: Border.all(color: q.line),
                                 ),
                                 child: Row(
@@ -489,7 +507,10 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                             ],
                             decoration: const InputDecoration(
                               prefixText: 'Rp ',
-                              prefixIcon: Icon(Icons.account_balance_wallet_outlined, size: 18),
+                              prefixIcon: Icon(
+                                Icons.account_balance_wallet_outlined,
+                                size: 18,
+                              ),
                             ),
                           ),
                           const SizedBox(height: Spacing.m),
@@ -536,8 +557,8 @@ class _AutoReadCard extends StatelessWidget {
     final Color color = !active
         ? q.muted
         : permissionBlocked
-            ? q.bad
-            : q.good;
+        ? q.bad
+        : q.good;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -555,8 +576,8 @@ class _AutoReadCard extends StatelessWidget {
                 !active
                     ? Icons.notifications_none_rounded
                     : permissionBlocked
-                        ? Icons.notifications_off_rounded
-                        : Icons.notifications_active_rounded,
+                    ? Icons.notifications_off_rounded
+                    : Icons.notifications_active_rounded,
                 color: color,
                 size: 20,
               ),

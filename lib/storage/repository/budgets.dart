@@ -71,11 +71,9 @@ extension BudgetsRepo on LedgerRepository {
 
   /// Stream filter kategori scope batas — null = semua kategori.
   Stream<Set<int>?> watchLimitCategories(String key) {
-    return (_db.select(
-      _db.appSettings,
-    )..where((s) => s.key.equals(key))).watchSingleOrNull().map(
-          (row) => parseLimitCategories(row?.valueText),
-        );
+    return (_db.select(_db.appSettings)..where((s) => s.key.equals(key)))
+        .watchSingleOrNull()
+        .map((row) => parseLimitCategories(row?.valueText));
   }
 
   /// Buang id kategori yang dihapus dari filter seluruh scope batas.
@@ -89,5 +87,4 @@ extension BudgetsRepo on LedgerRepository {
       await setLimitCategories(scope.categoriesKey, kept.isEmpty ? null : kept);
     }
   }
-
 }
