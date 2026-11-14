@@ -214,7 +214,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
               Spacing.m,
               Spacing.m,
               Spacing.m,
-              Spacing.xs,
+              Spacing.sm,
             ),
             child: Row(
               children: [
@@ -330,7 +330,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                 Spacing.m,
                 0,
                 Spacing.m,
-                Spacing.xs,
+                Spacing.sm,
               ),
               child: TextField(
                   controller: _searchCtrl,
