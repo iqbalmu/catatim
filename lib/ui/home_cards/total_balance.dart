@@ -178,7 +178,11 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                           amount: total,
                           replayKey: _obscured,
                           duration: const Duration(milliseconds: 520),
-                          style: context.qDisplay(34),
+                          // Saldo minus tampil merah — sinyal sama dengan
+                          // label "Defisit" di kartu jatah harian.
+                          style: context.qDisplay(34).copyWith(
+                                color: total < 0 ? q.bad : null,
+                              ),
                         ),
                         hiddenChild: Text(
                           '••••••••',
