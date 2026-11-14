@@ -6,7 +6,6 @@ import '../capture/pipeline.dart';
 import '../game/mascot.dart';
 import '../game/progress.dart';
 import '../rules/rule_set.dart';
-import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../storage/seed_dummy.dart';
 import '../theme/quest.dart';
