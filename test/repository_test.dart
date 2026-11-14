@@ -507,48 +507,6 @@ void main() {
     },
   );
 
-  group('outSumByDaySince', () {
-    Future<void> addOutAt(DateTime when, int amount) => repo.addManual(
-      amount: amount,
-      direction: Direction.outgoing,
-      kind: TxKind.payment,
-      occurredAt: when,
-    );
-
-    test('jumlah keluar per hari lokal, inklusif batas sejak', () async {
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      await addOutAt(today.add(const Duration(hours: 9)), 5000);
-      await addOutAt(today.subtract(const Duration(days: 1)), 7000);
-      await addOutAt(today.subtract(const Duration(days: 6)), 9000);
-      await addOutAt(today.subtract(const Duration(days: 31)), 11000);
-
-      final sums = await repo
-          .watchOutSumByDaySince(today.subtract(const Duration(days: 29)))
-          .first;
-      expect(sums[today], 5000);
-      expect(sums[today.subtract(const Duration(days: 1))], 7000);
-      expect(sums[today.subtract(const Duration(days: 6))], 9000);
-      expect(
-        sums.containsKey(today.subtract(const Duration(days: 31))),
-        isFalse,
-      );
-    });
-
-    test('hanya masuk tidak terhitung', () async {
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      await repo.addManual(
-        amount: 25000,
-        direction: Direction.incoming,
-        kind: TxKind.transfer,
-        occurredAt: today.add(const Duration(hours: 8)),
-      );
-      final sums = await repo.watchOutSumByDaySince(today).first;
-      expect(sums, isEmpty);
-    });
-  });
-
   group('belanja murni', () {
     test('transfer antar-akun bukan belanja', () async {
       await repo.addManual(

@@ -816,29 +816,6 @@ class LedgerRepository {
     });
   }
 
-  /// Cari transaksi pasangan transfer yang mungkin sudah tercatat sebelumnya.
-  Future<Transaction?> findMatchingTransferTransaction(
-    Draft draft, {
-    Duration window = const Duration(minutes: 5),
-  }) async {
-    final from = draft.occurredAt.subtract(window);
-    final to = draft.occurredAt.add(window);
-    final oppositeDirection = draft.direction == Direction.incoming
-        ? Direction.outgoing
-        : Direction.incoming;
-
-    return (_db.select(_db.transactions)
-          ..where(
-            (t) =>
-                t.amount.equals(draft.amount) &
-                t.direction.equalsValue(oppositeDirection) &
-                t.bankId.equals(draft.bankId).not() &
-                t.occurredAt.isBetweenValues(from, to),
-          )
-          ..limit(1))
-        .getSingleOrNull();
-  }
-
   // --- koneksi bank (model hubungkan bank) ----------------------------------------
 
   /// Kunci settings penyimpan daftar bankId terhubung (CSV).
@@ -1323,27 +1300,6 @@ class LedgerRepository {
       for (final r in rows)
         DateTime.parse(r.read<String>('day')): r.read<int>('c'),
     };
-  }
-
-  /// Total keluar per hari sejak [since] (inklusif) — bahan sparkline
-  /// insight beranda. Diagregasi di SQLite (audit O-03); re-emit tiap
-  /// tabel transaksi berubah.
-  Stream<Map<DateTime, int>> watchOutSumByDaySince(DateTime since) {
-    return _db
-        .customSelect(
-          "SELECT date(occurred_at, 'unixepoch', '$_localTzModifier') AS day, "
-          'SUM(amount) AS s FROM transactions '
-          "WHERE direction = 'outgoing' AND occurred_at >= ? GROUP BY day",
-          variables: [Variable.withInt(since.millisecondsSinceEpoch ~/ 1000)],
-          readsFrom: {_db.transactions},
-        )
-        .watch()
-        .map(
-          (rows) => {
-            for (final r in rows)
-              DateTime.parse(r.read<String>('day')): r.read<int>('s'),
-          },
-        );
   }
 
   /// Total belanja MURNI per hari sejak [since] (inklusif); transfer ke
@@ -1867,13 +1823,19 @@ class LedgerRepository {
   /// Hapus kategori: transaksinya dipindah ke kategori [fallbackId]
   /// (biasanya "Lainnya"), alokasinya ikut terhapus, dan filter kategori
   /// pada scope batas ikut dibersihkan.
-  Future<void> deleteCategory(int id, {required int fallbackId}) async {
+  ///
+  /// Audit C-1: keempat langkah harus atomik — crash di tengah jalan
+  /// (mis. transaksi sudah pindah tapi kategori masih ada) meninggalkan
+  /// data konsisten-parsial.
+  Future<void> deleteCategory(int id, {required int fallbackId}) {
     if (id == fallbackId) throw ArgumentError('tidak boleh hapus fallback');
-    await (_db.update(_db.transactions)..where((t) => t.categoryId.equals(id)))
-        .write(TransactionsCompanion(categoryId: Value(fallbackId)));
-    await (_db.delete(_db.budgets)..where((b) => b.categoryId.equals(id))).go();
-    await (_db.delete(_db.categories)..where((c) => c.id.equals(id))).go();
-    await _removeCategoryFromLimitScopes(id);
+    return _db.transaction(() async {
+      await (_db.update(_db.transactions)..where((t) => t.categoryId.equals(id)))
+          .write(TransactionsCompanion(categoryId: Value(fallbackId)));
+      await (_db.delete(_db.budgets)..where((b) => b.categoryId.equals(id))).go();
+      await (_db.delete(_db.categories)..where((c) => c.id.equals(id))).go();
+      await _removeCategoryFromLimitScopes(id);
+    });
   }
 
   // --- backup -----------------------------------------------------------------
@@ -2066,11 +2028,15 @@ class LedgerRepository {
   }
 
   /// Hapus akun; transaksi yang memakainya jadi tanpa akun (tidak ikut
-  /// terhapus).
-  Future<void> deleteAccount(int id) async {
-    await (_db.update(_db.transactions)..where((t) => t.accountId.equals(id)))
-        .write(const TransactionsCompanion(accountId: Value(null)));
-    await (_db.delete(_db.accounts)..where((a) => a.id.equals(id))).go();
+  /// terhapus). Audit C-1: dua langkah dijadikan satu transaksi agar
+  /// FK `account_id → accounts` tidak sempat melanggar bila app mati
+  /// di antara null-ing dan delete.
+  Future<void> deleteAccount(int id) {
+    return _db.transaction(() async {
+      await (_db.update(_db.transactions)..where((t) => t.accountId.equals(id)))
+          .write(const TransactionsCompanion(accountId: Value(null)));
+      await (_db.delete(_db.accounts)..where((a) => a.id.equals(id))).go();
+    });
   }
 
   /// Tulis log mentah sekali — konten identik (paket+judul+isi) dalam

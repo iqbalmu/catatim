@@ -63,19 +63,4 @@ void main() {
     final sums = await repo.outSpendByDaySince(since);
     expect(sums[DateTime(2026, 11, 2)], 8000);
   });
-
-  test('watchOutSumByDaySince: re-emit saat tabel berubah', () async {
-    final since = DateTime(2026, 11, 1);
-    final emissions = <Map<DateTime, int>>[];
-    final sub = repo
-        .watchOutSumByDaySince(since)
-        .listen(emissions.add);
-    await addTx(DateTime(2026, 11, 3), direction: Direction.outgoing, amount: 1500);
-    await Future<void>.delayed(const Duration(milliseconds: 300));
-
-    expect(emissions, isNotEmpty);
-    final last = emissions.last;
-    expect(last[DateTime(2026, 11, 3)], 1500);
-    await sub.cancel();
-  });
 }
