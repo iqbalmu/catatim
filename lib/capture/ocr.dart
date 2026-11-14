@@ -34,6 +34,18 @@ class OcrReceiptData {
 class OcrService {
   const OcrService();
 
+  // Audit P-6: pola didefinisikan sekali — sebelumnya RegExp
+  // dikompilasi di dalam loop per baris (±150–200 kompilasi per nota,
+  // semuanya di main isolate).
+  static final _datePrefix = RegExp(r'^\d{1,2}[./\-]\d{1,2}[./\-]\d{2,4}');
+  static final _timePrefix = RegExp(r'^\d{2}:\d{2}');
+  static final _digitsOnly = RegExp(r'^\d+$');
+  static final _rpAmount = RegExp(r'[Rr][Pp]\.?\s*([\d][\d.,]*)');
+  static final _groupedAmount =
+      RegExp(r'\b(\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?)\b');
+  static final _fullDate = RegExp(r'\b(\d{1,2})[./\-](\d{1,2})[./\-](\d{2,4})\b');
+  static final _fullTime = RegExp(r'\b(\d{1,2}):(\d{2})(?::(\d{2}))?\b');
+
   /// Jalankan OCR pada file gambar di [imagePath].
   Future<OcrReceiptData?> processImage(
     String imagePath, {
@@ -110,17 +122,17 @@ class OcrService {
     for (final line in lines.take(6)) {
       final lower = line.toLowerCase();
       // Lewati baris berisi tanggal/waktu saja atau kata umum nota
-      if (RegExp(r'^\d{1,2}[./\-]\d{1,2}[./\-]\d{2,4}').hasMatch(line)) {
+      if (_datePrefix.hasMatch(line)) {
         continue;
       }
-      if (RegExp(r'^\d{2}:\d{2}').hasMatch(line)) {
+      if (_timePrefix.hasMatch(line)) {
         continue;
       }
       if (ignoreWords.any((w) => lower == w || lower.startsWith('$w '))) {
         continue;
       }
       // Ambil baris pertama yang bermakna sebagai nama toko
-      if (line.length >= 3 && !RegExp(r'^\d+$').hasMatch(line)) {
+      if (line.length >= 3 && !_digitsOnly.hasMatch(line)) {
         return line;
       }
     }
@@ -247,14 +259,14 @@ class OcrService {
 
   static List<int> _findAllAmountsInLine(String line) {
     final result = <int>[];
-    final rpMatches = RegExp(r'[Rr][Pp]\.?\s*([\d][\d.,]*)').allMatches(line);
+    final rpMatches = _rpAmount.allMatches(line);
     for (final m in rpMatches) {
       final g = m.group(1);
       final val = Money.tryParseGroup(g);
       if (val != null && val > 0) result.add(val);
     }
 
-    final numMatches = RegExp(r'\b(\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?)\b').allMatches(line);
+    final numMatches = _groupedAmount.allMatches(line);
     for (final m in numMatches) {
       final g = m.group(1);
       final val = Money.tryParseGroup(g);
@@ -287,10 +299,8 @@ class OcrService {
 
   static DateTime? _extractDate(List<String> lines, String fullText) {
     // 1. Format tanggal standar: DD/MM/YYYY, DD.MM.YYYY, DD-MM-YYYY, DD/MM/YY
-    final dateReg = RegExp(
-      r'\b(\d{1,2})[./\-](\d{1,2})[./\-](\d{2,4})\b',
-    );
-    final timeReg = RegExp(r'\b(\d{1,2}):(\d{2})(?::(\d{2}))?\b');
+    final dateReg = _fullDate;
+    final timeReg = _fullTime;
 
     DateTime? parsedDate;
     int hour = 0;
@@ -343,7 +353,7 @@ class OcrService {
 
   static String? _matchCategory(String text) {
     // Belanja / Minimarket
-    if ([
+    if (const [
       'indomaret',
       'indomar',
       'alfamart',
@@ -363,7 +373,7 @@ class OcrService {
     }
 
     // Makanan & Minuman
-    if ([
+    if (const [
       'kopi',
       'coffee',
       'cafe',
@@ -396,7 +406,7 @@ class OcrService {
     }
 
     // Transportasi & Bensin
-    if ([
+    if (const [
       'spbu',
       'pertamina',
       'shell',
@@ -418,7 +428,7 @@ class OcrService {
     }
 
     // Kesehatan & Obat
-    if ([
+    if (const [
       'apotek',
       'pharmacy',
       'kimia farma',
@@ -437,7 +447,7 @@ class OcrService {
     }
 
     // Tagihan & Utilitas
-    if ([
+    if (const [
       'pln',
       'pdam',
       'telkom',
@@ -452,7 +462,7 @@ class OcrService {
     }
 
     // Hiburan
-    if ([
+    if (const [
       'bioskop',
       'cinema',
       'xxi',
