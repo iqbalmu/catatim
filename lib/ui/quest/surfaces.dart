@@ -48,9 +48,7 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
           Spacing.m,
         ),
         child: QuestTabEnter(
-          index: 0,
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               if (leading != null) ...[
                 leading!,
@@ -79,7 +77,7 @@ class QuestHeader extends StatelessWidget implements PreferredSizeWidget {
                     if (!compact && subtitle != null)
                       Text(
                         subtitle!,
-                        style: context.qSmall(12),
+                        style: context.qSmall(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),

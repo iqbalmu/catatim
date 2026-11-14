@@ -95,7 +95,7 @@ class _CategoryStructureCard extends StatelessWidget {
                               : 'Distribusi ${activeStats.length} Kategori Keluar',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: context.qSmall(12),
+                          style: context.qSmall(),
                         ),
                       ),
                       const SizedBox(width: Spacing.s),

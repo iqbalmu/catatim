@@ -413,7 +413,7 @@ class _EmptyPeriodCard extends StatelessWidget {
           Text(
             'Catat pemasukan atau pengeluaran pakai tombol (+) di bawah, nanti grafik tren & komposisi kategorinya muncul.',
             textAlign: TextAlign.center,
-            style: context.qSmall(12),
+            style: context.qSmall(),
           ),
         ],
       ),

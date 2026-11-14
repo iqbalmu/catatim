@@ -4,7 +4,7 @@ import 'package:catatim/core/budget.dart';
 void main() {
   group('LimitLine.level', () {
     test('tanpa batas selalu ok', () {
-      final line = LimitLine(label: 'x', used: 999999);
+      final line = const LimitLine(label: 'x', used: 999999);
       expect(line.level, BudgetLevel.ok);
       expect(line.fraction, 0);
       expect(line.usedPercent, 0);
@@ -21,7 +21,7 @@ void main() {
     });
 
     test('fraction dipotong ke 1', () {
-      final line = LimitLine(label: 'x', used: 3000, limit: 1000);
+      final line = const LimitLine(label: 'x', used: 3000, limit: 1000);
       expect(line.fraction, 1);
       expect(line.usedPercent, 300);
     });
@@ -83,10 +83,10 @@ void main() {
 
     test('tren keluar saat bulan lalu kosong', () {
       // Bulan lalu 0, sekarang ada → memburuk.
-      expect(snap(monthOut: 100, lastMonthOut: 0).outTrend,
+      expect(snap(monthOut: 100).outTrend,
           TrendDirection.worse);
       // Dua-duanya kosong → datar.
-      expect(snap(monthOut: 0, lastMonthOut: 0).outTrend,
+      expect(snap().outTrend,
           TrendDirection.flat);
     });
 
@@ -202,7 +202,7 @@ void main() {
       expect(p.dayOfMonth, 11);
       expect(p.daysInMonth, 31);
       final feb = dailyPace(
-        now: DateTime(2024, 2, 1),
+        now: DateTime(2024, 2),
         dayOut: 0,
         weekOut: 0,
         monthOut: 0,

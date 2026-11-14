@@ -151,12 +151,12 @@ class MascotStage extends StatelessWidget {
             child: Container(
               width: size * 0.5,
               height: size * 0.1,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0x3D6B4937),
-                    const Color(0x006B4937),
+                    Color(0x3D6B4937),
+                    Color(0x006B4937),
                   ],
                 ),
               ),

@@ -230,12 +230,10 @@ class _TestTabViewState extends State<_TestTabView> with SingleTickerProviderSta
       );
     }
     return Stack(
-      clipBehavior: Clip.hardEdge,
       children: [
         for (var i = 0; i < widget.children.length; i++)
           if (i != flight.from && i != flight.to)
             Offstage(
-              offstage: true,
               child: pages[i],
             ),
         SlideTransition(position: _outgoingSlide, child: pages[flight.from]),

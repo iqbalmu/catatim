@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -126,7 +128,7 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
       _openingCtrl.text = '${account.openingBalance}';
       setState(() => _loaded = true);
     }
-    _refreshListener();
+    unawaited(_refreshListener());
   }
 
   Future<void> _refreshListener() async {
@@ -347,7 +349,7 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                                 children: [
                                   Text(
                                     account.name,
-                                    style: context.qTitle(17),
+                                    style: context.qTitle(),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -399,7 +401,7 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                                 children: [
                                   Text(
                                     'Saldo Sekarang',
-                                    style: context.qSmall(12).copyWith(
+                                    style: context.qSmall().copyWith(
                                       color: q.muted,
                                       fontWeight: FontWeight.w700,
                                     ),

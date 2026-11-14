@@ -156,7 +156,7 @@ class _BonScreenState extends State<BonScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Nominal', style: context.qSmall(12)),
+                        Text('Nominal', style: context.qSmall()),
                         Text(
                           Money.format(bon.amount),
                           style: TextStyle(
@@ -272,7 +272,6 @@ class _BonScreenState extends State<BonScreen> {
           children: [
             // Header
             QuestTabEnter(
-              index: 0,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
                   Spacing.m,
@@ -298,7 +297,7 @@ class _BonScreenState extends State<BonScreen> {
                           Text('Bon & Utang-Piutang', style: context.qTitle(20)),
                           Text(
                             'Pencatatan pinjam-meminjam dengan orang lain',
-                            style: context.qSmall(12),
+                            style: context.qSmall(),
                           ),
                         ],
                       ),
@@ -1246,7 +1245,6 @@ class _BonSheetState extends State<BonSheet> {
             QuestButton(
               label: _direction == BonDirection.lent ? 'Terima Pelunasan' : 'Lunasi Bon',
               icon: Icons.check_circle_outline_rounded,
-              tone: QuestTone.primary,
               onPressed: _settleDirectly,
             ),
             const SizedBox(height: Spacing.xs),

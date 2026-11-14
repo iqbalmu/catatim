@@ -298,7 +298,7 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
                       const SizedBox(height: 2),
                       Text(
                         'Rapikan kata kuncinya biar notifikasi berikutnya kebaca otomatis.',
-                        style: context.qSmall(12).copyWith(color: q.muted),
+                        style: context.qSmall().copyWith(color: q.muted),
                       ),
                     ],
                   ),
@@ -420,7 +420,7 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
             Text(
               'Arah Aliran Dana',
               style: context
-                  .qSmall(12)
+                  .qSmall()
                   .copyWith(color: q.muted, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: Spacing.xs),
@@ -446,7 +446,7 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
             Text(
               'Jenis Transaksi',
               style: context
-                  .qSmall(12)
+                  .qSmall()
                   .copyWith(color: q.muted, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: Spacing.xs),
@@ -468,7 +468,7 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
                 Text(
                   'Kata Kunci Wajib (Cocokkan Teks)',
                   style: context
-                      .qSmall(12)
+                      .qSmall()
                       .copyWith(color: q.muted, fontWeight: FontWeight.w700),
                 ),
                 Text(
@@ -606,7 +606,7 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
                     children: [
                       Text(
                         'Nominal Tertangkap:',
-                        style: context.qSmall(12).copyWith(color: q.muted),
+                        style: context.qSmall().copyWith(color: q.muted),
                       ),
                       Text(
                         previewAmount != null
@@ -627,12 +627,12 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
                     children: [
                       Text(
                         'Arah & Jenis:',
-                        style: context.qSmall(12).copyWith(color: q.muted),
+                        style: context.qSmall().copyWith(color: q.muted),
                       ),
                       Text(
                         '${_direction == Direction.incoming ? 'Masuk' : 'Keluar'} · ${_kind.name}',
                         style: context
-                            .qSmall(12)
+                            .qSmall()
                             .copyWith(fontWeight: FontWeight.w700),
                       ),
                     ],
@@ -648,7 +648,6 @@ class _CaptureTuneSheetState extends State<CaptureTuneSheet> {
                   ? 'Menyimpan & Memproses...'
                   : 'Simpan Template & Buat Draf',
               icon: Icons.rule_folder_outlined,
-              tone: QuestTone.primary,
               onPressed: (_isSaving || _selectedKeywords.isEmpty)
                   ? null
                   : _saveTemplate,

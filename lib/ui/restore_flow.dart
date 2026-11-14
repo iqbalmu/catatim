@@ -143,8 +143,6 @@ Future<void> startRestoreFlow(BuildContext context) async {
   try {
     await probe.customSelect(
       'SELECT count(*) AS c FROM sqlite_master',
-      variables: const [],
-      readsFrom: const {},
     ).get();
     await probe.customStatement("PRAGMA rekey = '$deviceKey'");
   } catch (_) {

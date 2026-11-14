@@ -478,7 +478,7 @@ void main() {
         body: 'Transfer masuk Rp1.000',
         postedAt: DateTime(2026, 10, 12, 9),
       ),
-      draft: ParsedDraft(
+      draft: const ParsedDraft(
         bankId: 'blu',
         bankName: 'blu by BCA',
         ruleName: 'transfer masuk',

@@ -67,7 +67,7 @@ class QuestCard extends StatelessWidget {
         };
 
     final BoxBorder effectiveBorder =
-        border ?? Border.all(color: q.line, width: 1);
+        border ?? Border.all(color: q.line);
 
     final card = Container(
       padding: effectivePadding,
@@ -123,7 +123,6 @@ class QuestChip extends StatelessWidget {
         // konteks lebar-tight (mis. kolom stretch) yang membuat pill
         // melebar penuh tanpa disengaja.
         child: UnconstrainedBox(
-          alignment: Alignment.center,
           child: AnimatedContainer(
             duration: QuestMotion.fast,
             curve: QuestMotion.easeOut,

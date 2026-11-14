@@ -50,15 +50,12 @@ void main() {
   });
 
   test('outSpendByDaySince: hanya keluar murni, transfer tak ikut', () async {
-    final since = DateTime(2026, 11, 1);
-    await addTx(DateTime(2026, 11, 2, 3),
-        direction: Direction.outgoing, amount: 5000);
-    await addTx(DateTime(2026, 11, 2, 4),
-        direction: Direction.outgoing, amount: 3000);
+    final since = DateTime(2026, 11);
+    await addTx(DateTime(2026, 11, 2, 3), amount: 5000);
+    await addTx(DateTime(2026, 11, 2, 4), amount: 3000);
     await addTx(DateTime(2026, 11, 2, 5),
         direction: Direction.incoming, amount: 9000);
-    await addTx(DateTime(2026, 11, 2, 6),
-        direction: Direction.outgoing, amount: 7000, kind: TxKind.internal);
+    await addTx(DateTime(2026, 11, 2, 6), amount: 7000, kind: TxKind.internal);
 
     final sums = await repo.outSpendByDaySince(since);
     expect(sums[DateTime(2026, 11, 2)], 8000);

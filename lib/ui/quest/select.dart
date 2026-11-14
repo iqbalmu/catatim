@@ -59,7 +59,7 @@ class QuestSelectField<T> extends StatelessWidget {
 
   Future<void> _openPicker(BuildContext context) async {
     if (!enabled) return;
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     FocusScope.of(context).unfocus();
 
     final q = context.q;
@@ -68,7 +68,7 @@ class QuestSelectField<T> extends StatelessWidget {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      sheetAnimationStyle: AnimationStyle(
+      sheetAnimationStyle: const AnimationStyle(
         duration: QuestMotion.sheet,
         reverseDuration: QuestMotion.medium,
         curve: QuestMotion.drawer,
@@ -107,7 +107,7 @@ class QuestSelectField<T> extends StatelessWidget {
                         Expanded(
                           child: Text(
                             sheetTitle ?? labelText,
-                            style: sheetContext.qTitle(17),
+                            style: sheetContext.qTitle(),
                           ),
                         ),
                         QuestIconButton(
@@ -320,7 +320,6 @@ class _SelectOptionTile<T> extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.tile),
             border: Border.all(
               color: selected ? q.primary.withValues(alpha: 0.35) : Colors.transparent,
-              width: 1,
             ),
           ),
           child: Row(
@@ -351,7 +350,7 @@ class _SelectOptionTile<T> extends StatelessWidget {
                         option.subtitle!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: context.qSmall(12).copyWith(color: q.muted),
+                        style: context.qSmall().copyWith(color: q.muted),
                       ),
                     ],
                   ],

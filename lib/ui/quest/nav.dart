@@ -58,7 +58,7 @@ class QuestBottomNav extends StatelessWidget {
               decoration: BoxDecoration(
                 color: context.q.surface,
                 borderRadius: BorderRadius.circular(AppRadius.nav),
-                border: Border.all(color: context.q.line, width: 1),
+                border: Border.all(color: context.q.line),
                 boxShadow: context.q.elevatedShadow,
               ),
               child: Row(

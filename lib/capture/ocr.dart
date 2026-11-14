@@ -55,7 +55,7 @@ class OcrService {
     if (!file.existsSync()) return null;
 
     final inputImage = InputImage.fromFilePath(imagePath);
-    final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    final textRecognizer = TextRecognizer();
 
     try {
       final recognized = await textRecognizer.processImage(inputImage);

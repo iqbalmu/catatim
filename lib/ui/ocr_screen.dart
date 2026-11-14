@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -48,12 +49,12 @@ class OcrScreen extends StatefulWidget {
               children: [
                 Text(
                   'Pindai Struk / Bukti Transaksi',
-                  style: ctx.qTitle(17),
+                  style: ctx.qTitle(),
                 ),
                 const SizedBox(height: Spacing.xs),
                 Text(
                   'Mau pakai gambar dari mana? Nominal & pihaknya diisi otomatis.',
-                  style: ctx.qSmall(12).copyWith(color: ctx.q.muted),
+                  style: ctx.qSmall().copyWith(color: ctx.q.muted),
                 ),
                 const SizedBox(height: Spacing.m),
                 QuestCard(
@@ -303,7 +304,7 @@ class _OcrScreenState extends State<OcrScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Ganti / Foto Ulang Struk', style: ctx.qTitle(17)),
+            Text('Ganti / Foto Ulang Struk', style: ctx.qTitle()),
             const SizedBox(height: Spacing.s),
             QuestCard(
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
@@ -370,7 +371,7 @@ class _OcrScreenState extends State<OcrScreen> {
         imageQuality: 90,
       );
       if (picked != null) {
-        _processImage(picked.path);
+        unawaited(_processImage(picked.path));
       }
     } catch (e) {
       if (mounted) {
@@ -571,7 +572,7 @@ class _OcrScreenState extends State<OcrScreen> {
                           const SizedBox(height: 4),
                           Text(
                             'Ketuk untuk membuka kamera atau galeri',
-                            style: context.qSmall(12).copyWith(color: q.muted),
+                            style: context.qSmall().copyWith(color: q.muted),
                           ),
                         ],
                       ),
@@ -601,7 +602,7 @@ class _OcrScreenState extends State<OcrScreen> {
                       const SizedBox(height: Spacing.xs),
                       Text(
                         'Koreksi bila ada angka atau nama yang keliru dibaca kamera.',
-                        style: context.qSmall(12).copyWith(color: q.muted),
+                        style: context.qSmall().copyWith(color: q.muted),
                       ),
                       const SizedBox(height: Spacing.m),
 
@@ -792,7 +793,7 @@ class _OcrScreenState extends State<OcrScreen> {
                       Text(
                         'Arah Transaksi',
                         style: context
-                            .qSmall(12)
+                            .qSmall()
                             .copyWith(color: q.muted, fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: Spacing.xs),
@@ -855,8 +856,6 @@ class _OcrScreenState extends State<OcrScreen> {
                           controller: _rawTextCtrl,
                           maxLines: 8,
                           style: context.qBody(12),
-                          decoration: InputDecoration(
-                                                      ),
                         ),
                       ],
                     ],
@@ -868,7 +867,6 @@ class _OcrScreenState extends State<OcrScreen> {
                 QuestButton(
                   label: _isSaving ? 'Memproses...' : 'Langsung Catat Transaksi',
                   icon: Icons.check_circle_rounded,
-                  tone: QuestTone.primary,
                   onPressed: _isSaving ? null : _recordDirectly,
                 ),
                 const SizedBox(height: Spacing.s),

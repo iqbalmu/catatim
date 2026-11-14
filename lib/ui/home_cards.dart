@@ -128,7 +128,7 @@ class _HomeTopBarState extends State<HomeTopBar> {
               children: [
                 Text(
                   greeting.title,
-                  style: context.qTitle(17).copyWith(
+                  style: context.qTitle().copyWith(
                     letterSpacing: -0.3,
                     height: 1.15,
                   ),
@@ -138,7 +138,7 @@ class _HomeTopBarState extends State<HomeTopBar> {
                 const SizedBox(height: 2),
                 Text(
                   greeting.subtitle,
-                  style: context.qSmall(12).copyWith(
+                  style: context.qSmall().copyWith(
                     color: q.muted,
                     fontWeight: FontWeight.w500,
                     height: 1.1,
@@ -269,7 +269,6 @@ class _HomeTopBarState extends State<HomeTopBar> {
                       pipeline: pipeline,
                       ruleSet: ruleSet,
                       progress: progress,
-                      showBack: true,
                     ),
                   ),
                 ),

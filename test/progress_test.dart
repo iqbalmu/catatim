@@ -47,7 +47,7 @@ void main() {
 
     test('3 hari dalam jatah → streak 3', () async {
       await setDaily(5000);
-      await addTxAt(todayAt(9), amount: 1000);
+      await addTxAt(todayAt(9));
       await addTxAt(todayAt(9).subtract(const Duration(days: 1)), amount: 2000);
       await addTxAt(todayAt(9).subtract(const Duration(days: 2)), amount: 3000);
       await progress.refresh();
@@ -59,7 +59,7 @@ void main() {
     test('kemarin over → streak 0', () async {
       await setDaily(5000);
       await addTxAt(todayAt(9).subtract(const Duration(days: 1)), amount: 6000);
-      await addTxAt(todayAt(9).subtract(const Duration(days: 2)), amount: 1000);
+      await addTxAt(todayAt(9).subtract(const Duration(days: 2)));
       await progress.refresh();
       expect(progress.latest!.streakDays, 0);
       expect(progress.latest!.streakPaused, isFalse);
@@ -67,23 +67,23 @@ void main() {
 
     test('hari Rp0 lolos', () async {
       await setDaily(5000);
-      await addTxAt(todayAt(9), amount: 1000);
+      await addTxAt(todayAt(9));
       // Kemarin kosong (Rp0) → lolos, streak jalan terus.
-      await addTxAt(todayAt(9).subtract(const Duration(days: 2)), amount: 1000);
+      await addTxAt(todayAt(9).subtract(const Duration(days: 2)));
       await progress.refresh();
       expect(progress.latest!.streakDays, 3);
     });
 
     test('hari ini over → 0 sekarang', () async {
       await setDaily(5000);
-      await addTxAt(todayAt(9).subtract(const Duration(days: 1)), amount: 1000);
+      await addTxAt(todayAt(9).subtract(const Duration(days: 1)));
       await addTxAt(todayAt(9), amount: 6000);
       await progress.refresh();
       expect(progress.latest!.streakDays, 0);
     });
 
     test('tanpa limit: streak 0 + streakPaused true', () async {
-      await addTxAt(todayAt(9), amount: 1000);
+      await addTxAt(todayAt(9));
       await progress.refresh();
       final p = progress.latest!;
       expect(p.streakDays, 0);
@@ -100,8 +100,8 @@ void main() {
 
     test('surut berhenti di transaksi pertama (bukan 365)', () async {
       await setDaily(5000);
-      await addTxAt(todayAt(9).subtract(const Duration(days: 10)), amount: 1000);
-      await addTxAt(todayAt(9), amount: 1000);
+      await addTxAt(todayAt(9).subtract(const Duration(days: 10)));
+      await addTxAt(todayAt(9));
       await progress.refresh();
       // Hari ini + 9 hari Rp0 + hari transaksi pertama = 11, bukan 370.
       expect(progress.latest!.streakDays, 11);
@@ -109,8 +109,8 @@ void main() {
 
     test('transfer biasa bukan belanja (opsi A)', () async {
       await setDaily(5000);
-      await addTxAt(todayAt(9).subtract(const Duration(days: 1)), amount: 1000);
-      await addTxAt(todayAt(9), amount: 1000);
+      await addTxAt(todayAt(9).subtract(const Duration(days: 1)));
+      await addTxAt(todayAt(9));
       // Transfer antar-akun biasa diabaikan streak.
       await transferAt(todayAt(10), 20000);
       await progress.refresh();
@@ -131,14 +131,14 @@ void main() {
       await setDaily(5000);
       // Streak 6 hari: 6..1 hari lalu. Hari ini belum dicatat.
       for (var i = 6; i >= 1; i--) {
-        await addTxAt(todayAt(8).subtract(Duration(days: i)), amount: 1000);
+        await addTxAt(todayAt(8).subtract(Duration(days: i)));
       }
       await progress.refresh();
       expect(progress.latest!.streakDays, 6);
       expect(await progress.consumePendingMilestone(), isNull);
 
       // Hari ini dalam jatah → streak 7 = milestone.
-      await addTxAt(todayAt(8), amount: 1000);
+      await addTxAt(todayAt(8));
       await progress.onTransactionRecorded();
       expect(progress.latest!.streakDays, 7);
       expect(progress.pendingMilestone, 7);
@@ -149,14 +149,14 @@ void main() {
       await setDaily(5000);
       // 6 hari lalu → hari ini belum dicatat: streak 6.
       for (var i = 6; i >= 1; i--) {
-        await addTxAt(todayAt(8).subtract(Duration(days: i)), amount: 1000);
+        await addTxAt(todayAt(8).subtract(Duration(days: i)));
       }
       await progress.refresh();
       expect(progress.latest!.streakDays, 6);
       expect(await progress.consumePendingMilestone(), isNull);
 
       // Hari ini dalam jatah → streak 7 = milestone, rayakan sekali.
-      await addTxAt(todayAt(8), amount: 1000);
+      await addTxAt(todayAt(8));
       await progress.onTransactionRecorded();
       expect(progress.latest!.streakDays, 7);
       expect(progress.pendingMilestone, 7);
@@ -174,7 +174,7 @@ void main() {
       expect(restartedFresh.pendingMilestone, isNull);
 
       // Streak 8 bukan milestone → tetap null.
-      await addTxAt(todayAt(8).subtract(const Duration(days: 7)), amount: 1000);
+      await addTxAt(todayAt(8).subtract(const Duration(days: 7)));
       final atEight = ProgressService(repository: repo);
       await atEight.refresh();
       expect(atEight.latest!.streakDays, 8);
@@ -184,7 +184,7 @@ void main() {
 
       // Run baru: lengkapi ke 14 hari → milestone 14 tetap dirayakan.
       for (var i = 8; i <= 13; i++) {
-        await addTxAt(todayAt(8).subtract(Duration(days: i)), amount: 1000);
+        await addTxAt(todayAt(8).subtract(Duration(days: i)));
       }
       final atFourteen = ProgressService(repository: repo);
       await atFourteen.onTransactionRecorded();

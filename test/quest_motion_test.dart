@@ -144,7 +144,7 @@ void main() {
           body: 'Transfer masuk Rp50.000 dari BUDI',
           postedAt: DateTime(2026, 10, 31, 9),
         ),
-        draft: ParsedDraft(
+        draft: const ParsedDraft(
           bankId: 'blu',
           bankName: 'blu by BCA',
           ruleName: 'transfer masuk',
@@ -191,7 +191,7 @@ void main() {
                     builder: (_) => Scaffold(
                       body: ListView(
                         children: const [
-                          QuestEnter(index: 0, child: Text('Konten A')),
+                          QuestEnter(child: Text('Konten A')),
                           QuestEnter(index: 2, child: Text('Konten B')),
                         ],
                       ),
@@ -429,9 +429,9 @@ void main() {
               return Scaffold(
                 body: QuestStage(
                   token: token,
-                  child: Column(
-                    children: const [
-                      QuestTabEnter(index: 0, child: _StatefulProbe('Item 0')),
+                  child: const Column(
+                    children: [
+                      QuestTabEnter(child: _StatefulProbe('Item 0')),
                       QuestTabEnter(index: 2, child: Text('Item 2')),
                       QuestTabEnter(index: 4, child: Text('Item 4')),
                     ],

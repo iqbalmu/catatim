@@ -38,7 +38,7 @@ class _CashflowSummaryCard extends StatelessWidget {
                   children: [
                     Text(
                       'Pemasukan',
-                      style: context.qSmall(12).copyWith(
+                      style: context.qSmall().copyWith(
                         color: context.q.good,
                         fontWeight: FontWeight.w700,
                       ),
@@ -73,7 +73,7 @@ class _CashflowSummaryCard extends StatelessWidget {
                   children: [
                     Text(
                       'Pengeluaran',
-                      style: context.qSmall(12).copyWith(
+                      style: context.qSmall().copyWith(
                         color: context.q.bad,
                         fontWeight: FontWeight.w700,
                       ),
@@ -108,7 +108,7 @@ class _CashflowSummaryCard extends StatelessWidget {
                   children: [
                     Text(
                       'Selisih',
-                      style: context.qSmall(12).copyWith(
+                      style: context.qSmall().copyWith(
                         color: context.q.muted,
                         fontWeight: FontWeight.w700,
                       ),

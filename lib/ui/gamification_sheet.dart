@@ -21,7 +21,7 @@ class GamificationSheet extends StatelessWidget {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      sheetAnimationStyle: AnimationStyle(
+      sheetAnimationStyle: const AnimationStyle(
         duration: QuestMotion.sheet,
         reverseDuration: QuestMotion.medium,
         curve: QuestMotion.drawer,
@@ -94,7 +94,6 @@ class GamificationSheet extends StatelessWidget {
                 // agar seluruh isi sheet muat tanpa scroll: maskot jangkar,
                 // mood line pesan utama, streak jadi sub-barisnya.
                 QuestEnter(
-                  index: 0,
                   child: Row(
                     children: [
                       MascotStage(
@@ -242,7 +241,7 @@ class GamificationSheet extends StatelessWidget {
                         ),
                         Text(
                           '${stats.badges.where((b) => b.unlocked).length} dari ${stats.badges.length} Terbuka',
-                          style: context.qSmall(12),
+                          style: context.qSmall(),
                         ),
                       ],
                     ),

@@ -266,7 +266,6 @@ class QuestSwitch extends StatelessWidget {
                 // terhadap kartu sehingga bentuk toggle bisa tenggelam.
                 border: Border.all(
                   color: value ? Colors.transparent : q.line,
-                  width: 1,
                 ),
               ),
               child: AnimatedAlign(
@@ -306,7 +305,7 @@ class QuestFieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: context.qSmall(12).copyWith(
+      style: context.qSmall().copyWith(
         fontWeight: FontWeight.w700,
         color: context.q.muted,
       ),

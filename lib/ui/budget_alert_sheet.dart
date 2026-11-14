@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -59,7 +61,7 @@ class _BudgetAlertSheetState extends State<BudgetAlertSheet> {
   }
 
   Future<void> _toggle(bool on) async {
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     await widget.repository.setBudgetAlertsEnabled(on);
     setState(() => _enabled = on);
     if (!on) return;
@@ -73,7 +75,7 @@ class _BudgetAlertSheetState extends State<BudgetAlertSheet> {
   }
 
   Future<void> _pickPercent(int percent) async {
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     await widget.repository.setBudgetAlertThreshold(percent);
     if (mounted) setState(() => _threshold = percent);
   }
@@ -82,7 +84,7 @@ class _BudgetAlertSheetState extends State<BudgetAlertSheet> {
   /// harus menunggu pengeluaran nyata menyentuh ambang. Contoh jelas
   /// berlabel agar tak disangka peringatan sungguhan.
   Future<void> _sendTest() async {
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     var granted = await _channel.canPost();
     if (!granted) {
       granted = await _channel.requestPermission();
@@ -132,7 +134,7 @@ class _BudgetAlertSheetState extends State<BudgetAlertSheet> {
             Text(
               'Notifikasi Android saat pengeluaran menyentuh persen batas '
               'harian, mingguan, atau bulanan.',
-              style: context.qSmall(12).copyWith(color: q.muted),
+              style: context.qSmall().copyWith(color: q.muted),
             ),
             const SizedBox(height: Spacing.m),
             QuestCard(
@@ -171,7 +173,7 @@ class _BudgetAlertSheetState extends State<BudgetAlertSheet> {
                         'Izin notifikasi belum aktif — peringatan tidak '
                         'bisa tampil.',
                         style: context.qSmall(
-                          12,
+                          
                         ).copyWith(color: q.text, fontWeight: FontWeight.w600),
                       ),
                     ),

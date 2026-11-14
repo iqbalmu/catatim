@@ -34,7 +34,7 @@ void main() {
       ];
       final buckets = trendBuckets(
         rows,
-        DateTime(2026, 5, 1),
+        DateTime(2026, 5),
         DateTime(2026, 10, 10),
       );
       expect(buckets, hasLength(6));

@@ -9,7 +9,7 @@ Future<T?> showQuestSheet<T>(
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: Colors.transparent,
-    sheetAnimationStyle: AnimationStyle(
+    sheetAnimationStyle: const AnimationStyle(
       duration: QuestMotion.sheet,
       reverseDuration: QuestMotion.medium,
       curve: QuestMotion.drawer,
@@ -49,7 +49,7 @@ Future<T?> showQuestDialog<T>(
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: Colors.transparent,
-    sheetAnimationStyle: AnimationStyle(
+    sheetAnimationStyle: const AnimationStyle(
       duration: QuestMotion.sheet,
       reverseDuration: QuestMotion.medium,
       curve: QuestMotion.drawer,

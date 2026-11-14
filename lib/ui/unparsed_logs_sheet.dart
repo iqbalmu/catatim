@@ -138,12 +138,12 @@ class _UnparsedLogsSheetState extends State<UnparsedLogsSheet> {
                         children: [
                           Text(
                             'Format Belum Dikenali',
-                            style: context.qTitle(17),
+                            style: context.qTitle(),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             'Notifikasi yang belum cocok dengan aturan bank',
-                            style: context.qSmall(12).copyWith(color: q.muted),
+                            style: context.qSmall().copyWith(color: q.muted),
                           ),
                         ],
                       ),
@@ -212,7 +212,7 @@ class _UnparsedLogsSheetState extends State<UnparsedLogsSheet> {
                           const SizedBox(height: 4),
                           Text(
                             'Belum ada notifikasi bank yang tertinggal atau gagal kebaca.',
-                            style: context.qSmall(12).copyWith(color: q.muted),
+                            style: context.qSmall().copyWith(color: q.muted),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -289,7 +289,7 @@ class _UnparsedLogsSheetState extends State<UnparsedLogsSheet> {
                             ],
                             Text(
                               log.body,
-                              style: context.qSmall(12).copyWith(
+                              style: context.qSmall().copyWith(
                                 color: q.text.withValues(alpha: 0.85),
                               ),
                               maxLines: 2,

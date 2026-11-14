@@ -16,7 +16,7 @@ void main() {
     final progress = ProgressService(repository: repo);
 
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day, 10, 0);
+    final today = DateTime(now.year, now.month, now.day, 10);
     final yesterday = today.subtract(const Duration(days: 1));
 
     final acc = await repo.addAccount('BCA', AccountKind.bank);
@@ -107,7 +107,7 @@ void main() {
       final progress = ProgressService(repository: repo);
 
       final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day, 12, 0);
+      final today = DateTime(now.year, now.month, now.day, 12);
 
       final acc = await repo.addAccount('BCA', AccountKind.bank);
       final categories = await repo.getCategories();

@@ -28,8 +28,8 @@ void main() {
         final categories = await repo.getCategories();
 
         final now = DateTime.now();
-        final thisMonthDay = DateTime(now.year, now.month, 1);
-        final prevMonthDay = DateTime(now.year, now.month - 1, 1);
+        final thisMonthDay = DateTime(now.year, now.month);
+        final prevMonthDay = DateTime(now.year, now.month - 1);
 
         await repo.addManual(
           amount: 45000000,

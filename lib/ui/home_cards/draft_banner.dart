@@ -207,7 +207,6 @@ class _DraftAttentionBannerState extends State<DraftAttentionBanner> {
                               horizontal: 12,
                               vertical: 10,
                             ),
-                            shadow: null,
                             onTap: onTap,
                             child: Row(
                               children: [

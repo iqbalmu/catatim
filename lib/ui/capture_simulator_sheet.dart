@@ -239,7 +239,7 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
                       const SizedBox(height: 2),
                       Text(
                         'Uji rule parser & kirim simulasi notifikasi (M3)',
-                        style: context.qSmall(12).copyWith(color: q.muted),
+                        style: context.qSmall().copyWith(color: q.muted),
                       ),
                     ],
                   ),
@@ -290,7 +290,7 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
         // Preset selector bar
         Text(
           'Pilih Preset Skenario',
-          style: context.qSmall(12).copyWith(
+          style: context.qSmall().copyWith(
             fontWeight: FontWeight.w700,
             color: q.muted,
           ),
@@ -322,7 +322,7 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
         // Editable Input Fields
         Text(
           'Data Notifikasi',
-          style: context.qSmall(12).copyWith(
+          style: context.qSmall().copyWith(
             fontWeight: FontWeight.w700,
             color: q.muted,
           ),
@@ -377,7 +377,6 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
               ? 'Mendorong ke Pipeline...'
               : 'Kirim ke Antrean Nyata (End-to-End)',
           icon: Icons.send_rounded,
-          tone: QuestTone.primary,
           onPressed: _isInjecting ? null : _injectEndToEnd,
         ),
         const SizedBox(height: Spacing.s),
@@ -453,7 +452,7 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
               if (eval.bankName != null)
                 Text(
                   eval.bankName!,
-                  style: context.qSmall(12).copyWith(
+                  style: context.qSmall().copyWith(
                         color: q.muted,
                         fontWeight: FontWeight.w600,
                       ),
@@ -480,7 +479,7 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
                 const SizedBox(width: Spacing.xs),
                 Text(
                   eval.direction == Direction.incoming ? 'Masuk' : 'Keluar',
-                  style: context.qSmall(12).copyWith(
+                  style: context.qSmall().copyWith(
                         color: eval.direction == Direction.incoming
                             ? q.good
                             : q.bad,
@@ -510,7 +509,7 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
           // Message
           Text(
             eval.message,
-            style: context.qSmall(12).copyWith(
+            style: context.qSmall().copyWith(
                   color: eval.passedExpectation ? q.muted : q.bad,
                 ),
           ),
@@ -587,7 +586,7 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
               const SizedBox(height: Spacing.xs),
               Text(
                 'Tingkat kelulusan preset: ${report.passRate.toStringAsFixed(1)}%',
-                style: context.qSmall(12).copyWith(color: q.muted),
+                style: context.qSmall().copyWith(color: q.muted),
               ),
               const SizedBox(height: Spacing.m),
               QuestButton(
@@ -603,7 +602,7 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
 
         Text(
           'Rincian Hasil Skenario',
-          style: context.qSmall(12).copyWith(
+          style: context.qSmall().copyWith(
             fontWeight: FontWeight.w700,
             color: q.muted,
           ),
@@ -647,7 +646,7 @@ class _CaptureSimulatorSheetState extends State<CaptureSimulatorSheet> {
                     item.body,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: context.qSmall(12).copyWith(color: q.muted),
+                    style: context.qSmall().copyWith(color: q.muted),
                   ),
                   const SizedBox(height: 6),
                   Text(

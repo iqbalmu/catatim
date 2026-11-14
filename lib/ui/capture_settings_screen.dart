@@ -512,8 +512,8 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
 
         // Jika pencarian kosong
         if (connectedList.isEmpty && availableList.isEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: Spacing.xl),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: Spacing.xl),
             child: QuestEmpty(
               title: 'Bank tidak ditemukan',
               hint:
@@ -531,7 +531,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
               Text(
                 'Bank/e-wallet yang belum ada di katalog? Hubungkan app-nya: '
                 'semua notifikasinya akan jadi draf yang bisa kamu tinjau & catat.',
-                style: context.qSmall(12).copyWith(color: q.muted),
+                style: context.qSmall().copyWith(color: q.muted),
               ),
               const SizedBox(height: Spacing.s),
               StreamBuilder<List<({String package, String label})>>(
@@ -693,7 +693,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                           _listenerEnabled
                               ? 'CatatIM bisa membaca notifikasi bank.'
                               : 'Izin ini biar CatatIM bisa nangkep transaksi dari notifikasi.',
-                          style: context.qSmall(12).copyWith(color: q.muted),
+                          style: context.qSmall().copyWith(color: q.muted),
                         ),
                       ],
                     ),
@@ -763,7 +763,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
               const SizedBox(height: Spacing.xs),
               Text(
                 'Setel baterai ke "Tidak Dibatasi" agar Android tidak mematikan layanan saat layar mati.',
-                style: context.qSmall(12).copyWith(color: q.muted),
+                style: context.qSmall().copyWith(color: q.muted),
               ),
               const SizedBox(height: Spacing.s),
               QuestButton(
@@ -865,7 +865,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                         const SizedBox(height: 3),
                         Text(
                           statusDesc,
-                          style: context.qSmall(12).copyWith(color: q.muted),
+                          style: context.qSmall().copyWith(color: q.muted),
                         ),
                       ],
                     ),
@@ -1198,7 +1198,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         ),
         Text(
           'Notifikasi dengan kata kunci di bawah langsung dibuang, nggak jadi draf.',
-          style: context.qSmall(12).copyWith(color: q.muted),
+          style: context.qSmall().copyWith(color: q.muted),
         ),
         const SizedBox(height: Spacing.xs),
         StreamBuilder<List<IgnoredPattern>>(
@@ -1215,7 +1215,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                     Expanded(
                       child: Text(
                         'Belum ada pola abaikan. Tap "Tambah" untuk memblokir kata kunci promo/spam.',
-                        style: context.qSmall(12).copyWith(color: q.muted),
+                        style: context.qSmall().copyWith(color: q.muted),
                       ),
                     ),
                   ],
@@ -1306,7 +1306,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         const QuestSectionHeader(title: 'Aturan & Template Kustom'),
         Text(
           'Template yang kamu buat dari penyesuaian draf/log. Pola ini diprioritaskan saat memproses notifikasi bank.',
-          style: context.qSmall(12).copyWith(color: q.muted),
+          style: context.qSmall().copyWith(color: q.muted),
         ),
         const SizedBox(height: Spacing.xs),
         StreamBuilder<List<CustomTemplate>>(
@@ -1317,7 +1317,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
               return QuestCard(
                 child: Text(
                   'Belum ada template kustom. Template kebentuk otomatis pas kamu atur ulang pembacaan notifikasi mentah.',
-                  style: context.qSmall(12).copyWith(color: q.muted),
+                  style: context.qSmall().copyWith(color: q.muted),
                 ),
               );
             }
@@ -1415,7 +1415,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                 const QuestSectionHeader(title: 'Duplikat yang Diabaikan'),
                 Text(
                   'Dianggap duplikat (bank, nominal, & arah sama dalam 2 menit), jadi nggak dibuat dua kali. Geser ke kiri buat hapus.',
-                  style: context.qSmall(12).copyWith(color: q.muted),
+                  style: context.qSmall().copyWith(color: q.muted),
                 ),
                 const SizedBox(height: Spacing.xs),
                 QuestCard(
@@ -1545,7 +1545,7 @@ class _AppPickerSheetState extends State<_AppPickerSheet> {
                 Text(
                   'Pilih app bank/e-wallet. Notifikasinya bakal jadi draf '
                   'yang kamu putuskan.',
-                  style: context.qSmall(12).copyWith(color: q.muted),
+                  style: context.qSmall().copyWith(color: q.muted),
                 ),
                 const SizedBox(height: Spacing.s),
                 TextField(
@@ -1563,7 +1563,7 @@ class _AppPickerSheetState extends State<_AppPickerSheet> {
                 ? Center(
                     child: Text(
                       'Belum ada app yang cocok.',
-                      style: context.qSmall(12).copyWith(color: q.muted),
+                      style: context.qSmall().copyWith(color: q.muted),
                     ),
                   )
                 : ListView.builder(

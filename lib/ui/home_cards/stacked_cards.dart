@@ -546,7 +546,6 @@ class _RenderStackedDeck extends RenderBox
 
     peek.layout(
       BoxConstraints.tightFor(width: peekWidth, height: peekHeight),
-      parentUsesSize: false,
     );
 
     (peek.parentData! as _StackedDeckParentData).offset =

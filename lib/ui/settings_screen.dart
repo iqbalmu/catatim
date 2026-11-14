@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -282,14 +284,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       // 2. Capture Notifikasi Bank
                       QuestListTile(
-                        leading: _SettingIcon(icon: Icons.notifications_active_rounded),
+                        leading: const _SettingIcon(icon: Icons.notifications_active_rounded),
                         title: Text(
                           'Capture Notifikasi Bank',
                           style: context.qTitle(15),
                         ),
                         subtitle: Text(
                           'Izin, bank terhubung, dan aturan',
-                          style: context.qSmall(12),
+                          style: context.qSmall(),
                         ),
                         trailing: Icon(
                           Icons.chevron_right_rounded,
@@ -313,7 +315,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         stream: _budgetAlertsStream,
                         initialData: false,
                         builder: (context, snap) => QuestListTile(
-                          leading: _SettingIcon(
+                          leading: const _SettingIcon(
                             icon: Icons.notification_important_rounded,
                           ),
                           title: Text(
@@ -324,7 +326,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             (snap.data ?? false)
                                 ? 'Notifikasi saat menyentuh ambang persen'
                                 : 'Nonaktif',
-                            style: context.qSmall(12),
+                            style: context.qSmall(),
                           ),
                           trailing: Icon(
                             Icons.chevron_right_rounded,
@@ -338,14 +340,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       // 4. Backup & Pulihkan Data
                       QuestListTile(
-                        leading: _SettingIcon(icon: Icons.shield_outlined),
+                        leading: const _SettingIcon(icon: Icons.shield_outlined),
                         title: Text(
                           'Backup & Pulihkan Data',
                           style: context.qTitle(15),
                         ),
                         subtitle: Text(
                           'Salinan data terenkripsi PIN',
-                          style: context.qSmall(12),
+                          style: context.qSmall(),
                         ),
                         trailing: Icon(
                           Icons.chevron_right_rounded,
@@ -365,14 +367,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       if (kDebugMode) ...[
                         Divider(height: 1, thickness: 1, color: q.line),
                         QuestListTile(
-                          leading: _SettingIcon(icon: Icons.dataset_outlined),
+                          leading: const _SettingIcon(icon: Icons.dataset_outlined),
                           title: Text(
                             'Isi Data Contoh',
                             style: context.qTitle(15),
                           ),
                           subtitle: Text(
                             'Transaksi, anggaran, dan saldo contoh',
-                            style: context.qSmall(12),
+                            style: context.qSmall(),
                           ),
                           trailing: Icon(
                             Icons.chevron_right_rounded,
@@ -384,14 +386,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       // 6. Kosongkan Data Aplikasi (Danger Zone di bagian paling akhir)
                       QuestListTile(
-                        leading: _SettingIcon(icon: Icons.delete_forever_rounded, danger: true),
+                        leading: const _SettingIcon(icon: Icons.delete_forever_rounded, danger: true),
                         title: Text(
                           'Kosongkan Data Aplikasi',
                           style: context.qTitle(15).copyWith(color: q.bad),
                         ),
                         subtitle: Text(
                           'Hapus semua data dan mulai dari awal',
-                          style: context.qSmall(12),
+                          style: context.qSmall(),
                         ),
                         trailing: Icon(
                           Icons.chevron_right_rounded,
@@ -413,7 +415,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: Spacing.xs),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(AppRadius.cell),
@@ -421,7 +422,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     'assets/logo/catatim_logo.png',
                     width: 40,
                     height: 40,
-                    filterQuality: FilterQuality.medium,
                   ),
                 ),
                 const SizedBox(width: Spacing.s),
@@ -434,7 +434,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: 2),
                       Text(
                         'Versi 1.0.0. Data terenkripsi di perangkat ini.',
-                        style: context.qSmall(12),
+                        style: context.qSmall(),
                       ),
                     ],
                   ),
@@ -469,14 +469,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         QuestButton(
           label: 'Isi Data',
-          tone: QuestTone.primary,
           onPressed: () => Navigator.pop(context, true),
         ),
       ],
     );
 
     if (confirmed == true && context.mounted) {
-      HapticFeedback.mediumImpact();
+      unawaited(HapticFeedback.mediumImpact());
       await reseedDummyData(repository.db, repository);
       await progress?.refresh();
       if (context.mounted) {
@@ -543,7 +542,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     if (confirmed == true && context.mounted) {
-      HapticFeedback.heavyImpact();
+      unawaited(HapticFeedback.heavyImpact());
       await repository.resetAllData();
       await progress?.refresh();
       if (context.mounted) {
@@ -560,13 +559,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     BuildContext context,
     ThemeMode currentMode,
   ) async {
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     await showQuestSheet<void>(
       context,
       (ctx) => _ThemePickerSheet(
         initialMode: currentMode,
         onModeSelected: (newMode) async {
-          HapticFeedback.selectionClick();
+          unawaited(HapticFeedback.selectionClick());
           await repository.setThemeMode(newMode);
           if (ctx.mounted) {
             Future.delayed(const Duration(milliseconds: 180), () {
@@ -737,7 +736,7 @@ class _ThemeOptionCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     desc,
-                    style: context.qSmall(12).copyWith(
+                    style: context.qSmall().copyWith(
                           color: selected ? q.text : q.muted,
                         ),
                   ),

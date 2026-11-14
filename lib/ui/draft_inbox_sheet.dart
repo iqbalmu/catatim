@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -145,7 +147,7 @@ class _DraftInboxViewState extends State<DraftInboxView> {
   }
 
   Future<void> _confirmDraftQuick(Draft draft) async {
-    HapticFeedback.lightImpact();
+    unawaited(HapticFeedback.lightImpact());
     await _repo.confirmDraft(
       draft,
       amount: draft.amount,
@@ -182,7 +184,7 @@ class _DraftInboxViewState extends State<DraftInboxView> {
             Text(
               'Mau diapain draf ini?',
               style:
-                  sheetContext.qSmall(12).copyWith(color: sheetContext.q.muted),
+                  sheetContext.qSmall().copyWith(color: sheetContext.q.muted),
             ),
             const SizedBox(height: Spacing.m),
             QuestListTile(
@@ -230,13 +232,13 @@ class _DraftInboxViewState extends State<DraftInboxView> {
     );
 
     if (result == 'once' && mounted) {
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
       await _repo.discardDrafts([draft.id]);
       if (mounted) {
         questSnack(context, 'Draf transaksi diabaikan.');
       }
     } else if (result == 'always' && mounted) {
-      HapticFeedback.mediumImpact();
+      unawaited(HapticFeedback.mediumImpact());
       final pattern = await _repo.discardDraftAndLearnPattern(draft);
       await widget.pipeline.refreshRules();
       if (mounted) {
@@ -302,7 +304,7 @@ class _DraftInboxViewState extends State<DraftInboxView> {
                       const SizedBox(height: 2),
                       Text(
                         'Pindah saldo antar rekening sendiri',
-                        style: sheetContext.qSmall(12).copyWith(
+                        style: sheetContext.qSmall().copyWith(
                           color: sheetContext.q.muted,
                         ),
                       ),
@@ -326,7 +328,7 @@ class _DraftInboxViewState extends State<DraftInboxView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Dari (Akun Asal)', style: sheetContext.qSmall(12)),
+                      Text('Dari (Akun Asal)', style: sheetContext.qSmall()),
                       Text(
                         fromName,
                         style: const TextStyle(fontWeight: FontWeight.w700),
@@ -337,7 +339,7 @@ class _DraftInboxViewState extends State<DraftInboxView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Ke (Akun Tujuan)', style: sheetContext.qSmall(12)),
+                      Text('Ke (Akun Tujuan)', style: sheetContext.qSmall()),
                       Text(
                         toName,
                         style: const TextStyle(fontWeight: FontWeight.w700),
@@ -348,7 +350,7 @@ class _DraftInboxViewState extends State<DraftInboxView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Nominal Transfer', style: sheetContext.qSmall(12)),
+                      Text('Nominal Transfer', style: sheetContext.qSmall()),
                       QuestMoney(
                         amount: pair.amount,
                         style: TextStyle(
@@ -545,7 +547,7 @@ class _DraftInboxViewState extends State<DraftInboxView> {
                         const SizedBox(height: 2),
                         Text(
                           '$bankName · ${idRelativeDay(day, now)} $time',
-                          style: sheetContext.qSmall(12).copyWith(
+                          style: sheetContext.qSmall().copyWith(
                             color: q.muted,
                           ),
                         ),
@@ -574,7 +576,7 @@ class _DraftInboxViewState extends State<DraftInboxView> {
                   children: [
                     Text(
                       'Nominal',
-                      style: sheetContext.qSmall(12).copyWith(
+                      style: sheetContext.qSmall().copyWith(
                         color: q.muted,
                       ),
                     ),
@@ -758,9 +760,9 @@ class _DraftInboxViewState extends State<DraftInboxView> {
         final singles = partitioned.singles;
 
         if (validDrafts.isEmpty) {
-          return Center(
+          return const Center(
             child: Padding(
-              padding: const EdgeInsets.all(Spacing.l),
+              padding: EdgeInsets.all(Spacing.l),
               child: QuestEmpty(
                 title: 'Belum ada tangkapan baru',
                 hint:

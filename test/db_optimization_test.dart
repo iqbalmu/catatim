@@ -70,9 +70,9 @@ void main() {
 
   group('SQL Aggregation - watchMonthlyCashflow', () {
     test('menghitung cashflow masuk, keluar, dan selisih bersih dengan benar', () async {
-      final now = DateTime(2026, 11, 15, 10, 0);
-      final start = DateTime(2026, 11, 1);
-      final end = DateTime(2026, 12, 1);
+      final now = DateTime(2026, 11, 15, 10);
+      final start = DateTime(2026, 11);
+      final end = DateTime(2026, 12);
 
       final acc1 = await repo.addAccount('BCA', AccountKind.bank);
       final acc2 = await repo.addAccount('Dompet', AccountKind.cash);
@@ -138,8 +138,8 @@ void main() {
     });
 
     test('mengembalikan 0 saat tidak ada transaksi dalam periode', () async {
-      final start = DateTime(2026, 1, 1);
-      final end = DateTime(2026, 2, 1);
+      final start = DateTime(2026);
+      final end = DateTime(2026, 2);
 
       final cashflow = await repo.watchMonthlyCashflow(start, end).first;
       expect(cashflow.totalIn, 0);

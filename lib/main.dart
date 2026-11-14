@@ -57,8 +57,6 @@ class _CatatIMBootstrapState extends State<CatatIMBootstrap> {
       await db
           .customSelect(
             'SELECT count(*) AS c FROM sqlite_master',
-            variables: const [],
-            readsFrom: const {},
           )
           .get();
     } catch (_) {

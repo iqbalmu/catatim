@@ -24,7 +24,7 @@ void main() {
       );
       // Rabu 1 Januari 2025 → Seninnya 30 Desember 2024.
       expect(
-        budgetAlertPeriodKey(LimitScope.weekly, DateTime(2025, 1, 1)),
+        budgetAlertPeriodKey(LimitScope.weekly, DateTime(2025)),
         'w2024-12-30',
       );
     });
@@ -132,7 +132,7 @@ void main() {
     test('tanpa batas atau limit nol/negatif selalu dilewati', () {
       final plan = planBudgetAlerts(
         lines: {
-          LimitScope.daily: line(1000, limit: null),
+          LimitScope.daily: line(1000),
           LimitScope.weekly: line(9999, limit: 0),
           LimitScope.monthly: line(50, limit: -100),
         },

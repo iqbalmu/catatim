@@ -118,7 +118,6 @@ class TransactionTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.tile),
             border: Border.all(
               color: context.q.line.withValues(alpha: 0.6),
-              width: 1,
             ),
           ),
           child: Row(

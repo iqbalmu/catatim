@@ -83,7 +83,7 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
           // Section 1: Arah Transaksi
           Text(
             'Jenis Transaksi',
-            style: context.qSmall(12).copyWith(
+            style: context.qSmall().copyWith(
               fontWeight: FontWeight.w700,
               color: q.muted,
             ),
@@ -136,7 +136,7 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
             // Section 2: Rekening / Akun
             Text(
               'Akun / Rekening',
-              style: context.qSmall(12).copyWith(
+              style: context.qSmall().copyWith(
                 fontWeight: FontWeight.w700,
                 color: q.muted,
               ),

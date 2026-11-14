@@ -111,7 +111,6 @@ void main() {
       // Tambah bon warung open tab
       await repo.addBon(
         person: 'Warung Bu Tejo',
-        amount: 0,
         direction: BonDirection.borrowed,
         note: 'Kopi & rokok',
       );

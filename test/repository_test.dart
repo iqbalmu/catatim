@@ -43,7 +43,7 @@ void main() {
     await repo.addDraftFromCapture(raw: capture(), draft: draft());
     await repo.addDraftFromCapture(
       raw: capture(postedAt: DateTime(2026, 10, 10, 10)),
-      draft: ParsedDraft(
+      draft: const ParsedDraft(
         bankId: 'blu',
         bankName: 'blu by BCA',
         ruleName: 'transfer keluar',
@@ -76,7 +76,7 @@ void main() {
   });
 
   group('baca ulang notifikasi tak terbaca', () {
-    ParsedDraft bluDraft() => ParsedDraft(
+    ParsedDraft bluDraft() => const ParsedDraft(
       bankId: 'blu',
       bankName: 'blu by BCA',
       ruleName: 'transfer masuk',
@@ -215,18 +215,18 @@ void main() {
         amount: 2000,
         direction: Direction.outgoing,
         kind: TxKind.payment,
-        occurredAt: DateTime(2026, 11, 1), // tepat 00:00:00.000
+        occurredAt: DateTime(2026, 11), // tepat 00:00:00.000
       );
       final okt = await repo
           .watchBetweenWithCategory(
-            DateTime(2026, 10, 1),
-            DateTime(2026, 11, 1),
+            DateTime(2026, 10),
+            DateTime(2026, 11),
           )
           .first;
       final nov = await repo
           .watchBetweenWithCategory(
-            DateTime(2026, 11, 1),
-            DateTime(2026, 12, 1),
+            DateTime(2026, 11),
+            DateTime(2026, 12),
           )
           .first;
       expect(okt, hasLength(1));
@@ -312,7 +312,6 @@ void main() {
     // 1. Catat bon warung open tab (belum dihitung / amount 0)
     final bonId = await repo.addBon(
       person: 'Warung Bu Tejo',
-      amount: 0,
       direction: BonDirection.borrowed,
       note: '2 bungkus nasi, kopi',
     );
@@ -672,7 +671,7 @@ void main() {
     test('getLatestCaptureLog & watchLatestCaptureLog mengembalikan log terbaru', () async {
       expect(await repo.getLatestCaptureLog(), isNull);
 
-      final t1 = DateTime(2026, 11, 1, 10, 0);
+      final t1 = DateTime(2026, 11, 1, 10);
       final t2 = DateTime(2026, 11, 2, 15, 30);
       await repo.recordUnparsedCapture(capture(body: 'log lama', postedAt: t1));
       await repo.recordUnparsedCapture(capture(body: 'log baru', postedAt: t2));
@@ -890,10 +889,10 @@ void main() {
     test('CRUD custom templates via repository', () async {
       expect(await repo.customTemplates(), isEmpty);
 
-      final t1 = CustomTemplate(
+      final t1 = const CustomTemplate(
         id: 't1',
         bankId: 'nagari',
-        template: const TemplateRule(
+        template: TemplateRule(
           name: 'Nagari QRIS Khusus',
           kind: TxKind.payment,
           direction: Direction.outgoing,
@@ -965,7 +964,7 @@ void main() {
           body: 'Pembayaran QRIS Rp28.000 ke KOPI KENANGAN berhasil',
           postedAt: DateTime(2026, 10, 11, 10),
         ),
-        draft: ParsedDraft(
+        draft: const ParsedDraft(
           bankId: 'blu',
           bankName: 'blu by BCA',
           ruleName: 'pembayaran',
@@ -998,7 +997,7 @@ void main() {
 
   group('Internal Transfer Pairing & Confirmation', () {
     test('partitionDrafts mendeteksi pasangan draf keluar & masuk bernominal sama', () {
-      final now = DateTime(2026, 11, 1, 10, 0);
+      final now = DateTime(2026, 11, 1, 10);
       final draftBca = Draft(
         id: 1,
         bankId: 'bca',
@@ -1056,7 +1055,7 @@ void main() {
       );
       await repo.setOpeningBalance(accGopay.id, 50000);
 
-      final now = DateTime(2026, 11, 1, 10, 0);
+      final now = DateTime(2026, 11, 1, 10);
       await repo.addDraftFromCapture(
         raw: capture(
           packageName: 'com.bca',
@@ -1064,7 +1063,7 @@ void main() {
           body: 'Transfer berhasil ke GoPay Rp 100.000',
           postedAt: now,
         ),
-        draft: ParsedDraft(
+        draft: const ParsedDraft(
           bankId: 'bca',
           bankName: 'BCA',
           ruleName: 'm-transfer keluar',
@@ -1080,7 +1079,7 @@ void main() {
           body: 'Top up berhasil Rp 100.000 dari BCA',
           postedAt: now.add(const Duration(minutes: 1)),
         ),
-        draft: ParsedDraft(
+        draft: const ParsedDraft(
           bankId: 'gopay',
           bankName: 'GoPay',
           ruleName: 'top up',
@@ -1112,7 +1111,7 @@ void main() {
 
       // 4. Belanja murni tetap 0 (transfer antar akun tidak dihitung sebagai beban pengeluaran)
       final spend = await repo.outSpendPairsBetween(
-        DateTime(2026, 11, 1),
+        DateTime(2026, 11),
         DateTime(2026, 11, 2),
       );
       expect(spend.values.fold<int>(0, (a, b) => a + b), 0);
@@ -1124,7 +1123,7 @@ void main() {
       await repo.setOpeningBalance(accBca.id, 1000000);
       await repo.setOpeningBalance(accCash.id, 100000);
 
-      final now = DateTime(2026, 11, 2, 14, 0);
+      final now = DateTime(2026, 11, 2, 14);
       await repo.addManualTransfer(
         fromAccountId: accBca.id,
         toAccountId: accCash.id,
@@ -1154,11 +1153,11 @@ void main() {
 
       // Pemasukan murni dan belanja murni tidak boleh terpengaruh transfer
       final income = await repo.sumIncomeBetween(
-        DateTime(2026, 11, 1),
+        DateTime(2026, 11),
         DateTime(2026, 11, 3),
       );
       final spend = await repo.sumSpendBetween(
-        DateTime(2026, 11, 1),
+        DateTime(2026, 11),
         DateTime(2026, 11, 3),
       );
       expect(income, 0);
@@ -1167,7 +1166,7 @@ void main() {
 
     test('sumIncomeBetween: transfer masuk tidak dihitung sebagai pendapatan', () async {
       final acc = await repo.addAccount('BCA', AccountKind.bank);
-      final now = DateTime(2026, 11, 2, 10, 0);
+      final now = DateTime(2026, 11, 2, 10);
 
       // 1. Gaji (masuk, bukan transfer) -> harus dihitung
       await repo.addManual(
@@ -1190,14 +1189,14 @@ void main() {
       );
 
       final totalIncome = await repo.sumIncomeBetween(
-        DateTime(2026, 11, 1),
+        DateTime(2026, 11),
         DateTime(2026, 11, 3),
       );
       expect(totalIncome, 5000000);
 
       // sumBetween biasa tetap menghitung semua arah incoming
       final rawIncoming = await repo.sumBetween(
-        DateTime(2026, 11, 1),
+        DateTime(2026, 11),
         DateTime(2026, 11, 3),
         Direction.incoming,
       );

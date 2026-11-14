@@ -78,7 +78,6 @@ class LockedScreen extends StatelessWidget {
         textScale: MediaQuery.textScalerOf(context).scale(1.0),
         title: 'Data terkunci',
         subtitle: 'Catatanmu ada, tapi kuncinya tidak cocok',
-        showBack: false,
       ),
       body: SafeArea(
         child: Padding(
@@ -112,7 +111,7 @@ class LockedScreen extends StatelessWidget {
                     Text(
                       'File backup yang kamu simpan sebelumnya (dengan '
                       'PIN) tetap bisa dipulihkan di sini.',
-                      style: context.qSmall(12),
+                      style: context.qSmall(),
                       textAlign: TextAlign.center,
                     ),
                   ],

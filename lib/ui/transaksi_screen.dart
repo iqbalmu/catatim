@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -73,7 +75,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
     );
 
     if (result != null && mounted) {
-      HapticFeedback.selectionClick();
+      unawaited(HapticFeedback.selectionClick());
       setState(() {
         _selectedDirection = result.direction;
         _selectedAccountId = result.accountId;
@@ -208,7 +210,6 @@ class TransaksiScreenState extends State<TransaksiScreen> {
       children: [
         // Top Header: Title (Kiri) + Action Icons (Kanan)
         QuestTabEnter(
-          index: 0,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
               Spacing.m,

@@ -152,7 +152,7 @@ Future<_LimitEditResult?> _askLimitWithCategories(
               Text(
                 limitScopeNote(selected, names) ??
                     'Semua kategori dihitung ke batas ini.',
-                style: context.qSmall(12).copyWith(color: q.muted),
+                style: context.qSmall().copyWith(color: q.muted),
               ),
             ],
           ),

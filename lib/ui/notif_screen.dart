@@ -316,9 +316,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   Widget _buildPeringatanView(BuildContext context, List<_NotifItem> items) {
     if (items.isEmpty) {
-      return Center(
+      return const Center(
         child: Padding(
-          padding: const EdgeInsets.all(Spacing.l),
+          padding: EdgeInsets.all(Spacing.l),
           child: QuestEmpty(
             title: 'Belum ada peringatan',
             hint:

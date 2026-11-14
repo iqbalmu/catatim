@@ -113,8 +113,6 @@ class QuestPalette {
     primaryGradientEnd: Color(0xFF164E48),
     shadow: Color(0x0A10393D),
     brandShadow: Color(0x401F5A53),
-    incomingTint: SeedColors.incomingTint,
-    outgoingTint: SeedColors.outgoingTint,
   );
 
   static const dark = QuestPalette(
@@ -282,7 +280,7 @@ class QuestPageTransitionsBuilder extends PageTransitionsBuilder {
             BoxShadow(
               color: edgeColor,
               blurRadius: 24,
-              offset: Offset(-6, 0),
+              offset: const Offset(-6, 0),
             ),
           ],
         ),
@@ -1080,14 +1078,14 @@ class QuestSchemes {
         backgroundColor: p.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.sheet),
-          side: BorderSide(color: p.line, width: 1),
+          side: BorderSide(color: p.line),
         ),
       ),
       timePickerTheme: TimePickerThemeData(
         backgroundColor: p.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.sheet),
-          side: BorderSide(color: p.line, width: 1),
+          side: BorderSide(color: p.line),
         ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
@@ -1096,7 +1094,7 @@ class QuestSchemes {
           borderRadius: const BorderRadius.vertical(
             top: Radius.circular(AppRadius.sheet),
           ),
-          side: BorderSide(color: p.line, width: 1),
+          side: BorderSide(color: p.line),
         ),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -1118,7 +1116,7 @@ class QuestSchemes {
         hintStyle: TextStyle(color: p.hint, fontSize: 13),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.tile),
-          borderSide: BorderSide(color: p.line, width: 1),
+          borderSide: BorderSide(color: p.line),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.tile),
@@ -1126,7 +1124,7 @@ class QuestSchemes {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.tile),
-          borderSide: BorderSide(color: p.bad, width: 1),
+          borderSide: BorderSide(color: p.bad),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.tile),
@@ -1139,7 +1137,7 @@ class QuestSchemes {
         labelStyle: TextStyle(fontWeight: FontWeight.w700, color: p.text, fontSize: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.pill),
-          side: BorderSide(color: p.line, width: 1),
+          side: BorderSide(color: p.line),
         ),
       ),
       // switchTheme dihapus (audit T-03): app memakai QuestSwitch custom

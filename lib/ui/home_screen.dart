@@ -244,7 +244,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 child: LaporanScreen(
                   repository: widget.repository,
                   progress: widget.progress,
-                  showBack: false,
                 ),
               ),
             ),
@@ -325,19 +324,19 @@ class _BerandaTabState extends State<_BerandaTab> {
   Future<void> _onProgressChanged() async {
     final alert = widget.progress.consumePendingAlert();
     if (alert != null && mounted) {
-      HapticFeedback.mediumImpact();
+      unawaited(HapticFeedback.mediumImpact());
       questSnack(context, alert, icon: Icons.warning_amber_rounded);
       return;
     }
     final recovery = await widget.progress.consumePendingRecovery();
     if (recovery != null && mounted) {
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
       questSnack(context, recovery, icon: Icons.emoji_emotions_rounded);
       return;
     }
     final milestone = await widget.progress.consumePendingMilestone();
     if (milestone != null && mounted) {
-      HapticFeedback.lightImpact();
+      unawaited(HapticFeedback.lightImpact());
       questSnack(
         context,
         '$milestone hari disiplin: mantap!',
@@ -358,7 +357,6 @@ class _BerandaTabState extends State<_BerandaTab> {
           ),
           children: [
             QuestTabEnter(
-              index: 0,
               child: HomeTopBar(
                 progress: widget.progress,
                 repository: widget.repository,

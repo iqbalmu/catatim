@@ -139,7 +139,7 @@ class DailyPaceHeroCard extends StatelessWidget {
 
                 Text(
                   isOver ? 'Melebihi jatah hari ini' : 'Sisa yang boleh dipakai hari ini',
-                  style: context.qSmall(12).copyWith(
+                  style: context.qSmall().copyWith(
                         color: q.muted,
                         fontWeight: FontWeight.w600,
                       ),

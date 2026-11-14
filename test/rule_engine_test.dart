@@ -127,10 +127,10 @@ void main() {
   group('CustomTemplate & Dynamic Merging', () {
     test('template kustom diprioritaskan di atas template bawaan', () {
       final baseRuleSet = _loadSeed();
-      final custom = CustomTemplate(
+      final custom = const CustomTemplate(
         id: 'cust_1',
         bankId: 'nagari',
-        template: const TemplateRule(
+        template: TemplateRule(
           name: 'Custom Spesial Nagari',
           kind: TxKind.payment,
           direction: Direction.outgoing,
@@ -157,10 +157,10 @@ void main() {
       'template kustom untuk paket baru (app:<paket>) didaftarkan dinamis',
       () {
         final baseRuleSet = _loadSeed();
-        final custom = CustomTemplate(
+        final custom = const CustomTemplate(
           id: 'cust_2',
           bankId: 'app:com.custom.fintech',
-          template: const TemplateRule(
+          template: TemplateRule(
             name: 'Fintech Keluar',
             kind: TxKind.payment,
             direction: Direction.outgoing,

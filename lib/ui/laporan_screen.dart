@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -251,7 +252,7 @@ class LaporanScreenState extends State<LaporanScreen> {
       ),
     );
     if (picked == null || !mounted) return;
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     setState(() {
       if (picked.range != null) {
         _customRange = picked.range;
@@ -336,7 +337,7 @@ class LaporanScreenState extends State<LaporanScreen> {
       ),
     );
     if (selected == null || !mounted) return;
-    HapticFeedback.selectionClick();
+    unawaited(HapticFeedback.selectionClick());
     setState(() {
       _accountId = selected.id;
       _reportRevision++;
@@ -398,7 +399,7 @@ class LaporanScreenState extends State<LaporanScreen> {
                               '${stat.items.length} transaksi · $_periodLabel',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: context.qSmall(12),
+                              style: context.qSmall(),
                             ),
                           ],
                         ),
@@ -497,7 +498,6 @@ class LaporanScreenState extends State<LaporanScreen> {
                       children: [
                         // ── Top Bar: Title + Account Filter ────────────────
                         QuestTabEnter(
-                          index: 0,
                           child:
                         Row(
                           children: [
@@ -536,7 +536,7 @@ class LaporanScreenState extends State<LaporanScreen> {
                                     'Arus kas & pengeluaran',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: context.qSmall(12),
+                                    style: context.qSmall(),
                                   ),
                                 ],
                               ),

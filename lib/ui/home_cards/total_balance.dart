@@ -210,7 +210,7 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                                 Text(
                                   'Saldo disembunyikan',
                                   style: context
-                                      .qSmall(12)
+                                      .qSmall()
                                       .copyWith(
                                         color: q.primaryText,
                                         fontWeight: FontWeight.w700,
@@ -222,7 +222,7 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                               '${accounts.length} akun terdaftar',
                               key: ValueKey('subtitle-${accounts.length}'),
                               style: context
-                                  .qSmall(12)
+                                  .qSmall()
                                   .copyWith(color: q.muted),
                             ),
                     ),
@@ -277,7 +277,6 @@ class _TotalBalanceCardState extends State<TotalBalanceCard> {
                                   ),
                                   border: Border.all(
                                     color: q.primary.withValues(alpha: 0.25),
-                                    style: BorderStyle.solid,
                                   ),
                                 ),
                                 alignment: Alignment.center,
@@ -478,8 +477,6 @@ class _PrivacyBalanceReveal extends StatelessWidget {
               content = ShaderMask(
                 blendMode: BlendMode.srcATop,
                 shaderCallback: (bounds) => LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
                   colors: [
                     context.q.primaryDeep,
                     primary,

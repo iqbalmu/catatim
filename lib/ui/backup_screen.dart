@@ -145,7 +145,6 @@ class _BackupScreenState extends State<BackupScreen>
               child: LinearProgressIndicator(),
             ),
           QuestEnter(
-            index: 0,
             child:
           QuestCard(
             padding: EdgeInsets.zero,

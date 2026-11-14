@@ -97,7 +97,7 @@ class _BankAccountsScreenState extends State<BankAccountsScreen> {
             builder: (context, accSnap) {
               if (accSnap.connectionState == ConnectionState.waiting &&
                   !accSnap.hasData) {
-                return const QuestSkeleton(rows: 3);
+                return const QuestSkeleton();
               }
               final accounts = accSnap.data ?? const <Account>[];
               return StreamBuilder<Map<int, int>>(
@@ -113,7 +113,6 @@ class _BankAccountsScreenState extends State<BankAccountsScreen> {
                     ),
                     children: [
                       const QuestEnter(
-                        index: 0,
                         child: QuestSectionHeader(title: 'Akunmu'),
                       ),
                       if (accounts.isEmpty)
@@ -269,7 +268,7 @@ class _AccountTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: q.surface,
           borderRadius: BorderRadius.circular(AppRadius.tile),
-          border: Border.all(color: q.line, width: 1),
+          border: Border.all(color: q.line),
           boxShadow: q.cardShadow,
         ),
         child: Row(

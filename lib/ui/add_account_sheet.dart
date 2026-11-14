@@ -246,7 +246,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Mau tambah apa?', style: context.qTitle(17)),
+        Text('Mau tambah apa?', style: context.qTitle()),
         const SizedBox(height: Spacing.m),
         QuestSegmented<AccountKind>(
           options: const [
@@ -452,7 +452,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
             Expanded(
               child: Text(
                 'Hubungkan ${bank.displayName}?',
-                style: context.qTitle(17),
+                style: context.qTitle(),
               ),
             ),
           ],
@@ -464,17 +464,17 @@ class _AddAccountSheetState extends State<AddAccountSheet>
           icon: Icons.notifications_active_rounded,
           text: 'Notifikasi transaksi ${bank.displayName} dibaca CatatIM',
         ),
-        _FactRow(
+        const _FactRow(
           icon: Icons.edit_note_rounded,
           text: 'Langsung jadi draf, baru tersimpan saat kamu menekan '
               'Catat',
         ),
-        _FactRow(
+        const _FactRow(
           icon: Icons.lock_rounded,
           text: 'Datanya hanya ada di HP ini: terenkripsi, tak dikirim ke '
               'mana pun',
         ),
-        _FactRow(
+        const _FactRow(
           icon: Icons.link_off_rounded,
           text: 'Putuskan hubungannya kapan saja kamu mau',
         ),
@@ -509,15 +509,15 @@ class _AddAccountSheetState extends State<AddAccountSheet>
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Satu langkah terakhir', style: context.qTitle(17)),
+        Text('Satu langkah terakhir', style: context.qTitle()),
         const SizedBox(height: Spacing.xs),
         Text(
           'CatatIM perlu izin membaca notifikasi. Caranya:',
           style: context.qBody(13),
         ),
         const SizedBox(height: Spacing.m),
-        _StepRow(number: '1', text: 'Tekan "Buka Pengaturan" di bawah'),
-        _StepRow(
+        const _StepRow(number: '1', text: 'Tekan "Buka Pengaturan" di bawah'),
+        const _StepRow(
           number: '2',
           text: 'Cari CatatIM, lalu nyalakan akses notifikasinya',
         ),
@@ -566,7 +566,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
         const SizedBox(height: Spacing.m),
         Text(
           '${bank.displayName} nyambung!',
-          style: context.qTitle(17),
+          style: context.qTitle(),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: Spacing.xs),
