@@ -391,7 +391,15 @@ class _StructuredTrendPainter extends CustomPainter {
       oldDelegate.maxValue != maxValue ||
       oldDelegate.selectedIndex != selectedIndex ||
       oldDelegate.progress != progress ||
-      oldDelegate.buckets.length != buckets.length;
+      oldDelegate.yAxisWidth != yAxisWidth ||
+      oldDelegate.buckets.length != buckets.length ||
+      !identical(oldDelegate.buckets, buckets) ||
+      oldDelegate.inColor != inColor ||
+      oldDelegate.outColor != outColor ||
+      oldDelegate.gridColor != gridColor ||
+      oldDelegate.highlightColor != highlightColor ||
+      oldDelegate.labelColor != labelColor ||
+      oldDelegate.activeLabelColor != activeLabelColor;
 }
 
 /// 03 · Kartu Komposisi Kategori (Stacked Bar + Tabel Terstruktur)
