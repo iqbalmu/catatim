@@ -13,6 +13,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import android.util.Log
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -47,15 +48,26 @@ class MainActivity : FlutterActivity() {
         } else if (type.startsWith("image/")) {
             @Suppress("DEPRECATION")
             val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM) ?: return
-            try {
-                contentResolver.openInputStream(uri)?.use { input ->
-                    val file = File(cacheDir, "shared_ocr_${System.currentTimeMillis()}.jpg")
-                    FileOutputStream(file).use { output ->
-                        input.copyTo(output)
+            // Audit P-1: salinan bisa beberapa MB (foto kamera) — jangan
+            // diblokir di main thread saat onCreate/onNewIntent (risiko
+            // ANR saat cold start). Pakai thread IO yang sama dengan
+            // antrean capture; pendingSharedPayload sudah @Volatile.
+            val appContext = applicationContext
+            ioHandler.post {
+                try {
+                    appContext.contentResolver.openInputStream(uri)?.use { input ->
+                        val file = File(appContext.cacheDir, "shared_ocr_${System.currentTimeMillis()}.jpg")
+                        FileOutputStream(file).use { output ->
+                            input.copyTo(output)
+                        }
+                        pendingSharedPayload = mapOf("type" to "image", "path" to file.absolutePath)
                     }
-                    pendingSharedPayload = mapOf("type" to "image", "path" to file.absolutePath)
+                } catch (e: Exception) {
+                    // Audit P-11: kegagalan senyap membuat user mengira
+                    // share gagal diam-diam. Pesan statis — tanpa payload.
+                    Log.w("catatim-capture", "gagal menyalin gambar share", e)
                 }
-            } catch (_: Exception) {}
+            }
         }
     }
 
@@ -259,10 +271,25 @@ class NotificationCatcher : NotificationListenerService() {
         private const val KEY_LEARNED = "learned_packages"
         private const val KEY_LAST_HEARTBEAT = "last_heartbeat_at"
 
+        /// Audit P-5: onNotificationPosted dipanggil untuk SETIAP
+        /// notifikasi dari SEMUA app — tanpa throttle berarti satu
+        /// tulisan prefs per notifikasi. Heartbeat hanya indikator
+        /// kebugaran (Dart membacanya untuk "lampu sehat"), jadi tulis
+        /// disk maksimal sekali per menit; proses restart → nilai
+        /// in-memory 0 → tulisan pertama langsung lewat.
+        private const val HEARTBEAT_MIN_INTERVAL_MS = 60_000L
+
+        @Volatile
+        private var lastHeartbeatWriteAt = 0L
+
         fun recordHeartbeat(context: Context) {
+            val now = System.currentTimeMillis()
+            val last = lastHeartbeatWriteAt
+            if (last != 0L && now - last < HEARTBEAT_MIN_INTERVAL_MS) return
+            lastHeartbeatWriteAt = now
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .edit()
-                .putLong(KEY_LAST_HEARTBEAT, System.currentTimeMillis())
+                .putLong(KEY_LAST_HEARTBEAT, now)
                 .apply()
         }
 
