@@ -266,13 +266,27 @@ class LedgerRepository {
 
   // --- kategori -------------------------------------------------------------
 
+  /// Urutan tampil kategori: id naik, kecuali "Lainnya" — fallback yang
+  /// tidak bisa dihapus — selalu paling akhir di semua daftar.
+  static int categoryDisplayOrder(Category a, Category b) {
+    final aLast = a.name.toLowerCase() == 'lainnya';
+    final bLast = b.name.toLowerCase() == 'lainnya';
+    if (aLast != bLast) return aLast ? 1 : -1;
+    return a.id.compareTo(b.id);
+  }
+
   Stream<List<Category>> watchCategories() {
     return (_db.select(
       _db.categories,
-    )..orderBy([(c) => OrderingTerm.asc(c.id)])).watch();
+    )..orderBy([(c) => OrderingTerm.asc(c.id)]))
+        .watch()
+        .map((cats) => [...cats]..sort(categoryDisplayOrder));
   }
 
-  Future<List<Category>> getCategories() => _db.select(_db.categories).get();
+  Future<List<Category>> getCategories() async {
+    final cats = await _db.select(_db.categories).get();
+    return [...cats]..sort(categoryDisplayOrder);
+  }
 
   /// Tambah kategori; melempar bila nama sudah dipakai (unique).
   Future<Category> addCategory(String name) async {

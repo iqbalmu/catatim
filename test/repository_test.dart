@@ -131,6 +131,30 @@ void main() {
     expect(drafts.single.categoryId, transfer.id);
   });
 
+  test('kategori "Lainnya" selalu di akhir daftar', () async {
+    // DB segar sudah berisi 7 default (…, Transfer, Lainnya).
+    // Insert dua kategori baru — tanpa sort mereka lolos "Lainnya".
+    await repo.addCategory('Zebra');
+    await repo.addCategory('Hobi');
+
+    final names = (await repo.getCategories()).map((c) => c.name).toList();
+    expect(names, [
+      'Makanan',
+      'Transportasi',
+      'Tagihan',
+      'Belanja',
+      'Gaji',
+      'Transfer',
+      'Zebra',
+      'Hobi',
+      'Lainnya',
+    ]);
+
+    final streamNames =
+        (await repo.watchCategories().first).map((c) => c.name).toList();
+    expect(streamNames, names);
+  });
+
   test('settings simpan & ambil', () async {
     expect(await repo.getSetting('kunci'), isNull);
     await repo.setSetting('kunci', '1');
