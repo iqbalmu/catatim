@@ -2,7 +2,7 @@ part of '../home_cards.dart';
 
 /// Kartu Transaksi Terbaru (5 transaksi terakhir)
 
-class RecentTransactionsCard extends StatelessWidget {
+class RecentTransactionsCard extends StatefulWidget {
   const RecentTransactionsCard({
     super.key,
     required this.repository,
@@ -13,6 +13,32 @@ class RecentTransactionsCard extends StatelessWidget {
   final LedgerRepository repository;
   final ProgressService? progress;
   final VoidCallback onSeeAll;
+
+  @override
+  State<RecentTransactionsCard> createState() =>
+      _RecentTransactionsCardState();
+}
+
+class _RecentTransactionsCardState extends State<RecentTransactionsCard> {
+  LedgerRepository get repository => widget.repository;
+  ProgressService? get progress => widget.progress;
+  VoidCallback get onSeeAll => widget.onSeeAll;
+
+  late final Stream<List<TxWithCategory>> _recentStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _recentStream = widget.repository.watchRecentWithCategory(limit: 5);
+  }
+
+  @override
+  void didUpdateWidget(covariant RecentTransactionsCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.repository != widget.repository) {
+      _recentStream = widget.repository.watchRecentWithCategory(limit: 5);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +81,7 @@ class RecentTransactionsCard extends StatelessWidget {
           const SizedBox(height: Spacing.s),
 
           StreamBuilder<List<TxWithCategory>>(
-            stream: repository.watchRecentWithCategory(limit: 5),
+            stream: _recentStream,
             builder: (context, snapshot) {
               final items = snapshot.data ?? const [];
               if (items.isEmpty) {

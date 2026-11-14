@@ -80,11 +80,28 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
   /// user kembali dari Pengaturan sistem dengan izin sudah aktif.
   BankRules? _pendingConnect;
 
+  late Stream<List<Account>> _accountsStream;
+  late Stream<Set<String>> _connectedBanksStream;
+  late Stream<Map<int, int>> _balancesStream;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _accountsStream = widget.repository.watchAccounts();
+    _connectedBanksStream = widget.repository.watchConnectedBanks();
+    _balancesStream = widget.repository.watchAccountBalances();
     _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant AccountDetailSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.repository != widget.repository) {
+      _accountsStream = widget.repository.watchAccounts();
+      _connectedBanksStream = widget.repository.watchConnectedBanks();
+      _balancesStream = widget.repository.watchAccountBalances();
+    }
   }
 
   @override
@@ -264,7 +281,7 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
     final q = context.q;
 
     return StreamBuilder<List<Account>>(
-      stream: widget.repository.watchAccounts(),
+      stream: _accountsStream,
       builder: (context, accSnap) {
         final accounts = accSnap.data;
         final account = accounts
@@ -286,13 +303,13 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
             : null;
 
         return StreamBuilder<Set<String>>(
-          stream: widget.repository.watchConnectedBanks(),
+          stream: _connectedBanksStream,
           builder: (context, connSnap) {
             final connected = connSnap.data ?? const <String>{};
             final autoOn = bank != null && connected.contains(bank.id);
 
             return StreamBuilder<Map<int, int>>(
-              stream: widget.repository.watchAccountBalances(),
+              stream: _balancesStream,
               builder: (context, balSnap) {
                 final balance =
                     balSnap.data?[account.id] ?? account.openingBalance;

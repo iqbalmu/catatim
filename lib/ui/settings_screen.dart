@@ -18,7 +18,7 @@ import 'quest.dart';
 
 typedef ProfileSettingsScreen = SettingsScreen;
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({
     super.key,
     required this.repository,
@@ -33,6 +33,36 @@ class SettingsScreen extends StatelessWidget {
   final RuleSet ruleSet;
   final ProgressService? progress;
   final bool showBack;
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  LedgerRepository get repository => widget.repository;
+  CapturePipeline get pipeline => widget.pipeline;
+  RuleSet get ruleSet => widget.ruleSet;
+  ProgressService? get progress => widget.progress;
+  bool get showBack => widget.showBack;
+
+  late Stream<ThemeMode> _themeModeStream;
+  late Stream<bool> _budgetAlertsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _themeModeStream = widget.repository.watchThemeMode();
+    _budgetAlertsStream = widget.repository.watchBudgetAlertsEnabled();
+  }
+
+  @override
+  void didUpdateWidget(covariant SettingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.repository != widget.repository) {
+      _themeModeStream = widget.repository.watchThemeMode();
+      _budgetAlertsStream = widget.repository.watchBudgetAlertsEnabled();
+    }
+  }
 
   /// Satu baris status streak untuk kartu gamifikasi — tiap kondisi
   /// singkat agar muat tanpa membungkus.
@@ -204,7 +234,7 @@ class SettingsScreen extends StatelessWidget {
                     children: [
                       // 1. Tema Tampilan (Light / Dark / System)
                       StreamBuilder<ThemeMode>(
-                        stream: repository.watchThemeMode(),
+                        stream: _themeModeStream,
                         initialData: ThemeMode.system,
                         builder: (context, snapshot) {
                           final currentMode =
@@ -280,7 +310,7 @@ class SettingsScreen extends StatelessWidget {
 
                       // 3. Peringatan Batas (notifikasi Android)
                       StreamBuilder<bool>(
-                        stream: repository.watchBudgetAlertsEnabled(),
+                        stream: _budgetAlertsStream,
                         initialData: false,
                         builder: (context, snap) => QuestListTile(
                           leading: _SettingIcon(

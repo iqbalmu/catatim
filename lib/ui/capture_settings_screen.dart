@@ -42,11 +42,37 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';
 
+  late Stream<Set<String>> _connectedBanksStream;
+  late Stream<bool> _autoRecordStream;
+  late Stream<List<({String package, String label})>> _customBanksStream;
+  late Stream<CaptureLog?> _latestCaptureLogStream;
+  late Stream<List<IgnoredPattern>> _ignoredPatternsStream;
+  late Stream<List<CustomTemplate>> _customTemplatesStream;
+  late Stream<List<CaptureLog>> _ignoredDuplicatesStream;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _checkListenerStatus();
+    _initStreams();
+  }
+
+  void _initStreams() {
+    final repo = widget.repository;
+    _connectedBanksStream = repo.watchConnectedBanks();
+    _autoRecordStream = repo.watchAutoRecordEnabled();
+    _customBanksStream = repo.watchCustomBanks();
+    _latestCaptureLogStream = repo.watchLatestCaptureLog();
+    _ignoredPatternsStream = repo.watchIgnoredPatterns();
+    _customTemplatesStream = repo.watchCustomTemplates();
+    _ignoredDuplicatesStream = repo.watchIgnoredDuplicates();
+  }
+
+  @override
+  void didUpdateWidget(covariant CaptureSettingsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.repository != widget.repository) _initStreams();
   }
 
   @override
@@ -317,7 +343,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         showBack: true,
       ),
       body: StreamBuilder<Set<String>>(
-        stream: widget.repository.watchConnectedBanks(),
+        stream: _connectedBanksStream,
         builder: (context, connSnap) {
           final connected = connSnap.data ?? const <String>{};
 
@@ -399,7 +425,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
       ),
       children: [
         StreamBuilder<bool>(
-          stream: widget.repository.watchAutoRecordEnabled(),
+          stream: _autoRecordStream,
           initialData: false,
           builder: (context, snap) => QuestCard(
             padding: EdgeInsets.zero,
@@ -509,7 +535,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
               ),
               const SizedBox(height: Spacing.s),
               StreamBuilder<List<({String package, String label})>>(
-                stream: widget.repository.watchCustomBanks(),
+                stream: _customBanksStream,
                 builder: (context, snap) {
                   final customs = snap.data ?? const [];
                   if (customs.isEmpty) return const SizedBox.shrink();
@@ -760,7 +786,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
 
   Widget _buildLampuSehatCard(Set<String> connected, QuestPalette q) {
     return StreamBuilder<CaptureLog?>(
-      stream: widget.repository.watchLatestCaptureLog(),
+      stream: _latestCaptureLogStream,
       builder: (context, snapshot) {
         final latestLog = snapshot.data;
         final now = DateTime.now();
@@ -1176,7 +1202,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         ),
         const SizedBox(height: Spacing.xs),
         StreamBuilder<List<IgnoredPattern>>(
-          stream: widget.repository.watchIgnoredPatterns(),
+          stream: _ignoredPatternsStream,
           builder: (_, snap) {
             final ignoredList = snap.data ?? const <IgnoredPattern>[];
             if (ignoredList.isEmpty) {
@@ -1284,7 +1310,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         ),
         const SizedBox(height: Spacing.xs),
         StreamBuilder<List<CustomTemplate>>(
-          stream: widget.repository.watchCustomTemplates(),
+          stream: _customTemplatesStream,
           builder: (_, snap) {
             final customTemplates = snap.data ?? const <CustomTemplate>[];
             if (customTemplates.isEmpty) {
@@ -1378,7 +1404,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
 
         // 4. Duplikat yang Diabaikan (Dedup)
         StreamBuilder<List<CaptureLog>>(
-          stream: widget.repository.watchIgnoredDuplicates(),
+          stream: _ignoredDuplicatesStream,
           builder: (context, dupSnap) {
             final dups = dupSnap.data ?? const <CaptureLog>[];
             if (dups.isEmpty) return const SizedBox.shrink();

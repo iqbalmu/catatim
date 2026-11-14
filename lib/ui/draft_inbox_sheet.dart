@@ -109,10 +109,21 @@ class _DraftInboxViewState extends State<DraftInboxView> {
 
   LedgerRepository get _repo => widget.repository;
 
+  late Stream<List<Draft>> _draftsStream;
+
   @override
   void initState() {
     super.initState();
     _repo.purgeNonTransactionDrafts(widget.pipeline.engine);
+    _draftsStream = _repo.watchDrafts();
+  }
+
+  @override
+  void didUpdateWidget(covariant DraftInboxView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.repository != widget.repository) {
+      _draftsStream = _repo.watchDrafts();
+    }
   }
 
   Future<String> _bankName(String bankId) async {
@@ -730,7 +741,7 @@ class _DraftInboxViewState extends State<DraftInboxView> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Draft>>(
-      stream: _repo.watchDrafts(),
+      stream: _draftsStream,
       builder: (context, draftSnap) {
         final drafts = draftSnap.data ?? const <Draft>[];
         final validDrafts = drafts.where((d) {

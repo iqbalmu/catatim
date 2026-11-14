@@ -2,7 +2,7 @@ part of '../home_cards.dart';
 
 /// Banner Draf Notifikasi Bank Aktif: Tampil otomatis bila ada capture bank menunggu konfirmasi
 
-class DraftAttentionBanner extends StatelessWidget {
+class DraftAttentionBanner extends StatefulWidget {
   const DraftAttentionBanner({
     super.key,
     required this.repository,
@@ -20,6 +20,34 @@ class DraftAttentionBanner extends StatelessWidget {
   final VoidCallback onOpenAnggaran;
   final VoidCallback onOpenBon;
 
+  @override
+  State<DraftAttentionBanner> createState() => _DraftAttentionBannerState();
+}
+
+class _DraftAttentionBannerState extends State<DraftAttentionBanner> {
+  LedgerRepository get repository => widget.repository;
+  RuleSet get ruleSet => widget.ruleSet;
+  ProgressService get progress => widget.progress;
+  CapturePipeline get pipeline => widget.pipeline;
+  VoidCallback get onOpenAnggaran => widget.onOpenAnggaran;
+  VoidCallback get onOpenBon => widget.onOpenBon;
+
+  late final Stream<List<Draft>> _draftsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _draftsStream = widget.repository.watchDrafts();
+  }
+
+  @override
+  void didUpdateWidget(covariant DraftAttentionBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.repository != widget.repository) {
+      _draftsStream = widget.repository.watchDrafts();
+    }
+  }
+
   String _bankName(String bankId) {
     if (bankId == 'paste') return 'Tempelan / Struk';
     final known = ruleSet.bank(bankId)?.displayName;
@@ -32,7 +60,7 @@ class DraftAttentionBanner extends StatelessWidget {
     final q = context.q;
 
     return StreamBuilder<List<Draft>>(
-      stream: repository.watchDrafts(),
+      stream: _draftsStream,
       builder: (context, snapshot) {
         final drafts = snapshot.data ?? const [];
         return AnimatedSize(

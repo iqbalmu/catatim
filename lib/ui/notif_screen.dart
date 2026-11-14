@@ -72,6 +72,28 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
   LedgerRepository get _repo => widget.repository;
 
+  late Stream<List<Draft>> _draftsStream;
+  late Stream<Set<String>> _connectedBanksStream;
+  late Stream<List<Bon>> _bonsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _draftsStream = _repo.watchDrafts();
+    _connectedBanksStream = _repo.watchConnectedBanks();
+    _bonsStream = _repo.watchBons();
+  }
+
+  @override
+  void didUpdateWidget(covariant NotificationScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.repository != widget.repository) {
+      _draftsStream = _repo.watchDrafts();
+      _connectedBanksStream = _repo.watchConnectedBanks();
+      _bonsStream = _repo.watchBons();
+    }
+  }
+
   void _openBankAccounts() {
     Navigator.push(
       context,
@@ -119,7 +141,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     final q = context.q;
 
     return StreamBuilder<List<Draft>>(
-      stream: _repo.watchDrafts(),
+      stream: _draftsStream,
       builder: (context, draftSnap) {
         final drafts = draftSnap.data ?? const <Draft>[];
 
@@ -163,12 +185,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
               final enabled = listenerSnap.data ?? false;
 
               return StreamBuilder<Set<String>>(
-                stream: _repo.watchConnectedBanks(),
+                stream: _connectedBanksStream,
                 builder: (context, connSnap) {
                   final connected = connSnap.data ?? const <String>{};
 
                   return StreamBuilder<List<Bon>>(
-                    stream: _repo.watchBons(),
+                    stream: _bonsStream,
                     builder: (context, bonSnap) {
                       final bons = bonSnap.data ?? const <Bon>[];
                       final aging = bons

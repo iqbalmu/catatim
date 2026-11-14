@@ -46,6 +46,22 @@ class UnparsedLogsSheet extends StatefulWidget {
 class _UnparsedLogsSheetState extends State<UnparsedLogsSheet> {
   bool _isReparsing = false;
 
+  late Stream<List<CaptureLog>> _logsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _logsStream = widget.repository.watchCaptureLog(limit: 100);
+  }
+
+  @override
+  void didUpdateWidget(covariant UnparsedLogsSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.repository != widget.repository) {
+      _logsStream = widget.repository.watchCaptureLog(limit: 100);
+    }
+  }
+
   Future<void> _reparseAll() async {
     if (_isReparsing) return;
     setState(() => _isReparsing = true);
@@ -97,7 +113,7 @@ class _UnparsedLogsSheetState extends State<UnparsedLogsSheet> {
       expand: false,
       builder: (context, scrollController) {
         return StreamBuilder<List<CaptureLog>>(
-          stream: widget.repository.watchCaptureLog(limit: 100),
+          stream: _logsStream,
           builder: (context, snapshot) {
             final allLogs = snapshot.data ?? const <CaptureLog>[];
             final unparsed = allLogs

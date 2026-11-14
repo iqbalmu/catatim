@@ -32,7 +32,7 @@ part 'home_cards/recent_tx.dart';
 part 'home_cards/stacked_cards.dart';
 part 'home_cards/total_balance.dart';
 
-class HomeTopBar extends StatelessWidget {
+class HomeTopBar extends StatefulWidget {
   const HomeTopBar({
     super.key,
     required this.progress,
@@ -49,6 +49,34 @@ class HomeTopBar extends StatelessWidget {
   final RuleSet ruleSet;
   final VoidCallback onOpenAnggaran;
   final VoidCallback onOpenBon;
+
+  @override
+  State<HomeTopBar> createState() => _HomeTopBarState();
+}
+
+class _HomeTopBarState extends State<HomeTopBar> {
+  ProgressService get progress => widget.progress;
+  LedgerRepository get repository => widget.repository;
+  CapturePipeline get pipeline => widget.pipeline;
+  RuleSet get ruleSet => widget.ruleSet;
+  VoidCallback get onOpenAnggaran => widget.onOpenAnggaran;
+  VoidCallback get onOpenBon => widget.onOpenBon;
+
+  late final Stream<List<Draft>> _draftsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _draftsStream = widget.repository.watchDrafts();
+  }
+
+  @override
+  void didUpdateWidget(covariant HomeTopBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.repository != widget.repository) {
+      _draftsStream = widget.repository.watchDrafts();
+    }
+  }
 
   ({String title, String subtitle}) _getGreeting() {
     final hour = DateTime.now().hour;
@@ -163,7 +191,7 @@ class HomeTopBar extends StatelessWidget {
 
           // Notification Bell Inbox Button
           StreamBuilder<List<Draft>>(
-            stream: repository.watchDrafts(),
+            stream: _draftsStream,
             builder: (context, snapshot) {
               final draftCount = (snapshot.data ?? const []).length;
               // Label semantik untuk pembaca layar (audit H-01).

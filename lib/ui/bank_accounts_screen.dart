@@ -15,7 +15,7 @@ import 'quest.dart';
 /// halaman detailnya — saldo, baca notifikasi otomatis (khusus bank/
 /// e-wallet), ubah nama & saldo awal, dan hapus. Akun baru ditambahkan
 /// lewat tombol Tambah akun; bantuan (baca ulang, baterai) ada di bawah.
-class BankAccountsScreen extends StatelessWidget {
+class BankAccountsScreen extends StatefulWidget {
   const BankAccountsScreen({
     super.key,
     required this.repository,
@@ -26,6 +26,37 @@ class BankAccountsScreen extends StatelessWidget {
   final LedgerRepository repository;
   final CapturePipeline pipeline;
   final RuleSet ruleSet;
+
+  @override
+  State<BankAccountsScreen> createState() => _BankAccountsScreenState();
+}
+
+class _BankAccountsScreenState extends State<BankAccountsScreen> {
+  LedgerRepository get repository => widget.repository;
+  CapturePipeline get pipeline => widget.pipeline;
+  RuleSet get ruleSet => widget.ruleSet;
+
+  late Stream<Set<String>> _connectedBanksStream;
+  late Stream<List<Account>> _accountsStream;
+  late Stream<Map<int, int>> _balancesStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _connectedBanksStream = widget.repository.watchConnectedBanks();
+    _accountsStream = widget.repository.watchAccounts();
+    _balancesStream = widget.repository.watchAccountBalances();
+  }
+
+  @override
+  void didUpdateWidget(covariant BankAccountsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.repository != widget.repository) {
+      _connectedBanksStream = widget.repository.watchConnectedBanks();
+      _accountsStream = widget.repository.watchAccounts();
+      _balancesStream = widget.repository.watchAccountBalances();
+    }
+  }
 
   void _openAddSheet(BuildContext context) {
     AddAccountSheet.show(
@@ -58,18 +89,19 @@ class BankAccountsScreen extends StatelessWidget {
         showBack: true,
       ),
       body: StreamBuilder<Set<String>>(
-        stream: repository.watchConnectedBanks(),
+        stream: _connectedBanksStream,
         builder: (context, connSnap) {
           final connected = connSnap.data ?? const <String>{};
           return StreamBuilder<List<Account>>(
-            stream: repository.watchAccounts(),
+            stream: _accountsStream,
             builder: (context, accSnap) {
-              if (accSnap.connectionState == ConnectionState.waiting) {
+              if (accSnap.connectionState == ConnectionState.waiting &&
+                  !accSnap.hasData) {
                 return const QuestSkeleton(rows: 3);
               }
               final accounts = accSnap.data ?? const <Account>[];
               return StreamBuilder<Map<int, int>>(
-                stream: repository.watchAccountBalances(),
+                stream: _balancesStream,
                 builder: (context, balanceSnap) {
                   final balances = balanceSnap.data ?? const <int, int>{};
                   return ListView(
