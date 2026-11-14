@@ -9,6 +9,7 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'account_detail_screen.dart';
 import 'add_account_sheet.dart';
+import 'capture_settings/permission_onboarding_sheet.dart';
 import 'quest.dart';
 
 /// Layar Bank & Akun: daftar semua akunmu. Tap satu akun untuk membuka
@@ -31,11 +32,13 @@ class BankAccountsScreen extends StatefulWidget {
   State<BankAccountsScreen> createState() => _BankAccountsScreenState();
 }
 
-class _BankAccountsScreenState extends State<BankAccountsScreen> {
+class _BankAccountsScreenState extends State<BankAccountsScreen>
+    with WidgetsBindingObserver {
   LedgerRepository get repository => widget.repository;
   CapturePipeline get pipeline => widget.pipeline;
   RuleSet get ruleSet => widget.ruleSet;
 
+  bool _listenerEnabled = false;
   late Stream<Set<String>> _connectedBanksStream;
   late Stream<List<Account>> _accountsStream;
   late Stream<Map<int, int>> _balancesStream;
@@ -43,9 +46,45 @@ class _BankAccountsScreenState extends State<BankAccountsScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkListener();
     _connectedBanksStream = widget.repository.watchConnectedBanks();
     _accountsStream = widget.repository.watchAccounts();
     _balancesStream = widget.repository.watchAccountBalances();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkListener();
+    }
+  }
+
+  Future<void> _checkListener() async {
+    final enabled = await widget.pipeline.channel.isListenerEnabled();
+    if (!mounted) return;
+    setState(() => _listenerEnabled = enabled);
+  }
+
+  Future<void> _requestPermission() async {
+    final granted = await NotificationPermissionSheet.show(
+      context,
+      channel: pipeline.channel,
+    );
+    await _checkListener();
+    if (granted && mounted) {
+      questSnack(
+        context,
+        'Izin akses notifikasi aktif! Akun bankmu siap mencatat otomatis.',
+        icon: Icons.check_circle_outline_rounded,
+      );
+    }
   }
 
   @override
@@ -58,23 +97,25 @@ class _BankAccountsScreenState extends State<BankAccountsScreen> {
     }
   }
 
-  void _openAddSheet(BuildContext context) {
-    AddAccountSheet.show(
+  Future<void> _openAddSheet(BuildContext context) async {
+    await AddAccountSheet.show(
       context,
       repository: repository,
       pipeline: pipeline,
       ruleSet: ruleSet,
     );
+    await _checkListener();
   }
 
-  void _openDetail(BuildContext context, Account account) {
-    AccountDetailSheet.show(
+  Future<void> _openDetail(BuildContext context, Account account) async {
+    await AccountDetailSheet.show(
       context,
       repository: repository,
       pipeline: pipeline,
       ruleSet: ruleSet,
       accountId: account.id,
     );
+    await _checkListener();
   }
 
   @override
@@ -103,6 +144,11 @@ class _BankAccountsScreenState extends State<BankAccountsScreen> {
                 stream: _balancesStream,
                 builder: (context, balanceSnap) {
                   final balances = balanceSnap.data ?? const <int, int>{};
+                  final hasBlockedConnected =
+                      !_listenerEnabled &&
+                      accounts.any(
+                        (a) => a.bankId != null && connected.contains(a.bankId),
+                      );
                   return ListView(
                     padding: const EdgeInsets.fromLTRB(
                       Spacing.m,
@@ -111,6 +157,15 @@ class _BankAccountsScreenState extends State<BankAccountsScreen> {
                       Spacing.m,
                     ),
                     children: [
+                      if (hasBlockedConnected) ...[
+                        const SizedBox(height: Spacing.xs),
+                        QuestEnter(
+                          child: _PermissionWarningCard(
+                            onEnable: _requestPermission,
+                          ),
+                        ),
+                        const SizedBox(height: Spacing.s),
+                      ],
                       const QuestEnter(
                         child: QuestSectionHeader(title: 'Akunmu'),
                       ),
@@ -138,6 +193,7 @@ class _BankAccountsScreenState extends State<BankAccountsScreen> {
                               connected:
                                   accounts[i].bankId != null &&
                                   connected.contains(accounts[i].bankId),
+                              listenerEnabled: _listenerEnabled,
                               onTap: () => _openDetail(context, accounts[i]),
                             ),
                           ),
@@ -249,22 +305,94 @@ class _CareRow extends StatelessWidget {
   }
 }
 
+class _PermissionWarningCard extends StatelessWidget {
+  const _PermissionWarningCard({required this.onEnable});
+
+  final VoidCallback onEnable;
+
+  @override
+  Widget build(BuildContext context) {
+    final q = context.q;
+    return Container(
+      padding: const EdgeInsets.all(Spacing.m),
+      decoration: BoxDecoration(
+        color: q.warnTint,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: q.warn.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: q.warn.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.notifications_off_rounded,
+                  color: q.warn,
+                  size: 19,
+                ),
+              ),
+              const SizedBox(width: Spacing.s),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Izin baca notifikasi belum aktif',
+                      style: context.qTitle(14).copyWith(color: q.warn),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Akun bank sudah terhubung, tapi CatatIM belum bisa membaca notifikasi transaksi sampai izin diaktifkan.',
+                      style: context.qSmall().copyWith(
+                        color: q.text,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Spacing.sm),
+          QuestButton(
+            label: 'Nyalakan Izin Notifikasi',
+            icon: Icons.notifications_active_rounded,
+            onPressed: onEnable,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _AccountTile extends StatelessWidget {
   const _AccountTile({
     required this.account,
     required this.balance,
     required this.connected,
+    required this.listenerEnabled,
     required this.onTap,
   });
 
   final Account account;
   final int balance;
   final bool connected;
+  final bool listenerEnabled;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final q = context.q;
+    final activeCapture = connected && listenerEnabled;
+    final waitingPermission = connected && !listenerEnabled;
     return QuestPress(
       onTap: onTap,
       child: Container(
@@ -281,8 +409,10 @@ class _AccountTile extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: connected
+                color: activeCapture
                     ? q.primary.withValues(alpha: 0.12)
+                    : waitingPermission
+                    ? q.warnTint
                     : q.surface2,
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -292,7 +422,11 @@ class _AccountTile extends StatelessWidget {
                   AccountKind.ewallet => Icons.wallet_rounded,
                   AccountKind.cash => Icons.payments_rounded,
                 },
-                color: connected ? q.primary : q.text,
+                color: activeCapture
+                    ? q.primary
+                    : waitingPermission
+                    ? q.warn
+                    : q.text,
                 size: 20,
               ),
             ),
@@ -315,14 +449,26 @@ class _AccountTile extends StatelessWidget {
                         style: context.qSmall(11.5).copyWith(color: q.muted),
                       ),
                       if (connected || account.bankId != null)
-                        Text(
-                          connected ? ' · Terhubung' : ' · Belum terhubung',
-                          style: context
-                              .qSmall(11.5)
-                              .copyWith(
-                                color: connected ? q.good : q.muted,
-                                fontWeight: FontWeight.w600,
-                              ),
+                        Flexible(
+                          child: Text(
+                            activeCapture
+                                ? ' · Terhubung'
+                                : waitingPermission
+                                ? ' · Menunggu izin notifikasi'
+                                : ' · Belum terhubung',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: context
+                                .qSmall(11.5)
+                                .copyWith(
+                                  color: activeCapture
+                                      ? q.good
+                                      : waitingPermission
+                                      ? q.warn
+                                      : q.muted,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
                         ),
                     ],
                   ),

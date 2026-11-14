@@ -10,6 +10,7 @@ import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
+import 'capture_settings/permission_onboarding_sheet.dart';
 import 'quest.dart';
 
 /// Teks persetujuan akses — syarat kebijakan User Data Google Play,
@@ -78,10 +79,6 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
   bool _loaded = false;
   bool _listenerOn = false;
 
-  /// Bank yang menunggu izin nyala — koneksi dilanjutkan otomatis saat
-  /// user kembali dari Pengaturan sistem dengan izin sudah aktif.
-  BankRules? _pendingConnect;
-
   late Stream<List<Account>> _accountsStream;
   late Stream<Set<String>> _connectedBanksStream;
   late Stream<Map<int, int>> _balancesStream;
@@ -133,47 +130,20 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
 
   Future<void> _refreshListener() async {
     final on = await widget.pipeline.channel.isListenerEnabled();
-    final pending = _pendingConnect;
     if (!mounted) return;
-    if (on && pending != null) {
-      setState(() {
-        _listenerOn = true;
-        _pendingConnect = null;
-      });
-      await _completeConnect(pending);
-      return;
+    setState(() => _listenerOn = on);
+  }
+
+  Future<void> _enablePermission(BankRules bank) async {
+    final granted = await NotificationPermissionSheet.show(
+      context,
+      channel: widget.pipeline.channel,
+      bankName: bank.displayName,
+    );
+    await _refreshListener();
+    if (granted && mounted) {
+      await _completeConnect(bank);
     }
-    setState(() {
-      _listenerOn = on;
-      if (!on) _pendingConnect = null;
-    });
-  }
-
-  Future<bool> _confirmDisclosure(String title) async {
-    return await showQuestDialog<bool>(
-          context,
-          title: title,
-          content: Text(connectDisclosureText, style: context.qBody(13)),
-          actions: [
-            QuestButton(
-              label: 'Nanti dulu',
-              tone: QuestTone.secondary,
-              onPressed: () => Navigator.pop(context, false),
-            ),
-            QuestButton(
-              label: 'Mengerti, lanjut',
-              icon: Icons.check_rounded,
-              onPressed: () => Navigator.pop(context, true),
-            ),
-          ],
-        ) ==
-        true;
-  }
-
-  Future<void> _enablePermission() async {
-    final understood = await _confirmDisclosure('Izinkan baca notifikasi?');
-    if (!understood || !mounted) return;
-    await widget.pipeline.channel.openListenerSettings();
   }
 
   Future<void> _completeConnect(BankRules bank) async {
@@ -210,12 +180,15 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
       await _completeConnect(bank);
       return;
     }
-    final understood = await _confirmDisclosure(
-      'Hubungkan ${bank.displayName}?',
+    final granted = await NotificationPermissionSheet.show(
+      context,
+      channel: widget.pipeline.channel,
+      bankName: bank.displayName,
     );
-    if (!understood || !mounted) return;
-    setState(() => _pendingConnect = bank);
-    await widget.pipeline.channel.openListenerSettings();
+    await _refreshListener();
+    if (granted && mounted) {
+      await _completeConnect(bank);
+    }
   }
 
   Future<void> _save(Account account) async {
@@ -361,7 +334,9 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                                   const SizedBox(height: 2),
                                   Text(
                                     autoOn
-                                        ? '${account.kind.label} · Auto-sync aktif'
+                                        ? (_listenerOn
+                                              ? '${account.kind.label} · Auto-sync aktif'
+                                              : '${account.kind.label} · Menunggu izin notifikasi')
                                         : (account.bankId != null
                                               ? '${account.kind.label} · Belum terhubung'
                                               : '${account.kind.label} · Manual'),
@@ -370,7 +345,9 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                                       fontWeight: autoOn
                                           ? FontWeight.w700
                                           : FontWeight.w500,
-                                      color: autoOn ? q.good : q.muted,
+                                      color: autoOn
+                                          ? (_listenerOn ? q.good : q.warn)
+                                          : q.muted,
                                     ),
                                   ),
                                 ],
@@ -480,7 +457,7 @@ class _AccountDetailSheetState extends State<AccountDetailSheet>
                             active: autoOn,
                             listenerOn: _listenerOn,
                             onToggle: (on) => _toggleAutoRead(bank, on),
-                            onEnablePermission: _enablePermission,
+                            onEnablePermission: () => _enablePermission(bank),
                           ),
                         ],
 

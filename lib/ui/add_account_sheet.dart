@@ -144,21 +144,9 @@ class _AddAccountSheetState extends State<AddAccountSheet>
   void _pickBank(BankRules bank) {
     setState(() {
       _bank = bank;
-      _step = _AddStep.explain;
+      _returnedWithoutPermission = false;
+      _step = _listenerOn ? _AddStep.explain : _AddStep.permission;
     });
-  }
-
-  /// Lanjut dari penjelasan: sambung langsung bila izin sudah aktif,
-  /// kalau belum arahkan ke panduan izin.
-  void _proceedAfterExplain() {
-    if (_listenerOn) {
-      _completeConnect();
-    } else {
-      setState(() {
-        _returnedWithoutPermission = false;
-        _step = _AddStep.permission;
-      });
-    }
   }
 
   Future<void> _completeConnect() async {
@@ -493,9 +481,9 @@ class _AddAccountSheetState extends State<AddAccountSheet>
             const SizedBox(width: Spacing.s),
             Expanded(
               child: QuestButton(
-                label: 'Lanjutkan',
+                label: 'Hubungkan',
                 icon: Icons.check_rounded,
-                onPressed: _proceedAfterExplain,
+                onPressed: _completeConnect,
               ),
             ),
           ],
@@ -505,40 +493,142 @@ class _AddAccountSheetState extends State<AddAccountSheet>
   }
 
   Widget _buildPermission() {
+    final q = context.q;
     final bank = _bank!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Satu langkah terakhir', style: context.qTitle()),
-        const SizedBox(height: Spacing.xs),
-        Text(
-          'CatatIM perlu izin membaca notifikasi. Caranya:',
-          style: context.qBody(13),
+        Row(
+          children: [
+            _BankAvatar(name: bank.displayName, size: 44),
+            const SizedBox(width: Spacing.m),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Hubungkan ${bank.displayName}',
+                    style: context.qTitle(),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Agar transaksi ${bank.displayName} bisa dicatat otomatis dari notifikasi.',
+                    style: context.qSmall(12.5).copyWith(color: q.muted),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: Spacing.m),
-        const _StepRow(number: '1', text: 'Tekan "Buka Pengaturan" di bawah'),
+        if (_returnedWithoutPermission) ...[
+          Container(
+            padding: const EdgeInsets.all(Spacing.sm),
+            decoration: BoxDecoration(
+              color: q.warnTint,
+              borderRadius: BorderRadius.circular(AppRadius.tile),
+              border: Border.all(color: q.warn.withValues(alpha: 0.35)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline_rounded, color: q.warn, size: 19),
+                const SizedBox(width: Spacing.s),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Izinnya belum aktif',
+                        style: context.qTitle(13).copyWith(color: q.warn),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Yuk cari CatatIM di daftar Akses Notifikasi lalu nyalakan saklarnya, setelah itu kembali ke sini.',
+                        style: context.qSmall().copyWith(color: q.text),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: Spacing.m),
+        ],
+        Container(
+          padding: const EdgeInsets.all(Spacing.sm),
+          decoration: BoxDecoration(
+            color: q.surface2.withValues(alpha: 0.65),
+            borderRadius: BorderRadius.circular(AppRadius.tile),
+            border: Border.all(color: q.line),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Jaminan Privasi & Cara Kerja', style: context.qTitle(13)),
+              const SizedBox(height: Spacing.xs),
+              _FactRow(
+                icon: Icons.edit_note_rounded,
+                text:
+                    'Notifikasi transaksi ${bank.displayName} diubah jadi draf catatan untuk kamu tinjau.',
+              ),
+              const _FactRow(
+                icon: Icons.lock_rounded,
+                text:
+                    '100% diproses offline di HP ini. Data terenkripsi dan tidak pernah dikirim ke server mana pun.',
+              ),
+              const _FactRow(
+                icon: Icons.link_off_rounded,
+                text:
+                    'Bebas diputus atau dimatikan kapan saja dari pengaturan.',
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: Spacing.m),
+        Text(
+          'Cara mengaktifkan (3 langkah cepat):',
+          style: context.qTitle(13.5),
+        ),
+        const SizedBox(height: Spacing.xs),
+        const _StepRow(
+          number: '1',
+          text: 'Ketuk tombol "Buka Pengaturan" di bawah.',
+        ),
         const _StepRow(
           number: '2',
-          text: 'Cari CatatIM, lalu nyalakan akses notifikasinya',
+          text:
+              'Cari aplikasi CatatIM, lalu nyalakan saklar akses notifikasinya.',
         ),
         _StepRow(
           number: '3',
-          text: 'Balik ke sini: ${bank.displayName} tersambung otomatis',
+          text:
+              'Kembali ke sini, ${bank.displayName} langsung tersambung otomatis.',
         ),
-        if (_returnedWithoutPermission) ...[
-          const SizedBox(height: Spacing.s),
-          Text(
-            'Izinnya belum aktif. Nyalakan dulu, ya, lalu balik lagi ke '
-            'sini.',
-            style: context.qBody(13).copyWith(color: context.q.bad),
-          ),
-        ],
         const SizedBox(height: Spacing.m),
-        QuestButton(
-          label: 'Buka Pengaturan',
-          icon: Icons.settings_rounded,
-          onPressed: _openPermissionSettings,
+        Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: QuestButton(
+                label: 'Kembali',
+                tone: QuestTone.secondary,
+                onPressed: () => setState(() => _step = _AddStep.pick),
+              ),
+            ),
+            const SizedBox(width: Spacing.s),
+            Expanded(
+              flex: 3,
+              child: QuestButton(
+                label: _returnedWithoutPermission
+                    ? 'Buka Pengaturan Lagi'
+                    : 'Buka Pengaturan',
+                icon: Icons.settings_rounded,
+                onPressed: _openPermissionSettings,
+              ),
+            ),
+          ],
         ),
       ],
     );

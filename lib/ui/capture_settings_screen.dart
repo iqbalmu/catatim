@@ -4,19 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../capture/pipeline.dart';
-import '../core/dates_id.dart';
 import '../models.dart';
 import '../rules/rule_set.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
-import 'capture_simulator_sheet.dart';
+import 'capture_settings/capture_settings_sheets.dart';
+import 'capture_settings/permission_onboarding_sheet.dart';
 import 'quest.dart';
-import 'transaction_sheet.dart';
-import 'unparsed_logs_sheet.dart';
 
-/// Halaman Pengaturan Capture Notifikasi Bank & E-Wallet Offline
+/// Halaman Pengaturan Capture Notifikasi Bank & E-Wallet Offline.
 class CaptureSettingsScreen extends StatefulWidget {
   const CaptureSettingsScreen({
     super.key,
@@ -37,8 +35,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     with WidgetsBindingObserver {
   bool _listenerEnabled = false;
   DateTime? _lastHeartbeat;
-  int _currentTab =
-      0; // 0 = Bank & E-Wallet, 1 = Izin & Sistem, 2 = Aturan & Alat
+  int _currentTab = 0; // 0 = Bank & App, 1 = Sistem & Aturan
   late final PageController _pageCtrl = PageController(
     initialPage: _currentTab,
   );
@@ -103,7 +100,30 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     });
   }
 
+  Future<bool> _requireListenerPermission({String? bankName}) async {
+    final granted = await NotificationPermissionSheet.show(
+      context,
+      channel: widget.pipeline.channel,
+      bankName: bankName,
+    );
+    await _checkListenerStatus();
+    if (granted && mounted && bankName == null) {
+      questSnack(
+        context,
+        'Izin akses notifikasi aktif! Capture siap berjalan.',
+        icon: Icons.check_circle_outline_rounded,
+      );
+    }
+    return granted;
+  }
+
   Future<void> _toggleBank(BankRules bank, bool connected) async {
+    if (connected && !_listenerEnabled) {
+      final granted = await _requireListenerPermission(
+        bankName: bank.displayName,
+      );
+      if (!granted || !mounted) return;
+    }
     await widget.repository.setBankConnected(bank.id, connected);
     if (connected) {
       await widget.repository.ensureBankAccount(
@@ -118,14 +138,12 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
           icon: Icons.check_rounded,
         );
       }
-    } else {
-      if (mounted) {
-        questSnack(
-          context,
-          'Capture ${bank.displayName} dinonaktifkan.',
-          icon: Icons.link_off_rounded,
-        );
-      }
+    } else if (mounted) {
+      questSnack(
+        context,
+        'Capture ${bank.displayName} dinonaktifkan.',
+        icon: Icons.link_off_rounded,
+      );
     }
     // Allowlist antrean native harus mengikuti koneksi terbaru.
     await widget.pipeline.syncAllowedPackages();
@@ -135,6 +153,10 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     ({String package, String label}) app,
     bool connected,
   ) async {
+    if (connected && !_listenerEnabled) {
+      final granted = await _requireListenerPermission(bankName: app.label);
+      if (!granted || !mounted) return;
+    }
     await widget.repository.setCustomBankConnected(
       app.package,
       app.label,
@@ -153,6 +175,10 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
   }
 
   Future<void> _pickApp() async {
+    if (!_listenerEnabled) {
+      final granted = await _requireListenerPermission();
+      if (!granted || !mounted) return;
+    }
     final apps = await widget.pipeline.channel.listLaunchableApps();
     if (!mounted) return;
     if (apps.isEmpty) {
@@ -169,7 +195,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _AppPickerSheet(apps: apps, connected: existing),
+      builder: (_) => AppPickerSheet(apps: apps, connected: existing),
     );
     if (!mounted || picked == null) return;
     await _toggleCustom(picked, true);
@@ -193,19 +219,15 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         connectedBankIds: connectedBanks,
       );
       if (!mounted) return;
-      if (created > 0) {
-        questSnack(
-          context,
-          'Beres! $created draf dibuat dari notifikasi lampau.',
-          icon: Icons.history_toggle_off_rounded,
-        );
-      } else {
-        questSnack(
-          context,
-          'Belum ada notifikasi baru yang bisa diproses.',
-          icon: Icons.info_outline_rounded,
-        );
-      }
+      questSnack(
+        context,
+        created > 0
+            ? 'Beres! $created draf dibuat dari notifikasi lampau.'
+            : 'Belum ada notifikasi baru yang bisa diproses.',
+        icon: created > 0
+            ? Icons.history_toggle_off_rounded
+            : Icons.info_outline_rounded,
+      );
     } catch (_) {
       if (mounted) {
         questSnack(
@@ -250,7 +272,8 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Notifikasi yang mengandung kata kunci ini langsung dibuang, nggak jadi draf.',
+                  'Notifikasi yang mengandung kata kunci ini langsung dibuang, '
+                  'nggak jadi draf.',
                   style: context.qBody(13),
                 ),
                 const SizedBox(height: Spacing.m),
@@ -336,6 +359,38 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     }
   }
 
+  void _openHealthSheet(Set<String> connected) {
+    showSystemHealthSheet(
+      context,
+      listenerEnabled: _listenerEnabled,
+      lastHeartbeat: _lastHeartbeat,
+      connected: connected,
+      latestCaptureLogStream: _latestCaptureLogStream,
+      onOpenListenerSettings: () {
+        if (_listenerEnabled) {
+          widget.pipeline.channel.openListenerSettings();
+        } else {
+          Navigator.of(context).pop();
+          _requireListenerPermission();
+        }
+      },
+      onOpenBatterySettings: widget.pipeline.channel.openBatterySettings,
+    );
+  }
+
+  void _openDiagnosticsSheet(Set<String> connected) {
+    showDiagnosticsSheet(
+      context,
+      repository: widget.repository,
+      pipeline: widget.pipeline,
+      ruleSet: widget.ruleSet,
+      connected: connected,
+      ignoredDuplicatesStream: _ignoredDuplicatesStream,
+      onReparseLogs: _reparseLogs,
+      onPullActiveNotifications: _pullActiveNotifications,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final q = context.q;
@@ -375,21 +430,18 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                     }
                   },
                   options: const [
-                    (value: 0, label: 'Bank & E-Wallet', icon: null),
-                    (value: 1, label: 'Izin & Sistem', icon: null),
-                    (value: 2, label: 'Aturan & Alat', icon: null),
+                    (value: 0, label: 'Bank & App', icon: null),
+                    (value: 1, label: 'Sistem & Aturan', icon: null),
                   ],
                 ),
               ),
-
               Expanded(
                 child: PageView(
                   controller: _pageCtrl,
                   onPageChanged: (page) => setState(() => _currentTab = page),
                   children: [
-                    _buildBankTab(connected, q),
-                    _buildPermissionTab(connected, q),
-                    _buildRulesAndDiagnosticsTab(connected, q),
+                    _buildBankAndAppTab(connected, q),
+                    _buildSystemAndRulesTab(connected, q),
                   ],
                 ),
               ),
@@ -400,8 +452,8 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     );
   }
 
-  // Tab 0: bank & e-wallet.
-  Widget _buildBankTab(Set<String> connected, QuestPalette q) {
+  // Tab 0: Bank & App — status pill ringkas + daftar bank & Mode Belajar.
+  Widget _buildBankAndAppTab(Set<String> connected, QuestPalette q) {
     final allBanks = widget.ruleSet.banks;
     final filtered = _searchQuery.isEmpty
         ? allBanks
@@ -429,6 +481,9 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         Spacing.xl,
       ),
       children: [
+        _buildStatusPill(connected, q),
+        const SizedBox(height: Spacing.m),
+
         StreamBuilder<bool>(
           stream: _autoRecordStream,
           initialData: false,
@@ -590,29 +645,173 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     );
   }
 
+  Widget _buildStatusPill(Set<String> connected, QuestPalette q) {
+    final isOk = _listenerEnabled;
+    if (isOk) {
+      return QuestPress(
+        onTap: () => _openHealthSheet(connected),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Spacing.m,
+            vertical: 10,
+          ),
+          decoration: BoxDecoration(
+            color: q.incomingTint,
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            border: Border.all(color: q.good.withValues(alpha: 0.25)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.check_circle_rounded, color: q.good, size: 18),
+              const SizedBox(width: Spacing.s),
+              Text(
+                'Capture Aktif',
+                style: TextStyle(
+                  fontFamily: 'Nunito',
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: q.good,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '· Detail izin & kesehatan',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: context.qSmall(11.5).copyWith(color: q.muted),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: q.muted, size: 18),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final hasConnected = connected.isNotEmpty;
+    return Container(
+      padding: const EdgeInsets.all(Spacing.m),
+      decoration: BoxDecoration(
+        color: q.outgoingTint,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: q.bad.withValues(alpha: 0.28)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: q.bad.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.notifications_off_rounded,
+                  color: q.bad,
+                  size: 19,
+                ),
+              ),
+              const SizedBox(width: Spacing.s),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Perlu Izin Notifikasi',
+                      style: context.qTitle(14.5).copyWith(color: q.bad),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      hasConnected
+                          ? 'Ada ${connected.length} akun terhubung, tapi izin akses notifikasi belum aktif. Nyalakan agar transaksi otomatis tercatat.'
+                          : 'Aktifkan izin baca notifikasi atau pilih bank di bawah untuk mulai mencatat transaksi otomatis (100% offline di HP ini).',
+                      style: context.qSmall().copyWith(
+                        color: q.body,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Spacing.sm),
+          Row(
+            children: [
+              Expanded(
+                child: QuestButton(
+                  label: 'Cek Kesehatan',
+                  tone: QuestTone.secondary,
+                  onPressed: () => _openHealthSheet(connected),
+                ),
+              ),
+              const SizedBox(width: Spacing.s),
+              Expanded(
+                child: QuestButton(
+                  label: 'Aktifkan Izin',
+                  icon: Icons.notifications_active_rounded,
+                  onPressed: _requireListenerPermission,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _bankTile(BankRules bank, bool isConnected, QuestPalette q) {
     final kind = _accountKindForBank(bank);
-    final IconData icon = kind == AccountKind.ewallet
+    final icon = kind == AccountKind.ewallet
         ? Icons.phone_android_rounded
         : Icons.account_balance_rounded;
+    final String subtitleText;
+    final Color subtitleColor;
+    if (!isConnected) {
+      subtitleText = _listenerEnabled
+          ? 'Ketuk saklar untuk menghubungkan'
+          : 'Ketuk saklar untuk panduan izin & hubungkan';
+      subtitleColor = q.muted;
+    } else if (!_listenerEnabled) {
+      subtitleText = 'Menunggu izin notifikasi';
+      subtitleColor = q.warn;
+    } else {
+      subtitleText = 'Aktif dicatat otomatis';
+      subtitleColor = q.good;
+    }
 
     return QuestListTile(
       leading: Container(
         width: 36,
         height: 36,
         decoration: BoxDecoration(
-          color: isConnected ? q.primary.withValues(alpha: 0.12) : q.surface2,
+          color: isConnected
+              ? (_listenerEnabled
+                    ? q.primary.withValues(alpha: 0.12)
+                    : q.warnTint)
+              : q.surface2,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, color: isConnected ? q.primary : q.muted, size: 19),
+        child: Icon(
+          icon,
+          color: isConnected
+              ? (_listenerEnabled ? q.primary : q.warn)
+              : q.muted,
+          size: 19,
+        ),
       ),
       title: Text(bank.displayName, style: context.qTitle(14.5)),
       subtitle: Text(
-        isConnected ? 'Aktif dicatat otomatis' : 'Tidak aktif',
+        subtitleText,
         style: TextStyle(
           fontSize: 11.5,
           fontWeight: FontWeight.w600,
-          color: isConnected ? q.good : q.muted,
+          color: subtitleColor,
         ),
       ),
       trailing: QuestSwitch(
@@ -623,10 +822,10 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     );
   }
 
-  // Tab 1: izin & sistem.
-  Widget _buildPermissionTab(Set<String> connected, QuestPalette q) {
+  // Tab 1: Sistem & Aturan — izin ringkas, pola abaikan, template, & akses diagnostik.
+  Widget _buildSystemAndRulesTab(Set<String> connected, QuestPalette q) {
     return ListView(
-      key: const PageStorageKey('capture_tab_permissions'),
+      key: const PageStorageKey('capture_tab_system_rules'),
       padding: const EdgeInsets.fromLTRB(
         Spacing.m,
         Spacing.xs,
@@ -634,542 +833,63 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         Spacing.xl,
       ),
       children: [
-        const QuestSectionHeader(title: 'Kesehatan Penangkap (Lampu Sehat)'),
-        _buildLampuSehatCard(connected, q),
-        const SizedBox(height: Spacing.m),
-
-        const QuestSectionHeader(title: 'Izin Akses Notifikasi'),
-        QuestCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: _listenerEnabled ? q.incomingTint : q.outgoingTint,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(
-                      _listenerEnabled
-                          ? Icons.notifications_active_rounded
-                          : Icons.notifications_off_rounded,
-                      color: _listenerEnabled ? q.good : q.bad,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: Spacing.s),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _listenerEnabled
-                              ? 'Akses Notifikasi Aktif'
-                              : 'Akses Notifikasi Belum Aktif',
-                          style: context
-                              .qTitle(15)
-                              .copyWith(
-                                color: _listenerEnabled ? q.good : q.bad,
-                              ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _listenerEnabled
-                              ? 'CatatIM bisa membaca notifikasi bank.'
-                              : 'Izin ini biar CatatIM bisa nangkep transaksi dari notifikasi.',
-                          style: context.qSmall().copyWith(color: q.muted),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: Spacing.m),
-              if (!_listenerEnabled) ...[
-                QuestButton(
-                  label: 'Buka Pengaturan Izin Android',
-                  icon: Icons.settings_rounded,
-                  onPressed: widget.pipeline.channel.openListenerSettings,
-                ),
-              ] else ...[
-                TextButton.icon(
-                  style: TextButton.styleFrom(
-                    alignment: Alignment.centerLeft,
-                    padding: EdgeInsets.zero,
-                    foregroundColor: q.muted,
-                  ),
-                  icon: const Icon(Icons.tune_rounded, size: 16),
-                  label: const Text(
-                    'Cek ulang di Pengaturan Sistem',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                  ),
-                  onPressed: widget.pipeline.channel.openListenerSettings,
-                ),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: Spacing.m),
-
-        const QuestSectionHeader(title: 'Ketahanan Latar Belakang'),
-        QuestCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: q.surface2,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.battery_saver_rounded,
-                      color: q.text,
-                      size: 18,
-                    ),
-                  ),
-                  const SizedBox(width: Spacing.s),
-                  Expanded(
-                    child: Text(
-                      'Optimasi Baterai HP',
-                      style: context.qTitle(14.5),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: Spacing.xs),
-              Text(
-                'Setel baterai ke "Tidak Dibatasi" agar Android tidak mematikan layanan saat layar mati.',
-                style: context.qSmall().copyWith(color: q.muted),
-              ),
-              const SizedBox(height: Spacing.s),
-              QuestButton(
-                label: 'Buka Pengaturan Baterai Android',
-                icon: Icons.open_in_new_rounded,
-                tone: QuestTone.secondary,
-                onPressed: widget.pipeline.channel.openBatterySettings,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: Spacing.m),
-
-        const QuestSectionHeader(title: 'Panduan Khusus Vendor HP'),
-        _buildVendorGuideCard(q),
-      ],
-    );
-  }
-
-  Widget _buildLampuSehatCard(Set<String> connected, QuestPalette q) {
-    return StreamBuilder<CaptureLog?>(
-      stream: _latestCaptureLogStream,
-      builder: (context, snapshot) {
-        final latestLog = snapshot.data;
-        final now = DateTime.now();
-        final hasConnected = connected.isNotEmpty;
-        final daysSinceCapture = latestLog != null
-            ? now.difference(latestLog.postedAt).inDays
-            : null;
-        final bool isStale =
-            hasConnected &&
-            ((daysSinceCapture != null && daysSinceCapture >= 7) ||
-                (latestLog == null &&
-                    _lastHeartbeat != null &&
-                    now.difference(_lastHeartbeat!).inDays >= 7));
-
-        final Color statusColor;
-        final String statusTitle;
-        final String statusDesc;
-        final IconData statusIcon;
-
-        if (!_listenerEnabled) {
-          statusColor = q.bad;
-          statusTitle = 'Tidak aktif';
-          statusDesc = 'Akses notifikasi belum diaktifkan di Android.';
-          statusIcon = Icons.error_outline_rounded;
-        } else if (isStale) {
-          statusColor = q.warn;
-          statusTitle = 'Perlu diperiksa';
-          statusDesc =
-              'Belum ada notifikasi masuk selama ${daysSinceCapture ?? '>7'} hari. Layanan mungkin dimatikan oleh penghemat baterai.';
-          statusIcon = Icons.warning_amber_rounded;
-        } else if (_lastHeartbeat == null && latestLog == null) {
-          statusColor = q.primary;
-          statusTitle = 'Menunggu';
-          statusDesc = 'Aktif. Menunggu notifikasi transaksi pertama.';
-          statusIcon = Icons.hourglass_empty_rounded;
-        } else {
-          statusColor = q.good;
-          statusTitle = 'Berjalan normal';
-          statusDesc = 'Notifikasi bank terbaca normal.';
-          statusIcon = Icons.check_circle_outline_rounded;
-        }
-
-        return QuestCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(statusIcon, color: statusColor, size: 20),
-                  ),
-                  const SizedBox(width: Spacing.s),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              statusTitle,
-                              style: context
-                                  .qTitle(15)
-                                  .copyWith(color: statusColor),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          statusDesc,
-                          style: context.qSmall().copyWith(color: q.muted),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: Spacing.m),
-              Column(
-                children: [
-                  _buildHealthMetricRow(
-                    q: q,
-                    label: 'Aktivitas terakhir',
-                    value: _lastHeartbeat != null
-                        ? idTimeAgo(_lastHeartbeat!, now)
-                        : 'Belum tercatat',
-                  ),
-                  Divider(
-                    height: Spacing.m,
-                    color: q.line.withValues(alpha: 0.4),
-                  ),
-                  _buildHealthMetricRow(
-                    q: q,
-                    label: 'Notifikasi terakhir',
-                    value: latestLog != null
-                        ? '${latestLog.packageName.split('.').last} • ${idTimeAgo(latestLog.postedAt, now)}'
-                        : 'Belum ada',
-                  ),
-                  Divider(
-                    height: Spacing.m,
-                    color: q.line.withValues(alpha: 0.4),
-                  ),
-                  _buildHealthMetricRow(
-                    q: q,
-                    label: 'Bank terhubung',
-                    value: hasConnected
-                        ? '${connected.length} bank aktif'
-                        : 'Belum ada bank terhubung',
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildHealthMetricRow({
-    required QuestPalette q,
-    required String label,
-    required String value,
-  }) {
-    return Row(
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Nunito',
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: q.muted,
-          ),
-        ),
-        const Spacer(),
-        Text(
-          value,
-          style: TextStyle(
-            fontFamily: 'Nunito',
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: q.text,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildVendorGuideCard(QuestPalette q) {
-    return QuestCard(
-      padding: EdgeInsets.zero,
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          key: const PageStorageKey('vendor_guide_expansion_tile'),
-          shape: const Border(),
-          collapsedShape: const Border(),
-          leading: Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: q.primaryLight,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              Icons.phone_android_rounded,
-              color: q.primary,
-              size: 20,
-            ),
-          ),
-          title: Text(
-            'Panduan Khusus per Merk HP',
-            style: context.qTitle(14.5),
-          ),
-          subtitle: Text(
-            'Xiaomi, Samsung, OPPO, Realme, & Vivo',
-            style: context.qSmall(11.5).copyWith(color: q.muted),
-          ),
-          childrenPadding: const EdgeInsets.fromLTRB(
-            Spacing.m,
-            0,
-            Spacing.m,
-            Spacing.m,
-          ),
-          children: [
-            Divider(height: 1, thickness: 1, color: q.line),
-            const SizedBox(height: Spacing.s),
-            _vendorItem(
-              brand: 'Xiaomi / POCO / Redmi (MIUI / HyperOS)',
-              steps: [
-                'Buka Info Aplikasi CatatIM → aktifkan "Mulai Otomatis" (Autostart).',
-                'Di Penghemat Baterai → pilih "Tidak Ada Pembatasan".',
-                'Buka Recent Apps → tekan & tahan kartu CatatIM → tap ikon "Gembok".',
-              ],
-              q: q,
-            ),
-            const SizedBox(height: Spacing.m),
-            _vendorItem(
-              brand: 'Samsung (One UI)',
-              steps: [
-                'Buka Pengaturan HP → Aplikasi → CatatIM → Baterai.',
-                'Pilih opsi "Tidak Dibatasi" (Unrestricted).',
-                'Pastikan CatatIM tidak ada di daftar "Aplikasi yang Dinonaktifkan" (Sleeping Apps).',
-              ],
-              q: q,
-            ),
-            const SizedBox(height: Spacing.m),
-            _vendorItem(
-              brand: 'OPPO & Realme (ColorOS / Realme UI)',
-              steps: [
-                'Buka Info Aplikasi CatatIM → Penggunaan Baterai → izinkan "Aktivitas di Latar Belakang" & "Mulai Otomatis".',
-                'Buka Recent Apps → tap titik tiga di kartu CatatIM → pilih "Kunci" (Lock).',
-              ],
-              q: q,
-            ),
-            const SizedBox(height: Spacing.m),
-            _vendorItem(
-              brand: 'Vivo & iQOO (Funtouch OS / OriginOS)',
-              steps: [
-                'Buka Pengaturan HP → Baterai → Konsumsi Daya Latar Belakang Tinggi → izinkan CatatIM.',
-                'Di Pengaturan Aplikasi / Izin → aktifkan "Mulai Otomatis".',
-              ],
-              q: q,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _vendorItem({
-    required String brand,
-    required List<String> steps,
-    required QuestPalette q,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          brand,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
-            color: q.primaryText,
-          ),
-        ),
-        const SizedBox(height: 4),
-        for (var i = 0; i < steps.length; i++)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 3),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${i + 1}. ',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                    color: q.muted,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    steps[i],
-                    style: context.qSmall(11.5).copyWith(height: 1.3),
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-
-  // Tab 2: aturan & alat.
-  Widget _buildRulesAndDiagnosticsTab(Set<String> connected, QuestPalette q) {
-    return ListView(
-      key: const PageStorageKey('capture_tab_rules'),
-      padding: const EdgeInsets.fromLTRB(
-        Spacing.m,
-        Spacing.xs,
-        Spacing.m,
-        Spacing.xl,
-      ),
-      children: [
-        const QuestSectionHeader(title: 'Alat Diagnostik & Pemulihan'),
+        const QuestSectionHeader(title: 'Izin & Kesehatan'),
         QuestCard(
           padding: EdgeInsets.zero,
           child: Column(
             children: [
               QuestListTile(
-                leading: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: q.primaryLight,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    Icons.refresh_rounded,
-                    color: q.primary,
-                    size: 20,
-                  ),
+                leading: Icon(
+                  _listenerEnabled
+                      ? Icons.notifications_active_rounded
+                      : Icons.notifications_off_rounded,
+                  color: _listenerEnabled ? q.good : q.bad,
                 ),
                 title: Text(
-                  'Pindai Ulang Notifikasi Lampau',
+                  'Izin Akses Notifikasi',
                   style: context.qTitle(14.5),
                 ),
                 subtitle: Text(
-                  'Coba proses ulang notifikasi yang belum terbaca',
-                  style: context.qSmall(11.5),
+                  _listenerEnabled
+                      ? 'Aktif · Ketuk untuk cek pengaturan'
+                      : 'Belum aktif · Ketuk untuk mengaktifkan',
+                  style: context
+                      .qSmall(11.5)
+                      .copyWith(color: _listenerEnabled ? q.good : q.bad),
                 ),
-                onTap: () => _reparseLogs(connected),
+                trailing: const Icon(Icons.open_in_new_rounded, size: 18),
+                onTap: () {
+                  if (_listenerEnabled) {
+                    widget.pipeline.channel.openListenerSettings();
+                  } else {
+                    _requireListenerPermission();
+                  }
+                },
               ),
               Divider(height: 1, thickness: 1, color: q.line),
               QuestListTile(
-                leading: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: q.primaryLight,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    Icons.download_rounded,
-                    color: q.primary,
-                    size: 20,
-                  ),
-                ),
-                title: Text(
-                  'Tarik Notifikasi yang Masih Tayang',
-                  style: context.qTitle(14.5),
-                ),
+                leading: Icon(Icons.battery_saver_rounded, color: q.text),
+                title: Text('Optimasi Baterai', style: context.qTitle(14.5)),
                 subtitle: Text(
-                  'Tarik notifikasi bank yang ada di bar status saat ini',
-                  style: context.qSmall(11.5),
+                  'Setel ke "Tidak Dibatasi"',
+                  style: context.qSmall(11.5).copyWith(color: q.muted),
                 ),
-                onTap: _pullActiveNotifications,
+                trailing: const Icon(Icons.open_in_new_rounded, size: 18),
+                onTap: widget.pipeline.channel.openBatterySettings,
               ),
               Divider(height: 1, thickness: 1, color: q.line),
               QuestListTile(
-                leading: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: q.surface2,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    Icons.mark_email_unread_rounded,
-                    color: q.text,
-                    size: 20,
-                  ),
-                ),
+                leading: Icon(Icons.monitor_heart_rounded, color: q.primary),
                 title: Text(
-                  'Buka Log Notifikasi Belum Terbaca',
+                  'Lampu Sehat & Panduan Vendor',
                   style: context.qTitle(14.5),
                 ),
                 subtitle: Text(
-                  'Lihat notifikasi mentah yang gagal terbaca untuk dilatih',
-                  style: context.qSmall(11.5),
+                  'Status aktivitas & tips Xiaomi, Samsung, OPPO, Vivo',
+                  style: context.qSmall(11.5).copyWith(color: q.muted),
                 ),
-                onTap: () => UnparsedLogsSheet.show(
-                  context,
-                  repository: widget.repository,
-                  pipeline: widget.pipeline,
-                  ruleSet: widget.ruleSet,
-                ),
-              ),
-              Divider(height: 1, thickness: 1, color: q.line),
-              QuestListTile(
-                leading: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: q.surface2,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.science_rounded, color: q.accent, size: 20),
-                ),
-                title: Text(
-                  'Simulator & Validasi Notifikasi',
-                  style: context.qTitle(14.5),
-                ),
-                subtitle: Text(
-                  'Uji coba parsing format notifikasi bank tanpa transaksi nyata',
-                  style: context.qSmall(11.5),
-                ),
-                onTap: () => CaptureSimulatorSheet.show(
-                  context,
-                  repository: widget.repository,
-                  pipeline: widget.pipeline,
-                  ruleSet: widget.ruleSet,
-                ),
+                trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+                onTap: () => _openHealthSheet(connected),
               ),
             ],
           ),
@@ -1178,11 +898,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
 
         Row(
           children: [
-            const Expanded(
-              child: QuestSectionHeader(
-                title: 'Pola Notifikasi yang Diabaikan',
-              ),
-            ),
+            const Expanded(child: QuestSectionHeader(title: 'Pola Diabaikan')),
             QuestPress(
               onTap: _showAddIgnoredPatternDialog,
               child: Container(
@@ -1210,32 +926,16 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
             ),
           ],
         ),
-        Text(
-          'Notifikasi dengan kata kunci di bawah langsung dibuang, nggak jadi draf.',
-          style: context.qSmall().copyWith(color: q.muted),
-        ),
-        const SizedBox(height: Spacing.xs),
         StreamBuilder<List<IgnoredPattern>>(
           stream: _ignoredPatternsStream,
           builder: (_, snap) {
             final ignoredList = snap.data ?? const <IgnoredPattern>[];
             if (ignoredList.isEmpty) {
               return QuestCard(
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.filter_alt_off_rounded,
-                      color: q.muted,
-                      size: 20,
-                    ),
-                    const SizedBox(width: Spacing.s),
-                    Expanded(
-                      child: Text(
-                        'Belum ada pola abaikan. Tap "Tambah" untuk memblokir kata kunci promo/spam.',
-                        style: context.qSmall().copyWith(color: q.muted),
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'Belum ada pola abaikan. Tap "Tambah" untuk memblokir kata '
+                  'kunci promo atau spam.',
+                  style: context.qSmall().copyWith(color: q.muted),
                 ),
               );
             }
@@ -1246,18 +946,10 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                 children: [
                   for (var i = 0; i < ignoredList.length; i++) ...[
                     QuestListTile(
-                      leading: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: q.surface2,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.block_rounded,
-                          color: q.bad,
-                          size: 19,
-                        ),
+                      leading: Icon(
+                        Icons.block_rounded,
+                        color: q.bad,
+                        size: 19,
                       ),
                       title: Text(
                         ignoredList[i].label,
@@ -1265,7 +957,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                       ),
                       subtitle: Text(
                         'Pola: "${ignoredList[i].pattern}"'
-                        '${ignoredList[i].bankId != null ? ' · Bank: ${ignoredList[i].bankId}' : ''}',
+                        '${ignoredList[i].bankId != null ? ' · ${ignoredList[i].bankId}' : ''}',
                         style: TextStyle(fontSize: 11.5, color: q.muted),
                       ),
                       trailing: IconButton(
@@ -1275,36 +967,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                           size: 20,
                         ),
                         tooltip: 'Hapus Pola Abaikan',
-                        onPressed: () async {
-                          final confirmed = await showQuestDialog<bool>(
-                            context,
-                            title: 'Hapus Pola Abaikan?',
-                            content: Text(
-                              'Pola "${ignoredList[i].label}" dihapus. Notifikasi dengan kata kunci ini bakal diproses ulang.',
-                              style: context.qBody(13),
-                            ),
-                            actions: [
-                              QuestButton(
-                                label: 'Batal',
-                                tone: QuestTone.secondary,
-                                onPressed: () => Navigator.pop(context, false),
-                              ),
-                              QuestButton(
-                                label: 'Hapus',
-                                tone: QuestTone.danger,
-                                onPressed: () => Navigator.pop(context, true),
-                              ),
-                            ],
-                          );
-                          if (confirmed == true) {
-                            await widget.repository.deleteIgnoredPattern(
-                              ignoredList[i].id,
-                            );
-                            await widget.pipeline.refreshRules();
-                            if (!mounted) return;
-                            questSnack(context, 'Pola abaikan dihapus.');
-                          }
-                        },
+                        onPressed: () => _confirmDeleteIgnored(ignoredList[i]),
                       ),
                     ),
                     if (i < ignoredList.length - 1)
@@ -1317,12 +980,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         ),
         const SizedBox(height: Spacing.m),
 
-        const QuestSectionHeader(title: 'Aturan & Template Kustom'),
-        Text(
-          'Template yang kamu buat dari penyesuaian draf/log. Pola ini diprioritaskan saat memproses notifikasi bank.',
-          style: context.qSmall().copyWith(color: q.muted),
-        ),
-        const SizedBox(height: Spacing.xs),
+        const QuestSectionHeader(title: 'Template Kustom'),
         StreamBuilder<List<CustomTemplate>>(
           stream: _customTemplatesStream,
           builder: (_, snap) {
@@ -1330,7 +988,8 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
             if (customTemplates.isEmpty) {
               return QuestCard(
                 child: Text(
-                  'Belum ada template kustom. Template kebentuk otomatis pas kamu atur ulang pembacaan notifikasi mentah.',
+                  'Belum ada template kustom. Template otomatis dibuat saat '
+                  'kamu melatih pembacaan notifikasi.',
                   style: context.qSmall().copyWith(color: q.muted),
                 ),
               );
@@ -1342,18 +1001,10 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                 children: [
                   for (var i = 0; i < customTemplates.length; i++) ...[
                     QuestListTile(
-                      leading: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: q.surface2,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.tune_rounded,
-                          color: q.primary,
-                          size: 19,
-                        ),
+                      leading: Icon(
+                        Icons.tune_rounded,
+                        color: q.primary,
+                        size: 19,
                       ),
                       title: Text(
                         customTemplates[i].template.name,
@@ -1361,8 +1012,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                       ),
                       subtitle: Text(
                         '${widget.ruleSet.bank(customTemplates[i].bankId)?.displayName ?? customTemplates[i].bankId} · '
-                        '${customTemplates[i].template.direction == Direction.incoming ? 'Masuk' : 'Keluar'} · '
-                        'Kata kunci: ${[...customTemplates[i].template.matchAll, ...customTemplates[i].template.matchAny].join(', ')}',
+                        '${customTemplates[i].template.direction == Direction.incoming ? 'Masuk' : 'Keluar'}',
                         style: TextStyle(fontSize: 11.5, color: q.muted),
                       ),
                       trailing: IconButton(
@@ -1372,36 +1022,8 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
                           size: 20,
                         ),
                         tooltip: 'Hapus Template',
-                        onPressed: () async {
-                          final confirmed = await showQuestDialog<bool>(
-                            context,
-                            title: 'Hapus Template Aturan?',
-                            content: Text(
-                              'Aturan "${customTemplates[i].template.name}" bakal dihapus.',
-                              style: context.qBody(13),
-                            ),
-                            actions: [
-                              QuestButton(
-                                label: 'Batal',
-                                tone: QuestTone.secondary,
-                                onPressed: () => Navigator.pop(context, false),
-                              ),
-                              QuestButton(
-                                label: 'Hapus',
-                                tone: QuestTone.danger,
-                                onPressed: () => Navigator.pop(context, true),
-                              ),
-                            ],
-                          );
-                          if (confirmed == true) {
-                            await widget.repository.deleteCustomTemplate(
-                              customTemplates[i].id,
-                            );
-                            await widget.pipeline.refreshRules();
-                            if (!mounted) return;
-                            questSnack(context, 'Template aturan dihapus.');
-                          }
-                        },
+                        onPressed: () =>
+                            _confirmDeleteTemplate(customTemplates[i]),
                       ),
                     ),
                     if (i < customTemplates.length - 1)
@@ -1414,215 +1036,83 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         ),
         const SizedBox(height: Spacing.m),
 
-        StreamBuilder<List<CaptureLog>>(
-          stream: _ignoredDuplicatesStream,
-          builder: (context, dupSnap) {
-            final dups = dupSnap.data ?? const <CaptureLog>[];
-            if (dups.isEmpty) return const SizedBox.shrink();
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const QuestSectionHeader(title: 'Duplikat yang Diabaikan'),
-                Text(
-                  'Dianggap duplikat (bank, nominal, & arah sama dalam 2 menit), jadi nggak dibuat dua kali. Geser ke kiri buat hapus.',
-                  style: context.qSmall().copyWith(color: q.muted),
-                ),
-                const SizedBox(height: Spacing.xs),
-                QuestCard(
-                  padding: EdgeInsets.zero,
-                  child: Column(
-                    children: [
-                      for (var i = 0; i < dups.length; i++) ...[
-                        Dismissible(
-                          key: ValueKey('ignored-dup-${dups[i].id}'),
-                          direction: DismissDirection.endToStart,
-                          onDismissed: (_) =>
-                              widget.repository.deleteCaptureLog(dups[i].id),
-                          background: Container(
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: Spacing.m),
-                            decoration: BoxDecoration(
-                              color: q.bad.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(
-                                AppRadius.card,
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.delete_outline_rounded,
-                              color: q.bad,
-                            ),
-                          ),
-                          child: QuestListTile(
-                            leading: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: q.surface2,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Icon(
-                                Icons.copy_rounded,
-                                color: q.muted,
-                                size: 19,
-                              ),
-                            ),
-                            title: Text(
-                              dups[i].body,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: context.qTitle(14),
-                            ),
-                            subtitle: Text(
-                              '${idDateTime(dups[i].postedAt)} · ${dups[i].packageName}',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
-                                color: q.muted,
-                              ),
-                            ),
-                            onTap: () => TransactionSheet.show(
-                              context,
-                              widget.repository,
-                            ),
-                          ),
-                        ),
-                        if (i < dups.length - 1)
-                          Divider(height: 1, thickness: 1, color: q.line),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            );
-          },
+        const QuestSectionHeader(title: 'Diagnostik'),
+        QuestCard(
+          padding: EdgeInsets.zero,
+          child: QuestListTile(
+            leading: Icon(Icons.build_circle_outlined, color: q.accent),
+            title: Text(
+              'Alat Diagnostik & Pemulihan',
+              style: context.qTitle(14.5),
+            ),
+            subtitle: Text(
+              'Pindai ulang, tarik notif, log mentah, simulator, duplikat',
+              style: context.qSmall(11.5).copyWith(color: q.muted),
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded, size: 20),
+            onTap: () => _openDiagnosticsSheet(connected),
+          ),
         ),
       ],
     );
   }
-}
 
-/// Sheet pilih app terpasang untuk Mode Belajar: pencarian + daftar,
-/// app yang sudah terhubung ditandai.
-class _AppPickerSheet extends StatefulWidget {
-  const _AppPickerSheet({required this.apps, required this.connected});
-
-  final List<({String package, String label})> apps;
-  final List<({String package, String label})> connected;
-
-  @override
-  State<_AppPickerSheet> createState() => _AppPickerSheetState();
-}
-
-class _AppPickerSheetState extends State<_AppPickerSheet> {
-  String _query = '';
-
-  @override
-  Widget build(BuildContext context) {
-    final q = context.q;
-    final lower = _query.toLowerCase();
-    final filtered = widget.apps
-        .where(
-          (a) =>
-              a.label.toLowerCase().contains(lower) ||
-              a.package.toLowerCase().contains(lower),
-        )
-        .toList();
-    final connectedPkgs = widget.connected.map((c) => c.package).toSet();
-    final bottomInset = MediaQuery.viewInsetsOf(context);
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomInset.bottom),
-      child: Container(
-        height: (MediaQuery.sizeOf(context).height * 0.75 - bottomInset.bottom)
-            .clamp(180.0, double.infinity),
-        decoration: BoxDecoration(
-          color: q.bg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            const QuestGrabber(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                Spacing.m,
-                0,
-                Spacing.m,
-                Spacing.s,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Hubungkan App', style: context.qTitle(15)),
-                  const SizedBox(height: Spacing.xs),
-                  Text(
-                    'Pilih app bank/e-wallet. Notifikasinya bakal jadi draf '
-                    'yang kamu putuskan.',
-                    style: context.qSmall().copyWith(color: q.muted),
-                  ),
-                  const SizedBox(height: Spacing.s),
-                  TextField(
-                    onChanged: (v) => setState(() => _query = v),
-                    decoration: const InputDecoration(
-                      hintText: 'Cari nama app…',
-                      prefixIcon: Icon(Icons.search_rounded, size: 20),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: filtered.isEmpty
-                  ? Center(
-                      child: Text(
-                        'Belum ada app yang cocok.',
-                        style: context.qSmall().copyWith(color: q.muted),
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: filtered.length,
-                      itemBuilder: (_, i) {
-                        final app = filtered[i];
-                        final isOn = connectedPkgs.contains(app.package);
-                        return QuestListTile(
-                          onTap: () => Navigator.pop(context, app),
-                          leading: Container(
-                            width: 36,
-                            height: 36,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: isOn ? q.incomingTint : q.surface2,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Text(
-                              app.label.characters.first.toUpperCase(),
-                              style: TextStyle(
-                                color: isOn ? q.good : q.text,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                          title: Text(app.label, style: context.qTitle(13.5)),
-                          subtitle: Text(
-                            app.package,
-                            style: context.qSmall(10).copyWith(color: q.muted),
-                          ),
-                          trailing: isOn
-                              ? Icon(
-                                  Icons.link_rounded,
-                                  size: 18,
-                                  color: q.good,
-                                )
-                              : const Icon(
-                                  Icons.chevron_right_rounded,
-                                  size: 22,
-                                ),
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
+  Future<void> _confirmDeleteIgnored(IgnoredPattern pattern) async {
+    final confirmed = await showQuestDialog<bool>(
+      context,
+      title: 'Hapus Pola Abaikan?',
+      content: Text(
+        'Pola "${pattern.label}" dihapus. Notifikasi dengan kata kunci ini '
+        'bakal diproses ulang.',
+        style: context.qBody(13),
       ),
+      actions: [
+        QuestButton(
+          label: 'Batal',
+          tone: QuestTone.secondary,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        QuestButton(
+          label: 'Hapus',
+          tone: QuestTone.danger,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
     );
+    if (confirmed == true) {
+      await widget.repository.deleteIgnoredPattern(pattern.id);
+      await widget.pipeline.refreshRules();
+      if (!mounted) return;
+      questSnack(context, 'Pola abaikan dihapus.');
+    }
+  }
+
+  Future<void> _confirmDeleteTemplate(CustomTemplate customTemplate) async {
+    final confirmed = await showQuestDialog<bool>(
+      context,
+      title: 'Hapus Template Aturan?',
+      content: Text(
+        'Aturan "${customTemplate.template.name}" bakal dihapus.',
+        style: context.qBody(13),
+      ),
+      actions: [
+        QuestButton(
+          label: 'Batal',
+          tone: QuestTone.secondary,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        QuestButton(
+          label: 'Hapus',
+          tone: QuestTone.danger,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
+    );
+    if (confirmed == true) {
+      await widget.repository.deleteCustomTemplate(customTemplate.id);
+      await widget.pipeline.refreshRules();
+      if (!mounted) return;
+      questSnack(context, 'Template aturan dihapus.');
+    }
   }
 }

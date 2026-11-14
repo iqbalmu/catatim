@@ -9,8 +9,8 @@ import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
-import 'bank_accounts_screen.dart';
 import 'bon_screen.dart';
+import 'capture_settings/permission_onboarding_sheet.dart';
 import 'draft_inbox_sheet.dart';
 import 'quest.dart';
 
@@ -64,11 +64,11 @@ class NotificationScreen extends StatefulWidget {
   State<NotificationScreen> createState() => _NotificationScreenState();
 }
 
-class _NotificationScreenState extends State<NotificationScreen> {
+class _NotificationScreenState extends State<NotificationScreen>
+    with WidgetsBindingObserver {
   late int _selectedTab = widget.initialTab;
 
-  late final Future<bool> _listenerEnabled = widget.pipeline.channel
-      .isListenerEnabled();
+  bool _listenerEnabled = false;
 
   LedgerRepository get _repo => widget.repository;
 
@@ -79,9 +79,30 @@ class _NotificationScreenState extends State<NotificationScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkListener();
     _draftsStream = _repo.watchDrafts();
     _connectedBanksStream = _repo.watchConnectedBanks();
     _bonsStream = _repo.watchBons();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkListener();
+    }
+  }
+
+  Future<void> _checkListener() async {
+    final enabled = await widget.pipeline.channel.isListenerEnabled();
+    if (!mounted) return;
+    setState(() => _listenerEnabled = enabled);
   }
 
   @override
@@ -94,17 +115,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
   }
 
-  void _openBankAccounts() {
-    Navigator.push(
+  Future<void> _requestPermission() async {
+    final granted = await NotificationPermissionSheet.show(
       context,
-      MaterialPageRoute(
-        builder: (_) => BankAccountsScreen(
-          repository: _repo,
-          pipeline: widget.pipeline,
-          ruleSet: widget.ruleSet,
-        ),
-      ),
+      channel: widget.pipeline.channel,
     );
+    await _checkListener();
+    if (granted && mounted) {
+      questSnack(
+        context,
+        'Izin akses notifikasi aktif! Capture siap berjalan.',
+        icon: Icons.check_circle_outline_rounded,
+      );
+    }
   }
 
   Future<void> _discardAllDrafts(List<Draft> drafts) async {
@@ -179,130 +202,121 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 ),
             ],
           ),
-          body: FutureBuilder<bool>(
-            future: _listenerEnabled,
-            builder: (context, listenerSnap) {
-              final enabled = listenerSnap.data ?? false;
+          body: StreamBuilder<Set<String>>(
+            stream: _connectedBanksStream,
+            builder: (context, connSnap) {
+              final connected = connSnap.data ?? const <String>{};
 
-              return StreamBuilder<Set<String>>(
-                stream: _connectedBanksStream,
-                builder: (context, connSnap) {
-                  final connected = connSnap.data ?? const <String>{};
+              return StreamBuilder<List<Bon>>(
+                stream: _bonsStream,
+                builder: (context, bonSnap) {
+                  final bons = bonSnap.data ?? const <Bon>[];
+                  final aging = bons
+                      .where(
+                        (b) =>
+                            b.settledAt == null && bonNeedsBadge(b.occurredAt),
+                      )
+                      .length;
 
-                  return StreamBuilder<List<Bon>>(
-                    stream: _bonsStream,
-                    builder: (context, bonSnap) {
-                      final bons = bonSnap.data ?? const <Bon>[];
-                      final aging = bons
-                          .where(
-                            (b) =>
-                                b.settledAt == null &&
-                                bonNeedsBadge(b.occurredAt),
-                          )
-                          .length;
+                  final summary = widget.progress?.latest;
+                  final level = summary?.snapshot.worstLevel;
+                  final critical = summary?.snapshot.criticalLine;
 
-                      final summary = widget.progress?.latest;
-                      final level = summary?.snapshot.worstLevel;
-                      final critical = summary?.snapshot.criticalLine;
+                  final items = [
+                    if (connected.isNotEmpty && !_listenerEnabled)
+                      _NotifItem(
+                        icon: Icons.notifications_off_rounded,
+                        color: q.bad,
+                        title: 'Izin baca notifikasi belum nyala',
+                        subtitle: 'Nyalakan agar draf transaksi otomatis masuk',
+                        actionLabel: 'Nyalakan',
+                        onTap: _requestPermission,
+                      ),
+                    if (level == BudgetLevel.over)
+                      _NotifItem(
+                        icon: Icons.warning_amber_rounded,
+                        color: q.bad,
+                        title:
+                            'Batas ${critical?.label.toLowerCase() ?? 'harian'} sudah terlewati',
+                        subtitle:
+                            'Pengeluaranmu sudah melebihi batas yang ditentukan',
+                        actionLabel: 'Lihat Anggaran',
+                        onTap: () => _goTo(widget.onOpenAnggaran),
+                      )
+                    else if (level == BudgetLevel.warning)
+                      _NotifItem(
+                        icon: Icons.error_outline_rounded,
+                        color: q.warn,
+                        title:
+                            'Batas ${critical?.label.toLowerCase() ?? 'harian'} hampir habis',
+                        subtitle:
+                            'Pengeluaranmu sudah mendekati batas yang ditentukan',
+                        actionLabel: 'Lihat Anggaran',
+                        onTap: () => _goTo(widget.onOpenAnggaran),
+                      ),
+                    if (aging > 0)
+                      _NotifItem(
+                        icon: Icons.handshake_outlined,
+                        color: q.bad,
+                        title: '$aging bon lebih dari 30 hari belum lunas',
+                        subtitle: 'Ingatkan dirimu atau tandai lunas',
+                        actionLabel: 'Lihat Bon',
+                        onTap: () => _goTo(widget.onOpenBon),
+                      ),
+                  ];
 
-                      final items = [
-                        if (connected.isNotEmpty && !enabled)
-                          _NotifItem(
-                            icon: Icons.notifications_off_rounded,
-                            color: q.bad,
-                            title: 'Izin baca notifikasi belum nyala',
-                            subtitle:
-                                'Nyalakan agar draf transaksi otomatis masuk',
-                            actionLabel: 'Nyalakan',
-                            onTap: _openBankAccounts,
-                          ),
-                        if (level == BudgetLevel.over)
-                          _NotifItem(
-                            icon: Icons.warning_amber_rounded,
-                            color: q.bad,
-                            title:
-                                'Batas ${critical?.label.toLowerCase() ?? 'harian'} sudah terlewati',
-                            subtitle:
-                                'Pengeluaranmu sudah melebihi batas yang ditentukan',
-                            actionLabel: 'Lihat Anggaran',
-                            onTap: () => _goTo(widget.onOpenAnggaran),
-                          )
-                        else if (level == BudgetLevel.warning)
-                          _NotifItem(
-                            icon: Icons.error_outline_rounded,
-                            color: q.warn,
-                            title:
-                                'Batas ${critical?.label.toLowerCase() ?? 'harian'} hampir habis',
-                            subtitle:
-                                'Pengeluaranmu sudah mendekati batas yang ditentukan',
-                            actionLabel: 'Lihat Anggaran',
-                            onTap: () => _goTo(widget.onOpenAnggaran),
-                          ),
-                        if (aging > 0)
-                          _NotifItem(
-                            icon: Icons.handshake_outlined,
-                            color: q.bad,
-                            title: '$aging bon lebih dari 30 hari belum lunas',
-                            subtitle: 'Ingatkan dirimu atau tandai lunas',
-                            actionLabel: 'Lihat Bon',
-                            onTap: () => _goTo(widget.onOpenBon),
-                          ),
-                      ];
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Tab Selector Segmen
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              Spacing.m,
-                              0,
-                              Spacing.m,
-                              Spacing.s,
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Tab Selector Segmen
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          Spacing.m,
+                          0,
+                          Spacing.m,
+                          Spacing.s,
+                        ),
+                        child: QuestSegmented<int>(
+                          options: [
+                            (
+                              value: 0,
+                              label: items.isEmpty
+                                  ? 'Peringatan'
+                                  : 'Peringatan (${items.length})',
+                              icon: Icons.notifications_none_rounded,
                             ),
-                            child: QuestSegmented<int>(
-                              options: [
-                                (
-                                  value: 0,
-                                  label: items.isEmpty
-                                      ? 'Peringatan'
-                                      : 'Peringatan (${items.length})',
-                                  icon: Icons.notifications_none_rounded,
+                            (
+                              value: 1,
+                              label: drafts.isEmpty
+                                  ? 'Tangkapan Bank'
+                                  : 'Tangkapan Bank (${drafts.length})',
+                              icon: Icons.inbox_outlined,
+                            ),
+                          ],
+                          selected: _selectedTab,
+                          onChanged: (val) {
+                            HapticFeedback.selectionClick();
+                            setState(() => _selectedTab = val);
+                          },
+                        ),
+                      ),
+
+                      // Tab Content
+                      Expanded(
+                        child: AnimatedSwitcher(
+                          duration: QuestMotion.fast,
+                          child: _selectedTab == 0
+                              ? _buildPeringatanView(context, items)
+                              : DraftInboxView(
+                                  key: const ValueKey('drafts-tab'),
+                                  repository: widget.repository,
+                                  pipeline: widget.pipeline,
+                                  ruleSet: widget.ruleSet,
+                                  progress: widget.progress,
                                 ),
-                                (
-                                  value: 1,
-                                  label: drafts.isEmpty
-                                      ? 'Tangkapan Bank'
-                                      : 'Tangkapan Bank (${drafts.length})',
-                                  icon: Icons.inbox_outlined,
-                                ),
-                              ],
-                              selected: _selectedTab,
-                              onChanged: (val) {
-                                HapticFeedback.selectionClick();
-                                setState(() => _selectedTab = val);
-                              },
-                            ),
-                          ),
-
-                          // Tab Content
-                          Expanded(
-                            child: AnimatedSwitcher(
-                              duration: QuestMotion.fast,
-                              child: _selectedTab == 0
-                                  ? _buildPeringatanView(context, items)
-                                  : DraftInboxView(
-                                      key: const ValueKey('drafts-tab'),
-                                      repository: widget.repository,
-                                      pipeline: widget.pipeline,
-                                      ruleSet: widget.ruleSet,
-                                      progress: widget.progress,
-                                    ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
+                        ),
+                      ),
+                    ],
                   );
                 },
               );
