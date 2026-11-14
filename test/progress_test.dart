@@ -270,6 +270,20 @@ void main() {
       expect(progress.latest!.moodLine, contains('terpakai'));
     });
 
+    test('saldo gabungan negatif → mood broke, bahkan saat budget aman',
+        () async {
+      final accounts = await repo.getAccounts();
+      await repo.setOpeningBalance(accounts.first.id, -50000);
+      await progress.refresh();
+      expect(progress.latest!.mood, MascotMood.broke);
+      expect(progress.latest!.moodLine, contains('minus'));
+
+      // Pulih: saldo positif kembali ke mood budget.
+      await repo.setOpeningBalance(accounts.first.id, 100000);
+      await progress.refresh();
+      expect(progress.latest!.mood, isNot(MascotMood.broke));
+    });
+
     test('alokasi ber-scope akun hanya menghitung akun itu', () async {
       final cats = await repo.watchCategories().first;
       final makanan = cats.firstWhere((c) => c.name == 'Makanan');

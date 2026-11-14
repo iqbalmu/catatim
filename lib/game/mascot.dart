@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
 
-enum MascotMood { idle, happy, sleepy, celebrate, worried }
+enum MascotMood { idle, happy, sleepy, celebrate, worried, broke }
 
 /// Peta mood → aset raster (render 3D "Pochy", dikompres WebP).
 ///
@@ -16,6 +16,7 @@ const Map<MascotMood, String> _assetFor = {
   MascotMood.happy: 'assets/mascot/mascot_happy.webp',
   MascotMood.celebrate: 'assets/mascot/mascot_celebrate.webp',
   MascotMood.worried: 'assets/mascot/mascot_worried.webp',
+  MascotMood.broke: 'assets/mascot/mascot_broke.webp',
   MascotMood.idle: 'assets/mascot/mascot_happy.webp',
   MascotMood.sleepy: 'assets/mascot/mascot_happy.webp',
 };
@@ -439,7 +440,7 @@ class _PochyPainter extends CustomPainter {
           dot,
         );
         _drawZzz(canvas, cx + bodyHalf * 1.05, neckY - s * 0.02, s);
-      case MascotMood.worried:
+      case MascotMood.worried || MascotMood.broke:
         _eyesOpen(canvas, cx, eyeY, eyeDx, eyeR, dot);
         // Alis miring ke dalam
         for (final dx in [-eyeDx, eyeDx]) {

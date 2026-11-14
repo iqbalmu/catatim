@@ -429,12 +429,23 @@ class ProgressService extends ChangeNotifier {
       badges: badges,
     );
 
+    // Karung kosong: total saldo seluruh akun negatif.
+    final balances = await _repo.watchAccountBalances().first;
+    final isBroke =
+        balances.values.fold(0, (sum, value) => sum + value) < 0;
+
     latest = ProgressSummary(
       streakDays: streak,
       streakPaused: streakPaused,
       recordedToday: recordedToday,
-      mood: _moodFor(snapshot, recordedToday, streak, wasCelebrating),
-      moodLine: _moodLineFor(snapshot, recordedToday, streak, streakPaused),
+      mood: _moodFor(snapshot, recordedToday, streak, wasCelebrating, isBroke),
+      moodLine: _moodLineFor(
+        snapshot,
+        recordedToday,
+        streak,
+        streakPaused,
+        isBroke,
+      ),
       snapshot: snapshot,
       dayOut: dayOut,
       monthIn: monthIn,
@@ -540,8 +551,12 @@ class ProgressService extends ChangeNotifier {
     bool recordedToday,
     int streak,
     bool celebrating,
+    bool isBroke,
   ) {
     if (celebrating) return MascotMood.celebrate;
+    // Karung kosong: saldo gabungan negatif mengalahkan semua mood lain
+    // (kecuali momen celebrate sesaat yang baru saja diraih pengguna).
+    if (isBroke) return MascotMood.broke;
     if (!recordedToday && streak == 0) return MascotMood.sleepy;
     if (!snap.hasData) return MascotMood.idle;
     return switch (snap.worstLevel) {
@@ -556,7 +571,11 @@ class ProgressService extends ChangeNotifier {
     bool recordedToday,
     int streak,
     bool streakPaused,
+    bool isBroke,
   ) {
+    if (isBroke) {
+      return 'Saldomu minus — top up dulu yuk biar Pochy tak kosong';
+    }
     final critical = snap.criticalLine;
     if (critical != null && critical.level == BudgetLevel.over) {
       return 'Yah, ${critical.label} lewat batas (${critical.usedPercent}%)';
