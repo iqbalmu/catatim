@@ -518,7 +518,7 @@ class TransaksiScreenState extends State<TransaksiScreen> {
             ),
           ),
         ),
-        const SizedBox(height: Spacing.xs),
+        const SizedBox(height: Spacing.sm),
 
         // Transactions Stream List & Monthly Cashflow Summary
         Expanded(
@@ -586,7 +586,6 @@ class TransaksiScreenState extends State<TransaksiScreen> {
 
               final grouped = groupTxByDay(filtered);
               final flatItems = <_FlatTxItem>[];
-              var isFirstDay = true;
               for (final entry in grouped.entries) {
                 final day = entry.key;
                 final items = entry.value;
@@ -596,10 +595,8 @@ class TransaksiScreenState extends State<TransaksiScreen> {
 
                 flatItems.add(_FlatDayHeaderItem(
                   day: day,
-                  first: isFirstDay,
                   totalOut: dayTotalOut > 0 ? dayTotalOut : null,
                 ));
-                isFirstDay = false;
 
                 for (final item in items) {
                   flatItems.add(_FlatTxEntryItem(item));
@@ -636,7 +633,6 @@ class TransaksiScreenState extends State<TransaksiScreen> {
                           _FlatDayHeaderItem h => TransactionDayHeader(
                               key: h.key,
                               day: h.day,
-                              first: h.first,
                               totalOut: h.totalOut,
                             ),
                           _FlatTxEntryItem t => TransactionTile(
@@ -649,7 +645,10 @@ class TransaksiScreenState extends State<TransaksiScreen> {
 
                         return QuestTabEnter(
                           key: entry.key,
-                          index: 4 + i,
+                          // Cap 8 langkah: tanpa ini, 30+ transaksi menunda
+                          // item terakhir >2 detik dan kaskade masuk terlihat
+                          // seperti jarak antar item yang tidak konsisten.
+                          index: 4 + i.clamp(0, 8),
                           replayKey: _filterRevision,
                           child: child,
                         );

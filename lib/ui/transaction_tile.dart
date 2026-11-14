@@ -15,12 +15,10 @@ class TransactionDayHeader extends StatelessWidget {
   const TransactionDayHeader({
     super.key,
     required this.day,
-    required this.first,
     this.totalOut,
   });
 
   final DateTime day;
-  final bool first;
 
   /// Total keluar hari itu — audit cepat per grup. Null = sembunyikan.
   final int? totalOut;
@@ -28,7 +26,9 @@ class TransactionDayHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(top: first ? 0 : Spacing.m, bottom: Spacing.xs),
+      // Top 16 seragam: pemisah antar grup selalu 16+8=24dp (margin tile
+      // bawah 8), termasuk grup pertama setelah kartu ringkasan.
+      padding: const EdgeInsets.only(top: Spacing.m, bottom: Spacing.xs),
       child: Row(
         children: [
           Expanded(

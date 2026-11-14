@@ -7,11 +7,9 @@ sealed class _FlatTxItem {
 
 class _FlatDayHeaderItem extends _FlatTxItem {
   final DateTime day;
-  final bool first;
   final int? totalOut;
   const _FlatDayHeaderItem({
     required this.day,
-    required this.first,
     this.totalOut,
   });
 
