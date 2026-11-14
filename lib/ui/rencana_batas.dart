@@ -405,58 +405,24 @@ class _RencanaBatasState extends State<RencanaBatas> {
                           ),
                       ],
                     ];
-                    // Daftar baris penuh (mockup v2.1): nama + bar
-                    // progres + "pakai/plafon" — bukan grid.
+                    // Grid 2 kolom: nama + bar progres + "pakai/plafon".
                     return Column(
                       children: [
-                        for (var i = 0; i < cards.length; i++) ...[
-                          QuestTabEnter(index: 5 + i, child: cards[i]),
-                          const SizedBox(height: Spacing.s),
-                        ],
-                        const SizedBox(height: Spacing.xs),
-                        QuestTabEnter(
-                          index: 5 + cards.length,
-                          child: QuestPress(
-                            onTap: () => showAddCategoryFlow(
-                              context,
-                              widget.repository,
-                            ),
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 12,
+                        GridView.count(
+                          crossAxisCount: 2,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          padding: EdgeInsets.zero,
+                          mainAxisSpacing: Spacing.s,
+                          crossAxisSpacing: Spacing.s,
+                          childAspectRatio: 1.9,
+                          children: [
+                            for (var i = 0; i < cards.length; i++)
+                              QuestTabEnter(
+                                index: (5 + i).clamp(5, 13),
+                                child: cards[i],
                               ),
-                              decoration: BoxDecoration(
-                                color: context.q.surface2,
-                                borderRadius: BorderRadius.circular(
-                                  AppRadius.tile,
-                                ),
-                                border: Border.all(
-                                  color: context.q.line.withValues(alpha: 0.6),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.add_circle_outline_rounded,
-                                    size: 18,
-                                    color: context.q.primaryText,
-                                  ),
-                                  const SizedBox(width: Spacing.xs),
-                                  Text(
-                                    'Tambah Kategori Baru',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      color: context.q.primaryText,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                          ],
                         ),
                       ],
                     );

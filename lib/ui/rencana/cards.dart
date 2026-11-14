@@ -54,8 +54,6 @@ class _LimitMiniCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: Spacing.xs),
-                  Icon(Icons.edit_rounded, size: 13, color: q.muted),
                 ],
               ),
               if (scopeNote != null) ...[
@@ -197,8 +195,6 @@ class _AllocationRow extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: Spacing.xs),
-                  Icon(Icons.edit_rounded, size: 14, color: q.muted),
                 ],
               ),
               if (line == null && used <= 0)
@@ -210,7 +206,7 @@ class _AllocationRow extends StatelessWidget {
                     color: q.muted,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 )
               else
@@ -226,7 +222,7 @@ class _AllocationRow extends StatelessWidget {
                           color: q.muted,
                           fontFeatures: const [FontFeature.tabularFigures()],
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       );
                     }
@@ -242,7 +238,7 @@ class _AllocationRow extends StatelessWidget {
                         color: isOver ? q.bad : q.muted,
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     );
                   },
