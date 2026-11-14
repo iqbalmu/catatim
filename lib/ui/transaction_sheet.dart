@@ -181,21 +181,24 @@ class _TransactionSheetState extends State<TransactionSheet> {
       final name = await showQuestDialog<String>(
         context,
         title: 'Akun baru',
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const QuestFieldLabel('Nama Akun'),
-            const SizedBox(height: Spacing.xs),
-            TextField(
-              controller: ctrl,
-              autofocus: true,
-              textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                hintText: 'Misalnya: Dompet, Kas Kecil...',
+        content: QuestDialogDisposer(
+          controllers: [ctrl],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const QuestFieldLabel('Nama Akun'),
+              const SizedBox(height: Spacing.xs),
+              TextField(
+                controller: ctrl,
+                autofocus: true,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  hintText: 'Misalnya: Dompet, Kas Kecil...',
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           QuestButton(
@@ -238,12 +241,15 @@ class _TransactionSheetState extends State<TransactionSheet> {
     final text = await showQuestDialog<String>(
       context,
       title: 'Tempel Teks Transaksi',
-      content: TextField(
-        controller: controller,
-        autofocus: true,
-        maxLines: 4,
-        decoration: const InputDecoration(
-          hintText: 'Tempel pesan SMS atau notifikasi transfer di sini...',
+      content: QuestDialogDisposer(
+        controllers: [controller],
+        child: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            hintText: 'Tempel pesan SMS atau notifikasi transfer di sini...',
+          ),
         ),
       ),
       actions: [
@@ -305,27 +311,30 @@ class _TransactionSheetState extends State<TransactionSheet> {
     final name = await showQuestDialog<String>(
       context,
       title: 'Tambah Kategori Baru',
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const QuestFieldLabel('Nama Kategori'),
-          const SizedBox(height: Spacing.xs),
-          TextField(
-            controller: ctrl,
-            autofocus: true,
-            textCapitalization: TextCapitalization.words,
-            style: TextStyle(
-              fontFamily: 'Nunito',
-              fontSize: 13.5,
-              fontWeight: FontWeight.w600,
-              color: q.text,
+      content: QuestDialogDisposer(
+        controllers: [ctrl],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const QuestFieldLabel('Nama Kategori'),
+            const SizedBox(height: Spacing.xs),
+            TextField(
+              controller: ctrl,
+              autofocus: true,
+              textCapitalization: TextCapitalization.words,
+              style: TextStyle(
+                fontFamily: 'Nunito',
+                fontSize: 13.5,
+                fontWeight: FontWeight.w600,
+                color: q.text,
+              ),
+              decoration: const InputDecoration(
+                hintText: 'Misalnya: Kopi, Langganan, Hobi...',
+              ),
             ),
-            decoration: const InputDecoration(
-              hintText: 'Misalnya: Kopi, Langganan, Hobi...',
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
       actions: [
         QuestButton(

@@ -243,17 +243,6 @@ class AppDatabase extends _$AppDatabase {
           'ON transactions (category_id, occurred_at DESC)',
         );
       }
-      if (from < 13) {
-        // Transfer antar akun sendiri (pasangan/manual) dulu bertanda
-        // 'transfer'; sekarang 'internal'. Transfer dari notifikasi
-        // (ke pihak lain) tetap 'transfer' dan ikut dihitung.
-        await customStatement(
-          "UPDATE transactions SET kind = 'internal' "
-          "WHERE kind = 'transfer' AND (source = 'manual' "
-          "OR counterparty LIKE 'Transfer ke %' "
-          "OR counterparty LIKE 'Transfer dari %')",
-        );
-      }
       if (from < 12) {
         if (await _hasTable(m, 'bons')) {
           if (!await _hasColumn(m, 'bons', 'category_id')) {
@@ -266,6 +255,17 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(bons, bons.settlementTransactionId);
           }
         }
+      }
+      if (from < 13) {
+        // Transfer antar akun sendiri (pasangan/manual) dulu bertanda
+        // 'transfer'; sekarang 'internal'. Transfer dari notifikasi
+        // (ke pihak lain) tetap 'transfer' dan ikut dihitung.
+        await customStatement(
+          "UPDATE transactions SET kind = 'internal' "
+          "WHERE kind = 'transfer' AND (source = 'manual' "
+          "OR counterparty LIKE 'Transfer ke %' "
+          "OR counterparty LIKE 'Transfer dari %')",
+        );
       }
     },
     beforeOpen: (details) async {

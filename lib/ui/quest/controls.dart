@@ -310,3 +310,35 @@ class QuestFieldLabel extends StatelessWidget {
     );
   }
 }
+
+/// Buang controller field dialog saat konten dialog unmount — setelah
+/// animasi tutup selesai, bukan saat `await showQuestDialog` kembali.
+/// Tombol aksi dirender di luar subtree content sehingga masih boleh
+/// membaca `controller.text` sebelum pop; dispose di call site justru
+/// membuat TextField used-after-disposed selama transisi tutup.
+class QuestDialogDisposer extends StatefulWidget {
+  const QuestDialogDisposer({
+    super.key,
+    required this.controllers,
+    required this.child,
+  });
+
+  final List<TextEditingController> controllers;
+  final Widget child;
+
+  @override
+  State<QuestDialogDisposer> createState() => _QuestDialogDisposerState();
+}
+
+class _QuestDialogDisposerState extends State<QuestDialogDisposer> {
+  @override
+  Widget build(BuildContext context) => widget.child;
+
+  @override
+  void dispose() {
+    for (final controller in widget.controllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+}

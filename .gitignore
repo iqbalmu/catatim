@@ -43,6 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Keystore rilis & kredensialnya — jangan pernah commit
+android/key.properties
+*.jks
+*.keystore
 .superpowers/
 /.worktrees/
 

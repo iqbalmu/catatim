@@ -170,6 +170,9 @@ class _AddAccountSheetState extends State<AddAccountSheet>
       name: bank.displayName,
       kind: bank.accountKind,
     );
+    // Allowlist antrean native + cache pipeline harus mengikuti koneksi
+    // terbaru — tanpa ini notifikasi bank baru diabaikan sampai restart.
+    await widget.pipeline.syncAllowedPackages();
     if (!mounted) return;
     setState(() {
       _connectedAccount = account;

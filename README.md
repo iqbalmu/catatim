@@ -88,6 +88,32 @@ Maintenance**, adjust `matchAll`/`matchAny`/`counterparty`/`amount` in the
 rules, then tap *re-read* to reprocess raw notifications without creating
 new transactions.
 
+## Build rilis
+
+Buat keystore (sekali, simpan baik-baik — hilang = tak bisa update app):
+
+```bash
+keytool -genkey -v -keystore android/app/upload-keystore.jks \
+  -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+```
+
+Lalu buat `android/key.properties` (di-gitignore):
+
+```properties
+storePassword=...
+keyPassword=...
+keyAlias=upload
+storeFile=upload-keystore.jks
+```
+
+Tanpa `key.properties`, build release jatuh ke debug key — cukup untuk
+uji lokal, bukan untuk didistribusikan. Build siap unggah:
+
+```bash
+flutter build appbundle                   # Play Store
+flutter build apk --split-per-abi         # ±24 MB per ABI, bukan fat APK
+```
+
 ## Project layout
 
 | Path | What lives there |

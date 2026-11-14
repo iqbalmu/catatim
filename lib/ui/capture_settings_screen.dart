@@ -238,85 +238,88 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
 
     final allBanks = widget.ruleSet.banks;
 
-    final confirmed = await showQuestDialog<bool>(
+    final result = await showQuestDialog<(String, String)>(
       context,
       title: 'Tambah Pola Abaikan',
-      content: StatefulBuilder(
-        builder: (context, setDialogState) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Notifikasi yang mengandung kata kunci ini langsung dibuang, nggak jadi draf.',
-                style: context.qBody(13),
-              ),
-              const SizedBox(height: Spacing.m),
-              const QuestFieldLabel('Kata Kunci / Frasa'),
-              const SizedBox(height: Spacing.xs),
-              TextField(
-                controller: patternCtrl,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Misal: promo, cashback, pinjaman',
+      content: QuestDialogDisposer(
+        controllers: [patternCtrl, labelCtrl],
+        child: StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Notifikasi yang mengandung kata kunci ini langsung dibuang, nggak jadi draf.',
+                  style: context.qBody(13),
                 ),
-              ),
-              const SizedBox(height: Spacing.m),
-              const QuestFieldLabel('Deskripsi / Label (Opsional)'),
-              const SizedBox(height: Spacing.xs),
-              TextField(
-                controller: labelCtrl,
-                decoration: const InputDecoration(
-                  hintText: 'Misal: Promo Cashback',
-                ),
-              ),
-              const SizedBox(height: Spacing.m),
-              QuestSelectField<String?>(
-                value: selectedBankId,
-                labelText: 'Berlaku Untuk',
-                sheetTitle: 'Pilih Bank / E-Wallet',
-                options: [
-                  const QuestSelectOption<String?>(
-                    value: null,
-                    label: 'Semua Bank & E-Wallet',
-                    icon: Icons.all_inclusive_rounded,
+                const SizedBox(height: Spacing.m),
+                const QuestFieldLabel('Kata Kunci / Frasa'),
+                const SizedBox(height: Spacing.xs),
+                TextField(
+                  controller: patternCtrl,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    hintText: 'Misal: promo, cashback, pinjaman',
                   ),
-                  for (final b in allBanks)
-                    QuestSelectOption<String?>(
-                      value: b.id,
-                      label: b.displayName,
-                      icon: Icons.account_balance_rounded,
+                ),
+                const SizedBox(height: Spacing.m),
+                const QuestFieldLabel('Deskripsi / Label (Opsional)'),
+                const SizedBox(height: Spacing.xs),
+                TextField(
+                  controller: labelCtrl,
+                  decoration: const InputDecoration(
+                    hintText: 'Misal: Promo Cashback',
+                  ),
+                ),
+                const SizedBox(height: Spacing.m),
+                QuestSelectField<String?>(
+                  value: selectedBankId,
+                  labelText: 'Berlaku Untuk',
+                  sheetTitle: 'Pilih Bank / E-Wallet',
+                  options: [
+                    const QuestSelectOption<String?>(
+                      value: null,
+                      label: 'Semua Bank & E-Wallet',
+                      icon: Icons.all_inclusive_rounded,
                     ),
-                ],
-                onChanged: (val) => setDialogState(() => selectedBankId = val),
-              ),
-            ],
-          );
-        },
+                    for (final b in allBanks)
+                      QuestSelectOption<String?>(
+                        value: b.id,
+                        label: b.displayName,
+                        icon: Icons.account_balance_rounded,
+                      ),
+                  ],
+                  onChanged: (val) =>
+                      setDialogState(() => selectedBankId = val),
+                ),
+              ],
+            );
+          },
+        ),
       ),
       actions: [
         QuestButton(
           label: 'Batal',
           tone: QuestTone.secondary,
-          onPressed: () => Navigator.pop(context, false),
+          onPressed: () => Navigator.pop(context),
         ),
         QuestButton(
           label: 'Simpan',
           icon: Icons.check_rounded,
           onPressed: () {
-            if (patternCtrl.text.trim().isNotEmpty) {
-              Navigator.pop(context, true);
+            final p = patternCtrl.text.trim();
+            if (p.isNotEmpty) {
+              Navigator.pop(context, (p, labelCtrl.text.trim()));
             }
           },
         ),
       ],
     );
 
-    if (confirmed == true && patternCtrl.text.trim().isNotEmpty) {
-      final pattern = patternCtrl.text.trim();
-      final label = labelCtrl.text.trim().isNotEmpty
-          ? labelCtrl.text.trim()
-          : 'Pola: "$pattern"';
+    if (result != null && result.$1.isNotEmpty) {
+      final (pattern, rawLabel) = result;
+      final label = rawLabel.isNotEmpty ? rawLabel : 'Pola: "$pattern"';
       await widget.repository.addIgnoredPattern(
         pattern: pattern,
         label: label,

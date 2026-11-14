@@ -534,6 +534,9 @@ class _OcrScreenState extends State<OcrScreen> {
                           child: Image.file(
                             File(_imagePath!),
                             fit: BoxFit.cover,
+                            // Pratinjau setinggi 180 px — jangan didekode
+                            // penuh (audit P-10).
+                            cacheWidth: 1080,
                           ),
                         ),
                         Positioned(

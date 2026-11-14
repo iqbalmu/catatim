@@ -89,77 +89,81 @@ Future<_LimitEditResult?> _askLimitWithCategories(
   return showQuestDialog<_LimitEditResult>(
     context,
     title: scope.settingTitle,
-    content: StatefulBuilder(
-      builder: (context, setDialogState) {
-        final q = context.q;
-        final names = {for (final c in categories) c.id: c.name};
-        return SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const QuestFieldLabel('Nominal (Rupiah)'),
-              const SizedBox(height: Spacing.xs),
-              TextField(
-                controller: ctrl,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  _RupiahGroupingFormatter(),
-                ],
-                decoration: const InputDecoration(
-                  hintText: 'Kosongkan kalau mau menghapus batas ini',
-                ),
-              ),
-              const SizedBox(height: Spacing.m),
-              const QuestFieldLabel('Kategori yang dihitung'),
-              const SizedBox(height: Spacing.xs),
-              Wrap(
-                spacing: Spacing.s,
-                runSpacing: Spacing.s,
-                children: [
-                  QuestChip(
-                    label: 'Semua',
-                    selected: selected == null,
-                    compact: true,
-                    onTap: () => setDialogState(() => selected = null),
+    content: QuestDialogDisposer(
+      controllers: [ctrl],
+      child: StatefulBuilder(
+        builder: (context, setDialogState) {
+          final q = context.q;
+          final names = {for (final c in categories) c.id: c.name};
+          return SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const QuestFieldLabel('Nominal (Rupiah)'),
+                const SizedBox(height: Spacing.xs),
+                TextField(
+                  controller: ctrl,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    _RupiahGroupingFormatter(),
+                  ],
+                  decoration: const InputDecoration(
+                    hintText: 'Kosongkan kalau mau menghapus batas ini',
                   ),
-                  for (final c in categories)
+                ),
+                const SizedBox(height: Spacing.m),
+                const QuestFieldLabel('Kategori yang dihitung'),
+                const SizedBox(height: Spacing.xs),
+                Wrap(
+                  spacing: Spacing.s,
+                  runSpacing: Spacing.s,
+                  children: [
                     QuestChip(
-                      label: c.name,
-                      selected: selected != null && selected!.contains(c.id),
+                      label: 'Semua',
+                      selected: selected == null,
                       compact: true,
-                      onTap: () => setDialogState(() => toggle(c.id)),
-                      leading: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: SeedColors.categoryColor(c.colorIndex),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: q.line, width: 1.5),
+                      onTap: () => setDialogState(() => selected = null),
+                    ),
+                    for (final c in categories)
+                      QuestChip(
+                        label: c.name,
+                        selected: selected != null && selected!.contains(c.id),
+                        compact: true,
+                        onTap: () => setDialogState(() => toggle(c.id)),
+                        leading: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: SeedColors.categoryColor(c.colorIndex),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: q.line, width: 1.5),
+                          ),
                         ),
                       ),
+                    QuestChip(
+                      label: 'Tanpa kategori',
+                      selected:
+                          selected != null &&
+                          selected!.contains(kUncategorizedId),
+                      compact: true,
+                      onTap: () =>
+                          setDialogState(() => toggle(kUncategorizedId)),
                     ),
-                  QuestChip(
-                    label: 'Tanpa kategori',
-                    selected:
-                        selected != null &&
-                        selected!.contains(kUncategorizedId),
-                    compact: true,
-                    onTap: () => setDialogState(() => toggle(kUncategorizedId)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: Spacing.s),
-              Text(
-                limitScopeNote(selected, names) ??
-                    'Semua kategori dihitung ke batas ini.',
-                style: context.qSmall().copyWith(color: q.muted),
-              ),
-            ],
-          ),
-        );
-      },
+                  ],
+                ),
+                const SizedBox(height: Spacing.s),
+                Text(
+                  limitScopeNote(selected, names) ??
+                      'Semua kategori dihitung ke batas ini.',
+                  style: context.qSmall().copyWith(color: q.muted),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     ),
     actions: [
       QuestButton(
@@ -206,85 +210,88 @@ Future<_CategoryBudgetResult?> _askCategoryAndBudget(
   return showQuestDialog<_CategoryBudgetResult>(
     context,
     title: 'Kelola Kategori & Anggaran',
-    content: StatefulBuilder(
-      builder: (context, setDialogState) {
-        final q = context.q;
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const QuestFieldLabel('Nama Kategori'),
-            const SizedBox(height: Spacing.xs),
-            TextField(
-              controller: nameCtrl,
-              textCapitalization: TextCapitalization.words,
-              style: TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-                color: q.text,
-              ),
-              decoration: const InputDecoration(hintText: 'Contoh: Makanan'),
-            ),
-            const SizedBox(height: Spacing.m),
-            const QuestFieldLabel('Batas Bulanan'),
-            const SizedBox(height: Spacing.xs),
-            TextField(
-              controller: limitCtrl,
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                _RupiahGroupingFormatter(),
-              ],
-              style: TextStyle(
-                fontFamily: 'Nunito',
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-                color: q.text,
-              ),
-              decoration: InputDecoration(
-                prefixText: 'Rp ',
-                prefixStyle: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: q.text,
+    content: QuestDialogDisposer(
+      controllers: [nameCtrl, limitCtrl],
+      child: StatefulBuilder(
+        builder: (context, setDialogState) {
+          final q = context.q;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const QuestFieldLabel('Nama Kategori'),
+              const SizedBox(height: Spacing.xs),
+              TextField(
+                controller: nameCtrl,
+                textCapitalization: TextCapitalization.words,
+                style: TextStyle(
+                  fontFamily: 'Nunito',
                   fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: q.text,
                 ),
-                hintText: 'Kosongkan kalau tanpa batas',
+                decoration: const InputDecoration(hintText: 'Contoh: Makanan'),
               ),
-            ),
-            const SizedBox(height: Spacing.m),
-            QuestSelectField<int?>(
-              value: scope,
-              labelText: 'Berlaku di Akun',
-              sheetTitle: 'Pilih Akun',
-              options: [
-                const QuestSelectOption<int?>(
-                  value: null,
-                  label: 'Semua akun',
-                  subtitle: 'Berlaku untuk seluruh rekening & dompet',
-                  icon: Icons.all_inclusive_rounded,
+              const SizedBox(height: Spacing.m),
+              const QuestFieldLabel('Batas Bulanan'),
+              const SizedBox(height: Spacing.xs),
+              TextField(
+                controller: limitCtrl,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  _RupiahGroupingFormatter(),
+                ],
+                style: TextStyle(
+                  fontFamily: 'Nunito',
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: q.text,
                 ),
-                for (final a in accounts)
-                  QuestSelectOption<int?>(
-                    value: a.id,
-                    label: a.name,
-                    subtitle: switch (a.kind) {
-                      AccountKind.bank => 'Rekening Bank',
-                      AccountKind.ewallet => 'E-Wallet',
-                      AccountKind.cash => 'Dompet Tunai',
-                    },
-                    icon: switch (a.kind) {
-                      AccountKind.bank => Icons.account_balance_rounded,
-                      AccountKind.ewallet => Icons.phone_android_rounded,
-                      AccountKind.cash => Icons.payments_outlined,
-                    },
+                decoration: InputDecoration(
+                  prefixText: 'Rp ',
+                  prefixStyle: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: q.text,
+                    fontSize: 13.5,
                   ),
-              ],
-              onChanged: (v) => setDialogState(() => scope = v),
-            ),
-          ],
-        );
-      },
+                  hintText: 'Kosongkan kalau tanpa batas',
+                ),
+              ),
+              const SizedBox(height: Spacing.m),
+              QuestSelectField<int?>(
+                value: scope,
+                labelText: 'Berlaku di Akun',
+                sheetTitle: 'Pilih Akun',
+                options: [
+                  const QuestSelectOption<int?>(
+                    value: null,
+                    label: 'Semua akun',
+                    subtitle: 'Berlaku untuk seluruh rekening & dompet',
+                    icon: Icons.all_inclusive_rounded,
+                  ),
+                  for (final a in accounts)
+                    QuestSelectOption<int?>(
+                      value: a.id,
+                      label: a.name,
+                      subtitle: switch (a.kind) {
+                        AccountKind.bank => 'Rekening Bank',
+                        AccountKind.ewallet => 'E-Wallet',
+                        AccountKind.cash => 'Dompet Tunai',
+                      },
+                      icon: switch (a.kind) {
+                        AccountKind.bank => Icons.account_balance_rounded,
+                        AccountKind.ewallet => Icons.phone_android_rounded,
+                        AccountKind.cash => Icons.payments_outlined,
+                      },
+                    ),
+                ],
+                onChanged: (v) => setDialogState(() => scope = v),
+              ),
+            ],
+          );
+        },
+      ),
     ),
     actions: [
       QuestButton(

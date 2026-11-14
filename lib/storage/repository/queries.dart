@@ -373,9 +373,10 @@ extension QueriesRepo on LedgerRepository {
     };
   }
 
-  /// Saldo berjalan tiap akun = saldo awal + masuk − keluar. Transfer/
-  /// topup satu kaki sementara dihitung sebagai keluar/masuk akun asal;
-  /// transfer dua kaki menyusul.
+  /// Saldo berjalan tiap akun = saldo awal + semua masuk − semua keluar,
+  /// apa pun kind-nya. Transfer internal dua kaki terhitung benar di
+  /// kedua sisi; notifikasi yang hanya menangkap satu sisi transfer/
+  /// topup belum menyesuaikan akun lawannya.
   Stream<Map<int, int>> watchAccountBalances() {
     final inSum = _db.transactions.amount.sum(
       filter: _db.transactions.direction.equalsValue(Direction.incoming),

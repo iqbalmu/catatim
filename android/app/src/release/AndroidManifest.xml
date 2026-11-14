@@ -1,0 +1,11 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application>
+        <!-- Simulator capture hanya untuk debug/profile (audit Q-07):
+             dicabut dari build rilis sebagai defense in depth — gate
+             runtime FLAG_DEBUGGABLE di onReceive tetap ada. -->
+        <receiver
+            android:name=".NotificationSimulatorReceiver"
+            tools:node="remove" />
+    </application>
+</manifest>

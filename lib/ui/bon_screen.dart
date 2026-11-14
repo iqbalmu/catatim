@@ -118,131 +118,135 @@ class _BonScreenState extends State<BonScreen> {
       text: isUncalculated ? '' : '${bon.amount}',
     );
 
-    final shouldSettle = await showQuestDialog<bool>(
+    final finalAmount = await showQuestDialog<int>(
       context,
       title: isLent ? 'Terima Pelunasan' : 'Lunasi Bon',
-      content: StatefulBuilder(
-        builder: (context, setDialogState) {
-          final q = context.q;
-          return SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (isUncalculated) ...[
-                  const QuestFieldLabel('Nominal'),
-                  const SizedBox(height: Spacing.xs),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    style: TextStyle(
-                      fontFamily: 'Nunito',
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
-                      color: q.text,
-                    ),
-                    decoration: InputDecoration(
-                      prefixText: 'Rp ',
-                      prefixStyle: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: q.text,
+      content: QuestDialogDisposer(
+        controllers: [amountController],
+        child: StatefulBuilder(
+          builder: (context, setDialogState) {
+            final q = context.q;
+            return SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (isUncalculated) ...[
+                    const QuestFieldLabel('Nominal'),
+                    const SizedBox(height: Spacing.xs),
+                    TextField(
+                      controller: amountController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      style: TextStyle(
+                        fontFamily: 'Nunito',
                         fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        color: q.text,
                       ),
-                      hintText: '0',
+                      decoration: InputDecoration(
+                        prefixText: 'Rp ',
+                        prefixStyle: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: q.text,
+                          fontSize: 13.5,
+                        ),
+                        hintText: '0',
+                      ),
                     ),
+                    const SizedBox(height: Spacing.m),
+                  ] else ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: context.q.surface2,
+                        borderRadius: BorderRadius.circular(AppRadius.tile),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Nominal', style: context.qSmall()),
+                          Text(
+                            Money.format(bon.amount),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: isLent ? context.q.good : context.q.bad,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: Spacing.m),
+                  ],
+                  QuestSelectField<int>(
+                    labelText: isLent ? 'Masuk ke Akun' : 'Sumber Dana',
+                    sheetTitle: 'Pilih Akun',
+                    prefixIcon: const Icon(
+                      Icons.account_balance_wallet_outlined,
+                      size: 18,
+                    ),
+                    value: selectedAccountId,
+                    options: [
+                      for (final a in accounts)
+                        QuestSelectOption(
+                          value: a.id,
+                          label: a.name,
+                          subtitle: switch (a.kind) {
+                            AccountKind.bank => 'Rekening Bank',
+                            AccountKind.ewallet => 'E-Wallet',
+                            AccountKind.cash => 'Dompet Tunai',
+                          },
+                          icon: switch (a.kind) {
+                            AccountKind.bank => Icons.account_balance_rounded,
+                            AccountKind.ewallet => Icons.phone_android_rounded,
+                            AccountKind.cash => Icons.payments_outlined,
+                          },
+                        ),
+                    ],
+                    onChanged: (v) =>
+                        setDialogState(() => selectedAccountId = v),
                   ),
                   const SizedBox(height: Spacing.m),
-                ] else ...[
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: context.q.surface2,
-                      borderRadius: BorderRadius.circular(AppRadius.tile),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Nominal', style: context.qSmall()),
-                        Text(
-                          Money.format(bon.amount),
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                            color: isLent ? context.q.good : context.q.bad,
+                  QuestSelectField<int>(
+                    labelText: 'Kategori',
+                    sheetTitle: 'Pilih Kategori',
+                    prefixIcon: const Icon(Icons.category_outlined, size: 18),
+                    value: selectedCategoryId,
+                    options: [
+                      for (final c in categories)
+                        QuestSelectOption(
+                          value: c.id,
+                          label: c.name,
+                          leading: Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color: SeedColors.categoryColor(c.colorIndex),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: q.line, width: 1.5),
+                            ),
                           ),
                         ),
-                      ],
-                    ),
+                    ],
+                    onChanged: (v) =>
+                        setDialogState(() => selectedCategoryId = v),
                   ),
-                  const SizedBox(height: Spacing.m),
                 ],
-                QuestSelectField<int>(
-                  labelText: isLent ? 'Masuk ke Akun' : 'Sumber Dana',
-                  sheetTitle: 'Pilih Akun',
-                  prefixIcon: const Icon(
-                    Icons.account_balance_wallet_outlined,
-                    size: 18,
-                  ),
-                  value: selectedAccountId,
-                  options: [
-                    for (final a in accounts)
-                      QuestSelectOption(
-                        value: a.id,
-                        label: a.name,
-                        subtitle: switch (a.kind) {
-                          AccountKind.bank => 'Rekening Bank',
-                          AccountKind.ewallet => 'E-Wallet',
-                          AccountKind.cash => 'Dompet Tunai',
-                        },
-                        icon: switch (a.kind) {
-                          AccountKind.bank => Icons.account_balance_rounded,
-                          AccountKind.ewallet => Icons.phone_android_rounded,
-                          AccountKind.cash => Icons.payments_outlined,
-                        },
-                      ),
-                  ],
-                  onChanged: (v) => setDialogState(() => selectedAccountId = v),
-                ),
-                const SizedBox(height: Spacing.m),
-                QuestSelectField<int>(
-                  labelText: 'Kategori',
-                  sheetTitle: 'Pilih Kategori',
-                  prefixIcon: const Icon(Icons.category_outlined, size: 18),
-                  value: selectedCategoryId,
-                  options: [
-                    for (final c in categories)
-                      QuestSelectOption(
-                        value: c.id,
-                        label: c.name,
-                        leading: Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: SeedColors.categoryColor(c.colorIndex),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: q.line, width: 1.5),
-                          ),
-                        ),
-                      ),
-                  ],
-                  onChanged: (v) =>
-                      setDialogState(() => selectedCategoryId = v),
-                ),
-              ],
-            ),
-          );
-        },
+              ),
+            );
+          },
+        ),
       ),
       actions: [
         QuestButton(
           label: 'Batal',
           tone: QuestTone.secondary,
-          onPressed: () => Navigator.pop(context, false),
+          onPressed: () => Navigator.pop(context),
         ),
         QuestButton(
           label: 'Lunasi',
@@ -255,18 +259,15 @@ class _BonScreenState extends State<BonScreen> {
               questSnack(context, 'Isi nominalnya dulu yuk.');
               return;
             }
-            Navigator.pop(context, true);
+            Navigator.pop(context, amt);
           },
         ),
       ],
     );
 
-    if (shouldSettle != true || !mounted) return;
-
-    final finalAmount =
-        Money.tryParseGroup(amountController.text) ??
-        (isUncalculated ? 0 : bon.amount);
-    if (finalAmount <= 0 ||
+    if (finalAmount == null ||
+        !mounted ||
+        finalAmount <= 0 ||
         selectedAccountId == null ||
         selectedCategoryId == null) {
       return;
@@ -952,27 +953,30 @@ class _BonSheetState extends State<BonSheet> {
     final name = await showQuestDialog<String>(
       context,
       title: 'Tambah Kategori Baru',
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const QuestFieldLabel('Nama Kategori'),
-          const SizedBox(height: Spacing.xs),
-          TextField(
-            controller: ctrl,
-            autofocus: true,
-            textCapitalization: TextCapitalization.words,
-            style: TextStyle(
-              fontFamily: 'Nunito',
-              fontSize: 13.5,
-              fontWeight: FontWeight.w600,
-              color: q.text,
+      content: QuestDialogDisposer(
+        controllers: [ctrl],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const QuestFieldLabel('Nama Kategori'),
+            const SizedBox(height: Spacing.xs),
+            TextField(
+              controller: ctrl,
+              autofocus: true,
+              textCapitalization: TextCapitalization.words,
+              style: TextStyle(
+                fontFamily: 'Nunito',
+                fontSize: 13.5,
+                fontWeight: FontWeight.w600,
+                color: q.text,
+              ),
+              decoration: const InputDecoration(
+                hintText: 'Misalnya: Kopi, Langganan, Hobi...',
+              ),
             ),
-            decoration: const InputDecoration(
-              hintText: 'Misalnya: Kopi, Langganan, Hobi...',
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
       actions: [
         QuestButton(

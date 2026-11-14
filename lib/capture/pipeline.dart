@@ -40,6 +40,13 @@ class CapturePipeline extends ChangeNotifier {
   StreamSubscription<RawCapture>? _subscription;
   bool _started = false;
 
+  /// Cache koneksi (audit P-04): disegarkan oleh [syncAllowedPackages]
+  /// — start, refreshRules, dan tiap toggle koneksi — lalu dibaca per
+  /// notifikasi tanpa query ulang (drain N notif ≠ 2N+ query).
+  Set<String> _connectedIds = const {};
+  List<({String package, String label})> _customBanks = const [];
+  bool _connectionsLoaded = false;
+
   /// Antrean pemrosesan berurutan — notifikasi yang tiba nyaris
   /// bersamaan (drain + stream) tidak boleh balapan menulis DB.
   Future<void> _tail = Future<void>.value();
@@ -162,8 +169,9 @@ class CapturePipeline extends ChangeNotifier {
     try {
       // Mode belajar: yang diproses = bank katalog terhubung ATAU app
       // custom yang dihubungkan user; selebihnya diabaikan diam-diam.
-      final connected = await repository.connectedBankIds();
-      final customs = await repository.customBanks();
+      if (!_connectionsLoaded) await syncAllowedPackages();
+      final connected = _connectedIds;
+      final customs = _customBanks;
       if (connected.isEmpty && customs.isEmpty) return;
       final bank = _detectConnected(raw, connected);
       String? customLabel;
@@ -245,11 +253,12 @@ class CapturePipeline extends ChangeNotifier {
   /// (paket belajar keyword ditambahkan native sendiri dan bertahan
   /// antar proses). Dipanggil saat start dan setiap koneksi berubah.
   Future<void> syncAllowedPackages() async {
-    final connected = await repository.connectedBankIds();
-    final customs = await repository.customBanks();
+    _connectedIds = await repository.connectedBankIds();
+    _customBanks = await repository.customBanks();
+    _connectionsLoaded = true;
     await channel.setAllowedPackages({
-      ...engine.packageNamesFor(connected),
-      for (final c in customs) c.package,
+      ...engine.packageNamesFor(_connectedIds),
+      for (final c in _customBanks) c.package,
     });
   }
 

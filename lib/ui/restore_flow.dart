@@ -20,52 +20,55 @@ Future<String?> askBackupPin(
 }) async {
   final firstCtrl = TextEditingController();
   final secondCtrl = TextEditingController();
-  final pin = await showQuestDialog<String>(
+  final pins = await showQuestDialog<(String, String)>(
     context,
     title: 'Kunci backup (PIN)',
-    content: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          repeat
-              ? 'Masukkan PIN yang kamu buat saat menyimpan backup ini.'
-              : 'Bikin PIN buat kunci file backup-nya. Ingat baik-baik ya, '
-                    'tanpa PIN ini backup nggak bisa dibuka.',
-          style: context.qBody(13),
-        ),
-        const SizedBox(height: Spacing.m),
-        const QuestFieldLabel('PIN (6–12 angka)'),
-        const SizedBox(height: Spacing.xs),
-        TextField(
-          controller: firstCtrl,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          obscureText: true,
-          maxLength: 12,
-          decoration: const InputDecoration(
-            hintText: 'Masukkan 6–12 angka PIN',
-            counterText: '',
+    content: QuestDialogDisposer(
+      controllers: [firstCtrl, secondCtrl],
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            repeat
+                ? 'Masukkan PIN yang kamu buat saat menyimpan backup ini.'
+                : 'Bikin PIN buat kunci file backup-nya. Ingat baik-baik ya, '
+                      'tanpa PIN ini backup nggak bisa dibuka.',
+            style: context.qBody(13),
           ),
-        ),
-        if (!repeat) ...[
           const SizedBox(height: Spacing.m),
-          const QuestFieldLabel('Ulangi PIN'),
+          const QuestFieldLabel('PIN (6–12 angka)'),
           const SizedBox(height: Spacing.xs),
           TextField(
-            controller: secondCtrl,
+            controller: firstCtrl,
+            autofocus: true,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             obscureText: true,
             maxLength: 12,
             decoration: const InputDecoration(
-              hintText: 'Ketik ulang PIN yang sama',
+              hintText: 'Masukkan 6–12 angka PIN',
               counterText: '',
             ),
           ),
+          if (!repeat) ...[
+            const SizedBox(height: Spacing.m),
+            const QuestFieldLabel('Ulangi PIN'),
+            const SizedBox(height: Spacing.xs),
+            TextField(
+              controller: secondCtrl,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              obscureText: true,
+              maxLength: 12,
+              decoration: const InputDecoration(
+                hintText: 'Ketik ulang PIN yang sama',
+                counterText: '',
+              ),
+            ),
+          ],
         ],
-      ],
+      ),
     ),
     actions: [
       QuestButton(
@@ -76,12 +79,18 @@ Future<String?> askBackupPin(
       QuestButton(
         label: 'Lanjut',
         icon: Icons.check_rounded,
-        onPressed: () => Navigator.pop(context, firstCtrl.text.trim()),
+        // Baca kedua PIN di sini — setelah await controller sudah dibuang.
+        onPressed: () => Navigator.pop(context, (
+          firstCtrl.text.trim(),
+          secondCtrl.text.trim(),
+        )),
       ),
     ],
   );
   if (!context.mounted) return null;
-  if (pin == null || pin.isEmpty) return null;
+  if (pins == null) return null;
+  final (pin, confirm) = pins;
+  if (pin.isEmpty) return null;
   // PIN pendek mudah dipaksa (brute force offline pada file backup).
   if (pin.length < 6) {
     questSnack(
@@ -91,7 +100,7 @@ Future<String?> askBackupPin(
     );
     return null;
   }
-  if (!repeat && pin != secondCtrl.text.trim()) {
+  if (!repeat && pin != confirm) {
     questSnack(
       context,
       'PIN tidak sama, coba lagi.',
