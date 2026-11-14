@@ -88,7 +88,7 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
               color: q.muted,
             ),
           ),
-          const SizedBox(height: Spacing.xs),
+          const SizedBox(height: Spacing.s),
           Row(
             children: [
               Expanded(
@@ -141,7 +141,7 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
                 color: q.muted,
               ),
             ),
-            const SizedBox(height: Spacing.xs),
+            const SizedBox(height: Spacing.s),
             Wrap(
               spacing: Spacing.xs,
               runSpacing: Spacing.xs,
@@ -172,7 +172,7 @@ class _TransactionFilterSheetState extends State<_TransactionFilterSheet> {
             ),
           ],
 
-          const SizedBox(height: Spacing.l),
+          const SizedBox(height: Spacing.m),
 
           // Action Button
           QuestButton(
@@ -208,31 +208,34 @@ class _FilterOptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final q = context.q;
+    // Pill horizontal — satu bahasa chip dengan filter akun di bawahnya,
+    // bukan kartu tinggi ikon-di-atas-label yang mendominasi sheet.
     return QuestPress(
       onTap: onTap,
       child: AnimatedContainer(
         duration: QuestMotion.fast,
         curve: QuestMotion.easeOut,
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
           color: selected ? q.primary.withValues(alpha: 0.12) : q.surface,
-          borderRadius: BorderRadius.circular(AppRadius.tile),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
           border: Border.all(
             color: selected ? q.primary : q.line.withValues(alpha: 0.6),
             width: selected ? 1.5 : 1,
           ),
         ),
-        child: Column(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              size: 20,
+              size: 14,
               color: selected
                   ? (iconColor ?? q.primary)
                   : (iconColor?.withValues(alpha: 0.7) ?? q.muted),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(width: 5),
             Text(
               label,
               style: TextStyle(
