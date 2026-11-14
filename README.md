@@ -1,110 +1,107 @@
 # CatatIM
 
-Pencatat keuangan pribadi, offline-first, untuk Android. Transaksi dari
-notifikasi aplikasi bank/e-wallet tertangkap otomatis lewat
-`NotificationListenerService`, lalu dikurasi jadi transaksi lewat rules
-per bank. Semua data tersimpan terenkripsi (SQLCipher) di perangkat:
-tanpa server, tanpa akun, tanpa iklan.
+An offline-first personal finance tracker for Android. Transactions from bank
+and e-wallet notifications are captured automatically through Android's
+`NotificationListenerService`, then curated into transactions by per-bank
+rules. Everything is stored encrypted (SQLCipher) on the device: no server,
+no account, no ads.
 
-## Fitur
+[![CI](https://github.com/iqbalmu/catatim/actions/workflows/ci.yml/badge.svg)](https://github.com/iqbalmu/catatim/actions/workflows/ci.yml)
 
-Empat tab utama: **Beranda · Transaksi · Bon · Laporan**, dengan tombol +
-kontekstual di tengah navbar.
+## Features
 
-- **Capture otomatis**: notifikasi bank/e-wallet → draf → rules per bank →
-  transaksi final. Draf yang belum yakin masuk kotak masuk untuk kurasi
-  manual (terima, abaikan sekali, atau abaikan polanya selamanya).
-  Dedup: notifikasi ganda (push + SMS / resend) dengan bank, nominal, dan
-  arah sama dalam ±120 detik hanya jadi satu transaksi.
-- **Pindai struk**: foto struk/bukti dibaca OCR on-device (ML Kit), tanpa
-  upload ke mana pun. Juga menerima share teks/gambar dari aplikasi lain.
-- **Transaksi**: daftar dengan pencarian, filter akun & periode, dan
-  ringkasan arus kas. Tap transaksi untuk ubah/hapus.
-- **Laporan**: ringkasan arus kas, tren mingguan/bulanan, komposisi
-  kategori, dan pengeluaran terbesar, untuk bulan pilihan atau rentang
-  bebas.
-- **Rencana (Batas)**: batas harian/mingguan/bulanan plus alokasi per
-  kategori, bisa di-scope ke akun tertentu (mis. "Makanan @ e-wallet").
-  Bisa dibuka dari Beranda atau Pengaturan.
-- **Bon**: piutang/utang dengan aksi satu-tap "Lunasi"; bon tua lebih dari
-  30 hari muncul sebagai badge di navbar.
-- **Notifikasi**: pusat perhatian (izin mati, batas terlampaui, bon tua)
-  dan tab tangkapan mentah untuk melatih rules.
-- **CatatIM Quest**: maskot Pochy mencerminkan kondisi batas, streak
-  disiplin dari data asli (milestone 3/7/14/21/30/60/100 hari).
-- **Multi-akun**: bank, e-wallet, dan tunai; tiap akun punya saldo awal
-  dan saldo berjalan.
-- **Backup**: salinan database terenkripsi dengan PIN + restore. Kunci DB
-  terikat perangkat (Keystore), jadi backup dari perangkat lain masuk lewat
-  alur pemulihan.
-- **Tema** terang/gelap mengikuti sistem; preferensi tersimpan.
+Four main tabs: **Home · Transactions · Bon · Reports**, with a contextual +
+button in the middle of the nav bar.
 
-## Izin yang dipakai
+- **Automatic capture**: bank/e-wallet notifications → drafts → per-bank
+  rules → final transactions. Uncertain drafts land in an inbox for manual
+  curation (accept, ignore once, or ignore the pattern forever).
+  Deduplication: duplicate notifications (push + SMS / resend) with the same
+  bank, amount, and direction within ±120 seconds become a single
+  transaction.
+- **Receipt scanning**: photos of receipts are read by on-device OCR
+  (ML Kit), uploaded nowhere. Also accepts shared text or images from other
+  apps.
+- **Transactions**: searchable list with account and period filters, plus a
+  cash-flow summary. Tap a transaction to edit or delete it.
+- **Reports**: cash-flow summary, weekly/monthly trends, category
+  composition, and top expenses for a selected month or any custom range.
+- **Budgets**: daily/weekly/monthly limits plus per-category allocations,
+  optionally scoped to one account (e.g. "Food @ e-wallet"). Reachable from
+  Home or Settings.
+- **Bon** (personal IOUs): debts and receivables with a one-tap settle
+  action; bons older than 30 days show a badge on the nav bar.
+- **Notifications**: one attention center (permission off, limits exceeded,
+  old bons) plus a raw-capture tab for tuning rules.
+- **CatatIM Quest**: the Pochy mascot mirrors your budget condition;
+  discipline streaks are computed from real data (3/7/14/21/30/60/100-day
+  milestones).
+- **Multi-account**: banks, e-wallets, and cash; each account has an opening
+  balance and a running balance.
+- **Backup**: an encrypted database copy protected by a PIN, with restore.
+  The database key is device-bound (Android Keystore), so backups from
+  another device go through a recovery flow.
+- **Theming**: light/dark follows the system; the preference is stored.
 
-| Izin | Alasan |
+## Permissions used
+
+| Permission | Why |
 |---|---|
-| Notification access | Membaca notifikasi bank/e-wallet sebagai sumber transaksi. Fitur inti; tidak ada notifikasi lain yang dipakai selain untuk draf. |
-| `CAMERA` | Foto struk/bukti untuk OCR on-device. |
-| `POST_NOTIFICATIONS` | Menampilkan peringatan batas lokal (bukan notifikasi pemasaran). |
-| `INTERNET` | Dibawa dependensi ML Kit. Kode aplikasi sendiri tidak melakukan panggilan jaringan: dependensinya tanpa HTTP client, tanpa Firebase, tanpa analytics. |
+| Notification access | Reads bank/e-wallet notifications as the transaction source. Core feature; no other notification content is used beyond creating drafts. |
+| `CAMERA` | Photographing receipts for on-device OCR. |
+| `POST_NOTIFICATIONS` | Showing local budget warnings (not marketing notifications). |
+| `INTERNET` | Brought in by the ML Kit dependency. The app's own code makes no network calls: no HTTP client, no Firebase, no analytics. |
 
-## Menjalankan
+## Getting started
 
 ```bash
 flutter pub get
-dart run build_runner build --delete-conflicting-outputs   # generate drift
-flutter run                                   # atau: flutter build apk
+dart run build_runner build --delete-conflicting-outputs   # generate drift code
+flutter run                                                # or: flutter build apk
 ```
 
-Butuh Flutter yang menyediakan Dart SDK `^3.12.1` (lihat `pubspec.yaml`)
-dan Android SDK.
+Requires a Flutter version that provides Dart SDK `^3.12.1` (see
+`pubspec.yaml`) and the Android SDK.
 
-Alur pertama kali: Pengaturan → **Catat otomatis** → *Mulai* → baca
-disclosure → "Saya mengerti" → centang CatatIM di *Notification access*
-Android. Untuk melihat aplikasi hidup tanpa data asli, Pengaturan menyediakan
-**Isi Data Contoh** (hanya build debug).
+First-time capture setup: Settings → **Auto capture** → *Start* → read the
+disclosure → "I understand" → enable CatatIM under Android's *Notification
+access*. To explore the app without real data, Settings offers **Fill sample
+data** (debug builds only).
 
-## Uji notifikasi via adb
+## Testing notifications over adb
 
-`scripts/test_capture.sh` menembakkan notifikasi simulasi ke device lewat
-`BroadcastReceiver` bawaan (khusus build debug), tanpa transfer uang asli:
+`scripts/test_capture.sh` fires simulated notifications at a connected
+device through a built-in `BroadcastReceiver` (debug builds only), without
+moving any real money:
 
 ```bash
-./scripts/test_capture.sh blu      # preset blu by BCA
-./scripts/test_capture.sh nagari   # preset Bank Nagari / Ollin
-./scripts/test_capture.sh guard    # negatif: OTP/promo harus ditolak
+./scripts/test_capture.sh blu      # blu by BCA preset
+./scripts/test_capture.sh nagari   # Bank Nagari / Ollin preset
+./scripts/test_capture.sh guard    # negative: OTP/promos must be rejected
 ./scripts/test_capture.sh send --pkg com.bca --title "t" --body "b"
 ```
 
-Seed rules (`assets/rules/seed_rules.json`) disusun dari format umum dan
-belum tervalidasi dengan notifikasi asli semua bank. Cara tuning: lakukan
-satu transaksi kecil, buka **Catat otomatis → Perawatan**, sesuaikan
-`matchAll`/`matchAny`/`counterparty`/`amount` di rules, lalu tap *baca
-ulang* untuk memproses ulang notifikasi mentah tanpa transaksi baru.
+The seed rules (`assets/rules/seed_rules.json`) are built from common
+formats and are not yet validated against real notifications from every
+bank. To tune them: make one small transaction, open **Auto capture →
+Maintenance**, adjust `matchAll`/`matchAny`/`counterparty`/`amount` in the
+rules, then tap *re-read* to reprocess raw notifications without creating
+new transactions.
 
-## Struktur
+## Project layout
 
-| Path | Isi |
+| Path | What lives there |
 |---|---|
-| `lib/capture/` | MethodChannel/EventChannel native + pipeline capture → parse → simpan |
-| `lib/rules/` | Rules engine + format rule (`assets/rules/seed_rules.json`) |
-| `lib/storage/` | Drift (SQLCipher) schema + repository, dedup 120 detik |
-| `lib/notify/` | Channel notifikasi lokal + peringatan batas |
-| `lib/ui/` | Shell 4 tab: Beranda, Transaksi, Bon, Laporan; Pengaturan, Rencana, Bon, pindai struk, dan sheet pendukung |
-| `lib/game/` | Maskot, streak, progres quest |
-| `lib/theme/` | Sistem desain Quest (Slate-Indigo, bukan default Material) |
+| `lib/capture/` | Native MethodChannel/EventChannel bridge and the capture → parse → store pipeline |
+| `lib/rules/` | Rules engine plus the rule format (`assets/rules/seed_rules.json`) |
+| `lib/storage/` | Drift (SQLCipher) schema and repository, with a 120-second dedup window |
+| `lib/notify/` | Local notification channel and budget warnings |
+| `lib/ui/` | Four-tab shell: Home, Transactions, Bon, Reports; Settings, Budgets, receipt scanning, and supporting sheets |
+| `lib/game/` | Mascot, streaks, quest progress |
+| `lib/theme/` | Quest design system (Slate-Indigo, not default Material) |
 | `android/.../MainActivity.kt` | `MainActivity`, `NotificationCatcher`, `NotificationSimulatorReceiver` |
-| `scripts/` | Injeksi notifikasi simulasi via adb |
+| `scripts/` | adb-based simulated notification injection |
 
-## Dokumentasi
-
-- [Arsitektur](docs/ARCHITECTURE.md): peta lapisan, alur capture, model data, konvensi.
-- [Desain visual](docs/DESIGN.md): sistem Slate-Indigo, token, komponen.
-- [Roadmap](docs/ROADMAP.md).
-- [Audit keamanan](docs/AUDIT_REPORT.md): temuan dan status perbaikannya.
-- [Keputusan desain (ADR)](docs/decisions/).
-- [Arsip perencanaan](docs/internal/): mockup dan rencana kerja lama.
-
-## Lisensi
+## License
 
 [MIT](LICENSE).
