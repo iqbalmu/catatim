@@ -45,3 +45,7 @@ app.*.map.json
 /android/app/release
 .superpowers/
 /.worktrees/
+
+# Catatan internal (audit, ADR, rancangan) tidak ikut repo publik —
+# keputusan user 2026-11-14. File tetap ada di lokal.
+/docs/
