@@ -73,33 +73,11 @@ class AddAccountSheet extends StatefulWidget {
   State<AddAccountSheet> createState() => _AddAccountSheetState();
 }
 
-/// Tahapan alur tambah akun di sheet utama.
-enum _AddStep {
-  /// Pilih jenis (Bank/E-wallet/Tunai), lalu pilih bank otomatis atau form
-  /// tunai.
-  pick,
-
-  /// Form catat manual untuk bank/e-wallet di luar daftar otomatis.
-  manual,
-}
-
 class _AddAccountSheetState extends State<AddAccountSheet> {
-  _AddStep _step = _AddStep.pick;
   AccountKind _kind = AccountKind.bank;
 
   late final bool _listenerOn = widget.initialListenerOn;
   late final Set<String> _connected = widget.initialConnected;
-
-  final _cashNameCtrl = TextEditingController();
-  final _cashOpeningCtrl = TextEditingController();
-  String? _cashError;
-
-  @override
-  void dispose() {
-    _cashNameCtrl.dispose();
-    _cashOpeningCtrl.dispose();
-    super.dispose();
-  }
 
   /// Katalog bank/e-wallet yang cocok jenis terpilih dan belum ada.
   List<BankRules> get _availableBanks => widget.ruleSet.banks
@@ -125,96 +103,62 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
     }
   }
 
-  Future<void> _saveManual(AccountKind kind) async {
-    final name = _cashNameCtrl.text.trim();
-    if (name.isEmpty) {
-      final hint = switch (kind) {
-        AccountKind.bank => 'Beri nama bank, ya. Misalnya BCA.',
-        AccountKind.ewallet => 'Beri nama e-wallet, ya. Misalnya GoPay.',
-        AccountKind.cash => 'Beri nama dulu, ya. Misalnya Dompet.',
-      };
-      setState(() => _cashError = hint);
-      return;
-    }
-    try {
-      final account = await widget.repository.addAccount(name, kind);
-      final opening = int.tryParse(
-        _cashOpeningCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''),
-      );
-      if (opening != null && opening > 0) {
-        await widget.repository.setOpeningBalance(account.id, opening);
-      }
-      if (!mounted) return;
-      questSnack(context, '$name siap dipakai.', icon: Icons.check_rounded);
+  Future<void> _openManualSheet() async {
+    final saved = await _ManualAccountSheet.show(
+      context,
+      repository: widget.repository,
+      kind: _kind,
+    );
+    if (!mounted) return;
+    if (saved == true) {
       Navigator.pop(context);
-    } catch (_) {
-      if (mounted) {
-        setState(
-          () => _cashError = 'Nama "$name" sudah dipakai. Coba nama lain, ya.',
-        );
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final content = switch (_step) {
-      _AddStep.pick => _buildPick(),
-      _AddStep.manual => _buildManual(),
-    };
-
     return SingleChildScrollView(
-      child: AnimatedSwitcher(
-        duration: QuestMotion.fast,
-        switchInCurve: QuestMotion.easeOut,
-        switchOutCurve: QuestMotion.easeOut,
-        child: KeyedSubtree(
-          key: ValueKey(_step),
-          child: content,
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Mau tambah apa?', style: context.qTitle()),
+          const SizedBox(height: Spacing.m),
+          QuestSegmented<AccountKind>(
+            options: const [
+              (
+                value: AccountKind.bank,
+                label: 'Bank',
+                icon: Icons.account_balance_rounded,
+              ),
+              (
+                value: AccountKind.ewallet,
+                label: 'E-wallet',
+                icon: Icons.wallet_rounded,
+              ),
+              (
+                value: AccountKind.cash,
+                label: 'Tunai',
+                icon: Icons.payments_rounded,
+              ),
+            ],
+            selected: _kind,
+            onChanged: (kind) => setState(() => _kind = kind),
+          ),
+          const SizedBox(height: Spacing.m),
+          if (_kind == AccountKind.cash)
+            _ManualAccountForm(
+              key: const ValueKey(AccountKind.cash),
+              repository: widget.repository,
+              kind: AccountKind.cash,
+              cancelLabel: 'Batal',
+              onCancel: () => Navigator.pop(context),
+              onSaved: () => Navigator.pop(context),
+            )
+          else
+            ..._buildBankList(),
+        ],
       ),
-    );
-  }
-
-  Widget _buildPick() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text('Mau tambah apa?', style: context.qTitle()),
-        const SizedBox(height: Spacing.m),
-        QuestSegmented<AccountKind>(
-          options: const [
-            (
-              value: AccountKind.bank,
-              label: 'Bank',
-              icon: Icons.account_balance_rounded,
-            ),
-            (
-              value: AccountKind.ewallet,
-              label: 'E-wallet',
-              icon: Icons.wallet_rounded,
-            ),
-            (
-              value: AccountKind.cash,
-              label: 'Tunai',
-              icon: Icons.payments_rounded,
-            ),
-          ],
-          selected: _kind,
-          onChanged: (kind) => setState(() {
-            _kind = kind;
-            _cashNameCtrl.clear();
-            _cashOpeningCtrl.clear();
-            _cashError = null;
-          }),
-        ),
-        const SizedBox(height: Spacing.m),
-        if (_kind == AccountKind.cash)
-          ..._buildManualForm(AccountKind.cash, showBack: false)
-        else
-          ..._buildBankList(),
-      ],
     );
   }
 
@@ -231,7 +175,14 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
           style: context.qSmall(12.5).copyWith(color: context.q.muted),
         ),
         const SizedBox(height: Spacing.s),
-        ..._buildManualForm(_kind, showBack: false),
+        _ManualAccountForm(
+          key: ValueKey(_kind),
+          repository: widget.repository,
+          kind: _kind,
+          cancelLabel: 'Batal',
+          onCancel: () => Navigator.pop(context),
+          onSaved: () => Navigator.pop(context),
+        ),
       ];
     }
 
@@ -252,39 +203,143 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
         label: isBank ? 'Bank lain? Catat manual' : 'E-wallet lain? Catat manual',
         icon: Icons.edit_outlined,
         tone: QuestTone.secondary,
-        onPressed: () => setState(() {
-          _cashNameCtrl.clear();
-          _cashOpeningCtrl.clear();
-          _cashError = null;
-          _step = _AddStep.manual;
-        }),
+        onPressed: _openManualSheet,
       ),
     ];
   }
+}
 
-  Widget _buildManual() {
-    final isBank = _kind == AccountKind.bank;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          isBank ? 'Tambah Bank Manual' : 'Tambah E-wallet Manual',
-          style: context.qTitle(),
+/// Drawer terpisah untuk menambah akun bank/e-wallet manual agar muncul
+/// mulus dari bawah seperti drawer lainnya.
+class _ManualAccountSheet extends StatelessWidget {
+  const _ManualAccountSheet({
+    required this.repository,
+    required this.kind,
+  });
+
+  final LedgerRepository repository;
+  final AccountKind kind;
+
+  static Future<bool?> show(
+    BuildContext context, {
+    required LedgerRepository repository,
+    required AccountKind kind,
+  }) {
+    return showQuestSheet<bool>(
+      context,
+      (context) => Padding(
+        padding: EdgeInsets.only(
+          left: Spacing.m,
+          right: Spacing.m,
+          top: Spacing.s,
+          bottom: MediaQuery.viewInsetsOf(context).bottom + Spacing.m,
         ),
-        const SizedBox(height: 2),
-        Text(
-          'Untuk catatan manual tanpa membaca notifikasi.',
-          style: context.qSmall(12.5).copyWith(color: context.q.muted),
-        ),
-        const SizedBox(height: Spacing.m),
-        ..._buildManualForm(_kind, showBack: true),
-      ],
+        child: _ManualAccountSheet(repository: repository, kind: kind),
+      ),
     );
   }
 
-  List<Widget> _buildManualForm(AccountKind kind, {required bool showBack}) {
-    final presets = switch (kind) {
+  @override
+  Widget build(BuildContext context) {
+    final isBank = kind == AccountKind.bank;
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            isBank ? 'Tambah Bank Manual' : 'Tambah E-wallet Manual',
+            style: context.qTitle(),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Untuk catatan manual tanpa membaca notifikasi.',
+            style: context.qSmall(12.5).copyWith(color: context.q.muted),
+          ),
+          const SizedBox(height: Spacing.m),
+          _ManualAccountForm(
+            repository: repository,
+            kind: kind,
+            cancelLabel: 'Kembali',
+            cancelIcon: Icons.arrow_back_rounded,
+            onCancel: () => Navigator.pop(context, false),
+            onSaved: () => Navigator.pop(context, true),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Form input akun manual (dipakai inline untuk Tunai dan di [_ManualAccountSheet]).
+class _ManualAccountForm extends StatefulWidget {
+  const _ManualAccountForm({
+    super.key,
+    required this.repository,
+    required this.kind,
+    required this.cancelLabel,
+    this.cancelIcon,
+    required this.onCancel,
+    required this.onSaved,
+  });
+
+  final LedgerRepository repository;
+  final AccountKind kind;
+  final String cancelLabel;
+  final IconData? cancelIcon;
+  final VoidCallback onCancel;
+  final VoidCallback onSaved;
+
+  @override
+  State<_ManualAccountForm> createState() => _ManualAccountFormState();
+}
+
+class _ManualAccountFormState extends State<_ManualAccountForm> {
+  final _nameCtrl = TextEditingController();
+  final _openingCtrl = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _openingCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final name = _nameCtrl.text.trim();
+    if (name.isEmpty) {
+      final hint = switch (widget.kind) {
+        AccountKind.bank => 'Beri nama bank, ya. Misalnya BCA.',
+        AccountKind.ewallet => 'Beri nama e-wallet, ya. Misalnya GoPay.',
+        AccountKind.cash => 'Beri nama dulu, ya. Misalnya Dompet.',
+      };
+      setState(() => _error = hint);
+      return;
+    }
+    try {
+      final account = await widget.repository.addAccount(name, widget.kind);
+      final opening = int.tryParse(
+        _openingCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''),
+      );
+      if (opening != null && opening > 0) {
+        await widget.repository.setOpeningBalance(account.id, opening);
+      }
+      if (!mounted) return;
+      questSnack(context, '$name siap dipakai.', icon: Icons.check_rounded);
+      widget.onSaved();
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error = 'Nama "$name" sudah dipakai. Coba nama lain, ya.',
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final presets = switch (widget.kind) {
       AccountKind.bank => const [
         'CIMB Niaga',
         'BSI',
@@ -295,90 +350,91 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
       AccountKind.ewallet => const ['LinkAja', 'AstraPay', 'iSaku'],
       AccountKind.cash => const <String>[],
     };
-    final nameLabel = switch (kind) {
+    final nameLabel = switch (widget.kind) {
       AccountKind.bank => 'Nama Bank',
       AccountKind.ewallet => 'Nama E-Wallet',
       AccountKind.cash => 'Nama Akun',
     };
-    final nameHint = switch (kind) {
+    final nameHint = switch (widget.kind) {
       AccountKind.bank => 'Misalnya: CIMB Niaga atau BSI',
       AccountKind.ewallet => 'Misalnya: LinkAja',
       AccountKind.cash => 'Misalnya: Dompet',
     };
-    final openingHint = kind == AccountKind.cash
+    final openingHint = widget.kind == AccountKind.cash
         ? 'Misalnya: 250000'
         : 'Misalnya: 500000';
 
-    return [
-      if (presets.isNotEmpty) ...[
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (final p in presets) ...[
-                QuestChip(
-                  label: p,
-                  selected: _cashNameCtrl.text == p,
-                  onTap: () {
-                    setState(() {
-                      _cashNameCtrl.text = p;
-                      _cashError = null;
-                    });
-                  },
-                ),
-                const SizedBox(width: Spacing.xs),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (presets.isNotEmpty) ...[
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final p in presets) ...[
+                  QuestChip(
+                    label: p,
+                    selected: _nameCtrl.text == p,
+                    onTap: () {
+                      setState(() {
+                        _nameCtrl.text = p;
+                        _error = null;
+                      });
+                    },
+                  ),
+                  const SizedBox(width: Spacing.xs),
+                ],
               ],
-            ],
-          ),
-        ),
-        const SizedBox(height: Spacing.s),
-      ],
-      QuestFieldLabel(nameLabel),
-      const SizedBox(height: Spacing.xs),
-      TextField(
-        controller: _cashNameCtrl,
-        autofocus: kind == AccountKind.cash,
-        textCapitalization: TextCapitalization.words,
-        decoration: InputDecoration(
-          hintText: nameHint,
-          errorText: _cashError,
-        ),
-      ),
-      const SizedBox(height: Spacing.m),
-      const QuestFieldLabel('Saldo awal (opsional)'),
-      const SizedBox(height: Spacing.xs),
-      TextField(
-        controller: _cashOpeningCtrl,
-        keyboardType: TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        decoration: InputDecoration(hintText: openingHint),
-      ),
-      const SizedBox(height: Spacing.m),
-      Row(
-        children: [
-          Expanded(
-            child: QuestButton(
-              label: showBack ? 'Kembali' : 'Batal',
-              icon: showBack ? Icons.arrow_back_rounded : null,
-              tone: QuestTone.secondary,
-              onPressed: showBack
-                  ? () => setState(() => _step = _AddStep.pick)
-                  : () => Navigator.pop(context),
             ),
           ),
-          const SizedBox(width: Spacing.s),
-          Expanded(
-            child: QuestButton(
-              label: 'Simpan',
-              icon: Icons.check_rounded,
-              onPressed: () => _saveManual(kind),
-            ),
-          ),
+          const SizedBox(height: Spacing.s),
         ],
-      ),
-    ];
+        QuestFieldLabel(nameLabel),
+        const SizedBox(height: Spacing.xs),
+        TextField(
+          controller: _nameCtrl,
+          autofocus: widget.kind == AccountKind.cash,
+          textCapitalization: TextCapitalization.words,
+          decoration: InputDecoration(
+            hintText: nameHint,
+            errorText: _error,
+          ),
+        ),
+        const SizedBox(height: Spacing.m),
+        const QuestFieldLabel('Saldo awal (opsional)'),
+        const SizedBox(height: Spacing.xs),
+        TextField(
+          controller: _openingCtrl,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: InputDecoration(hintText: openingHint),
+        ),
+        const SizedBox(height: Spacing.m),
+        Row(
+          children: [
+            Expanded(
+              child: QuestButton(
+                label: widget.cancelLabel,
+                icon: widget.cancelIcon,
+                tone: QuestTone.secondary,
+                onPressed: widget.onCancel,
+              ),
+            ),
+            const SizedBox(width: Spacing.s),
+            Expanded(
+              child: QuestButton(
+                label: 'Simpan',
+                icon: Icons.check_rounded,
+                onPressed: _save,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
-
 }
 
 enum _ConnectStep { explain, permission, success }
