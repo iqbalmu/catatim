@@ -18,7 +18,11 @@ extension ManualTransactionsRepo on LedgerRepository {
         : counterparty.trim();
     final resolvedCategoryId =
         categoryId ??
-        await preferredCategoryId(counterparty: clean, kind: kind);
+        await preferredCategoryId(
+          counterparty: clean,
+          kind: kind,
+          direction: direction,
+        );
     return _db
         .into(_db.transactions)
         .insert(

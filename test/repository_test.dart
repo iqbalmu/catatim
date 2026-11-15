@@ -1013,6 +1013,89 @@ void main() {
     );
   });
 
+  group('kategori otomatis via vote kata kunci notifikasi', () {
+    test(
+      'draf QRIS tanpa counterparty dapat kategori dari riwayat merchant',
+      () async {
+        final ritel = await repo.addCategory('Ritel');
+        final bahanBakar = await repo.addCategory('Bahan Bakar');
+
+        // Riwayat: dua kali belanja di Indomaret (keluar) → Ritel; satu
+        // distraktor merchant lain; satu refund Indomaret arah masuk.
+        await repo.addManual(
+          amount: 50000,
+          direction: Direction.outgoing,
+          kind: TxKind.payment,
+          counterparty: 'INDOMARET MARGONDO RAYA',
+          categoryId: ritel.id,
+          occurredAt: DateTime(2026, 10, 1, 9),
+        );
+        await repo.addManual(
+          amount: 60000,
+          direction: Direction.outgoing,
+          kind: TxKind.payment,
+          counterparty: 'INDOMARET SUKARNO HATTA',
+          categoryId: ritel.id,
+          occurredAt: DateTime(2026, 10, 2, 9),
+        );
+        await repo.addManual(
+          amount: 100000,
+          direction: Direction.outgoing,
+          kind: TxKind.payment,
+          counterparty: 'PERTASHAP SPBU 34.101.05',
+          categoryId: bahanBakar.id,
+          occurredAt: DateTime(2026, 10, 3, 9),
+        );
+        await repo.addManual(
+          amount: 20000,
+          direction: Direction.incoming,
+          kind: TxKind.transfer,
+          counterparty: 'REFUND INDOMARET',
+          categoryId: bahanBakar.id,
+          occurredAt: DateTime(2026, 10, 4, 9),
+        );
+
+        // Notifikasi QRIS terparse tanpa counterparty (template tanpa pola
+        // counterparty) — kategori menempel dari vote isi notifikasi.
+        final draftId = await repo.addDraftFromCapture(
+          raw: capture(
+            body: 'Pembayaran QRIS Rp35.000 ke INDOMARET MARGONDO berhasil',
+            postedAt: DateTime(2026, 10, 11, 10),
+          ),
+          draft: const ParsedDraft(
+            bankId: 'blu',
+            bankName: 'blu by BCA',
+            ruleName: 'pembayaran / qr',
+            kind: TxKind.payment,
+            direction: Direction.outgoing,
+            amount: 35000,
+          ),
+        );
+        expect(draftId, isNotNull);
+        final draft = await (db.select(
+          db.drafts,
+        )..where((d) => d.id.equals(draftId!))).getSingle();
+        expect(draft.categoryId, ritel.id);
+      },
+    );
+
+    test(
+      'isi notifikasi tanpa kata kunci bermakna jatuh ke default jenis',
+      () async {
+        final pref = await repo.preferredCategoryId(
+          rawText: 'blu by BCA transfer berhasil dana masuk',
+          kind: TxKind.other,
+          direction: Direction.incoming,
+        );
+        final lainnya = await db
+            .select(db.categories)
+            .get()
+            .then((l) => l.firstWhere((c) => c.name == 'Lainnya').id);
+        expect(pref, lainnya);
+      },
+    );
+  });
+
   group('Internal Transfer Pairing & Confirmation', () {
     test(
       'partitionDrafts mendeteksi pasangan draf keluar & masuk bernominal sama',

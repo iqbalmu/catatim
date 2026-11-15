@@ -47,7 +47,9 @@ extension DraftsRepo on LedgerRepository {
 
       final resolvedCatId = await preferredCategoryId(
         counterparty: draft.counterparty,
+        rawText: '${raw.title} ${raw.body}',
         kind: draft.kind,
+        direction: draft.direction,
       );
 
       return _db
@@ -99,7 +101,9 @@ extension DraftsRepo on LedgerRepository {
           draft.categoryId ??
           await preferredCategoryId(
             counterparty: targetCounterparty,
+            rawText: '${draft.rawTitle ?? ''} ${draft.rawBody ?? ''}',
             kind: kind,
+            direction: direction,
           );
       final id = await _db
           .into(_db.transactions)
@@ -459,7 +463,12 @@ extension DraftsRepo on LedgerRepository {
       if (dup != null) return null;
       final resolvedCatId =
           categoryId ??
-          await preferredCategoryId(counterparty: title, kind: TxKind.other);
+          await preferredCategoryId(
+            counterparty: title,
+            rawText: '$title $body',
+            kind: TxKind.other,
+            direction: direction,
+          );
       final resolvedAccId = accountId ?? await _accountIdForBank(bankId);
       return _db
           .into(_db.drafts)

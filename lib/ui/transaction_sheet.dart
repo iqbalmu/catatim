@@ -128,9 +128,14 @@ class _TransactionSheetState extends State<TransactionSheet> {
     if (!mounted) return;
     setState(() => _categories = cats);
     if (!_isEdit && _categoryId == null) {
+      final draft = widget.draft;
       final preferred = await widget.repository.preferredCategoryId(
         counterparty: _counterpartyCtrl.text,
+        rawText: draft == null
+            ? null
+            : '${draft.rawTitle ?? ''} ${draft.rawBody ?? ''}',
         kind: _kind,
+        direction: _direction,
       );
       if (!mounted) return;
       if (preferred != null) {
@@ -146,6 +151,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
     final preferred = await widget.repository.preferredCategoryId(
       counterparty: text,
       kind: _kind,
+      direction: _direction,
     );
     if (preferred != null && mounted && !_userExplicitlySelectedCategory) {
       setState(() => _categoryId = preferred);
