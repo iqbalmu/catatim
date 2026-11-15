@@ -17,10 +17,12 @@ Future<void> showSystemHealthSheet(
   BuildContext context, {
   required bool listenerEnabled,
   required DateTime? lastHeartbeat,
+  required bool batteryExempt,
   required Set<String> connected,
   required Stream<CaptureLog?> latestCaptureLogStream,
   required VoidCallback onOpenListenerSettings,
   required VoidCallback onOpenBatterySettings,
+  required VoidCallback onRequestBatteryExempt,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -110,21 +112,32 @@ Future<void> showSystemHealthSheet(
                         QuestListTile(
                           leading: Icon(
                             Icons.battery_saver_rounded,
-                            color: q.text,
+                            color: batteryExempt ? q.good : q.text,
                           ),
                           title: Text(
-                            'Optimasi Baterai HP',
+                            batteryExempt
+                                ? 'Baterai: Tidak Dibatasi'
+                                : 'Optimasi Baterai HP',
                             style: ctx.qTitle(14.5),
                           ),
                           subtitle: Text(
-                            'Setel ke "Tidak Dibatasi" agar layanan tidak dimatikan',
+                            batteryExempt
+                                ? 'Sudah dikecualikan — Android tidak akan '
+                                    'mematikan layanan capture'
+                                : 'Izinkan agar layanan capture tidak '
+                                    'dimatikan di background',
                             style: ctx.qSmall(11.5).copyWith(color: q.muted),
                           ),
-                          trailing: const Icon(
-                            Icons.open_in_new_rounded,
+                          trailing: Icon(
+                            batteryExempt
+                                ? Icons.check_circle_outline_rounded
+                                : Icons.open_in_new_rounded,
                             size: 18,
+                            color: batteryExempt ? q.good : null,
                           ),
-                          onTap: onOpenBatterySettings,
+                          onTap: batteryExempt
+                              ? onOpenBatterySettings
+                              : onRequestBatteryExempt,
                         ),
                       ],
                     ),

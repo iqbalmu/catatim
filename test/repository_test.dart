@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -1404,5 +1406,51 @@ void main() {
         expect(spend, 0);
       },
     );
+  });
+
+  group('bon jatuh tempo', () {
+    test('dueDate tersimpan, terubah, dan bisa dikosongkan', () async {
+      final due = DateTime(2026, 11, 25);
+      final id = await repo.addBon(
+        person: 'Budi',
+        amount: 50000,
+        direction: BonDirection.lent,
+        dueDate: due,
+      );
+      var saved = await repo.watchBons().first;
+      expect(saved.single.dueDate, due);
+
+      await repo.updateBon(id, const BonsCompanion(dueDate: Value(null)));
+      saved = await repo.watchBons().first;
+      expect(saved.single.dueDate, isNull);
+    });
+  });
+
+  group('lampiran struk', () {
+    test('receiptPath tersimpan dan filenya ikut terhapus saat hapus tx',
+        () async {
+      final acc = await repo.addAccount('Dompet Uji2', AccountKind.cash);
+      final f = File(
+        '${Directory.systemTemp.createTempSync('catatim-test').path}/'
+        'receipt-test.jpg',
+      );
+      f.writeAsBytesSync([1, 2, 3]);
+
+      final txId = await repo.addManual(
+        amount: 12000,
+        direction: Direction.outgoing,
+        kind: TxKind.payment,
+        accountId: acc.id,
+        receiptPath: f.path,
+      );
+      final saved = await (db.select(
+        db.transactions,
+      )..where((t) => t.id.equals(txId))).getSingle();
+      expect(saved.receiptPath, f.path);
+
+      await repo.deleteTransaction(txId);
+      expect(f.existsSync(), isFalse,
+          reason: 'Hapus transaksi harus ikut membuang file lampiran');
+    });
   });
 }

@@ -61,6 +61,10 @@ class Transactions extends Table {
   IntColumn get categoryId =>
       integer().nullable().references(Categories, #id)();
   IntColumn get accountId => integer().nullable().references(Accounts, #id)();
+
+  /// Foto struk/bukti terlampir — disalin ke direktori app (bukan cache
+  /// yang bisa dibersihkan OS), null bila tanpa lampiran.
+  TextColumn get receiptPath => text().nullable()();
 }
 
 /// Draf transaksi hasil notifikasi bank terhubung — menunggu keputusan
@@ -104,6 +108,10 @@ class Bons extends Table {
   TextColumn get direction => textEnum<BonDirection>()();
   TextColumn get note => text().nullable()();
   DateTimeColumn get occurredAt => dateTime()();
+
+  /// Tanggal jatuh tempo pilihan user — null berarti tidak ditetapkan;
+  /// bon tanpa due date memakai heuristik umur >30 hari.
+  DateTimeColumn get dueDate => dateTime().nullable()();
   DateTimeColumn get settledAt => dateTime().nullable()();
   IntColumn get categoryId =>
       integer().nullable().references(Categories, #id)();
@@ -145,7 +153,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -266,6 +274,22 @@ class AppDatabase extends _$AppDatabase {
           "OR counterparty LIKE 'Transfer ke %' "
           "OR counterparty LIKE 'Transfer dari %')",
         );
+      }
+      if (from < 14) {
+        // Bon: kolom jatuh tempo pilihan user (nullable — tanpa due
+        // date tetap memakai heuristik umur >30 hari). Guard tabel
+        // seperti v12: fixture lama bisa saja tanpa tabel bons.
+        if (await _hasTable(m, 'bons')) {
+          if (!await _hasColumn(m, 'bons', 'due_date')) {
+            await m.addColumn(bons, bons.dueDate);
+          }
+        }
+      }
+      if (from < 15) {
+        // Transaksi: lampiran foto struk (hasil OCR / share gambar).
+        if (!await _hasColumn(m, 'transactions', 'receipt_path')) {
+          await m.addColumn(transactions, transactions.receiptPath);
+        }
       }
     },
     beforeOpen: (details) async {

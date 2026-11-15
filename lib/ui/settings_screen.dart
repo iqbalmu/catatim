@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../capture/pipeline.dart';
+import '../core/csv_export.dart' show buildTransactionCsv;
 import '../game/mascot.dart';
 import '../game/progress.dart';
 import '../rules/rule_set.dart';
@@ -364,6 +368,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       Divider(height: 1, thickness: 1, color: q.line),
 
+                      QuestListTile(
+                        leading: const _SettingIcon(
+                          icon: Icons.table_view_rounded,
+                        ),
+                        title: Text('Ekspor CSV', style: context.qTitle(15)),
+                        subtitle: Text(
+                          'Semua transaksi untuk spreadsheet',
+                          style: context.qSmall(),
+                        ),
+                        trailing: Icon(
+                          Icons.chevron_right_rounded,
+                          color: q.muted,
+                        ),
+                        onTap: () => _exportCsv(context),
+                      ),
+                      Divider(height: 1, thickness: 1, color: q.line),
+
                       if (kDebugMode) ...[
                         Divider(height: 1, thickness: 1, color: q.line),
                         QuestListTile(
@@ -449,6 +470,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  /// Ekspor seluruh transaksi ke CSV dan serahkan ke share sheet.
+  /// File ditaruh di cache lalu dibuang setelah diserahkan — pola yang
+  /// sama dengan backup (share() bisa tidak selesai, jadi pembersihan
+  /// lama dilakukan proaktif sebelum menulis).
+  Future<void> _exportCsv(BuildContext context) async {
+    final rows = await repository.exportRows();
+    if (!context.mounted) return;
+    if (rows.isEmpty) {
+      questSnack(
+        context,
+        'Belum ada transaksi untuk diekspor.',
+        icon: Icons.info_outline_rounded,
+      );
+      return;
+    }
+    final csv = buildTransactionCsv(rows);
+    final dir = await getTemporaryDirectory();
+    for (final entry in dir.listSync()) {
+      if (entry is File && entry.path.contains('catatim-export-')) {
+        entry.deleteSync();
+      }
+    }
+    final now = DateTime.now();
+    String two(int n) => n.toString().padLeft(2, '0');
+    final path =
+        '${dir.path}/catatim-export-'
+        '${now.year}${two(now.month)}${two(now.day)}'
+        '-${two(now.hour)}${two(now.minute)}.csv';
+    final file = File(path);
+    await file.writeAsString(csv);
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(path)],
+          text: 'Ekspor transaksi CatatIM — buka dengan spreadsheet.',
+        ),
+      );
+    } finally {
+      if (file.existsSync()) await file.delete();
+    }
+    if (context.mounted) {
+      questSnack(
+        context,
+        'CSV ${rows.length} transaksi siap dibagikan.',
+        icon: Icons.table_view_rounded,
+      );
+    }
   }
 
   Future<void> _seedDemoData(BuildContext context) async {

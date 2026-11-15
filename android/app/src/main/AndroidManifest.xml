@@ -3,6 +3,10 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <!-- Menampilkan peringatan batas pengeluaran (runtime di Android 13+). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Dialog langsung "di luar optimasi baterai" untuk menjaga listener
+         capture tetap hidup di vendor agresif (vivo/Xiaomi/OPPO). Permission
+         ini terbatas kebijakan Google Play — wajib justifikasi di M4. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
         android:allowBackup="false"

@@ -14,11 +14,48 @@ import 'date_picker_sheet.dart';
 import 'quest.dart';
 
 /// Bon tua: belum lunas dan umur kalender (today − occurredAt) > 30 hari.
-bool bonNeedsBadge(DateTime occurredAt, {DateTime? now}) {
+bool bonNeedsBadge(Bon bon, {DateTime? now}) {
+  if (bon.settledAt != null) return false;
   final n = now ?? DateTime.now();
   final today = DateTime(n.year, n.month, n.day);
-  final day = DateTime(occurredAt.year, occurredAt.month, occurredAt.day);
+
+  // Due date pilihan user menang: hari-H masih aman, besoknya lewat.
+  final due = bon.dueDate;
+  if (due != null) {
+    final dueDay = DateTime(due.year, due.month, due.day);
+    return today.isAfter(dueDay);
+  }
+  final day = DateTime(
+    bon.occurredAt.year,
+    bon.occurredAt.month,
+    bon.occurredAt.day,
+  );
   return today.difference(day).inDays > 30;
+}
+
+/// Status chip jatuh tempo untuk kartu bon: null bila tidak relevan
+/// (lunas atau tanpa due date). [today] memisahkan lewat / hari ini /
+/// mendatang.
+({String label, Color? color})? bonDueChip(
+  Bon bon,
+  Color warn,
+  Color bad, {
+  DateTime? now,
+}) {
+  final due = bon.dueDate;
+  if (bon.settledAt != null || due == null) return null;
+  final n = now ?? DateTime.now();
+  final today = DateTime(n.year, n.month, n.day);
+  final dueDay = DateTime(due.year, due.month, due.day);
+  final selisih = today.difference(dueDay).inDays;
+  if (selisih > 0) {
+    return (
+      label: selisih == 1 ? 'Lewat 1 hari' : 'Lewat $selisih hari',
+      color: bad,
+    );
+  }
+  if (selisih == 0) return (label: 'Jatuh tempo hari ini', color: warn);
+  return (label: 'Jatuh tempo ${idDayMonth(due)}', color: null);
 }
 
 /// Layar utama Bon & Utang-Piutang (tab navbar).
@@ -718,6 +755,45 @@ class _BonScreenState extends State<BonScreen> {
                             spacing: 6,
                             runSpacing: 2,
                             children: [
+                              Builder(
+                                builder: (context) {
+                                  final dueChip = bonDueChip(
+                                    bon,
+                                    context.q.warn,
+                                    context.q.bad,
+                                  );
+                                  if (dueChip == null) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 5,
+                                      vertical: 1,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: (dueChip.color ?? context.q.muted)
+                                          .withValues(alpha: 0.13),
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadius.cell,
+                                      ),
+                                      border: Border.all(
+                                        color:
+                                            (dueChip.color ?? context.q.muted)
+                                                .withValues(alpha: 0.4),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      dueChip.label,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color:
+                                            dueChip.color ?? context.q.text,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                               if (cat != null)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
@@ -886,6 +962,7 @@ class _BonSheetState extends State<BonSheet> {
   late final TextEditingController _noteCtrl;
   late BonDirection _direction;
   late DateTime _date;
+  DateTime? _dueDate;
   int? _categoryId;
   int? _accountId;
   List<Category> _categories = [];
@@ -902,6 +979,7 @@ class _BonSheetState extends State<BonSheet> {
     _noteCtrl = TextEditingController(text: e?.note ?? '');
     _direction = e?.direction ?? BonDirection.lent;
     _date = e?.occurredAt ?? DateTime.now();
+    _dueDate = e?.dueDate;
     _categoryId = e?.categoryId;
     _accountId = e?.accountId;
     _loadMetadata();
@@ -945,6 +1023,18 @@ class _BonSheetState extends State<BonSheet> {
     );
     if (picked != null) {
       setState(() => _date = picked);
+    }
+  }
+
+  Future<void> _pickDueDate() async {
+    final picked = await showQuestDatePicker(
+      context,
+      initialDate: _dueDate ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+    );
+    if (picked != null) {
+      setState(() => _dueDate = picked);
     }
   }
 
@@ -1031,6 +1121,7 @@ class _BonSheetState extends State<BonSheet> {
           amount: Value(amount),
           direction: Value(_direction),
           occurredAt: Value(_date),
+          dueDate: Value(_dueDate),
           note: Value(note),
           categoryId: Value(_categoryId),
           accountId: Value(_accountId),
@@ -1042,6 +1133,7 @@ class _BonSheetState extends State<BonSheet> {
         amount: amount,
         direction: _direction,
         occurredAt: _date,
+        dueDate: _dueDate,
         note: note,
         categoryId: _categoryId,
         accountId: _accountId,
@@ -1327,6 +1419,33 @@ class _BonSheetState extends State<BonSheet> {
             ),
             decoration: const InputDecoration(
               prefixIcon: Icon(Icons.event_outlined),
+            ),
+          ),
+          const SizedBox(height: Spacing.m),
+          const QuestFieldLabel('Jatuh Tempo (Opsional)'),
+          const SizedBox(height: Spacing.xs),
+          TextFormField(
+            key: ValueKey(_dueDate),
+            initialValue: _dueDate == null
+                ? 'Tidak ditetapkan'
+                : idFullDate(_dueDate!),
+            readOnly: true,
+            onTap: _pickDueDate,
+            style: TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+              color: _dueDate == null ? q.muted : q.text,
+            ),
+            decoration: InputDecoration(
+              prefixIcon: const Icon(Icons.alarm_outlined),
+              suffixIcon: _dueDate == null
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      tooltip: 'Hapus jatuh tempo',
+                      onPressed: () => setState(() => _dueDate = null),
+                    ),
             ),
           ),
           const SizedBox(height: Spacing.m),

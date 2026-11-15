@@ -134,6 +134,25 @@ class CaptureChannel {
     await _method.invokeMethod<void>('openBatterySettings');
   }
 
+  /// Status riil pengecualian optimasi baterai dari PowerManager —
+  /// bukan asumsi dari pernah membuka layar setting.
+  Future<bool> isIgnoringBatteryOptimizations() async {
+    try {
+      return await _method
+              .invokeMethod<bool>('isIgnoringBatteryOptimizations') ??
+          false;
+    } catch (e) {
+      _log('isIgnoringBatteryOptimizations', e);
+      return false;
+    }
+  }
+
+  /// Dialog langsung Android "di luar optimasi baterai" untuk app ini —
+  /// user tetap yang memutuskan di dialog sistem.
+  Future<void> requestIgnoreBatteryOptimizations() async {
+    await _method.invokeMethod<void>('requestIgnoreBatteryOptimizations');
+  }
+
   /// Simulasikan notifikasi melalui lapisan native untuk pengujian end-to-end.
   Future<bool> simulateNotification({
     required String packageName,

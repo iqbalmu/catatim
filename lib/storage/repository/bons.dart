@@ -27,6 +27,7 @@ extension BonsRepo on LedgerRepository {
     required BonDirection direction,
     String? note,
     DateTime? occurredAt,
+    DateTime? dueDate,
     int? categoryId,
     int? accountId,
   }) {
@@ -43,6 +44,7 @@ extension BonsRepo on LedgerRepository {
             direction: direction,
             note: Value(cleanNote),
             occurredAt: occurredAt ?? DateTime.now(),
+            dueDate: Value(dueDate),
             categoryId: Value(categoryId),
             accountId: Value(accountId),
           ),

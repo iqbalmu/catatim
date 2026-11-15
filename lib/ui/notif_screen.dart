@@ -211,12 +211,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                 stream: _bonsStream,
                 builder: (context, bonSnap) {
                   final bons = bonSnap.data ?? const <Bon>[];
-                  final aging = bons
-                      .where(
-                        (b) =>
-                            b.settledAt == null && bonNeedsBadge(b.occurredAt),
-                      )
-                      .length;
+                  final aging = bons.where(bonNeedsBadge).length;
 
                   final summary = widget.progress?.latest;
                   final level = summary?.snapshot.worstLevel;
@@ -258,8 +253,9 @@ class _NotificationScreenState extends State<NotificationScreen>
                       _NotifItem(
                         icon: Icons.handshake_outlined,
                         color: q.bad,
-                        title: '$aging bon lebih dari 30 hari belum lunas',
-                        subtitle: 'Ingatkan dirimu atau tandai lunas',
+                        title: '$aging bon belum lunas lewat batas',
+                        subtitle:
+                            'Jatuh tempo terlewat atau sudah lebih dari 30 hari',
                         actionLabel: 'Lihat Bon',
                         onTap: () => _goTo(widget.onOpenBon),
                       ),

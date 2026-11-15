@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -256,6 +258,45 @@ class _TransactionSheetState extends State<TransactionSheet> {
       }
     }
     await _loadAccounts();
+  }
+
+  /// Lihat struk asli layar penuh — pinch-zoom aktif, tap ikon/di luar
+  /// untuk menutup.
+  void _viewReceipt(String path) {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (dialogContext) => Dialog.fullscreen(
+        backgroundColor: Colors.black,
+        child: Stack(
+          children: [
+            InteractiveViewer(
+              maxScale: 4,
+              child: Center(
+                child: Image.file(
+                  File(path),
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) => const Text(
+                    'Foto tidak bisa dibuka.',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                ),
+              ),
+            ),
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topRight,
+                child: IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Colors.white),
+                  tooltip: 'Tutup',
+                  onPressed: () => Navigator.pop(dialogContext),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _openOcr() async {
@@ -626,6 +667,53 @@ class _TransactionSheetState extends State<TransactionSheet> {
           ],
         ),
         const SizedBox(height: Spacing.s),
+        if (_isEdit && (widget.existing?.tx.receiptPath ?? '').isNotEmpty)
+          Builder(
+            builder: (context) {
+              final path = widget.existing!.tx.receiptPath!;
+              final q = context.q;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: Spacing.s),
+                child: QuestCard(
+                  onTap: () => _viewReceipt(path),
+                  child: Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(AppRadius.cell),
+                        child: SizedBox(
+                          width: 56,
+                          height: 56,
+                          child: Image.file(
+                            File(path),
+                            fit: BoxFit.cover,
+                            cacheWidth: 168,
+                            errorBuilder: (_, _, _) => Icon(
+                              Icons.broken_image_outlined,
+                              color: q.muted,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: Spacing.s),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Struk terlampir', style: context.qTitle(14)),
+                            Text(
+                              'Ketuk untuk melihat foto asli',
+                              style: context.qSmall().copyWith(color: q.muted),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded, color: q.muted),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
         QuestSegmented<Direction>(
           selected: _direction,
           onChanged: (d) => setState(() => _direction = d),

@@ -15,6 +15,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
+import android.os.PowerManager
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
@@ -92,6 +93,21 @@ class MainActivity : FlutterActivity() {
                         startActivity(
                             Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
                         )
+                        result.success(null)
+                    }
+                    "isIgnoringBatteryOptimizations" -> {
+                        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+                        result.success(pm.isIgnoringBatteryOptimizations(packageName))
+                    }
+                    "requestIgnoreBatteryOptimizations" -> {
+                        // Dialog langsung Android (bukan daftar global) —
+                        // user tetap yang memutuskan. Butuh permission
+                        // REQUEST_IGNORE_BATTERY_OPTIMIZATIONS di manifest;
+                        // terbatas kebijakan Play, lihat M4.
+                        val intent = Intent(
+                            Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        ).apply { data = Uri.parse("package:$packageName") }
+                        startActivity(intent)
                         result.success(null)
                     }
                     "setAllowedPackages" -> {

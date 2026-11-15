@@ -255,7 +255,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             stream: _bonsWatch,
             builder: (context, snapshot) {
               final hasOld = (snapshot.data ?? const <Bon>[]).any(
-                (b) => b.settledAt == null && bonNeedsBadge(b.occurredAt),
+                bonNeedsBadge,
               );
               return QuestBottomNav(
                 index: _tab,

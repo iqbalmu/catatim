@@ -874,6 +874,17 @@ class $TransactionsTable extends Transactions
       'REFERENCES accounts (id)',
     ),
   );
+  static const VerificationMeta _receiptPathMeta = const VerificationMeta(
+    'receiptPath',
+  );
+  @override
+  late final GeneratedColumn<String> receiptPath = GeneratedColumn<String>(
+    'receipt_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -890,6 +901,7 @@ class $TransactionsTable extends Transactions
     createdAt,
     categoryId,
     accountId,
+    receiptPath,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -977,6 +989,15 @@ class $TransactionsTable extends Transactions
         accountId.isAcceptableOrUnknown(data['account_id']!, _accountIdMeta),
       );
     }
+    if (data.containsKey('receipt_path')) {
+      context.handle(
+        _receiptPathMeta,
+        receiptPath.isAcceptableOrUnknown(
+          data['receipt_path']!,
+          _receiptPathMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1048,6 +1069,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.int,
         data['${effectivePrefix}account_id'],
       ),
+      receiptPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}receipt_path'],
+      ),
     );
   }
 
@@ -1079,6 +1104,10 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final DateTime createdAt;
   final int? categoryId;
   final int? accountId;
+
+  /// Foto struk/bukti terlampir — disalin ke direktori app (bukan cache
+  /// yang bisa dibersihkan OS), null bila tanpa lampiran.
+  final String? receiptPath;
   const Transaction({
     required this.id,
     required this.uuid,
@@ -1094,6 +1123,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     required this.createdAt,
     this.categoryId,
     this.accountId,
+    this.receiptPath,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1134,6 +1164,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     if (!nullToAbsent || accountId != null) {
       map['account_id'] = Variable<int>(accountId);
     }
+    if (!nullToAbsent || receiptPath != null) {
+      map['receipt_path'] = Variable<String>(receiptPath);
+    }
     return map;
   }
 
@@ -1163,6 +1196,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       accountId: accountId == null && nullToAbsent
           ? const Value.absent()
           : Value(accountId),
+      receiptPath: receiptPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(receiptPath),
     );
   }
 
@@ -1192,6 +1228,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       categoryId: serializer.fromJson<int?>(json['categoryId']),
       accountId: serializer.fromJson<int?>(json['accountId']),
+      receiptPath: serializer.fromJson<String?>(json['receiptPath']),
     );
   }
   @override
@@ -1218,6 +1255,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'categoryId': serializer.toJson<int?>(categoryId),
       'accountId': serializer.toJson<int?>(accountId),
+      'receiptPath': serializer.toJson<String?>(receiptPath),
     };
   }
 
@@ -1236,6 +1274,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     DateTime? createdAt,
     Value<int?> categoryId = const Value.absent(),
     Value<int?> accountId = const Value.absent(),
+    Value<String?> receiptPath = const Value.absent(),
   }) => Transaction(
     id: id ?? this.id,
     uuid: uuid ?? this.uuid,
@@ -1251,6 +1290,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     createdAt: createdAt ?? this.createdAt,
     categoryId: categoryId.present ? categoryId.value : this.categoryId,
     accountId: accountId.present ? accountId.value : this.accountId,
+    receiptPath: receiptPath.present ? receiptPath.value : this.receiptPath,
   );
   Transaction copyWithCompanion(TransactionsCompanion data) {
     return Transaction(
@@ -1274,6 +1314,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ? data.categoryId.value
           : this.categoryId,
       accountId: data.accountId.present ? data.accountId.value : this.accountId,
+      receiptPath: data.receiptPath.present
+          ? data.receiptPath.value
+          : this.receiptPath,
     );
   }
 
@@ -1293,7 +1336,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('rawBody: $rawBody, ')
           ..write('createdAt: $createdAt, ')
           ..write('categoryId: $categoryId, ')
-          ..write('accountId: $accountId')
+          ..write('accountId: $accountId, ')
+          ..write('receiptPath: $receiptPath')
           ..write(')'))
         .toString();
   }
@@ -1314,6 +1358,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     createdAt,
     categoryId,
     accountId,
+    receiptPath,
   );
   @override
   bool operator ==(Object other) =>
@@ -1332,7 +1377,8 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.rawBody == this.rawBody &&
           other.createdAt == this.createdAt &&
           other.categoryId == this.categoryId &&
-          other.accountId == this.accountId);
+          other.accountId == this.accountId &&
+          other.receiptPath == this.receiptPath);
 }
 
 class TransactionsCompanion extends UpdateCompanion<Transaction> {
@@ -1350,6 +1396,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<DateTime> createdAt;
   final Value<int?> categoryId;
   final Value<int?> accountId;
+  final Value<String?> receiptPath;
   const TransactionsCompanion({
     this.id = const Value.absent(),
     this.uuid = const Value.absent(),
@@ -1365,6 +1412,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.createdAt = const Value.absent(),
     this.categoryId = const Value.absent(),
     this.accountId = const Value.absent(),
+    this.receiptPath = const Value.absent(),
   });
   TransactionsCompanion.insert({
     this.id = const Value.absent(),
@@ -1381,6 +1429,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.createdAt = const Value.absent(),
     this.categoryId = const Value.absent(),
     this.accountId = const Value.absent(),
+    this.receiptPath = const Value.absent(),
   }) : uuid = Value(uuid),
        bankId = Value(bankId),
        kind = Value(kind),
@@ -1403,6 +1452,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<DateTime>? createdAt,
     Expression<int>? categoryId,
     Expression<int>? accountId,
+    Expression<String>? receiptPath,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1419,6 +1469,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (createdAt != null) 'created_at': createdAt,
       if (categoryId != null) 'category_id': categoryId,
       if (accountId != null) 'account_id': accountId,
+      if (receiptPath != null) 'receipt_path': receiptPath,
     });
   }
 
@@ -1437,6 +1488,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<DateTime>? createdAt,
     Value<int?>? categoryId,
     Value<int?>? accountId,
+    Value<String?>? receiptPath,
   }) {
     return TransactionsCompanion(
       id: id ?? this.id,
@@ -1453,6 +1505,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       createdAt: createdAt ?? this.createdAt,
       categoryId: categoryId ?? this.categoryId,
       accountId: accountId ?? this.accountId,
+      receiptPath: receiptPath ?? this.receiptPath,
     );
   }
 
@@ -1507,6 +1560,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (accountId.present) {
       map['account_id'] = Variable<int>(accountId.value);
     }
+    if (receiptPath.present) {
+      map['receipt_path'] = Variable<String>(receiptPath.value);
+    }
     return map;
   }
 
@@ -1526,7 +1582,8 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('rawBody: $rawBody, ')
           ..write('createdAt: $createdAt, ')
           ..write('categoryId: $categoryId, ')
-          ..write('accountId: $accountId')
+          ..write('accountId: $accountId, ')
+          ..write('receiptPath: $receiptPath')
           ..write(')'))
         .toString();
   }
@@ -3412,6 +3469,17 @@ class $BonsTable extends Bons with TableInfo<$BonsTable, Bon> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _dueDateMeta = const VerificationMeta(
+    'dueDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dueDate = GeneratedColumn<DateTime>(
+    'due_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _settledAtMeta = const VerificationMeta(
     'settledAt',
   );
@@ -3486,6 +3554,7 @@ class $BonsTable extends Bons with TableInfo<$BonsTable, Bon> {
     direction,
     note,
     occurredAt,
+    dueDate,
     settledAt,
     categoryId,
     accountId,
@@ -3542,6 +3611,12 @@ class $BonsTable extends Bons with TableInfo<$BonsTable, Bon> {
       );
     } else if (isInserting) {
       context.missing(_occurredAtMeta);
+    }
+    if (data.containsKey('due_date')) {
+      context.handle(
+        _dueDateMeta,
+        dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta),
+      );
     }
     if (data.containsKey('settled_at')) {
       context.handle(
@@ -3615,6 +3690,10 @@ class $BonsTable extends Bons with TableInfo<$BonsTable, Bon> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}occurred_at'],
       )!,
+      dueDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}due_date'],
+      ),
       settledAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}settled_at'],
@@ -3655,6 +3734,10 @@ class Bon extends DataClass implements Insertable<Bon> {
   final BonDirection direction;
   final String? note;
   final DateTime occurredAt;
+
+  /// Tanggal jatuh tempo pilihan user — null berarti tidak ditetapkan;
+  /// bon tanpa due date memakai heuristik umur >30 hari.
+  final DateTime? dueDate;
   final DateTime? settledAt;
   final int? categoryId;
   final int? accountId;
@@ -3668,6 +3751,7 @@ class Bon extends DataClass implements Insertable<Bon> {
     required this.direction,
     this.note,
     required this.occurredAt,
+    this.dueDate,
     this.settledAt,
     this.categoryId,
     this.accountId,
@@ -3690,6 +3774,9 @@ class Bon extends DataClass implements Insertable<Bon> {
       map['note'] = Variable<String>(note);
     }
     map['occurred_at'] = Variable<DateTime>(occurredAt);
+    if (!nullToAbsent || dueDate != null) {
+      map['due_date'] = Variable<DateTime>(dueDate);
+    }
     if (!nullToAbsent || settledAt != null) {
       map['settled_at'] = Variable<DateTime>(settledAt);
     }
@@ -3715,6 +3802,9 @@ class Bon extends DataClass implements Insertable<Bon> {
       direction: Value(direction),
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
       occurredAt: Value(occurredAt),
+      dueDate: dueDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dueDate),
       settledAt: settledAt == null && nullToAbsent
           ? const Value.absent()
           : Value(settledAt),
@@ -3746,6 +3836,7 @@ class Bon extends DataClass implements Insertable<Bon> {
       ),
       note: serializer.fromJson<String?>(json['note']),
       occurredAt: serializer.fromJson<DateTime>(json['occurredAt']),
+      dueDate: serializer.fromJson<DateTime?>(json['dueDate']),
       settledAt: serializer.fromJson<DateTime?>(json['settledAt']),
       categoryId: serializer.fromJson<int?>(json['categoryId']),
       accountId: serializer.fromJson<int?>(json['accountId']),
@@ -3768,6 +3859,7 @@ class Bon extends DataClass implements Insertable<Bon> {
       ),
       'note': serializer.toJson<String?>(note),
       'occurredAt': serializer.toJson<DateTime>(occurredAt),
+      'dueDate': serializer.toJson<DateTime?>(dueDate),
       'settledAt': serializer.toJson<DateTime?>(settledAt),
       'categoryId': serializer.toJson<int?>(categoryId),
       'accountId': serializer.toJson<int?>(accountId),
@@ -3786,6 +3878,7 @@ class Bon extends DataClass implements Insertable<Bon> {
     BonDirection? direction,
     Value<String?> note = const Value.absent(),
     DateTime? occurredAt,
+    Value<DateTime?> dueDate = const Value.absent(),
     Value<DateTime?> settledAt = const Value.absent(),
     Value<int?> categoryId = const Value.absent(),
     Value<int?> accountId = const Value.absent(),
@@ -3799,6 +3892,7 @@ class Bon extends DataClass implements Insertable<Bon> {
     direction: direction ?? this.direction,
     note: note.present ? note.value : this.note,
     occurredAt: occurredAt ?? this.occurredAt,
+    dueDate: dueDate.present ? dueDate.value : this.dueDate,
     settledAt: settledAt.present ? settledAt.value : this.settledAt,
     categoryId: categoryId.present ? categoryId.value : this.categoryId,
     accountId: accountId.present ? accountId.value : this.accountId,
@@ -3818,6 +3912,7 @@ class Bon extends DataClass implements Insertable<Bon> {
       occurredAt: data.occurredAt.present
           ? data.occurredAt.value
           : this.occurredAt,
+      dueDate: data.dueDate.present ? data.dueDate.value : this.dueDate,
       settledAt: data.settledAt.present ? data.settledAt.value : this.settledAt,
       categoryId: data.categoryId.present
           ? data.categoryId.value
@@ -3840,6 +3935,7 @@ class Bon extends DataClass implements Insertable<Bon> {
           ..write('direction: $direction, ')
           ..write('note: $note, ')
           ..write('occurredAt: $occurredAt, ')
+          ..write('dueDate: $dueDate, ')
           ..write('settledAt: $settledAt, ')
           ..write('categoryId: $categoryId, ')
           ..write('accountId: $accountId, ')
@@ -3858,6 +3954,7 @@ class Bon extends DataClass implements Insertable<Bon> {
     direction,
     note,
     occurredAt,
+    dueDate,
     settledAt,
     categoryId,
     accountId,
@@ -3875,6 +3972,7 @@ class Bon extends DataClass implements Insertable<Bon> {
           other.direction == this.direction &&
           other.note == this.note &&
           other.occurredAt == this.occurredAt &&
+          other.dueDate == this.dueDate &&
           other.settledAt == this.settledAt &&
           other.categoryId == this.categoryId &&
           other.accountId == this.accountId &&
@@ -3890,6 +3988,7 @@ class BonsCompanion extends UpdateCompanion<Bon> {
   final Value<BonDirection> direction;
   final Value<String?> note;
   final Value<DateTime> occurredAt;
+  final Value<DateTime?> dueDate;
   final Value<DateTime?> settledAt;
   final Value<int?> categoryId;
   final Value<int?> accountId;
@@ -3903,6 +4002,7 @@ class BonsCompanion extends UpdateCompanion<Bon> {
     this.direction = const Value.absent(),
     this.note = const Value.absent(),
     this.occurredAt = const Value.absent(),
+    this.dueDate = const Value.absent(),
     this.settledAt = const Value.absent(),
     this.categoryId = const Value.absent(),
     this.accountId = const Value.absent(),
@@ -3917,6 +4017,7 @@ class BonsCompanion extends UpdateCompanion<Bon> {
     required BonDirection direction,
     this.note = const Value.absent(),
     required DateTime occurredAt,
+    this.dueDate = const Value.absent(),
     this.settledAt = const Value.absent(),
     this.categoryId = const Value.absent(),
     this.accountId = const Value.absent(),
@@ -3934,6 +4035,7 @@ class BonsCompanion extends UpdateCompanion<Bon> {
     Expression<String>? direction,
     Expression<String>? note,
     Expression<DateTime>? occurredAt,
+    Expression<DateTime>? dueDate,
     Expression<DateTime>? settledAt,
     Expression<int>? categoryId,
     Expression<int>? accountId,
@@ -3948,6 +4050,7 @@ class BonsCompanion extends UpdateCompanion<Bon> {
       if (direction != null) 'direction': direction,
       if (note != null) 'note': note,
       if (occurredAt != null) 'occurred_at': occurredAt,
+      if (dueDate != null) 'due_date': dueDate,
       if (settledAt != null) 'settled_at': settledAt,
       if (categoryId != null) 'category_id': categoryId,
       if (accountId != null) 'account_id': accountId,
@@ -3965,6 +4068,7 @@ class BonsCompanion extends UpdateCompanion<Bon> {
     Value<BonDirection>? direction,
     Value<String?>? note,
     Value<DateTime>? occurredAt,
+    Value<DateTime?>? dueDate,
     Value<DateTime?>? settledAt,
     Value<int?>? categoryId,
     Value<int?>? accountId,
@@ -3979,6 +4083,7 @@ class BonsCompanion extends UpdateCompanion<Bon> {
       direction: direction ?? this.direction,
       note: note ?? this.note,
       occurredAt: occurredAt ?? this.occurredAt,
+      dueDate: dueDate ?? this.dueDate,
       settledAt: settledAt ?? this.settledAt,
       categoryId: categoryId ?? this.categoryId,
       accountId: accountId ?? this.accountId,
@@ -4014,6 +4119,9 @@ class BonsCompanion extends UpdateCompanion<Bon> {
     if (occurredAt.present) {
       map['occurred_at'] = Variable<DateTime>(occurredAt.value);
     }
+    if (dueDate.present) {
+      map['due_date'] = Variable<DateTime>(dueDate.value);
+    }
     if (settledAt.present) {
       map['settled_at'] = Variable<DateTime>(settledAt.value);
     }
@@ -4044,6 +4152,7 @@ class BonsCompanion extends UpdateCompanion<Bon> {
           ..write('direction: $direction, ')
           ..write('note: $note, ')
           ..write('occurredAt: $occurredAt, ')
+          ..write('dueDate: $dueDate, ')
           ..write('settledAt: $settledAt, ')
           ..write('categoryId: $categoryId, ')
           ..write('accountId: $accountId, ')
@@ -5084,6 +5193,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<int?> categoryId,
       Value<int?> accountId,
+      Value<String?> receiptPath,
     });
 typedef $$TransactionsTableUpdateCompanionBuilder =
     TransactionsCompanion Function({
@@ -5101,6 +5211,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<int?> categoryId,
       Value<int?> accountId,
+      Value<String?> receiptPath,
     });
 
 final class $$TransactionsTableReferences
@@ -5229,6 +5340,11 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get receiptPath => $composableBuilder(
+    column: $table.receiptPath,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5373,6 +5489,11 @@ class $$TransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get receiptPath => $composableBuilder(
+    column: $table.receiptPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CategoriesTableOrderingComposer get categoryId {
     final $$CategoriesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -5468,6 +5589,11 @@ class $$TransactionsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get receiptPath => $composableBuilder(
+    column: $table.receiptPath,
+    builder: (column) => column,
+  );
 
   $$CategoriesTableAnnotationComposer get categoryId {
     final $$CategoriesTableAnnotationComposer composer = $composerBuilder(
@@ -5587,6 +5713,7 @@ class $$TransactionsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int?> categoryId = const Value.absent(),
                 Value<int?> accountId = const Value.absent(),
+                Value<String?> receiptPath = const Value.absent(),
               }) => TransactionsCompanion(
                 id: id,
                 uuid: uuid,
@@ -5602,6 +5729,7 @@ class $$TransactionsTableTableManager
                 createdAt: createdAt,
                 categoryId: categoryId,
                 accountId: accountId,
+                receiptPath: receiptPath,
               ),
           createCompanionCallback:
               ({
@@ -5619,6 +5747,7 @@ class $$TransactionsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int?> categoryId = const Value.absent(),
                 Value<int?> accountId = const Value.absent(),
+                Value<String?> receiptPath = const Value.absent(),
               }) => TransactionsCompanion.insert(
                 id: id,
                 uuid: uuid,
@@ -5634,6 +5763,7 @@ class $$TransactionsTableTableManager
                 createdAt: createdAt,
                 categoryId: categoryId,
                 accountId: accountId,
+                receiptPath: receiptPath,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -6906,6 +7036,7 @@ typedef $$BonsTableCreateCompanionBuilder =
       required BonDirection direction,
       Value<String?> note,
       required DateTime occurredAt,
+      Value<DateTime?> dueDate,
       Value<DateTime?> settledAt,
       Value<int?> categoryId,
       Value<int?> accountId,
@@ -6921,6 +7052,7 @@ typedef $$BonsTableUpdateCompanionBuilder =
       Value<BonDirection> direction,
       Value<String?> note,
       Value<DateTime> occurredAt,
+      Value<DateTime?> dueDate,
       Value<DateTime?> settledAt,
       Value<int?> categoryId,
       Value<int?> accountId,
@@ -7029,6 +7161,11 @@ class $$BonsTableFilterComposer extends Composer<_$AppDatabase, $BonsTable> {
 
   ColumnFilters<DateTime> get occurredAt => $composableBuilder(
     column: $table.occurredAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dueDate => $composableBuilder(
+    column: $table.dueDate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7155,6 +7292,11 @@ class $$BonsTableOrderingComposer extends Composer<_$AppDatabase, $BonsTable> {
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get dueDate => $composableBuilder(
+    column: $table.dueDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get settledAt => $composableBuilder(
     column: $table.settledAt,
     builder: (column) => ColumnOrderings(column),
@@ -7266,6 +7408,9 @@ class $$BonsTableAnnotationComposer
     column: $table.occurredAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<DateTime> get dueDate =>
+      $composableBuilder(column: $table.dueDate, builder: (column) => column);
 
   GeneratedColumn<DateTime> get settledAt =>
       $composableBuilder(column: $table.settledAt, builder: (column) => column);
@@ -7382,6 +7527,7 @@ class $$BonsTableTableManager
                 Value<BonDirection> direction = const Value.absent(),
                 Value<String?> note = const Value.absent(),
                 Value<DateTime> occurredAt = const Value.absent(),
+                Value<DateTime?> dueDate = const Value.absent(),
                 Value<DateTime?> settledAt = const Value.absent(),
                 Value<int?> categoryId = const Value.absent(),
                 Value<int?> accountId = const Value.absent(),
@@ -7395,6 +7541,7 @@ class $$BonsTableTableManager
                 direction: direction,
                 note: note,
                 occurredAt: occurredAt,
+                dueDate: dueDate,
                 settledAt: settledAt,
                 categoryId: categoryId,
                 accountId: accountId,
@@ -7410,6 +7557,7 @@ class $$BonsTableTableManager
                 required BonDirection direction,
                 Value<String?> note = const Value.absent(),
                 required DateTime occurredAt,
+                Value<DateTime?> dueDate = const Value.absent(),
                 Value<DateTime?> settledAt = const Value.absent(),
                 Value<int?> categoryId = const Value.absent(),
                 Value<int?> accountId = const Value.absent(),
@@ -7423,6 +7571,7 @@ class $$BonsTableTableManager
                 direction: direction,
                 note: note,
                 occurredAt: occurredAt,
+                dueDate: dueDate,
                 settledAt: settledAt,
                 categoryId: categoryId,
                 accountId: accountId,

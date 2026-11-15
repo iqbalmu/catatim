@@ -58,6 +58,35 @@ extension QueriesRepo on LedgerRepository {
     accountId: accountId,
   ).watch().map(_mapRows);
 
+  /// Baris ekspor CSV: seluruh transaksi + nama akun & kategori,
+  /// urut waktu naik (siap dibaca sebagai timeline di spreadsheet).
+  Future<List<ExportRow>> exportRows() async {
+    final query = _db.select(_db.transactions).join([
+      leftOuterJoin(
+        _db.categories,
+        _db.categories.id.equalsExp(_db.transactions.categoryId),
+      ),
+      leftOuterJoin(
+        _db.accounts,
+        _db.accounts.id.equalsExp(_db.transactions.accountId),
+      ),
+    ]);
+    query.orderBy([OrderingTerm.asc(_db.transactions.occurredAt)]);
+    final rows = await query.get();
+    return [
+      for (final row in rows)
+        (
+          occurredAt: row.readTable(_db.transactions).occurredAt,
+          direction: row.readTable(_db.transactions).direction,
+          kind: row.readTable(_db.transactions).kind,
+          amount: row.readTable(_db.transactions).amount,
+          account: row.readTableOrNull(_db.accounts)?.name,
+          category: row.readTableOrNull(_db.categories)?.name,
+          counterparty: row.readTable(_db.transactions).counterparty,
+        ),
+    ];
+  }
+
   /// Jumlah transaksi per hari (UTC; drift menyimpan occurred_at sebagai
   /// epoch-ms UTC dan pembacaan lama juga mengelompokkan lewat field UTC)
   /// sejak [since] — sumber kebenaran streak di ProgressService.

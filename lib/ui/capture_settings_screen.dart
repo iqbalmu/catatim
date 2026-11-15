@@ -35,6 +35,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     with WidgetsBindingObserver {
   bool _listenerEnabled = false;
   DateTime? _lastHeartbeat;
+  bool _batteryExempt = false;
   int _currentTab = 0; // 0 = Bank & App, 1 = Sistem & Aturan
   late final PageController _pageCtrl = PageController(
     initialPage: _currentTab,
@@ -93,10 +94,14 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
   Future<void> _checkListenerStatus() async {
     final enabled = await widget.pipeline.channel.isListenerEnabled();
     final heartbeat = await widget.pipeline.channel.getLastCaptureHeartbeat();
+    // Dipanggil juga saat app resume — termasuk kembali dari dialog sistem
+    // pengecualian baterai, jadi status selalu segar tanpa refresh manual.
+    final exempt = await widget.pipeline.channel.isIgnoringBatteryOptimizations();
     if (!mounted) return;
     setState(() {
       _listenerEnabled = enabled;
       _lastHeartbeat = heartbeat;
+      _batteryExempt = exempt;
     });
   }
 
@@ -364,6 +369,7 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
       context,
       listenerEnabled: _listenerEnabled,
       lastHeartbeat: _lastHeartbeat,
+      batteryExempt: _batteryExempt,
       connected: connected,
       latestCaptureLogStream: _latestCaptureLogStream,
       onOpenListenerSettings: () {
@@ -375,6 +381,8 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
         }
       },
       onOpenBatterySettings: widget.pipeline.channel.openBatterySettings,
+      onRequestBatteryExempt:
+          widget.pipeline.channel.requestIgnoreBatteryOptimizations,
     );
   }
 

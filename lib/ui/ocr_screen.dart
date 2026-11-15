@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../capture/ocr.dart';
 import '../capture/pipeline.dart';
@@ -442,6 +443,26 @@ class _OcrScreenState extends State<OcrScreen> {
     }
   }
 
+  /// Salin foto struk ke `<docs>/receipts/` dan kembalikan path tujuan.
+  Future<String?> _stashReceipt() async {
+    final src = _imagePath;
+    if (src == null) return null;
+    final f = File(src);
+    if (!f.existsSync()) return null;
+    try {
+      final docs = await getApplicationDocumentsDirectory();
+      final receipts = Directory('${docs.path}/receipts');
+      if (!receipts.existsSync()) receipts.createSync(recursive: true);
+      final dest =
+          '${receipts.path}/'
+          'receipt-${DateTime.now().millisecondsSinceEpoch}.jpg';
+      await f.copy(dest);
+      return dest;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> _recordDirectly() async {
     if (_isSaving) return;
     final amount = Money.tryParseGroup(_amountCtrl.text.trim()) ?? 0;
@@ -460,6 +481,11 @@ class _OcrScreenState extends State<OcrScreen> {
           ? 'Struk / Belanja'
           : _merchantCtrl.text.trim();
 
+      // Lampiran: salin foto ke direktori app (cache share/ambil foto
+      // bisa dibersihkan OS kapan saja). Best effort — gagal salin
+      // tidak boleh menggagalkan pencatatan.
+      final receiptPath = await _stashReceipt();
+
       await widget.pipeline.repository.addManual(
         amount: amount,
         direction: _direction,
@@ -470,6 +496,7 @@ class _OcrScreenState extends State<OcrScreen> {
         categoryId: _selectedCategoryId,
         accountId: _selectedAccountId,
         occurredAt: _occurredAt,
+        receiptPath: receiptPath,
       );
 
       if (mounted) {

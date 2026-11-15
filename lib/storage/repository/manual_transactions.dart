@@ -12,6 +12,7 @@ extension ManualTransactionsRepo on LedgerRepository {
     int? categoryId,
     int? accountId,
     DateTime? occurredAt,
+    String? receiptPath,
   }) async {
     final clean = (counterparty == null || counterparty.trim().isEmpty)
         ? null
@@ -35,6 +36,7 @@ extension ManualTransactionsRepo on LedgerRepository {
             counterparty: Value(clean),
             occurredAt: occurredAt ?? DateTime.now(),
             source: TxSource.manual,
+            receiptPath: Value(receiptPath),
             categoryId: Value(resolvedCategoryId),
             accountId: Value(accountId),
           ),
@@ -137,6 +139,18 @@ extension ManualTransactionsRepo on LedgerRepository {
   }
 
   Future<void> deleteTransaction(int id) async {
+    // Lampiran struk ikut dibuang — best effort, jangan gagalkan hapus
+    // transaksi bila file sudah tidak ada / terkunci.
+    final row = await (_db.select(
+      _db.transactions,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    final receipt = row?.receiptPath;
+    if (receipt != null && receipt.isNotEmpty) {
+      try {
+        final f = File(receipt);
+        if (f.existsSync()) f.deleteSync();
+      } catch (_) {}
+    }
     return _db.transaction(() async {
       await (_db.update(
         _db.bons,
