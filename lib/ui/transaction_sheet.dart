@@ -14,6 +14,7 @@ import '../theme/quest.dart';
 import '../theme/tokens.dart';
 import 'add_account_sheet.dart';
 import 'bon_screen.dart';
+import 'capture_source_sheet.dart';
 import 'ocr_screen.dart';
 import 'quest.dart';
 
@@ -96,6 +97,34 @@ class _TransactionSheetState extends State<TransactionSheet> {
 
   bool get _isEdit => widget.existing != null;
   bool get _isDraft => widget.draft != null;
+
+  /// Teks notifikasi asal transaksi/draf, null bila bukan hasil capture
+  /// (input manual tidak menyimpan teks mentah).
+  ({String title, String body})? get _captureSource {
+    final rawTitle = _isEdit
+        ? widget.existing!.tx.rawTitle
+        : widget.draft!.rawTitle;
+    final rawBody = _isEdit
+        ? widget.existing!.tx.rawBody
+        : widget.draft!.rawBody;
+    final title = rawTitle?.trim() ?? '';
+    final body = rawBody?.trim() ?? '';
+    if (title.isEmpty && body.isEmpty) return null;
+    return (title: title, body: body);
+  }
+
+  /// Nama tampilan bank sumber — dari katalog bila tersedia; sumber
+  /// non-katalog (tempelan/OCR/bank tak dikenal) diberi label ramah.
+  String get _captureSourceBankLabel {
+    final bankId = _isEdit ? widget.existing!.tx.bankId : widget.draft!.bankId;
+    return widget.ruleSet?.bank(bankId)?.displayName ??
+        switch (bankId) {
+          'unknown' => 'Bank tidak dikenal',
+          'paste' => 'Tempelan / Struk',
+          'manual' => 'Manual',
+          _ => bankId.startsWith('app:') ? bankId.substring(4) : bankId,
+        };
+  }
 
   @override
   void initState() {
@@ -686,12 +715,30 @@ class _TransactionSheetState extends State<TransactionSheet> {
                 style: context.qTitle(19),
               ),
             ),
-            if (_isEdit || _isDraft)
+            if (_isEdit || _isDraft) ...[
+              // Pintasan lihat notifikasi asal — hanya untuk hasil capture.
+              if (_captureSource != null)
+                QuestIconButton(
+                  icon: Icons.notifications_rounded,
+                  tooltip: 'Lihat notifikasi asal',
+                  onPressed: () {
+                    HapticFeedback.selectionClick();
+                    final source = _captureSource!;
+                    showCaptureSourceSheet(
+                      context,
+                      bankLabel: _captureSourceBankLabel,
+                      capturedAt: _occurredAt,
+                      title: source.title,
+                      body: source.body,
+                    );
+                  },
+                ),
               QuestIconButton(
                 icon: Icons.delete_outline_rounded,
                 tooltip: _isDraft ? 'Buang' : 'Hapus',
                 onPressed: _delete,
               ),
+            ],
           ],
         ),
         const SizedBox(height: Spacing.s),
