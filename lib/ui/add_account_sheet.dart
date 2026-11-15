@@ -23,11 +23,15 @@ class AddAccountSheet extends StatefulWidget {
     required this.repository,
     required this.pipeline,
     required this.ruleSet,
+    this.initialListenerOn = false,
+    this.initialConnected = const {},
   });
 
   final LedgerRepository repository;
   final CapturePipeline pipeline;
   final RuleSet ruleSet;
+  final bool initialListenerOn;
+  final Set<String> initialConnected;
 
   /// Buka sheet tambah akun.
   static Future<void> show(
@@ -35,7 +39,16 @@ class AddAccountSheet extends StatefulWidget {
     required LedgerRepository repository,
     required CapturePipeline pipeline,
     required RuleSet ruleSet,
-  }) {
+  }) async {
+    // Muat status izin & bank terhubung sebelum sheet dibuka agar tinggi
+    // awal sudah final dan animasi slide-up dari bawah berjalan mulus.
+    final results = await Future.wait([
+      pipeline.channel.isListenerEnabled(),
+      repository.connectedBankIds(),
+    ]);
+    final listenerOn = results[0] as bool;
+    final connected = results[1] as Set<String>;
+    if (!context.mounted) return;
     return showQuestSheet<void>(
       context,
       (context) => Padding(
@@ -49,6 +62,8 @@ class AddAccountSheet extends StatefulWidget {
           repository: repository,
           pipeline: pipeline,
           ruleSet: ruleSet,
+          initialListenerOn: listenerOn,
+          initialConnected: connected,
         ),
       ),
     );
@@ -58,77 +73,32 @@ class AddAccountSheet extends StatefulWidget {
   State<AddAccountSheet> createState() => _AddAccountSheetState();
 }
 
-/// Tahapan alur tambah akun.
+/// Tahapan alur tambah akun di sheet utama.
 enum _AddStep {
-  /// Pilih jenis (Bank/E-wallet/Tunai), lalu pilih bank atau isi form
+  /// Pilih jenis (Bank/E-wallet/Tunai), lalu pilih bank otomatis atau form
   /// tunai.
   pick,
 
-  /// Penjelasan singkat sebelum menghubungkan (syarat kebijakan data).
-  explain,
-
-  /// Panduan izin bernomor — hanya bila izin belum aktif.
-  permission,
-
-  /// Berita sukses + saldo awal opsional.
-  success,
+  /// Form catat manual untuk bank/e-wallet di luar daftar otomatis.
+  manual,
 }
 
-class _AddAccountSheetState extends State<AddAccountSheet>
-    with WidgetsBindingObserver {
+class _AddAccountSheetState extends State<AddAccountSheet> {
   _AddStep _step = _AddStep.pick;
   AccountKind _kind = AccountKind.bank;
-  BankRules? _bank;
 
-  bool _listenerOn = false;
-  bool _returnedWithoutPermission = false;
-  Set<String> _connected = const {};
-
-  /// Akun hasil koneksi — dipakai untuk mengisi saldo awal saat sukses.
-  Account? _connectedAccount;
+  late final bool _listenerOn = widget.initialListenerOn;
+  late final Set<String> _connected = widget.initialConnected;
 
   final _cashNameCtrl = TextEditingController();
   final _cashOpeningCtrl = TextEditingController();
-  final _openingCtrl = TextEditingController();
   String? _cashError;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _refreshState();
-  }
-
-  @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _cashNameCtrl.dispose();
     _cashOpeningCtrl.dispose();
-    _openingCtrl.dispose();
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Balik dari Pengaturan sistem → cek izin, sambung bila sudah aktif.
-    if (state == AppLifecycleState.resumed) _refreshState();
-  }
-
-  Future<void> _refreshState() async {
-    final on = await widget.pipeline.channel.isListenerEnabled();
-    final connected = await widget.repository.connectedBankIds();
-    if (!mounted) return;
-    setState(() {
-      _listenerOn = on;
-      _connected = connected;
-    });
-    if (_step == _AddStep.permission) {
-      if (on) {
-        await _completeConnect();
-      } else if (mounted) {
-        setState(() => _returnedWithoutPermission = true);
-      }
-    }
   }
 
   /// Katalog bank/e-wallet yang cocok jenis terpilih dan belum ada.
@@ -141,36 +111,18 @@ class _AddAccountSheetState extends State<AddAccountSheet>
       )
       .toList();
 
-  void _pickBank(BankRules bank) {
-    setState(() {
-      _bank = bank;
-      _returnedWithoutPermission = false;
-      _step = _listenerOn ? _AddStep.explain : _AddStep.permission;
-    });
-  }
-
-  Future<void> _completeConnect() async {
-    final bank = _bank;
-    if (bank == null) return;
-    await widget.repository.setBankConnected(bank.id, true);
-    final account = await widget.repository.ensureBankAccount(
-      bankId: bank.id,
-      name: bank.displayName,
-      kind: bank.accountKind,
+  Future<void> _pickBank(BankRules bank) async {
+    final connected = await _ConnectBankSheet.show(
+      context,
+      repository: widget.repository,
+      pipeline: widget.pipeline,
+      bank: bank,
+      listenerOn: _listenerOn,
     );
-    // Allowlist antrean native + cache pipeline harus mengikuti koneksi
-    // terbaru — tanpa ini notifikasi bank baru diabaikan sampai restart.
-    await widget.pipeline.syncAllowedPackages();
     if (!mounted) return;
-    setState(() {
-      _connectedAccount = account;
-      _step = _AddStep.success;
-    });
-  }
-
-  Future<void> _openPermissionSettings() async {
-    setState(() => _returnedWithoutPermission = false);
-    await widget.pipeline.channel.openListenerSettings();
+    if (connected == true) {
+      Navigator.pop(context);
+    }
   }
 
   Future<void> _saveManual(AccountKind kind) async {
@@ -204,27 +156,24 @@ class _AddAccountSheetState extends State<AddAccountSheet>
     }
   }
 
-  Future<void> _finishSuccess() async {
-    final opening = int.tryParse(
-      _openingCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''),
-    );
-    final account = _connectedAccount;
-    if (opening != null && opening > 0 && account != null) {
-      await widget.repository.setOpeningBalance(account.id, opening);
-    }
-    if (mounted) Navigator.pop(context);
-  }
-
   @override
   Widget build(BuildContext context) {
     final content = switch (_step) {
       _AddStep.pick => _buildPick(),
-      _AddStep.explain => _buildExplain(),
-      _AddStep.permission => _buildPermission(),
-      _AddStep.success => _buildSuccess(),
+      _AddStep.manual => _buildManual(),
     };
 
-    return SingleChildScrollView(child: content);
+    return SingleChildScrollView(
+      child: AnimatedSwitcher(
+        duration: QuestMotion.fast,
+        switchInCurve: QuestMotion.easeOut,
+        switchOutCurve: QuestMotion.easeOut,
+        child: KeyedSubtree(
+          key: ValueKey(_step),
+          child: content,
+        ),
+      ),
+    );
   }
 
   Widget _buildPick() {
@@ -262,7 +211,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
         ),
         const SizedBox(height: Spacing.m),
         if (_kind == AccountKind.cash)
-          ..._buildCashForm()
+          ..._buildManualForm(AccountKind.cash, showBack: false)
         else
           ..._buildBankList(),
       ],
@@ -272,80 +221,126 @@ class _AddAccountSheetState extends State<AddAccountSheet>
   List<Widget> _buildBankList() {
     final banks = _availableBanks;
     final isBank = _kind == AccountKind.bank;
-    final presets = isBank
-        ? const ['BCA', 'Mandiri', 'BRI', 'BNI', 'CIMB Niaga', 'BSI', 'Permata']
-        : const ['GoPay', 'OVO', 'DANA', 'ShopeePay', 'LinkAja'];
 
-    return [
-      if (banks.isNotEmpty) ...[
+    if (banks.isEmpty) {
+      return [
         Text(
           isBank
-              ? 'Pilih bank untuk baca notifikasi otomatis:'
-              : 'Pilih e-wallet untuk baca notifikasi otomatis:',
-          style: context.qBody(13),
+              ? 'Semua bank otomatis sudah terhubung. Tambah bank lain secara manual:'
+              : 'Semua e-wallet otomatis sudah terhubung. Tambah e-wallet lain secara manual:',
+          style: context.qSmall(12.5).copyWith(color: context.q.muted),
         ),
         const SizedBox(height: Spacing.s),
-        for (final b in banks) ...[
-          _BankRow(bank: b, onTap: () => _pickBank(b)),
-          const SizedBox(height: Spacing.s),
-        ],
-        const SizedBox(height: Spacing.s),
-        Row(
-          children: [
-            Expanded(child: Divider(color: context.q.line)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Text(
-                'ATAU CATAT MANUAL',
-                style: context
-                    .qSmall(11)
-                    .copyWith(
-                      color: context.q.muted,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-              ),
-            ),
-            Expanded(child: Divider(color: context.q.line)),
-          ],
+        ..._buildManualForm(_kind, showBack: false),
+      ];
+    }
+
+    return [
+      Text(
+        isBank
+            ? 'Pilih bank untuk baca notifikasi otomatis:'
+            : 'Pilih e-wallet untuk baca notifikasi otomatis:',
+        style: context.qBody(13),
+      ),
+      const SizedBox(height: Spacing.s),
+      for (final b in banks) ...[
+        _BankRow(bank: b, onTap: () => _pickBank(b)),
+        const SizedBox(height: Spacing.xs),
+      ],
+      const SizedBox(height: Spacing.s),
+      QuestButton(
+        label: isBank ? 'Bank lain? Catat manual' : 'E-wallet lain? Catat manual',
+        icon: Icons.edit_outlined,
+        tone: QuestTone.secondary,
+        onPressed: () => setState(() {
+          _cashNameCtrl.clear();
+          _cashOpeningCtrl.clear();
+          _cashError = null;
+          _step = _AddStep.manual;
+        }),
+      ),
+    ];
+  }
+
+  Widget _buildManual() {
+    final isBank = _kind == AccountKind.bank;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          isBank ? 'Tambah Bank Manual' : 'Tambah E-wallet Manual',
+          style: context.qTitle(),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'Untuk catatan manual tanpa membaca notifikasi.',
+          style: context.qSmall(12.5).copyWith(color: context.q.muted),
+        ),
+        const SizedBox(height: Spacing.m),
+        ..._buildManualForm(_kind, showBack: true),
+      ],
+    );
+  }
+
+  List<Widget> _buildManualForm(AccountKind kind, {required bool showBack}) {
+    final presets = switch (kind) {
+      AccountKind.bank => const [
+        'CIMB Niaga',
+        'BSI',
+        'Permata',
+        'Jago',
+        'SeaBank',
+      ],
+      AccountKind.ewallet => const ['LinkAja', 'AstraPay', 'iSaku'],
+      AccountKind.cash => const <String>[],
+    };
+    final nameLabel = switch (kind) {
+      AccountKind.bank => 'Nama Bank',
+      AccountKind.ewallet => 'Nama E-Wallet',
+      AccountKind.cash => 'Nama Akun',
+    };
+    final nameHint = switch (kind) {
+      AccountKind.bank => 'Misalnya: CIMB Niaga atau BSI',
+      AccountKind.ewallet => 'Misalnya: LinkAja',
+      AccountKind.cash => 'Misalnya: Dompet',
+    };
+    final openingHint = kind == AccountKind.cash
+        ? 'Misalnya: 250000'
+        : 'Misalnya: 500000';
+
+    return [
+      if (presets.isNotEmpty) ...[
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final p in presets) ...[
+                QuestChip(
+                  label: p,
+                  selected: _cashNameCtrl.text == p,
+                  onTap: () {
+                    setState(() {
+                      _cashNameCtrl.text = p;
+                      _cashError = null;
+                    });
+                  },
+                ),
+                const SizedBox(width: Spacing.xs),
+              ],
+            ],
+          ),
         ),
         const SizedBox(height: Spacing.s),
       ],
-      Text(
-        isBank
-            ? 'Tambah bank manual (tanpa baca notifikasi):'
-            : 'Tambah e-wallet (pilih atau ketik):',
-        style: context.qBody(13),
-      ),
-      const SizedBox(height: Spacing.xs),
-      SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            for (final p in presets) ...[
-              QuestChip(
-                label: p,
-                selected: _cashNameCtrl.text == p,
-                onTap: () {
-                  setState(() {
-                    _cashNameCtrl.text = p;
-                    _cashError = null;
-                  });
-                },
-              ),
-              const SizedBox(width: Spacing.xs),
-            ],
-          ],
-        ),
-      ),
-      const SizedBox(height: Spacing.s),
-      QuestFieldLabel(isBank ? 'Nama Bank' : 'Nama E-Wallet'),
+      QuestFieldLabel(nameLabel),
       const SizedBox(height: Spacing.xs),
       TextField(
         controller: _cashNameCtrl,
+        autofocus: kind == AccountKind.cash,
         textCapitalization: TextCapitalization.words,
         decoration: InputDecoration(
-          hintText: isBank ? 'Misalnya: BCA atau Mandiri' : 'Misalnya: GoPay',
+          hintText: nameHint,
           errorText: _cashError,
         ),
       ),
@@ -356,16 +351,19 @@ class _AddAccountSheetState extends State<AddAccountSheet>
         controller: _cashOpeningCtrl,
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        decoration: const InputDecoration(hintText: 'Misalnya: 500000'),
+        decoration: InputDecoration(hintText: openingHint),
       ),
       const SizedBox(height: Spacing.m),
       Row(
         children: [
           Expanded(
             child: QuestButton(
-              label: 'Batal',
+              label: showBack ? 'Kembali' : 'Batal',
+              icon: showBack ? Icons.arrow_back_rounded : null,
               tone: QuestTone.secondary,
-              onPressed: () => Navigator.pop(context),
+              onPressed: showBack
+                  ? () => setState(() => _step = _AddStep.pick)
+                  : () => Navigator.pop(context),
             ),
           ),
           const SizedBox(width: Spacing.s),
@@ -373,7 +371,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
             child: QuestButton(
               label: 'Simpan',
               icon: Icons.check_rounded,
-              onPressed: () => _saveManual(_kind),
+              onPressed: () => _saveManual(kind),
             ),
           ),
         ],
@@ -381,53 +379,161 @@ class _AddAccountSheetState extends State<AddAccountSheet>
     ];
   }
 
-  List<Widget> _buildCashForm() {
-    return [
-      const QuestFieldLabel('Nama Akun'),
-      const SizedBox(height: Spacing.xs),
-      TextField(
-        controller: _cashNameCtrl,
-        autofocus: true,
-        textCapitalization: TextCapitalization.words,
-        decoration: InputDecoration(
-          hintText: 'Misalnya: Dompet',
-          errorText: _cashError,
+}
+
+enum _ConnectStep { explain, permission, success }
+
+/// Drawer terpisah untuk menghubungkan satu bank/e-wallet otomatis.
+///
+/// Dibuka lewat [showQuestSheet] saat user men-tap item bank/e-wallet
+/// sehingga muncul mulus dari bawah seperti drawer lainnya. Mengembalikan
+/// `true` bila akun berhasil terhubung.
+class _ConnectBankSheet extends StatefulWidget {
+  const _ConnectBankSheet({
+    required this.repository,
+    required this.pipeline,
+    required this.bank,
+    required this.initialListenerOn,
+  });
+
+  final LedgerRepository repository;
+  final CapturePipeline pipeline;
+  final BankRules bank;
+  final bool initialListenerOn;
+
+  static Future<bool?> show(
+    BuildContext context, {
+    required LedgerRepository repository,
+    required CapturePipeline pipeline,
+    required BankRules bank,
+    required bool listenerOn,
+  }) {
+    return showQuestSheet<bool>(
+      context,
+      (context) => Padding(
+        padding: EdgeInsets.only(
+          left: Spacing.m,
+          right: Spacing.m,
+          top: Spacing.s,
+          bottom: MediaQuery.viewInsetsOf(context).bottom + Spacing.m,
+        ),
+        child: _ConnectBankSheet(
+          repository: repository,
+          pipeline: pipeline,
+          bank: bank,
+          initialListenerOn: listenerOn,
         ),
       ),
-      const SizedBox(height: Spacing.m),
-      const QuestFieldLabel('Saldo awal (opsional)'),
-      const SizedBox(height: Spacing.xs),
-      TextField(
-        controller: _cashOpeningCtrl,
-        keyboardType: TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        decoration: const InputDecoration(hintText: 'Misalnya: 250000'),
-      ),
-      const SizedBox(height: Spacing.m),
-      Row(
-        children: [
-          Expanded(
-            child: QuestButton(
-              label: 'Batal',
-              tone: QuestTone.secondary,
-              onPressed: () => Navigator.pop(context),
-            ),
+    );
+  }
+
+  @override
+  State<_ConnectBankSheet> createState() => _ConnectBankSheetState();
+}
+
+class _ConnectBankSheetState extends State<_ConnectBankSheet>
+    with WidgetsBindingObserver {
+  late _ConnectStep _step = widget.initialListenerOn
+      ? _ConnectStep.explain
+      : _ConnectStep.permission;
+  bool _returnedWithoutPermission = false;
+  Account? _connectedAccount;
+  final _openingCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _openingCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        _step == _ConnectStep.permission) {
+      _checkPermissionAndConnect();
+    }
+  }
+
+  Future<void> _checkPermissionAndConnect() async {
+    final on = await widget.pipeline.channel.isListenerEnabled();
+    if (!mounted) return;
+    if (on) {
+      await _completeConnect();
+    } else {
+      setState(() => _returnedWithoutPermission = true);
+    }
+  }
+
+  Future<void> _completeConnect() async {
+    final bank = widget.bank;
+    await widget.repository.setBankConnected(bank.id, true);
+    final account = await widget.repository.ensureBankAccount(
+      bankId: bank.id,
+      name: bank.displayName,
+      kind: bank.accountKind,
+    );
+    await widget.pipeline.syncAllowedPackages();
+    if (!mounted) return;
+    setState(() {
+      _connectedAccount = account;
+      _step = _ConnectStep.success;
+    });
+  }
+
+  Future<void> _openPermissionSettings() async {
+    setState(() => _returnedWithoutPermission = false);
+    await widget.pipeline.channel.openListenerSettings();
+  }
+
+  Future<void> _finishSuccess() async {
+    final opening = int.tryParse(
+      _openingCtrl.text.replaceAll(RegExp(r'[^0-9]'), ''),
+    );
+    final account = _connectedAccount;
+    if (opening != null && opening > 0 && account != null) {
+      await widget.repository.setOpeningBalance(account.id, opening);
+    }
+    if (mounted) Navigator.pop(context, true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final content = switch (_step) {
+      _ConnectStep.explain => _buildExplain(),
+      _ConnectStep.permission => _buildPermission(),
+      _ConnectStep.success => _buildSuccess(),
+    };
+
+    return PopScope(
+      canPop: _connectedAccount == null,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _connectedAccount != null) {
+          Navigator.pop(context, true);
+        }
+      },
+      child: SingleChildScrollView(
+        child: AnimatedSwitcher(
+          duration: QuestMotion.fast,
+          switchInCurve: QuestMotion.easeOut,
+          switchOutCurve: QuestMotion.easeOut,
+          child: KeyedSubtree(
+            key: ValueKey(_step),
+            child: content,
           ),
-          const SizedBox(width: Spacing.s),
-          Expanded(
-            child: QuestButton(
-              label: 'Simpan',
-              icon: Icons.check_rounded,
-              onPressed: () => _saveManual(AccountKind.cash),
-            ),
-          ),
-        ],
+        ),
       ),
-    ];
+    );
   }
 
   Widget _buildExplain() {
-    final bank = _bank!;
+    final bank = widget.bank;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -445,27 +551,15 @@ class _AddAccountSheetState extends State<AddAccountSheet>
           ],
         ),
         const SizedBox(height: Spacing.m),
-        Text('Yang bakal terjadi:', style: context.qBody(13)),
-        const SizedBox(height: Spacing.xs),
         _FactRow(
-          icon: Icons.notifications_active_rounded,
-          text: 'Notifikasi transaksi ${bank.displayName} dibaca CatatIM',
-        ),
-        const _FactRow(
           icon: Icons.edit_note_rounded,
           text:
-              'Langsung jadi draf, baru tersimpan saat kamu menekan '
-              'Catat',
+              'Notifikasi transaksi ${bank.displayName} otomatis jadi draf, baru tersimpan saat kamu menekan Catat.',
         ),
         const _FactRow(
           icon: Icons.lock_rounded,
           text:
-              'Datanya hanya ada di HP ini: terenkripsi, tak dikirim ke '
-              'mana pun',
-        ),
-        const _FactRow(
-          icon: Icons.link_off_rounded,
-          text: 'Putuskan hubungannya kapan saja kamu mau',
+              '100% offline & terenkripsi di HP ini, dan bisa diputus kapan saja.',
         ),
         const SizedBox(height: Spacing.m),
         Row(
@@ -475,7 +569,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
                 label: 'Kembali',
                 icon: Icons.arrow_back_rounded,
                 tone: QuestTone.secondary,
-                onPressed: () => setState(() => _step = _AddStep.pick),
+                onPressed: () => Navigator.pop(context, false),
               ),
             ),
             const SizedBox(width: Spacing.s),
@@ -494,7 +588,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
 
   Widget _buildPermission() {
     final q = context.q;
-    final bank = _bank!;
+    final bank = widget.bank;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -513,7 +607,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Agar transaksi ${bank.displayName} bisa dicatat otomatis dari notifikasi.',
+                    'Notifikasi transaksi otomatis jadi draf — 100% offline di HP ini.',
                     style: context.qSmall(12.5).copyWith(color: q.muted),
                   ),
                 ],
@@ -556,37 +650,6 @@ class _AddAccountSheetState extends State<AddAccountSheet>
           ),
           const SizedBox(height: Spacing.m),
         ],
-        Container(
-          padding: const EdgeInsets.all(Spacing.sm),
-          decoration: BoxDecoration(
-            color: q.surface2.withValues(alpha: 0.65),
-            borderRadius: BorderRadius.circular(AppRadius.tile),
-            border: Border.all(color: q.line),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Jaminan Privasi & Cara Kerja', style: context.qTitle(13)),
-              const SizedBox(height: Spacing.xs),
-              _FactRow(
-                icon: Icons.edit_note_rounded,
-                text:
-                    'Notifikasi transaksi ${bank.displayName} diubah jadi draf catatan untuk kamu tinjau.',
-              ),
-              const _FactRow(
-                icon: Icons.lock_rounded,
-                text:
-                    '100% diproses offline di HP ini. Data terenkripsi dan tidak pernah dikirim ke server mana pun.',
-              ),
-              const _FactRow(
-                icon: Icons.link_off_rounded,
-                text:
-                    'Bebas diputus atau dimatikan kapan saja dari pengaturan.',
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: Spacing.m),
         Text(
           'Cara mengaktifkan (3 langkah cepat):',
           style: context.qTitle(13.5),
@@ -614,7 +677,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
               child: QuestButton(
                 label: 'Kembali',
                 tone: QuestTone.secondary,
-                onPressed: () => setState(() => _step = _AddStep.pick),
+                onPressed: () => Navigator.pop(context, false),
               ),
             ),
             const SizedBox(width: Spacing.s),
@@ -636,7 +699,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
 
   Widget _buildSuccess() {
     final q = context.q;
-    final bank = _bank!;
+    final bank = widget.bank;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -686,7 +749,7 @@ class _AddAccountSheetState extends State<AddAccountSheet>
   }
 }
 
-/// Baris pilihan bank: avatar inisial + nama + ajakan menghubungkan.
+/// Baris pilihan bank: avatar inisial + nama + chevron.
 class _BankRow extends StatelessWidget {
   const _BankRow({required this.bank, required this.onTap});
 
@@ -699,35 +762,23 @@ class _BankRow extends StatelessWidget {
     return QuestPress(
       onTap: onTap,
       child: Container(
-        padding: Insets.tile,
+        padding: const EdgeInsets.symmetric(
+          horizontal: Spacing.sm,
+          vertical: Spacing.s,
+        ),
         decoration: BoxDecoration(
-          color: q.surface,
+          color: q.surface2.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(AppRadius.tile),
-          boxShadow: [
-            BoxShadow(
-              color: q.shadow,
-              offset: const Offset(0, 6),
-              blurRadius: 18,
-            ),
-          ],
+          border: Border.all(color: q.line),
         ),
         child: Row(
           children: [
-            _BankAvatar(name: bank.displayName),
+            _BankAvatar(name: bank.displayName, size: 34),
             const SizedBox(width: Spacing.s),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(bank.displayName, style: context.qTitle(15)),
-                  Text(
-                    'Tap untuk menghubungkan',
-                    style: TextStyle(color: q.muted, fontSize: 12),
-                  ),
-                ],
-              ),
+              child: Text(bank.displayName, style: context.qTitle(15)),
             ),
-            Icon(Icons.add_circle_outline_rounded, color: q.muted),
+            Icon(Icons.chevron_right_rounded, color: q.muted, size: 20),
           ],
         ),
       ),
