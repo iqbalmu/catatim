@@ -20,14 +20,12 @@ import 'gamification_sheet.dart';
 import 'notif_screen.dart';
 import 'quest.dart';
 import 'settings_screen.dart';
-import 'transaction_sheet.dart';
 import 'transaction_tile.dart';
 
 /// Header bagian atas Beranda: Brand logo + streak chip netral + lonceng + settings
 
 // Dipecah ke part files.
 part 'home_cards/daily_pace_hero.dart';
-part 'home_cards/draft_banner.dart';
 part 'home_cards/recent_tx.dart';
 part 'home_cards/stacked_cards.dart';
 part 'home_cards/total_balance.dart';
