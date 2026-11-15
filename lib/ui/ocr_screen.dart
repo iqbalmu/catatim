@@ -13,6 +13,7 @@ import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
+import 'date_picker_sheet.dart';
 import 'quest.dart';
 
 /// Layar pratinjau dan koreksi hasil pembacaan OCR struk / nota / bukti transfer.
@@ -378,16 +379,16 @@ class _OcrScreenState extends State<OcrScreen> {
   }
 
   Future<void> _pickDateTime() async {
-    final pickedDate = await showDatePicker(
-      context: context,
+    final pickedDate = await showQuestDatePicker(
+      context,
       initialDate: _occurredAt,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
     if (pickedDate == null || !mounted) return;
 
-    final pickedTime = await showTimePicker(
-      context: context,
+    final pickedTime = await showQuestTimePicker(
+      context,
       initialTime: TimeOfDay.fromDateTime(_occurredAt),
     );
     if (!mounted) return;

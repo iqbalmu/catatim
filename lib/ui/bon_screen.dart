@@ -10,6 +10,7 @@ import '../storage/database.dart';
 import '../storage/repository.dart';
 import '../theme/quest.dart';
 import '../theme/tokens.dart';
+import 'date_picker_sheet.dart';
 import 'quest.dart';
 
 /// Bon tua: belum lunas dan umur kalender (today − occurredAt) > 30 hari.
@@ -936,8 +937,8 @@ class _BonSheetState extends State<BonSheet> {
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await showQuestDatePicker(
+      context,
       initialDate: _date,
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365)),

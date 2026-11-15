@@ -15,6 +15,7 @@ import '../theme/tokens.dart';
 import 'add_account_sheet.dart';
 import 'bon_screen.dart';
 import 'capture_source_sheet.dart';
+import 'date_picker_sheet.dart';
 import 'ocr_screen.dart';
 import 'quest.dart';
 
@@ -320,8 +321,8 @@ class _TransactionSheetState extends State<TransactionSheet> {
   }
 
   Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await showQuestDatePicker(
+      context,
       initialDate: _occurredAt,
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365)),
