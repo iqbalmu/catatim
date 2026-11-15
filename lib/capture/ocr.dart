@@ -162,7 +162,11 @@ class OcrService {
       }
     }
 
-    // Prioritas kata kunci total
+    // Kata kunci total — urut = prioritas. Baris dipilih berdasarkan kata
+    // kunci BERPRIORITAS TERTINGGI yang muncul di struk, bukan baris
+    // teratas: struk umumnya menulis SUBTOTAL (sebelum diskon) lebih dulu,
+    // dan 'subtotal' mengandung substring 'total', sehingga kecocokan
+    // substring polos baris-per-baris selalu memilih subtotal.
     const totalKeywords = [
       'grand total',
       'total akhir',
@@ -195,12 +199,12 @@ class OcrService {
 
     int? totalAmount;
 
-    // 1. Cari baris yang memuat total tanpa kata kunci kembalian/tunai
+    // 1. Baris total terbaik: peringkat kata kuncinya tertinggi (paling
+    //    kecil indeksnya) di antara semua baris yang tidak terexclude.
+    int bestLine = -1;
+    int? bestRank;
     for (var i = 0; i < lines.length; i++) {
       final lineLower = lines[i].toLowerCase();
-
-      final isTotal = totalKeywords.any(lineLower.contains);
-      if (!isTotal) continue;
 
       final isExcluded = excludeKeywords.any((kw) {
         // Pengecualian khusus: 'total bayar tunai' tetap dihitung jika tidak ada kata 'kembali'
@@ -209,22 +213,27 @@ class OcrService {
         }
         return lineLower.contains(kw);
       });
+      if (isExcluded) continue;
 
-      if (!isExcluded) {
-        // Ambil nominal di baris yang sama
-        final parsed = _findAmountInLine(lines[i]);
-        if (parsed != null && parsed > 0) {
-          totalAmount = parsed;
-          break;
-        }
+      final rank = _totalKeywordRank(lineLower, totalKeywords);
+      if (rank == null) continue;
+      if (bestRank == null || rank < bestRank) {
+        bestRank = rank;
+        bestLine = i;
+        if (rank == 0) break; // 'grand total' tak terkalahkan
+      }
+    }
 
+    if (bestLine >= 0) {
+      // Ambil nominal di baris yang sama
+      final parsed = _findAmountInLine(lines[bestLine]);
+      if (parsed != null && parsed > 0) {
+        totalAmount = parsed;
+      } else if (bestLine + 1 < lines.length) {
         // Atau di baris tepat setelahnya
-        if (i + 1 < lines.length) {
-          final nextParsed = _findAmountInLine(lines[i + 1]);
-          if (nextParsed != null && nextParsed > 0) {
-            totalAmount = nextParsed;
-            break;
-          }
+        final nextParsed = _findAmountInLine(lines[bestLine + 1]);
+        if (nextParsed != null && nextParsed > 0) {
+          totalAmount = nextParsed;
         }
       }
     }
@@ -263,6 +272,22 @@ class OcrService {
     return (totalAmount, candidateList);
   }
 
+  /// Peringkat kata kunci total terbaik pada satu baris; null = bukan
+  /// baris total. 'total' sengaja tidak menangkap baris yang memuat
+  /// 'subtotal' — baris itu berperingkat lebih rendah dan harus kalah
+  /// dari TOTAL sungguhan di bawahnya.
+  static int? _totalKeywordRank(
+    String lowerLine,
+    List<String> totalKeywords,
+  ) {
+    for (var i = 0; i < totalKeywords.length; i++) {
+      final kw = totalKeywords[i];
+      if (kw == 'total' && lowerLine.contains('subtotal')) continue;
+      if (lowerLine.contains(kw)) return i;
+    }
+    return null;
+  }
+
   static List<int> _findAllAmountsInLine(String line) {
     final result = <int>[];
     final rpMatches = _rpAmount.allMatches(line);
@@ -295,12 +320,26 @@ class OcrService {
       'penerima:',
       'kamu menerima',
       'berhasil diterima',
+      'setoran',
       'kredit',
     ];
-    if (inWords.any(lower.contains)) {
-      return Direction.incoming;
-    }
-    return Direction.outgoing;
+    // 'kredit' saja ambigu: bukti pembayaran KARTU KREDIT juga memuatnya.
+    // Masuk hanya bila ada sinyal masuk DAN tidak ada sinyal keluar —
+    // guard yang sama dengan RuleEngine.guess.
+    const outWords = [
+      'pembayaran',
+      'membayar',
+      'bayar',
+      'tagihan',
+      'debit',
+      'transfer ke',
+      'qris',
+      'belanja',
+      'tarik tunai',
+    ];
+    final isIn = inWords.any(lower.contains);
+    final isOut = outWords.any(lower.contains);
+    return isIn && !isOut ? Direction.incoming : Direction.outgoing;
   }
 
   static DateTime? _extractDate(List<String> lines, String fullText) {

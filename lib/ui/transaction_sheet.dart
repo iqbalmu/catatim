@@ -429,16 +429,32 @@ class _TransactionSheetState extends State<TransactionSheet> {
 
     int? createdTxId;
     if (_isDraft) {
+      // Konfirmasi draf sbg transfer internal: kaki keluar di akun sumber
+      // (draf), kaki masuk di akun tujuan pilihan user — sama seperti alur
+      // internal manual. Arah kaki keluar selalu keluar.
+      final internalTarget = _kind == TxKind.internal ? _toAccountId : null;
       createdTxId = await widget.repository.confirmDraft(
         widget.draft!,
         amount: _amount,
-        direction: _direction,
+        direction: internalTarget != null
+            ? Direction.outgoing
+            : _direction,
         kind: _kind,
         counterparty: counterparty.isEmpty ? null : counterparty,
         categoryId: _categoryId,
         accountId: resolvedAccountId,
         occurredAt: _occurredAt,
       );
+      if (internalTarget != null &&
+          internalTarget != resolvedAccountId &&
+          resolvedAccountId != null) {
+        await widget.repository.addInternalCounterpartLeg(
+          accountId: internalTarget,
+          fromLabel: _accountName(resolvedAccountId),
+          amount: _amount,
+          occurredAt: _occurredAt,
+        );
+      }
       await widget.progress?.onTransactionRecorded();
     } else if (_isEdit) {
       await widget.repository.updateTransaction(
@@ -938,7 +954,11 @@ class _TransactionSheetState extends State<TransactionSheet> {
                     });
                   },
                 ),
-                if (_kind == TxKind.internal) ...[
+                // Edit: kaki tujuan adalah baris transaksi lain (tanpa tautan
+                // di DB) — field ini tak bisa disimpan dari sini, jangan
+                // tampilkan agar tidak jadi kontrol mati. Konfirmasi draf
+                // baru memakainya utk membuat kaki masuk.
+                if (_kind == TxKind.internal && !_isEdit) ...[
                   const SizedBox(height: Spacing.m),
                   QuestSelectField<int>(
                     key: ValueKey('to_account_$_toAccountId'),
@@ -1125,4 +1145,13 @@ class _TransactionSheetState extends State<TransactionSheet> {
       '${idFullDate(dt)} · '
       '${dt.hour.toString().padLeft(2, '0')}:'
       '${dt.minute.toString().padLeft(2, '0')}';
+
+  /// Nama akun utk label kaki transfer; fallback generik bila belum termuat.
+  String _accountName(int? id) {
+    if (id == null) return 'Rekening';
+    for (final a in _accounts) {
+      if (a.id == id) return a.name;
+    }
+    return 'Rekening';
+  }
 }

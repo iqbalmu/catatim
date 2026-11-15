@@ -105,5 +105,52 @@ REFF: 89347293847293
       expect(data.amount, 250000);
       expect(data.direction, Direction.incoming);
     });
+
+    test('subtotal sebelum total dengan diskon — yang dipakai TOTAL', () {
+      const sample = '''
+TOKO MAJU JAYA
+GULA 1KG        30.000
+SUBTOTAL        30.000
+DISKON          1.000
+TOTAL           29.000
+TUNAI           50.000
+KEMBALI         21.000
+''';
+      final data = OcrService.parseReceiptText(sample);
+      expect(data.amount, 29000);
+    });
+
+    test('grand total mengalahkan subtotal di atasnya', () {
+      const sample = '''
+HYPERMART
+BARANG A       100.000
+BARANG B        50.000
+SUBTOTAL       150.000
+DISKON MEMBER   10.000
+GRAND TOTAL    140.000
+''';
+      final data = OcrService.parseReceiptText(sample);
+      expect(data.amount, 140000);
+    });
+
+    test('pembayaran kartu kredit tetap pengeluaran walau ada kata kredit', () {
+      const sample = '''
+PEMBAYARAN KARTU KREDIT
+BCA CARD
+TOTAL TAGIHAN Rp 2.500.000
+''';
+      final data = OcrService.parseReceiptText(sample);
+      expect(data.direction, Direction.outgoing);
+      expect(data.amount, 2500000);
+    });
+
+    test('setoran tunai murni tetap pemasukan', () {
+      const sample = '''
+SETORAN TUNAI BERHASIL
+KREDIT Rp 500.000
+''';
+      final data = OcrService.parseReceiptText(sample);
+      expect(data.direction, Direction.incoming);
+    });
   });
 }

@@ -100,6 +100,36 @@ extension ManualTransactionsRepo on LedgerRepository {
     });
   }
 
+  /// Kaki masuk pemindahan dana antar akun sendiri hasil konfirmasi draf:
+  /// kaki keluar sudah dibuat [confirmDraft] (jenis internal), kaki lawannya
+  /// dibuat di sini pada akun tujuan pilihan user. Keduanya internal —
+  /// tidak masuk arus kas.
+  Future<void> addInternalCounterpartLeg({
+    required int accountId,
+    required String fromLabel,
+    required int amount,
+    required DateTime occurredAt,
+  }) async {
+    final allAccounts = await getAccounts();
+    final target = allAccounts.where((a) => a.id == accountId).firstOrNull;
+    await _db
+        .into(_db.transactions)
+        .insert(
+          TransactionsCompanion.insert(
+            uuid: newUuid(),
+            bankId: target?.bankId ?? 'manual',
+            kind: TxKind.internal,
+            direction: Direction.incoming,
+            amount: amount,
+            counterparty: Value('Transfer dari $fromLabel'),
+            occurredAt: occurredAt,
+            source: TxSource.manual,
+            categoryId: Value(await _defaultCategoryId(TxKind.internal)),
+            accountId: Value(accountId),
+          ),
+        );
+  }
+
   Future<void> updateTransaction(int id, TransactionsCompanion data) {
     return (_db.update(
       _db.transactions,

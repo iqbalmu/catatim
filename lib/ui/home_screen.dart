@@ -379,6 +379,19 @@ class _BerandaTabState extends State<_BerandaTab> {
                 onOpenAccounts: _openAccounts,
               ),
             ),
+            // Tangkapan bank menunggu keputusan — tanpa ini, draf baru
+            // hanya terlihat sebagai titik kecil di lonceng notifikasi.
+            QuestTabEnter(
+              index: 2,
+              child: DraftAttentionBanner(
+                repository: widget.repository,
+                ruleSet: widget.ruleSet,
+                progress: widget.progress,
+                pipeline: widget.pipeline,
+                onOpenAnggaran: widget.onOpenAnggaran,
+                onOpenBon: widget.onOpenBon,
+              ),
+            ),
             RecentTransactionsCard(
               repository: widget.repository,
               progress: widget.progress,

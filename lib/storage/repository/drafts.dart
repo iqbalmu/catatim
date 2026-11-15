@@ -80,6 +80,9 @@ extension DraftsRepo on LedgerRepository {
 
   /// Konfirmasi draf → transaksi source notifikasi; draf terhapus.
   /// Field boleh dikoreksi user dulu; yang tak disebut mengikuti draf.
+  /// Setelah tercatat, perpindahan dana antar akun sendiri (tarik tunai,
+  /// transfer/top up) selalu dikaitkan kaki lawannya — jalur auto maupun
+  /// manual sama-sama lewat sini supaya pembukuan konsisten.
   Future<int> confirmDraft(
     Draft draft, {
     required int amount,
@@ -90,8 +93,8 @@ extension DraftsRepo on LedgerRepository {
     int? accountId,
     DateTime? occurredAt,
     bool auto = false,
-  }) {
-    return _db.transaction(() async {
+  }) async {
+    final id = await _db.transaction(() async {
       final clean = (counterparty == null || counterparty.trim().isEmpty)
           ? null
           : counterparty.trim();
@@ -126,11 +129,13 @@ extension DraftsRepo on LedgerRepository {
       await (_db.delete(_db.drafts)..where((d) => d.id.equals(draft.id))).go();
       return id;
     });
+    await _linkInternalMove(id);
+    return id;
   }
 
-  /// Catat draf [id] otomatis sebagai transaksi source auto, lalu tautkan
-  /// dengan kaki lawannya bila perpindahan dana antar akun sendiri.
-  /// Draf tanpa nominal dilewati. Mengembalikan true bila tercatat.
+  /// Catat draf [id] otomatis sebagai transaksi source auto. Draf tanpa
+  /// nominal dilewati. Mengembalikan true bila tercatat. (Penautan kaki
+  /// lawan perpindahan dana kini bagian dari [confirmDraft] sendiri.)
   Future<bool> autoConfirmDraft(int id) async {
     final draft = await (_db.select(
       _db.drafts,
@@ -138,14 +143,13 @@ extension DraftsRepo on LedgerRepository {
     if (draft == null || draft.amount <= 0) {
       return false;
     }
-    final txId = await confirmDraft(
+    await confirmDraft(
       draft,
       amount: draft.amount,
       direction: draft.direction,
       kind: draft.kind,
       auto: true,
     );
-    await _linkInternalMove(txId);
     return true;
   }
 
