@@ -38,8 +38,8 @@ class HomeScreen extends StatefulWidget {
   static const _destinations = [
     QuestDestination(icon: Icons.dashboard_rounded, label: 'Beranda'),
     QuestDestination(icon: Icons.receipt_long_rounded, label: 'Transaksi'),
-    QuestDestination(icon: Icons.handshake_outlined, label: 'Bon'),
     QuestDestination(icon: Icons.bar_chart_rounded, label: 'Laporan'),
+    QuestDestination(icon: Icons.handshake_outlined, label: 'Bon'),
   ];
 
   @override
@@ -142,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _openTransaksi() => _switchTab(1);
-  void _openBon() => _switchTab(2);
+  void _openBon() => _switchTab(3);
 
   /// Aksi tombol + tengah navbar: Langsung catat transaksi 1-tap.
   void _primaryAction() {
@@ -157,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   ({String tooltip, VoidCallback onTap, IconData? icon}) _getCenterAction() {
-    if (_tab == 2) {
+    if (_tab == 3) {
       return (
         tooltip: 'Catat bon baru',
         onTap: () {
@@ -233,7 +233,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 token: _tabTokens[2],
                 child: TickerMode(
                   enabled: _tab == 2,
-                  child: BonScreen(
+                  child: LaporanScreen(
                     repository: widget.repository,
                     progress: widget.progress,
                   ),
@@ -243,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 token: _tabTokens[3],
                 child: TickerMode(
                   enabled: _tab == 3,
-                  child: LaporanScreen(
+                  child: BonScreen(
                     repository: widget.repository,
                     progress: widget.progress,
                   ),
@@ -261,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 index: _tab,
                 onChanged: _onTabChanged,
                 destinations: HomeScreen._destinations,
-                badges: hasOld ? const {2} : const <int>{},
+                badges: hasOld ? const {3} : const <int>{},
                 centerAction: _getCenterAction(),
               );
             },
