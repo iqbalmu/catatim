@@ -36,8 +36,10 @@ Future<void> showSystemHealthSheet(
           color: q.bg,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
           children: [
             const QuestGrabber(),
             Padding(
@@ -133,6 +135,7 @@ Future<void> showSystemHealthSheet(
               ),
             ),
           ],
+          ),
         ),
       );
     },
@@ -453,8 +456,10 @@ Future<void> showDiagnosticsSheet(
           color: q.bg,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
           children: [
             const QuestGrabber(),
             Padding(
@@ -662,6 +667,7 @@ Future<void> showDiagnosticsSheet(
               ),
             ),
           ],
+          ),
         ),
       );
     },
@@ -708,8 +714,11 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
           color: q.bg,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        child: Column(
-          children: [
+        child: SafeArea(
+          top: false,
+          bottom: bottomInset.bottom == 0,
+          child: Column(
+            children: [
             const QuestGrabber(),
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -790,6 +799,7 @@ class _AppPickerSheetState extends State<AppPickerSheet> {
                     ),
             ),
           ],
+          ),
         ),
       ),
     );

@@ -23,13 +23,17 @@ Future<T?> showQuestSheet<T>(
         ),
         boxShadow: context.q.elevatedShadow,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: Spacing.s),
-          const QuestGrabber(),
-          Flexible(child: builder(context)),
-        ],
+      child: SafeArea(
+        top: false,
+        bottom: MediaQuery.viewInsetsOf(context).bottom == 0,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: Spacing.s),
+            const QuestGrabber(),
+            Flexible(child: builder(context)),
+          ],
+        ),
       ),
     ),
   );

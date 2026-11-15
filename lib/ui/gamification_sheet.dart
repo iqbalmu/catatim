@@ -48,8 +48,10 @@ class GamificationSheet extends StatelessWidget {
           top: Radius.circular(AppRadius.sheet),
         ),
       ),
-      child: Column(
-        children: [
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: [
           const QuestGrabber(),
 
           // Header: satu baris tenang tanpa divider — konten langsung
@@ -345,6 +347,7 @@ class GamificationSheet extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }
