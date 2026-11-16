@@ -215,6 +215,28 @@ class MainActivity : FlutterActivity() {
                         BudgetNotifier.show(applicationContext, title, body)
                         result.success(null)
                     }
+                    "schedule" -> {
+                        val id = call.argument<Int>("id") ?: 3001
+                        val triggerAtMillis =
+                            call.argument<Number>("triggerAtMillis")?.toLong() ?: 0L
+                        val title = call.argument<String>("title").orEmpty()
+                        val body = call.argument<String>("body").orEmpty()
+                        if (triggerAtMillis > 0L && title.isNotEmpty()) {
+                            BudgetNotifier.schedule(
+                                applicationContext,
+                                id,
+                                triggerAtMillis,
+                                title,
+                                body,
+                            )
+                        }
+                        result.success(null)
+                    }
+                    "cancel" -> {
+                        val id = call.argument<Int>("id") ?: 3001
+                        BudgetNotifier.cancel(applicationContext, id)
+                        result.success(null)
+                    }
                     else -> result.notImplemented()
                 }
             }

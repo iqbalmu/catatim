@@ -21,6 +21,7 @@ import 'budget_alert_sheet.dart';
 import 'capture_settings_screen.dart';
 import 'gamification_sheet.dart';
 import 'quest.dart';
+import 'reminder_sheet.dart';
 
 typedef ProfileSettingsScreen = SettingsScreen;
 
@@ -53,12 +54,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   late Stream<ThemeMode> _themeModeStream;
   late Stream<bool> _budgetAlertsStream;
+  late Stream<bool> _dailyReminderStream;
 
   @override
   void initState() {
     super.initState();
     _themeModeStream = widget.repository.watchThemeMode();
     _budgetAlertsStream = widget.repository.watchBudgetAlertsEnabled();
+    _dailyReminderStream = widget.repository.watchDailyReminderEnabled();
   }
 
   @override
@@ -67,6 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (oldWidget.repository != widget.repository) {
       _themeModeStream = widget.repository.watchThemeMode();
       _budgetAlertsStream = widget.repository.watchBudgetAlertsEnabled();
+      _dailyReminderStream = widget.repository.watchDailyReminderEnabled();
     }
   }
 
@@ -342,6 +346,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       Divider(height: 1, thickness: 1, color: q.line),
 
+                      StreamBuilder<bool>(
+                        stream: _dailyReminderStream,
+                        initialData: false,
+                        builder: (context, snap) => QuestListTile(
+                          leading: const _SettingIcon(
+                            icon: Icons.alarm_rounded,
+                          ),
+                          title: Text(
+                            'Pengingat Terjadwal',
+                            style: context.qTitle(15),
+                          ),
+                          subtitle: Text(
+                            (snap.data ?? false)
+                                ? 'Pengingat harian & jatuh tempo bon aktif'
+                                : 'Jatuh tempo bon aktif · harian nonaktif',
+                            style: context.qSmall(),
+                          ),
+                          trailing: Icon(
+                            Icons.chevron_right_rounded,
+                            color: q.muted,
+                          ),
+                          onTap: () => ReminderSheet.show(context, repository),
+                        ),
+                      ),
+                      Divider(height: 1, thickness: 1, color: q.line),
+
                       QuestListTile(
                         leading: const _SettingIcon(
                           icon: Icons.shield_outlined,
@@ -444,9 +474,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(AppRadius.cell),
                   child: Image.asset(
-                    'assets/logo/catatim_logo.png',
+                    'assets/logo/catatim_logo.jpg',
                     width: 40,
                     height: 40,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stack) => Icon(
+                      Icons.account_balance_wallet_rounded,
+                      size: 32,
+                      color: q.primary,
+                    ),
                   ),
                 ),
                 const SizedBox(width: Spacing.s),

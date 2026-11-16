@@ -135,4 +135,67 @@ extension SettingsRepo on LedgerRepository {
     };
     return setSetting(LedgerRepository.themeModeKey, val);
   }
+
+  /// Pengingat catat harian aktif.
+  Future<bool> dailyReminderEnabled() async =>
+      await getSetting(LedgerRepository.dailyReminderEnabledKey) == '1';
+
+  Future<void> setDailyReminderEnabled(bool on) =>
+      setSetting(LedgerRepository.dailyReminderEnabledKey, on ? '1' : '0');
+
+  Stream<bool> watchDailyReminderEnabled() {
+    return (_db.select(_db.appSettings)
+          ..where((s) => s.key.equals(LedgerRepository.dailyReminderEnabledKey)))
+        .watchSingleOrNull()
+        .map((row) => row?.valueText == '1');
+  }
+
+  /// Jam pengingat harian dalam menit dari tengah malam (0..1439, default 20:00).
+  Future<int> dailyReminderMinutes() async {
+    final raw = int.tryParse(
+      await getSetting(LedgerRepository.dailyReminderMinutesKey) ?? '',
+    );
+    if (raw == null || raw < 0 || raw >= 24 * 60) {
+      return LedgerRepository.defaultDailyReminderMinutes;
+    }
+    return raw;
+  }
+
+  Future<void> setDailyReminderMinutes(int minutes) => setSetting(
+    LedgerRepository.dailyReminderMinutesKey,
+    minutes.clamp(0, 24 * 60 - 1).toString(),
+  );
+
+  /// Pengingat jatuh tempo bon aktif (bawaan aktif agar bon bertanggal otomatis diingatkan).
+  Future<bool> bonReminderEnabled() async {
+    final raw = await getSetting(LedgerRepository.bonReminderEnabledKey);
+    return raw == null || raw == '1';
+  }
+
+  Future<void> setBonReminderEnabled(bool on) =>
+      setSetting(LedgerRepository.bonReminderEnabledKey, on ? '1' : '0');
+
+  Stream<bool> watchBonReminderEnabled() {
+    return (_db.select(_db.appSettings)
+          ..where((s) => s.key.equals(LedgerRepository.bonReminderEnabledKey)))
+        .watchSingleOrNull()
+        .map((row) => row == null || row.valueText == '1');
+  }
+
+  Future<List<int>> scheduledBonReminderIds() async {
+    final raw = await getSetting(LedgerRepository.scheduledBonReminderIdsKey);
+    if (raw == null || raw.isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+      return decoded.whereType<num>().map((e) => e.toInt()).toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> setScheduledBonReminderIds(List<int> ids) => setSetting(
+    LedgerRepository.scheduledBonReminderIdsKey,
+    jsonEncode(ids),
+  );
 }

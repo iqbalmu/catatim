@@ -66,4 +66,36 @@ class NotifyChannel {
       }
     }
   }
+
+  /// Jadwalkan notifikasi lokal pada waktu tertentu (AlarmManager).
+  Future<void> scheduleNotification({
+    required int id,
+    required DateTime scheduledAt,
+    required String title,
+    required String body,
+  }) async {
+    try {
+      await _method.invokeMethod<void>('schedule', {
+        'id': id,
+        'triggerAtMillis': scheduledAt.millisecondsSinceEpoch,
+        'title': title,
+        'body': body,
+      });
+    } on Exception catch (e) {
+      if (e is! MissingPluginException) {
+        debugPrint('NotifyChannel.schedule: $e');
+      }
+    }
+  }
+
+  /// Batalkan notifikasi terjadwal berdasarkan id.
+  Future<void> cancelNotification(int id) async {
+    try {
+      await _method.invokeMethod<void>('cancel', {'id': id});
+    } on Exception catch (e) {
+      if (e is! MissingPluginException) {
+        debugPrint('NotifyChannel.cancel: $e');
+      }
+    }
+  }
 }

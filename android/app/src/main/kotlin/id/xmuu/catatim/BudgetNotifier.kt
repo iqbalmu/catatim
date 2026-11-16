@@ -1,5 +1,6 @@
 package id.xmuu.catatim
 
+import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -19,21 +20,33 @@ import android.provider.Settings
 object BudgetNotifier {
 
     private const val CHANNEL_ID = "budget_alerts"
+    private const val REMINDER_CHANNEL_ID = "reminders"
     private const val NOTIF_ID = 2001
 
     fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT < 26) return
         val manager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        if (manager.getNotificationChannel(CHANNEL_ID) != null) return
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            "Peringatan Batas",
-            NotificationManager.IMPORTANCE_DEFAULT,
-        ).apply {
-            description = "Peringatan saat pengeluaran menyentuh persentase batas"
+        if (manager.getNotificationChannel(CHANNEL_ID) == null) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Peringatan Batas",
+                NotificationManager.IMPORTANCE_DEFAULT,
+            ).apply {
+                description = "Peringatan saat pengeluaran menyentuh persentase batas"
+            }
+            manager.createNotificationChannel(channel)
         }
-        manager.createNotificationChannel(channel)
+        if (manager.getNotificationChannel(REMINDER_CHANNEL_ID) == null) {
+            val reminderChannel = NotificationChannel(
+                REMINDER_CHANNEL_ID,
+                "Pengingat Terjadwal",
+                NotificationManager.IMPORTANCE_DEFAULT,
+            ).apply {
+                description = "Pengingat catat harian dan jatuh tempo bon"
+            }
+            manager.createNotificationChannel(reminderChannel)
+        }
     }
 
     /** Izin notifikasi app aktif dan channel tidak dimatikan user. */
@@ -62,10 +75,24 @@ object BudgetNotifier {
     }
 
     fun show(context: Context, title: String, body: String) {
+        showInChannel(context, CHANNEL_ID, NOTIF_ID, title, body)
+    }
+
+    fun showReminder(context: Context, id: Int, title: String, body: String) {
+        showInChannel(context, REMINDER_CHANNEL_ID, id, title, body)
+    }
+
+    private fun showInChannel(
+        context: Context,
+        channelId: String,
+        notifId: Int,
+        title: String,
+        body: String,
+    ) {
         ensureChannel(context)
         if (!canPost(context)) return
         val builder = if (Build.VERSION.SDK_INT >= 26) {
-            Notification.Builder(context, CHANNEL_ID)
+            Notification.Builder(context, channelId)
         } else {
             @Suppress("DEPRECATION")
             Notification.Builder(context)
@@ -91,9 +118,59 @@ object BudgetNotifier {
         try {
             val manager =
                 context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            manager.notify(NOTIF_ID, notification)
+            manager.notify(notifId, notification)
         } catch (_: SecurityException) {
             // Izin dicabut di tengah jalan — jangan crash.
         }
+    }
+
+    fun schedule(
+        context: Context,
+        id: Int,
+        triggerAtMillis: Long,
+        title: String,
+        body: String,
+    ) {
+        ensureChannel(context)
+        val alarm = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val pending = reminderPendingIntent(context, id, title, body)
+        if (Build.VERSION.SDK_INT >= 23) {
+            alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pending)
+        } else {
+            alarm.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, pending)
+        }
+    }
+
+    fun cancel(context: Context, id: Int) {
+        val alarm = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, ReminderReceiver::class.java)
+        val pending = PendingIntent.getBroadcast(
+            context,
+            id,
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE,
+        )
+        if (pending != null) {
+            alarm.cancel(pending)
+            pending.cancel()
+        }
+    }
+
+    private fun reminderPendingIntent(
+        context: Context,
+        id: Int,
+        title: String,
+        body: String,
+    ): PendingIntent {
+        val intent = Intent(context, ReminderReceiver::class.java)
+            .putExtra(ReminderReceiver.EXTRA_ID, id)
+            .putExtra(ReminderReceiver.EXTRA_TITLE, title)
+            .putExtra(ReminderReceiver.EXTRA_BODY, body)
+        return PendingIntent.getBroadcast(
+            context,
+            id,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 }

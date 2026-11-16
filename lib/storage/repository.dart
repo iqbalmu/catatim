@@ -109,6 +109,19 @@ class LedgerRepository {
   /// Persen bawaan peringatan batas saat user belum memilih.
   static const defaultBudgetAlertThreshold = 80;
 
+  // --- pengingat terjadwal (notifikasi lokal) --------------------------------
+
+  static const dailyReminderEnabledKey = 'daily_reminder_enabled';
+
+  static const dailyReminderMinutesKey = 'daily_reminder_minutes';
+
+  static const bonReminderEnabledKey = 'bon_reminder_enabled';
+
+  static const scheduledBonReminderIdsKey = 'scheduled_bon_reminder_ids';
+
+  /// Menit bawaan dari tengah malam untuk pengingat harian (20:00).
+  static const defaultDailyReminderMinutes = 20 * 60;
+
   // --- transfer antar-akun internal -------------------------------------------
 
   /// Pisahkan daftar draf menjadi pasangan transfer antar-akun sendiri dan draf tunggal.

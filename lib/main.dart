@@ -10,6 +10,7 @@ import 'capture/capture_channel.dart';
 import 'capture/pipeline.dart';
 import 'game/progress.dart';
 import 'notify/budget_alert_service.dart';
+import 'notify/reminder_scheduler.dart';
 import 'rules/engine.dart';
 import 'storage/database.dart';
 import 'storage/repository.dart';
@@ -83,6 +84,7 @@ class _CatatIMBootstrapState extends State<CatatIMBootstrap> {
     );
     unawaited(pipeline.start());
     unawaited(progress.refresh());
+    unawaited(ReminderScheduler(repository: repository).sync());
 
     if (!mounted) return;
     setState(() {
