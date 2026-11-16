@@ -37,7 +37,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:maxLines="1"
+                android:maxLines="2"
                 android:text="Sisa jatah hari ini"
                 android:textColor="#5EEAD4"
                 android:textSize="11.5sp"
@@ -69,16 +69,15 @@
 
         <TextView
             android:id="@+id/widget_add_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:background="@drawable/widget_btn_bg"
-            android:paddingLeft="14dp"
-            android:paddingTop="9dp"
-            android:paddingRight="14dp"
-            android:paddingBottom="9dp"
-            android:text="+ Catat"
+            android:contentDescription="Catat transaksi baru"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:text="+"
             android:textColor="#062825"
-            android:textSize="12.5sp"
+            android:textSize="22sp"
             android:textStyle="bold" />
     </LinearLayout>
 </FrameLayout>
