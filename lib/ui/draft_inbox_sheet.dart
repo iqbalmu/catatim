@@ -183,6 +183,118 @@ class _DraftInboxViewState extends State<DraftInboxView> {
     }
   }
 
+  /// Terima semua draf yang bisa dicatat langsung (ber-nominal) + semua
+  /// pasangan transfer. Draf tanpa nominal dibiarkan di inbox — memang
+  /// butuh input nominal. Konfirmasi dulu dengan rincian per-bank.
+  Future<void> _acceptAll(
+    List<Draft> singles,
+    List<InternalTransferPair> pairs,
+  ) async {
+    final recordable = singles.where((d) => d.amount > 0).toList();
+    final belumDihitung = singles.length - recordable.length;
+    if (recordable.isEmpty && pairs.isEmpty) {
+      questSnack(
+        context,
+        'Semua draf masih perlu dilengkapi manual dulu.',
+        icon: Icons.info_outline_rounded,
+      );
+      return;
+    }
+
+    final perBank = <String, int>{};
+    var total = 0;
+    for (final d in recordable) {
+      perBank[d.bankId] = (perBank[d.bankId] ?? 0) + 1;
+      total += d.amount;
+    }
+    for (final p in pairs) {
+      perBank[p.outDraft.bankId] = (perBank[p.outDraft.bankId] ?? 0) + 1;
+    }
+    final names = {
+      for (final bankId in perBank.keys) bankId: await _bankName(bankId),
+    };
+    if (!mounted) return;
+
+    final confirmed = await showQuestDialog<bool>(
+      context,
+      title: 'Terima Semua Draf?',
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${recordable.length + pairs.length * 2} draf akan dicatat'
+            '${pairs.isEmpty ? '' : ' (termasuk ${pairs.length} transfer antar akun)'}:',
+            style: context.qBody(13),
+          ),
+          const SizedBox(height: Spacing.s),
+          for (final entry in perBank.entries)
+            Text(
+              '• ${names[entry.key]} — ${entry.value} draf',
+              style: context.qBody(13),
+            ),
+          if (total > 0) ...[
+            const SizedBox(height: Spacing.s),
+            Text(
+              'Total nominal draf tunggal: ${Money.format(total)}',
+              style: context.qBody(13).copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+          if (belumDihitung > 0) ...[
+            const SizedBox(height: Spacing.s),
+            Text(
+              '$belumDihitung draf belum ada nominalnya — tetap di inbox '
+              'untuk dilengkapi manual.',
+              style: context.qSmall().copyWith(color: context.q.muted),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        QuestButton(
+          label: 'Batal',
+          tone: QuestTone.secondary,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+        QuestButton(
+          label: 'Terima Semua',
+          icon: Icons.done_all_rounded,
+          onPressed: () => Navigator.pop(context, true),
+        ),
+      ],
+    );
+    if (confirmed != true || !mounted) return;
+
+    var recorded = 0;
+    for (final d in recordable) {
+      await _repo.confirmDraft(
+        d,
+        amount: d.amount,
+        direction: d.direction,
+        kind: d.kind,
+        counterparty: d.counterparty,
+        categoryId: d.categoryId,
+        accountId: d.accountId,
+        occurredAt: d.occurredAt,
+      );
+      recorded++;
+    }
+    for (final p in pairs) {
+      await _repo.confirmTransferPair(pair: p);
+      recorded += 2;
+    }
+    await widget.progress?.onTransactionRecorded();
+    if (mounted) {
+      questSnack(
+        context,
+        'Beres! $recorded transaksi dicatat.',
+        icon: Icons.done_all_rounded,
+      );
+    }
+  }
+
   Future<void> _openTransferPair(InternalTransferPair pair) async {
     final fromName = await _bankName(pair.outDraft.bankId);
     final toName = await _bankName(pair.inDraft.bankId);
@@ -702,6 +814,12 @@ class _DraftInboxViewState extends State<DraftInboxView> {
             Spacing.m,
           ),
           children: [
+            QuestButton(
+              label: 'Terima Semua',
+              icon: Icons.done_all_rounded,
+              onPressed: () => _acceptAll(singles, pairs),
+            ),
+            const SizedBox(height: Spacing.m),
             for (var i = 0; i < pairs.length; i++)
               FutureBuilder<String>(
                 future: _bankName(pairs[i].outDraft.bankId),
