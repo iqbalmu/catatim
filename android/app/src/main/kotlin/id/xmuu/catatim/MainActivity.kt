@@ -40,9 +40,18 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleSharedIntent(intent)
+        handleWidgetIntent(intent)
+    }
+
+    private fun handleWidgetIntent(intent: Intent?) {
+        val action = intent?.getStringExtra(CatatimWidgetProvider.EXTRA_ACTION) ?: return
+        if (action.isNotEmpty()) {
+            pendingWidgetAction = action
+        }
     }
 
     private fun handleSharedIntent(intent: Intent?) {
+        handleWidgetIntent(intent)
         if (intent == null || intent.action != Intent.ACTION_SEND) return
         val type = intent.type ?: return
         if (type.startsWith("text/")) {
@@ -240,6 +249,34 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, WIDGET_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "updateWidget" -> {
+                        val headline = call.argument<String>("headline") ?: "Sisa jatah hari ini"
+                        val primary = call.argument<String>("primaryAmount") ?: "Rp0"
+                        val secondary = call.argument<String>("secondaryInfo") ?: "Keluar: Rp0"
+                        val mood = call.argument<String>("mood") ?: "happy"
+                        val isOver = call.argument<Boolean>("isOver") ?: false
+                        CatatimWidgetProvider.update(
+                            applicationContext,
+                            headline,
+                            primary,
+                            secondary,
+                            mood,
+                            isOver,
+                        )
+                        result.success(null)
+                    }
+                    "consumePendingAction" -> {
+                        val action = pendingWidgetAction
+                        pendingWidgetAction = null
+                        result.success(action)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
     }
 
     override fun onRequestPermissionsResult(
@@ -271,10 +308,14 @@ class MainActivity : FlutterActivity() {
         const val METHOD_CHANNEL = "catatim/capture"
         const val EVENT_CHANNEL = "catatim/capture_events"
         const val NOTIFY_CHANNEL = "catatim/notify"
+        const val WIDGET_CHANNEL = "catatim/widget"
         const val REQUEST_POST_PERMISSION = 4001
 
         @Volatile
         var pendingSharedPayload: Map<String, Any?>? = null
+
+        @Volatile
+        var pendingWidgetAction: String? = null
 
         @Volatile
         var pendingPermissionResult: MethodChannel.Result? = null

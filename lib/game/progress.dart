@@ -6,6 +6,7 @@ import '../core/budget.dart';
 import '../core/money.dart';
 import '../game/mascot.dart';
 import '../notify/budget_alert_service.dart';
+import '../notify/widget_sync_service.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
 
@@ -126,14 +127,20 @@ class ProgressSummary {
 /// tidak pernah drift); batas anggaran tersimpan di tabel budgets dan
 /// settings.
 class ProgressService extends ChangeNotifier {
-  ProgressService({required LedgerRepository repository, this._alerts})
-    : _repo = repository;
+  ProgressService({
+    required LedgerRepository repository,
+    this._alerts,
+    this._widgetSync,
+  }) : _repo = repository;
 
   final LedgerRepository _repo;
 
   /// Peringatan batas via notifikasi Android; null = fitur tidak
   /// dipasang (test lama tanpa wiring tetap jalan).
   final BudgetAlertService? _alerts;
+
+  /// Sinkronisasi ringkasan saldo/keluar ke widget home screen Android.
+  final WidgetSyncService? _widgetSync;
 
   ProgressSummary? latest;
 
@@ -480,6 +487,16 @@ class ProgressService extends ChangeNotifier {
         saverStats: saverStats,
       );
       notifyListeners();
+      final widgetSync = _widgetSync;
+      if (widgetSync != null) {
+        unawaited(
+          widgetSync.sync(
+            safeToSpend: latest?.dailyPace?.safeToSpend,
+            moodLine: latest?.moodLine,
+            mood: latest?.mood.name ?? 'happy',
+          ),
+        );
+      }
     } catch (_) {
       // Database mungkin sedang ditutup atau stream queries dibatalkan.
     }

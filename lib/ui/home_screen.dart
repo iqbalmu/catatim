@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../capture/pipeline.dart';
 import '../game/progress.dart';
+import '../notify/widget_channel.dart';
 import '../rules/rule_set.dart';
 import '../storage/database.dart';
 import '../storage/repository.dart';
@@ -62,6 +63,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     _bonsWatch = widget.repository.watchBons();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkSharedPayload();
+      _checkWidgetAction();
     });
   }
 
@@ -76,6 +78,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _checkSharedPayload();
+      _checkWidgetAction();
+    }
+  }
+
+  Future<void> _checkWidgetAction() async {
+    final action = await const WidgetChannel().consumePendingAction();
+    if (!mounted) return;
+    if (action == 'quick_add') {
+      _primaryAction();
     }
   }
 

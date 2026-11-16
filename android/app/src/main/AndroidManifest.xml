@@ -72,6 +72,18 @@
             android:name=".ReminderReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name=".CatatimWidgetProvider"
+            android:exported="true"
+            android:label="CatatIM">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/catatim_widget_info" />
+        </receiver>
+
         <!-- Simulasi capture utk pengujian (adb broadcast). Handler Kotlin
              mengabaikan broadcast di build rilis — lihat onReceive. -->
         <receiver

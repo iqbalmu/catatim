@@ -11,6 +11,7 @@ import 'capture/pipeline.dart';
 import 'game/progress.dart';
 import 'notify/budget_alert_service.dart';
 import 'notify/reminder_scheduler.dart';
+import 'notify/widget_sync_service.dart';
 import 'rules/engine.dart';
 import 'storage/database.dart';
 import 'storage/repository.dart';
@@ -75,6 +76,7 @@ class _CatatIMBootstrapState extends State<CatatIMBootstrap> {
     final progress = ProgressService(
       repository: repository,
       alerts: BudgetAlertService(repository: repository),
+      widgetSync: WidgetSyncService(repository: repository),
     );
     final pipeline = CapturePipeline(
       channel: const CaptureChannel(),
