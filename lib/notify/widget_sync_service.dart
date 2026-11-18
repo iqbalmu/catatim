@@ -4,9 +4,8 @@ import '../core/money.dart';
 import '../storage/repository.dart';
 import 'widget_channel.dart';
 
-/// Menghitung sisa jatah hari ini, pengeluaran hari ini, ekspresi mood maskot,
-/// dan jumlah draf lalu mengirimkannya ke widget home screen Android.
-/// Tidak mengirim total saldo demi privasi di layar utama.
+/// Mengirim ringkasan sisa jatah, kalimat mood, progress bar jatah harian,
+/// pengeluaran hari ini, streak, dan chip draf ke widget home screen Android.
 class WidgetSyncService {
   WidgetSyncService({
     required LedgerRepository repository,
@@ -24,6 +23,7 @@ class WidgetSyncService {
     int? safeToSpend,
     String? moodLine,
     String mood = 'happy',
+    int streakDays = 0,
   }) async {
     try {
       final now = _now();
@@ -32,33 +32,59 @@ class WidgetSyncService {
       final spentToday = await _repo.sumSpendBetween(start, end);
 
       final draftCount = (await _repo.watchDrafts().first).length;
-      final draftSuffix = draftCount > 0 ? ' · $draftCount draf' : '';
+      final draftChip = draftCount > 0 ? '$draftCount draf' : '';
+      final streakBadge = streakDays > 0 ? '🔥 $streakDays' : '';
 
-      final String headline;
       final String primaryAmount;
+      final String headline;
+      final String compactHeadline;
       final String secondaryInfo;
       final bool isOver;
+      final bool hasProgress;
+      final int progressPercent;
+      final String progressLabel;
 
       if (safeToSpend != null) {
         isOver = safeToSpend < 0;
-        headline = isOver
-            ? 'Melebihi jatah · ${moodLine ?? 'Waspada'}'
-            : (moodLine?.isNotEmpty == true ? moodLine! : 'Sisa jatah hari ini');
+        hasProgress = true;
+        final totalTodayBudget = spentToday + safeToSpend;
+        final rawPercent = totalTodayBudget > 0
+            ? ((spentToday * 100) / totalTodayBudget).round()
+            : (spentToday > 0 ? 100 : 0);
+        progressPercent = rawPercent.clamp(0, 100);
+        progressLabel = '$rawPercent%';
+
         primaryAmount = isOver
             ? '-${Money.format(safeToSpend.abs())}'
             : Money.format(safeToSpend);
-        secondaryInfo = 'Keluar: ${Money.format(spentToday)}$draftSuffix';
+        headline = moodLine?.isNotEmpty == true
+            ? moodLine!
+            : (isOver ? 'Melebihi jatah!' : 'Masih aman terkendali!');
+        compactHeadline = 'Keluar ${Money.format(spentToday)}';
+        secondaryInfo = 'Keluar ${Money.format(spentToday)}';
       } else {
         isOver = false;
-        headline = moodLine?.isNotEmpty == true ? moodLine! : 'Keluar hari ini';
+        hasProgress = false;
+        progressPercent = 0;
+        progressLabel = '0%';
         primaryAmount = Money.format(spentToday);
-        secondaryInfo = 'Belum atur batas harian$draftSuffix';
+        headline = moodLine?.isNotEmpty == true
+            ? moodLine!
+            : 'Keluar hari ini';
+        compactHeadline = 'Keluar hari ini';
+        secondaryInfo = 'Belum atur batas harian';
       }
 
       await _channel.updateWidget(
         headline: headline,
+        compactHeadline: compactHeadline,
         primaryAmount: primaryAmount,
         secondaryInfo: secondaryInfo,
+        draftChip: draftChip,
+        streakBadge: streakBadge,
+        progressPercent: progressPercent,
+        progressLabel: progressLabel,
+        hasProgress: hasProgress,
         mood: mood,
         isOver: isOver,
       );

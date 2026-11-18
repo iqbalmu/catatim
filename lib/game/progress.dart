@@ -494,6 +494,7 @@ class ProgressService extends ChangeNotifier {
             safeToSpend: latest?.dailyPace?.safeToSpend,
             moodLine: latest?.moodLine,
             mood: latest?.mood.name ?? 'happy',
+            streakDays: latest?.streakDays ?? 0,
           ),
         );
       }

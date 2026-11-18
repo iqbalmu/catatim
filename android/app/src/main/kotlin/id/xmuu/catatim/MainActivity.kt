@@ -254,16 +254,29 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "updateWidget" -> {
-                        val headline = call.argument<String>("headline") ?: "Sisa jatah hari ini"
+                        val headline = call.argument<String>("headline") ?: "Masih aman terkendali!"
+                        val compactHeadline =
+                            call.argument<String>("compactHeadline") ?: "Keluar Rp0"
                         val primary = call.argument<String>("primaryAmount") ?: "Rp0"
-                        val secondary = call.argument<String>("secondaryInfo") ?: "Keluar: Rp0"
+                        val secondary = call.argument<String>("secondaryInfo") ?: "Keluar Rp0"
+                        val draftChip = call.argument<String>("draftChip") ?: ""
+                        val streakBadge = call.argument<String>("streakBadge") ?: ""
+                        val progress = call.argument<Int>("progressPercent") ?: 0
+                        val progressLabel = call.argument<String>("progressLabel") ?: "${progress}%"
+                        val hasProgress = call.argument<Boolean>("hasProgress") ?: false
                         val mood = call.argument<String>("mood") ?: "happy"
                         val isOver = call.argument<Boolean>("isOver") ?: false
                         CatatimWidgetProvider.update(
                             applicationContext,
                             headline,
+                            compactHeadline,
                             primary,
                             secondary,
+                            draftChip,
+                            streakBadge,
+                            progress,
+                            progressLabel,
+                            hasProgress,
                             mood,
                             isOver,
                         )

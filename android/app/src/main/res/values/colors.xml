@@ -4,4 +4,21 @@
     <color name="launch_bg">#13454A</color>
     <!-- Latar adaptive icon launcher (Android 8+) agar menyatu tanpa wrapper putih. -->
     <color name="ic_launcher_background">#14454B</color>
+
+    <!-- Palet Widget Home Screen (Light — SeedColors Petrol Teal) -->
+    <color name="widget_surface">#F3F8F7</color>
+    <color name="widget_surface2">#E7F0EE</color>
+    <color name="widget_bubble_bg">#FFFFFF</color>
+    <color name="widget_border">#D2E3DF</color>
+    <color name="widget_ink">#10393D</color>
+    <color name="widget_muted">#54716E</color>
+    <color name="widget_primary">#2A6F66</color>
+    <color name="widget_warn">#8A5F06</color>
+    <color name="widget_bad">#B93A31</color>
+    <color name="widget_btn_bg">#1F5A53</color>
+    <color name="widget_btn_shadow">#133B36</color>
+    <color name="widget_btn_fg">#FFFFFF</color>
+    <color name="widget_halo_happy">#262A6F66</color>
+    <color name="widget_halo_worried">#2EE8C468</color>
+    <color name="widget_halo_broke">#26B93A31</color>
 </resources>

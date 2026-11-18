@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Palet Widget Home Screen (Dark — DarkColors Graphite & Petrol Teal) -->
+    <color name="widget_surface">#191F21</color>
+    <color name="widget_surface2">#262F31</color>
+    <color name="widget_bubble_bg">#222A2C</color>
+    <color name="widget_border">#3F4C4E</color>
+    <color name="widget_ink">#EFF4F3</color>
+    <color name="widget_muted">#93A2A1</color>
+    <color name="widget_primary">#5FB8A9</color>
+    <color name="widget_warn">#E8C468</color>
+    <color name="widget_bad">#F0928A</color>
+    <color name="widget_btn_bg">#4FAA9B</color>
+    <color name="widget_btn_shadow">#2E7569</color>
+    <color name="widget_btn_fg">#0C1112</color>
+    <color name="widget_halo_happy">#2B5FB8A9</color>
+    <color name="widget_halo_worried">#2BE8C468</color>
+    <color name="widget_halo_broke">#2BF0928A</color>
+</resources>

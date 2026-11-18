@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:id="@+id/widget_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_card_happy"
+        android:paddingStart="12dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="4dp"
+        android:paddingBottom="4dp">
+
+        <!-- Bagian Atas: Angka Sisa Jatah + Streak & Keluar -->
+        <LinearLayout
+            android:id="@+id/compact_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:orientation="vertical"
+            android:paddingEnd="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/widget_primary_amount"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="Rp0"
+                    android:textColor="#D97706"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/widget_streak_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="🔥 0"
+                    android:textColor="#D97706"
+                    android:textSize="11.5sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/widget_headline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Keluar Rp0"
+                android:textColor="#8A6520"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Maskot raksasa (136dp) di-flip di pojok kanan bawah -->
+        <ImageView
+            android:id="@+id/widget_mascot"
+            android:layout_width="136dp"
+            android:layout_height="136dp"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginEnd="-14dp"
+            android:layout_marginBottom="-14dp"
+            android:contentDescription="Maskot CatatIM"
+            android:scaleType="fitCenter"
+            android:scaleX="-1"
+            android:src="@drawable/widget_mascot" />
+
+        <!-- Progress bar + chip draf di pojok kiri bawah -->
+        <LinearLayout
+            android:layout_width="76dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="10dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_draft_chip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="5dp"
+                android:background="@drawable/widget_day_off_happy"
+                android:paddingLeft="6dp"
+                android:paddingTop="1dp"
+                android:paddingRight="6dp"
+                android:paddingBottom="1dp"
+                android:text="1 draf"
+                android:textColor="#8A6520"
+                android:textSize="9.5sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <ProgressBar
+                android:id="@+id/widget_progress_happy"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="7dp"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/widget_duo_bar_happy" />
+
+            <ProgressBar
+                android:id="@+id/widget_progress_worried"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="7dp"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/widget_duo_bar_worried"
+                android:visibility="gone" />
+
+            <ProgressBar
+                android:id="@+id/widget_progress_broke"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="7dp"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/widget_duo_bar_broke"
+                android:visibility="gone" />
+        </LinearLayout>
+    </RelativeLayout>
+</FrameLayout>

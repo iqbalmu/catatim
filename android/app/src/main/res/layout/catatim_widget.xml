@@ -3,81 +3,188 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <LinearLayout
+    <RelativeLayout
         android:id="@+id/widget_root"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
-        android:background="@drawable/widget_bg"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="12dp"
-        android:paddingTop="12dp"
-        android:paddingEnd="14dp"
-        android:paddingBottom="12dp">
+        android:background="@drawable/widget_card_happy"
+        android:minHeight="136dp">
 
+        <!-- Maskot besar (156dp) di-flip menghadap kiri, bleed di pojok kanan bawah -->
         <ImageView
             android:id="@+id/widget_mascot"
-            android:layout_width="76dp"
-            android:layout_height="76dp"
+            android:layout_width="156dp"
+            android:layout_height="156dp"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginEnd="-10dp"
+            android:layout_marginBottom="-12dp"
             android:contentDescription="Maskot CatatIM"
             android:scaleType="fitCenter"
+            android:scaleX="-1"
             android:src="@drawable/widget_mascot" />
 
+        <!-- Blok Atas Kiri: Label + Sisa Jatah + Streak + Kalimat Mood -->
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="10dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginEnd="136dp"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingTop="14dp">
+
+            <TextView
+                android:id="@+id/widget_eyebrow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:letterSpacing="0.05"
+                android:maxLines="1"
+                android:text="SISA JATAH HARI INI"
+                android:textColor="#8A6520"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/widget_primary_amount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="Rp0"
+                    android:textColor="#D97706"
+                    android:textSize="32sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/widget_streak_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="🔥 1"
+                    android:textColor="#D97706"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/widget_headline"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="2"
-                android:text="Sisa jatah hari ini"
-                android:textColor="#5EEAD4"
-                android:textSize="11.5sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/widget_primary_amount"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="Rp0"
-                android:textColor="#FFFFFF"
-                android:textSize="21sp"
+                android:text="Masih aman terkendali!"
+                android:textColor="#8A6520"
+                android:textSize="13sp"
                 android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/widget_secondary_info"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:text="Keluar: Rp0"
-                android:textColor="#9BB5B1"
-                android:textSize="12sp" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/widget_add_btn"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/widget_btn_bg"
-            android:contentDescription="Catat transaksi baru"
-            android:gravity="center"
-            android:includeFontPadding="false"
-            android:text="+"
-            android:textColor="#062825"
-            android:textSize="22sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+        <!-- Blok Bawah Kiri: Keluar & Draf di atas, Progress Bar + % di bawah -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginEnd="152dp"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingBottom="14dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="5dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/widget_secondary_info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="Keluar Rp0"
+                    android:textColor="#8A6520"
+                    android:textSize="12.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/widget_draft_chip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/widget_day_off_happy"
+                    android:paddingLeft="7dp"
+                    android:paddingTop="1dp"
+                    android:paddingRight="7dp"
+                    android:paddingBottom="1dp"
+                    android:text="1 draf"
+                    android:textColor="#8A6520"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/widget_progress_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ProgressBar
+                    android:id="@+id/widget_progress_happy"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="0dp"
+                    android:layout_height="8dp"
+                    android:layout_weight="1"
+                    android:max="100"
+                    android:progress="0"
+                    android:progressDrawable="@drawable/widget_duo_bar_happy" />
+
+                <ProgressBar
+                    android:id="@+id/widget_progress_worried"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="0dp"
+                    android:layout_height="8dp"
+                    android:layout_weight="1"
+                    android:max="100"
+                    android:progress="0"
+                    android:progressDrawable="@drawable/widget_duo_bar_worried"
+                    android:visibility="gone" />
+
+                <ProgressBar
+                    android:id="@+id/widget_progress_broke"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="0dp"
+                    android:layout_height="8dp"
+                    android:layout_weight="1"
+                    android:max="100"
+                    android:progress="0"
+                    android:progressDrawable="@drawable/widget_duo_bar_broke"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/widget_progress_pct"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="0%"
+                    android:textColor="#8A6520"
+                    android:textSize="11.5sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+    </RelativeLayout>
 </FrameLayout>
