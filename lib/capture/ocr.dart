@@ -276,10 +276,7 @@ class OcrService {
   /// baris total. 'total' sengaja tidak menangkap baris yang memuat
   /// 'subtotal' — baris itu berperingkat lebih rendah dan harus kalah
   /// dari TOTAL sungguhan di bawahnya.
-  static int? _totalKeywordRank(
-    String lowerLine,
-    List<String> totalKeywords,
-  ) {
+  static int? _totalKeywordRank(String lowerLine, List<String> totalKeywords) {
     for (var i = 0; i < totalKeywords.length; i++) {
       final kw = totalKeywords[i];
       if (kw == 'total' && lowerLine.contains('subtotal')) continue;

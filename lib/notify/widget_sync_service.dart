@@ -68,9 +68,7 @@ class WidgetSyncService {
         progressPercent = 0;
         progressLabel = '0%';
         primaryAmount = Money.format(spentToday);
-        headline = moodLine?.isNotEmpty == true
-            ? moodLine!
-            : 'Keluar hari ini';
+        headline = moodLine?.isNotEmpty == true ? moodLine! : 'Keluar hari ini';
         compactHeadline = 'Keluar hari ini';
         secondaryInfo = 'Belum atur batas harian';
       }

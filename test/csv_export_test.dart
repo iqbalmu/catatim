@@ -25,20 +25,21 @@ void main() {
     final csv = buildTransactionCsv([row()]);
     expect(csv.startsWith('\uFEFF'), isTrue, reason: 'BOM UTF-8 untuk Excel');
     final lines = csv.split('\n');
-    expect(lines.first.trim(), 'Tanggal;Arah;Jenis;Nominal;Akun;Kategori;Lawan');
-    expect(lines[1], '15/11/2026 08:30;Keluar;Pembayaran;15000;Tunai;Makanan;Warung Bu Sari');
+    expect(
+      lines.first.trim(),
+      'Tanggal;Arah;Jenis;Nominal;Akun;Kategori;Lawan',
+    );
+    expect(
+      lines[1],
+      '15/11/2026 08:30;Keluar;Pembayaran;15000;Tunai;Makanan;Warung Bu Sari',
+    );
   });
 
   test('sel dengan delimiter dan kutip dibungkus dan digandakan', () {
     final csv = buildTransactionCsv([
       row(counterparty: 'Toko A;B & C "Premium"'),
     ]);
-    expect(
-      csv,
-      contains(
-        '"Toko A;B & C ""Premium"""',
-      ),
-    );
+    expect(csv, contains('"Toko A;B & C ""Premium"""'));
   });
 
   test('sel null menjadi kolom kosong', () {
@@ -65,9 +66,7 @@ void main() {
   });
 
   test('baris baru di dalam sel tetap satu baris CSV terkutip', () {
-    final csv = buildTransactionCsv([
-      row(counterparty: 'Warung\nBu Sari'),
-    ]);
+    final csv = buildTransactionCsv([row(counterparty: 'Warung\nBu Sari')]);
     // Newline di dalam kutip valid (RFC 4180) — sel utuh terkutip.
     expect(csv, contains('"Warung\nBu Sari"'));
     // Baris data tetap persis satu: satu baris diawali tanggal.

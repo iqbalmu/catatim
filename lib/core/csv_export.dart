@@ -14,8 +14,7 @@ typedef ExportRow = ({
 
 const String _csvBom = '\uFEFF';
 
-const String _csvHeader =
-    'Tanggal;Arah;Jenis;Nominal;Akun;Kategori;Lawan';
+const String _csvHeader = 'Tanggal;Arah;Jenis;Nominal;Akun;Kategori;Lawan';
 
 /// Bangun isi file CSV dari seluruh transaksi.
 ///

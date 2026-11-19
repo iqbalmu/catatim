@@ -237,9 +237,7 @@ class _DraftInboxViewState extends State<DraftInboxView> {
             const SizedBox(height: Spacing.s),
             Text(
               'Total nominal draf tunggal: ${Money.format(total)}',
-              style: context.qBody(13).copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: context.qBody(13).copyWith(fontWeight: FontWeight.w700),
             ),
           ],
           if (belumDihitung > 0) ...[

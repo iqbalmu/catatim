@@ -4,11 +4,7 @@ import 'package:catatim/ui/bon_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Bon bon({
-  DateTime? occurredAt,
-  DateTime? dueDate,
-  DateTime? settledAt,
-}) => Bon(
+Bon bon({DateTime? occurredAt, DateTime? dueDate, DateTime? settledAt}) => Bon(
   id: 1,
   uuid: 'u1',
   person: 'Budi',
@@ -66,23 +62,51 @@ void main() {
 
   group('bonDueChip', () {
     test('lunas / tanpa due date → null', () {
-      expect(bonDueChip(bon(settledAt: hariIni), Colors.orange, Colors.red, now: hariIni), isNull);
+      expect(
+        bonDueChip(
+          bon(settledAt: hariIni),
+          Colors.orange,
+          Colors.red,
+          now: hariIni,
+        ),
+        isNull,
+      );
       expect(bonDueChip(bon(), Colors.orange, Colors.red), isNull);
     });
 
     test('lewat 1 hari dan lewat beberapa hari', () {
-      final lewatSatu = bonDueChip(bon(dueDate: day(-1)), Colors.orange, Colors.red, now: hariIni);
+      final lewatSatu = bonDueChip(
+        bon(dueDate: day(-1)),
+        Colors.orange,
+        Colors.red,
+        now: hariIni,
+      );
       expect(lewatSatu!.label, 'Lewat 1 hari');
       expect(lewatSatu.color, Colors.red);
-      final lewatTiga = bonDueChip(bon(dueDate: day(-3)), Colors.orange, Colors.red, now: hariIni);
+      final lewatTiga = bonDueChip(
+        bon(dueDate: day(-3)),
+        Colors.orange,
+        Colors.red,
+        now: hariIni,
+      );
       expect(lewatTiga!.label, 'Lewat 3 hari');
     });
 
     test('hari ini warna peringatan, mendatang netral', () {
-      final hariIniChip = bonDueChip(bon(dueDate: day(0)), Colors.orange, Colors.red, now: hariIni);
+      final hariIniChip = bonDueChip(
+        bon(dueDate: day(0)),
+        Colors.orange,
+        Colors.red,
+        now: hariIni,
+      );
       expect(hariIniChip!.label, 'Jatuh tempo hari ini');
       expect(hariIniChip.color, Colors.orange);
-      final mendatang = bonDueChip(bon(dueDate: day(2)), Colors.orange, Colors.red, now: hariIni);
+      final mendatang = bonDueChip(
+        bon(dueDate: day(2)),
+        Colors.orange,
+        Colors.red,
+        now: hariIni,
+      );
       expect(mendatang!.label, 'Jatuh tempo 17 Nov');
       expect(mendatang.color, isNull);
     });

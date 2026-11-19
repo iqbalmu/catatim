@@ -67,7 +67,8 @@ class _ReminderSheetState extends State<ReminderSheet> {
     if (mounted) setState(() => _canPost = granted);
   }
 
-  Future<void> _sync() => ReminderScheduler(repository: widget.repository).sync();
+  Future<void> _sync() =>
+      ReminderScheduler(repository: widget.repository).sync();
 
   Future<void> _toggleDaily(bool on) async {
     unawaited(HapticFeedback.selectionClick());
@@ -90,10 +91,7 @@ class _ReminderSheetState extends State<ReminderSheet> {
       hour: _dailyMinutes ~/ 60,
       minute: _dailyMinutes % 60,
     );
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: initial,
-    );
+    final picked = await showTimePicker(context: context, initialTime: initial);
     if (picked == null) return;
     final minutes = picked.hour * 60 + picked.minute;
     await widget.repository.setDailyReminderMinutes(minutes);
@@ -152,19 +150,16 @@ class _ReminderSheetState extends State<ReminderSheet> {
                     child: Column(
                       children: [
                         QuestListTile(
-                          leading: Icon(
-                            Icons.alarm_rounded,
-                            color: q.primary,
-                          ),
+                          leading: Icon(Icons.alarm_rounded, color: q.primary),
                           title: Text(
                             'Pengingat catat harian',
                             style: context.qTitle(14.5),
                           ),
                           subtitle: Text(
                             'Ingatkan cek catatan & draf tiap hari.',
-                            style: context.qSmall(11.5).copyWith(
-                              color: q.muted,
-                            ),
+                            style: context
+                                .qSmall(11.5)
+                                .copyWith(color: q.muted),
                           ),
                           trailing: QuestSwitch(
                             value: _dailyEnabled,
@@ -187,9 +182,9 @@ class _ReminderSheetState extends State<ReminderSheet> {
                               children: [
                                 Text(
                                   _formatTime(_dailyMinutes),
-                                  style: context.qTitle(14).copyWith(
-                                    color: q.primary,
-                                  ),
+                                  style: context
+                                      .qTitle(14)
+                                      .copyWith(color: q.primary),
                                 ),
                                 const SizedBox(width: Spacing.xs),
                                 Icon(
@@ -209,10 +204,7 @@ class _ReminderSheetState extends State<ReminderSheet> {
                   QuestCard(
                     padding: EdgeInsets.zero,
                     child: QuestListTile(
-                      leading: Icon(
-                        Icons.event_note_rounded,
-                        color: q.primary,
-                      ),
+                      leading: Icon(Icons.event_note_rounded, color: q.primary),
                       title: Text(
                         'Jatuh tempo bon',
                         style: context.qTitle(14.5),

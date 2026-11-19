@@ -200,7 +200,9 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
       ],
       const SizedBox(height: Spacing.s),
       QuestButton(
-        label: isBank ? 'Bank lain? Catat manual' : 'E-wallet lain? Catat manual',
+        label: isBank
+            ? 'Bank lain? Catat manual'
+            : 'E-wallet lain? Catat manual',
         icon: Icons.edit_outlined,
         tone: QuestTone.secondary,
         onPressed: _openManualSheet,
@@ -212,10 +214,7 @@ class _AddAccountSheetState extends State<AddAccountSheet> {
 /// Drawer terpisah untuk menambah akun bank/e-wallet manual agar muncul
 /// mulus dari bawah seperti drawer lainnya.
 class _ManualAccountSheet extends StatelessWidget {
-  const _ManualAccountSheet({
-    required this.repository,
-    required this.kind,
-  });
+  const _ManualAccountSheet({required this.repository, required this.kind});
 
   final LedgerRepository repository;
   final AccountKind kind;
@@ -397,10 +396,7 @@ class _ManualAccountFormState extends State<_ManualAccountForm> {
           controller: _nameCtrl,
           autofocus: widget.kind == AccountKind.cash,
           textCapitalization: TextCapitalization.words,
-          decoration: InputDecoration(
-            hintText: nameHint,
-            errorText: _error,
-          ),
+          decoration: InputDecoration(hintText: nameHint, errorText: _error),
         ),
         const SizedBox(height: Spacing.m),
         const QuestFieldLabel('Saldo awal (opsional)'),
@@ -579,10 +575,7 @@ class _ConnectBankSheetState extends State<_ConnectBankSheet>
           duration: QuestMotion.fast,
           switchInCurve: QuestMotion.easeOut,
           switchOutCurve: QuestMotion.easeOut,
-          child: KeyedSubtree(
-            key: ValueKey(_step),
-            child: content,
-          ),
+          child: KeyedSubtree(key: ValueKey(_step), child: content),
         ),
       ),
     );
@@ -831,9 +824,7 @@ class _BankRow extends StatelessWidget {
           children: [
             _BankAvatar(name: bank.displayName, size: 34),
             const SizedBox(width: Spacing.s),
-            Expanded(
-              child: Text(bank.displayName, style: context.qTitle(15)),
-            ),
+            Expanded(child: Text(bank.displayName, style: context.qTitle(15))),
             Icon(Icons.chevron_right_rounded, color: q.muted, size: 20),
           ],
         ),

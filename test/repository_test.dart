@@ -1427,30 +1427,35 @@ void main() {
   });
 
   group('lampiran struk', () {
-    test('receiptPath tersimpan dan filenya ikut terhapus saat hapus tx',
-        () async {
-      final acc = await repo.addAccount('Dompet Uji2', AccountKind.cash);
-      final f = File(
-        '${Directory.systemTemp.createTempSync('catatim-test').path}/'
-        'receipt-test.jpg',
-      );
-      f.writeAsBytesSync([1, 2, 3]);
+    test(
+      'receiptPath tersimpan dan filenya ikut terhapus saat hapus tx',
+      () async {
+        final acc = await repo.addAccount('Dompet Uji2', AccountKind.cash);
+        final f = File(
+          '${Directory.systemTemp.createTempSync('catatim-test').path}/'
+          'receipt-test.jpg',
+        );
+        f.writeAsBytesSync([1, 2, 3]);
 
-      final txId = await repo.addManual(
-        amount: 12000,
-        direction: Direction.outgoing,
-        kind: TxKind.payment,
-        accountId: acc.id,
-        receiptPath: f.path,
-      );
-      final saved = await (db.select(
-        db.transactions,
-      )..where((t) => t.id.equals(txId))).getSingle();
-      expect(saved.receiptPath, f.path);
+        final txId = await repo.addManual(
+          amount: 12000,
+          direction: Direction.outgoing,
+          kind: TxKind.payment,
+          accountId: acc.id,
+          receiptPath: f.path,
+        );
+        final saved = await (db.select(
+          db.transactions,
+        )..where((t) => t.id.equals(txId))).getSingle();
+        expect(saved.receiptPath, f.path);
 
-      await repo.deleteTransaction(txId);
-      expect(f.existsSync(), isFalse,
-          reason: 'Hapus transaksi harus ikut membuang file lampiran');
-    });
+        await repo.deleteTransaction(txId);
+        expect(
+          f.existsSync(),
+          isFalse,
+          reason: 'Hapus transaksi harus ikut membuang file lampiran',
+        );
+      },
+    );
   });
 }

@@ -115,11 +115,15 @@ void main() {
   ) async {
     await tester.runAsync(seedTwoParsedOneUnparsed);
     await tester.pumpWidget(host());
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Terima Semua').first);
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
     await tester.pumpAndSettle();
 
     // Dialog konfirmasi menyebut jumlah draf.
@@ -128,7 +132,9 @@ void main() {
     expect(find.textContaining('1 draf belum ada nominalnya'), findsOneWidget);
 
     await tester.tap(find.text('Terima Semua').last);
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
     await tester.pumpAndSettle();
 
     final txs = await tester.runAsync(() => db.select(db.transactions).get());
@@ -142,17 +148,27 @@ void main() {
   testWidgets('batal di dialog tidak mencatat apa pun', (tester) async {
     await tester.runAsync(seedTwoParsedOneUnparsed);
     await tester.pumpWidget(host());
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Terima Semua').first);
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Batal'));
     await tester.pumpAndSettle();
 
-    expect(await tester.runAsync(() => db.select(db.transactions).get()), isEmpty);
-    expect(await tester.runAsync(() => db.select(db.drafts).get()), hasLength(3));
+    expect(
+      await tester.runAsync(() => db.select(db.transactions).get()),
+      isEmpty,
+    );
+    expect(
+      await tester.runAsync(() => db.select(db.drafts).get()),
+      hasLength(3),
+    );
     await unmountAndClose(tester);
   });
 
@@ -174,14 +190,19 @@ void main() {
       ),
     );
     await tester.pumpWidget(host());
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Terima Semua').first);
     await tester.pumpAndSettle();
 
     expect(find.text('Terima Semua Draf?'), findsNothing);
-    expect(await tester.runAsync(() => db.select(db.transactions).get()), isEmpty);
+    expect(
+      await tester.runAsync(() => db.select(db.transactions).get()),
+      isEmpty,
+    );
     await unmountAndClose(tester);
   });
 
@@ -214,18 +235,24 @@ void main() {
           );
     });
     await tester.pumpWidget(host());
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Terima Semua').first);
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
     await tester.pumpAndSettle();
     expect(
       find.text('2 draf akan dicatat (termasuk 1 transfer antar akun):'),
       findsOneWidget,
     );
     await tester.tap(find.text('Terima Semua').last);
-    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 100)),
+    );
     await tester.pumpAndSettle();
 
     final txs = await tester.runAsync(() => db.select(db.transactions).get());

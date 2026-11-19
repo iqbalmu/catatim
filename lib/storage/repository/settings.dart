@@ -144,8 +144,9 @@ extension SettingsRepo on LedgerRepository {
       setSetting(LedgerRepository.dailyReminderEnabledKey, on ? '1' : '0');
 
   Stream<bool> watchDailyReminderEnabled() {
-    return (_db.select(_db.appSettings)
-          ..where((s) => s.key.equals(LedgerRepository.dailyReminderEnabledKey)))
+    return (_db.select(
+          _db.appSettings,
+        )..where((s) => s.key.equals(LedgerRepository.dailyReminderEnabledKey)))
         .watchSingleOrNull()
         .map((row) => row?.valueText == '1');
   }
@@ -194,8 +195,6 @@ extension SettingsRepo on LedgerRepository {
     }
   }
 
-  Future<void> setScheduledBonReminderIds(List<int> ids) => setSetting(
-    LedgerRepository.scheduledBonReminderIdsKey,
-    jsonEncode(ids),
-  );
+  Future<void> setScheduledBonReminderIds(List<int> ids) =>
+      setSetting(LedgerRepository.scheduledBonReminderIdsKey, jsonEncode(ids));
 }

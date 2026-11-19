@@ -787,8 +787,7 @@ class _BonScreenState extends State<BonScreen> {
                                       style: TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.w700,
-                                        color:
-                                            dueChip.color ?? context.q.text,
+                                        color: dueChip.color ?? context.q.text,
                                       ),
                                     ),
                                   );

@@ -99,7 +99,9 @@ class ReminderScheduler {
       final notifId = bonReminderIdBase + bon.id;
       activeIds.add(notifId);
 
-      final kindLabel = bon.direction == BonDirection.lent ? 'Piutang' : 'Utang';
+      final kindLabel = bon.direction == BonDirection.lent
+          ? 'Piutang'
+          : 'Utang';
       final title = isDayBefore
           ? 'Besok jatuh tempo: ${bon.person}'
           : 'Hari ini jatuh tempo: ${bon.person}';

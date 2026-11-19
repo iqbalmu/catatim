@@ -477,9 +477,7 @@ class _TransactionSheetState extends State<TransactionSheet> {
       createdTxId = await widget.repository.confirmDraft(
         widget.draft!,
         amount: _amount,
-        direction: internalTarget != null
-            ? Direction.outgoing
-            : _direction,
+        direction: internalTarget != null ? Direction.outgoing : _direction,
         kind: _kind,
         counterparty: counterparty.isEmpty ? null : counterparty,
         categoryId: _categoryId,

@@ -96,7 +96,8 @@ class _CaptureSettingsScreenState extends State<CaptureSettingsScreen>
     final heartbeat = await widget.pipeline.channel.getLastCaptureHeartbeat();
     // Dipanggil juga saat app resume — termasuk kembali dari dialog sistem
     // pengecualian baterai, jadi status selalu segar tanpa refresh manual.
-    final exempt = await widget.pipeline.channel.isIgnoringBatteryOptimizations();
+    final exempt = await widget.pipeline.channel
+        .isIgnoringBatteryOptimizations();
     if (!mounted) return;
     setState(() {
       _listenerEnabled = enabled;

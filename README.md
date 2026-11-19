@@ -15,24 +15,29 @@ button in the middle of the nav bar.
 
 - **Automatic capture**: bank/e-wallet notifications → drafts → per-bank
   rules → final transactions. Uncertain drafts land in an inbox for manual
-  curation (accept, ignore once, or ignore the pattern forever).
+  curation (accept individually or in bulk per bank, ignore once, or ignore the
+  pattern forever), with a notification source viewer and automatic category
+  learning from keyword votes.
   Deduplication: duplicate notifications (push + SMS / resend) with the same
   bank, amount, and direction within ±120 seconds become a single
   transaction.
 - **Receipt scanning**: photos of receipts are read by on-device OCR
-  (ML Kit), uploaded nowhere. Also accepts shared text or images from other
-  apps.
-- **Transactions**: searchable list with account and period filters, plus a
-  cash-flow summary. Tap a transaction to edit or delete it.
+  (ML Kit), uploaded nowhere, and can be attached to transactions. Also accepts
+  shared text or images from other apps.
+- **Transactions**: searchable list with account and period filters, CSV
+  export, and a cash-flow summary. Tap a transaction to edit or delete it.
 - **Reports**: cash-flow summary, weekly/monthly trends, category
   composition, and top expenses for a selected month or any custom range.
 - **Budgets**: daily/weekly/monthly limits plus per-category allocations,
   optionally scoped to one account (e.g. "Food @ e-wallet"). Reachable from
   Home or Settings.
-- **Bon** (personal IOUs): debts and receivables with a one-tap settle
-  action; bons older than 30 days show a badge on the nav bar.
-- **Notifications**: one attention center (permission off, limits exceeded,
-  old bons) plus a raw-capture tab for tuning rules.
+- **Bon** (personal IOUs): debts and receivables with due dates and a one-tap
+  settle action; bons older than 30 days show a badge on the nav bar.
+- **Notifications & reminders**: one attention center (permission off, limits
+  exceeded, old bons, capture health) plus a raw-capture tab for tuning rules,
+  and scheduled daily & bon due-date reminders.
+- **Home screen widgets**: Android home widgets (including a 2x2 mini widget
+  and mood cards) showing dynamic Pochy mascot status and daily spending pace.
 - **CatatIM Quest**: the Pochy mascot mirrors your budget condition;
   discipline streaks are computed from real data (3/7/14/21/30/60/100-day
   milestones).
@@ -49,7 +54,7 @@ button in the middle of the nav bar.
 |---|---|
 | Notification access | Reads bank/e-wallet notifications as the transaction source. Core feature; no other notification content is used beyond creating drafts. |
 | `CAMERA` | Photographing receipts for on-device OCR. |
-| `POST_NOTIFICATIONS` | Showing local budget warnings (not marketing notifications). |
+| `POST_NOTIFICATIONS` | Showing local budget warnings and scheduled daily / bon due reminders (not marketing notifications). |
 | `INTERNET` | Brought in by the ML Kit dependency. The app's own code makes no network calls: no HTTP client, no Firebase, no analytics. |
 
 ## Getting started
@@ -128,6 +133,6 @@ flutter build apk --split-per-abi         # ±24 MB per ABI, bukan fat APK
 | `android/.../MainActivity.kt` | `MainActivity`, `NotificationCatcher`, `NotificationSimulatorReceiver` |
 | `scripts/` | adb-based simulated notification injection |
 
-## License
+## Changelog & License
 
-[MIT](LICENSE).
+See [CHANGELOG.md](CHANGELOG.md) for release notes. Licensed under [MIT](LICENSE).

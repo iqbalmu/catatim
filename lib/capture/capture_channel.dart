@@ -138,8 +138,9 @@ class CaptureChannel {
   /// bukan asumsi dari pernah membuka layar setting.
   Future<bool> isIgnoringBatteryOptimizations() async {
     try {
-      return await _method
-              .invokeMethod<bool>('isIgnoringBatteryOptimizations') ??
+      return await _method.invokeMethod<bool>(
+            'isIgnoringBatteryOptimizations',
+          ) ??
           false;
     } catch (e) {
       _log('isIgnoringBatteryOptimizations', e);
